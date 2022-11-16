@@ -1,6 +1,6 @@
 # stargate-mongoose
 
-![tests workflow](https://github.com/stargate/stargate-mongoose/actions/workflows/main.yml/badge.svg)
+![tests workflow](https://github.com/riptano/stargate-mongoose/actions/workflows/main.yml/badge.svg)
 
 `stargate-mongoose` is a mongoose driver for [Astra DB](https://astra.datastax.com).
 
@@ -129,7 +129,7 @@ These are operators that are available when forming a MongoDB compatible query o
 | $exists        | supported     |                                                                   |
 | $type          | not supported |                                                                   |
 | $expr          | not supported |                                                                   |
-| $jsonSchema    | in progress   | [Issue](https://github.com/stargate/stargate-mongoose/issues/2) |
+| $jsonSchema    | in progress   | [Issue](https://github.com/riptano/stargate-mongoose/issues/2) |
 | $mod           | not supported |                                                                   |
 | $regex         | not supported |                                                                   |
 | $text          | not supported |                                                                   |
@@ -149,8 +149,8 @@ These are operators that are available when forming a MongoDB compatible query o
 | $elemMatch     | not supported |                                                                   |
 | $meta          | not supported |                                                                   |
 | $slice         | not supported |                                                                   |
-| $comment       | in progress   | [Issue](https://github.com/stargate/stargate-mongoose/issues/3) |
-| $rand          | in progress   | [Issue](https://github.com/stargate/stargate-mongoose/issues/4) |
+| $comment       | in progress   | [Issue](https://github.com/riptano/stargate-mongoose/issues/3) |
+| $rand          | in progress   | [Issue](https://github.com/riptano/stargate-mongoose/issues/4) |
 | projection     | supported     |                                                                   |
 | sort           | not supported |                                                                   |
 | skip           | not supported |                                                                   |
@@ -165,8 +165,8 @@ These are operators that are available when forming a MongoDB compatible update 
 | ------------ | ------------- | ------------------------------------------------------------------ |
 | $addFields   | supported     |                                                                    |
 | $set         | supported     |                                                                    |
-| $projection  | in progress   | [Issue](https://github.com/stargate/stargate-mongoose/issues/10) |
-| $unset       | in progress   | [Issue](https://github.com/stargate/stargate-mongoose/issues/10) |
+| $projection  | in progress   | [Issue](https://github.com/riptano/stargate-mongoose/issues/10) |
+| $unset       | in progress   | [Issue](https://github.com/riptano/stargate-mongoose/issues/10) |
 | $replaceRoot | supported     |                                                                    |
 | $replaceWith | supported     |                                                                    |
 | upsert       | not supported |                                                                    |
@@ -179,9 +179,9 @@ These are operations that are available when working with a mongodb Collection o
 | ------------------------- | --------------- | ------------------------------------------------------------------ |
 | aggregate                 | not supported   |                                                                    |
 | bulkWrite                 | supported       |                                                                    |
-| count                     | limited support | [Issue](https://github.com/stargate/stargate-mongoose/issues/11) |
-| countDocuments            | limited support | [Issue](https://github.com/stargate/stargate-mongoose/issues/11) |
-| estimatedDocumentCount    | limited support | [Issue](https://github.com/stargate/stargate-mongoose/issues/11) |
+| count                     | limited support | [Issue](https://github.com/riptano/stargate-mongoose/issues/11) |
+| countDocuments            | limited support | [Issue](https://github.com/riptano/stargate-mongoose/issues/11) |
+| estimatedDocumentCount    | limited support | [Issue](https://github.com/riptano/stargate-mongoose/issues/11) |
 | createIndex               | not supported   |                                                                    |
 | deleteMany                | supported       |                                                                    |
 | deleteOne                 | supported       |                                                                    |

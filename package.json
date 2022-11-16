@@ -7,7 +7,7 @@
     "Valeri Karpov (https://github.com/vkarpov15)",
     "Aaron Morton (https://github.com/amorton)"
   ],
-  "homepage": "https://github.com/stargate/stargate-mongoose",
+  "homepage": "https://github.com/riptano/stargate-mongoose",
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "mocha": {
@@ -29,7 +29,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/stargate/stargate-mongoose.git"
+    "url": "git+https://github.com/riptano/stargate-mongoose.git"
   },
   "scripts": {
     "test": "nyc ts-mocha --paths -p tsconfig.json tests/**/*.test.ts",
@@ -37,7 +37,7 @@
     "build:docs": "jsdoc2md -t README.hbs --files src/**/*.ts --configure ./jsdoc2md.json > README.md"
   },
   "bugs": {
-    "url": "https://github.com/stargate/stargate-mongoose/issues"
+    "url": "https://github.com/riptano/stargate-mongoose/issues"
   },
   "devDependencies": {
     "@babel/cli": "^7.17.10",
