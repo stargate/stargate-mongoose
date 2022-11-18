@@ -36,9 +36,10 @@ export const formatQuery = (query: any, options?: any) => {
     if (value == null) {
       return value;
     }
-    if (types.includes(value.constructor.name)) {
+    //TODOV3 enable back and when all operators are supported (right now all are assumed $eq))
+    /*if (types.includes(value.constructor.name)) {
       return { $eq: value };
-    }
+    }*/
     return value;
   });
   return modified;
@@ -64,7 +65,7 @@ export const parseUri = (uri: string): ParsedUri => {
   }
   return {
     baseUrl,
-    baseApiPath: baseApiPath ?? '/api/rest/v2/namespaces',
+    baseApiPath,
     keyspaceName,
     applicationToken,
     logLevel
@@ -120,7 +121,7 @@ export const createStargateUri = async (
 ) => {
   let uri = new url.URL(baseUrl);
   uri.pathname = `/${keyspace}`;
-  uri.searchParams.append('baseApiPath', '/v2/namespaces');
+  //uri.searchParams.append('baseApiPath', '/v2/namespaces');
   if (logLevel) {
     uri.searchParams.append('logLevel', logLevel);
   }

@@ -53,7 +53,7 @@ export class Collection {
     }
     // use a clone of the underlying http client to support multiple collections from a single db
     this.httpClient = _.cloneDeep(httpClient);
-    this.httpClient.baseUrl += `/collections/${name}`;
+    this.httpClient.baseUrl += `/${name}`;
     this.name = name;
     this.collectionName = name;
   }
@@ -68,12 +68,18 @@ export class Collection {
   async insertOne(doc: Record<string, any>, options?: any, cb?: DocumentCallback) {
     ({ options, cb } = setOptionsAndCb(options, cb));
     return executeOperation(async (): Promise<InsertOneResult> => {
-      addDefaultId(doc);
-      const { data } = await this.httpClient.put(`/${doc._id}`, doc, options);
-
+      if(!doc._id){ //TODOV3
+        addDefaultId(doc);
+      }
+      const command = {
+        insertOne : {
+            doc : doc
+        }
+      };
+      const { data } = await this.httpClient.executeCommand('', command, options);
       return {
         acknowledged: true,
-        insertedId: data.documentId
+        insertedId: data.status.insertedIds[0] //TODOV3
       };
     }, cb);
   }

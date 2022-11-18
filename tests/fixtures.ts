@@ -16,7 +16,7 @@ import { createAstraUri, createStargateUri } from '@/src/collections/utils';
 import { Client } from '@/src/collections/client';
 import { randFirstName, randLastName } from '@ngneat/falso';
 
-export const astraUri = createAstraUri(
+export const astraUri = process.env.ASTRA_URI || createAstraUri(
   process.env.ASTRA_DB_ID ?? '',
   process.env.ASTRA_DB_REGION ?? '',
   process.env.ASTRA_DB_KEYSPACE ?? '',
@@ -24,7 +24,7 @@ export const astraUri = createAstraUri(
 );
 
 export const getAstraClient = async () => {
-  if (!process.env.ASTRA_DB_ID || !process.env.ASTRA_DB_APPLICATION_TOKEN) {
+  if (!process.env.ASTRA_URI && (!process.env.ASTRA_DB_ID || !process.env.ASTRA_DB_APPLICATION_TOKEN)) {
     return null;
   }
   return await Client.connect(astraUri);

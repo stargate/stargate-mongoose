@@ -135,15 +135,29 @@ export class FindCursor {
 
   async _getMore() {
     const batchSize = Math.min(this.batchSize, this.limit - this.totalNumFetched);
-
+    let command = {};
+    if(this.limit == 1){//TODOV3 - fix logic to identify findOne if required
+      command = {
+        findOne : {
+          filter : this.query
+        }
+      };
+    } else {
+      command = {
+        find : {
+          filter : this.query
+        }
+      };
+    }
+    //TODOV3 handle page size and page state
     const reqParams: any = {
-      where: this.query,
+      //where: this.query,
       'page-size': batchSize
     };
     if (this.nextPageState) {
       reqParams['page-state'] = this.nextPageState;
     }
-    const res = await this.collection.httpClient.get('', {
+    const res = await this.collection.httpClient.executeCommand('', command, {
       params: reqParams
     });
     this.nextPageState = res.pageState;

@@ -19,6 +19,8 @@ import { Client } from '@/src/collections/client';
 import { testClients, createSampleUser, getSampleUsers, sleep } from '@/tests/fixtures';
 import _ from 'lodash';
 
+const TEST_COLLECTION_NAME = 'collection1';
+
 for (const testClient in testClients) {
   describe(`StargateMongoose - ${testClient} Connection - collections.collection`, async () => {
     let astraClient: Client;
@@ -31,12 +33,12 @@ for (const testClient in testClients) {
         return this.skip();
       }
       db = astraClient.db();
-      collection = db.collection('collection_tests');
+      collection = db.collection(TEST_COLLECTION_NAME);
     });
 
     after(() => {
       // run drop collection async to save time
-      db?.dropCollection('collection_tests');
+      db?.dropCollection(TEST_COLLECTION_NAME);
     });
 
     describe('Collection initialization', () => {
@@ -56,10 +58,20 @@ for (const testClient in testClients) {
 
     describe('Collection operations', () => {
       it('should insertOne document', async () => {
-        const res = await collection.insertOne(sampleUser);
+        const sampleDoc = {"_id": "doc1", "username" : "aaron"};//TODOV3
+        const res = await collection.insertOne(sampleDoc);
         assert.strictEqual(res.documentId, undefined);
         assert.strictEqual(res.acknowledged, true);
         assert.ok(res.insertedId);
+        assert.ok(res);        
+      });
+      it('should findOne document', async () => {
+        const idToCheck = 'doc1';
+        const res = await collection.findOne({"_id": idToCheck});//TODOV3
+        //console.log('findOne result : ' + JSON.stringify(res));
+        //[{"_id":"doc1","username":"aaron"}]
+        assert.strictEqual(res.length, 1);
+        assert.strictEqual(res[0]._id, idToCheck);
         assert.ok(res);
       });
       it('should insertOne document with a callback', done => {
