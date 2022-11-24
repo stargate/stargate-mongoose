@@ -373,8 +373,6 @@ await mongoose.connect(astraUri);
 <dd></dd>
 <dt><a href="#getStargateAccessToken">getStargateAccessToken</a> ⇒</dt>
 <dd></dd>
-<dt><a href="#addDefaultId">addDefaultId</a> ⇒</dt>
-<dd></dd>
 <dt><a href="#setOptionsAndCb">setOptionsAndCb</a> ⇒</dt>
 <dd><p>executeOperation handles running functions that have a callback parameter and that also can
 return a promise.</p></dd>
@@ -767,17 +765,6 @@ drill into arrays.</p></dd>
 | Param |
 | --- |
 | doc | 
-
-<a name="addDefaultId"></a>
-
-## addDefaultId ⇒
-**Kind**: global variable  
-**Returns**: <p>Object</p>  
-
-| Param |
-| --- |
-| options | 
-| cb | 
 
 <a name="setOptionsAndCb"></a>
 

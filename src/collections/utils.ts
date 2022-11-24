@@ -162,18 +162,6 @@ export const getStargateAccessToken = async (
 
 /**
  *
- * @param doc
- * @returns Object
- */
-export const addDefaultId = (doc: any) => {
-  if (!doc._id) {
-    doc._id = new ObjectId().toHexString();
-  }
-  return doc;
-};
-
-/**
- *
  * @param options
  * @param cb
  * @returns Object

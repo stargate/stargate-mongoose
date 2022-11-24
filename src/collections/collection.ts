@@ -24,7 +24,7 @@ import {
 } from 'mongodb';
 import { FindCursor } from './cursor';
 import { HTTPClient } from '@/src/client';
-import { addDefaultId, setOptionsAndCb, executeOperation, getNestedPathRawValue } from './utils';
+import { setOptionsAndCb, executeOperation, getNestedPathRawValue } from './utils';
 import { inspect } from 'util';
 import mpath from 'mpath';
 import { InsertManyResult } from 'mongoose';
@@ -68,9 +68,6 @@ export class Collection {
   async insertOne(doc: Record<string, any>, options?: any, cb?: DocumentCallback) {
     ({ options, cb } = setOptionsAndCb(options, cb));
     return executeOperation(async (): Promise<InsertOneResult> => {
-      if(!doc._id){ //TODOV3
-        addDefaultId(doc);
-      }
       const command = {
         insertOne : {
             doc : doc
@@ -87,7 +84,6 @@ export class Collection {
   async insertMany(docs: any, options?: any, cb?: any) {
     ({ options, cb } = setOptionsAndCb(options, cb));
     return executeOperation(async (): Promise<InsertManyResult<any>> => {
-      docs = docs.map((doc: any) => addDefaultId(doc));
       const { data } = await this.httpClient.post('/batch', docs, { params: { 'id-path': '_id' } });
 
       return {
