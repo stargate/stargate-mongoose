@@ -76,7 +76,7 @@ export class Collection {
             doc : doc
         }
       };
-      const { data } = await this.httpClient.executeCommand('', command, options);
+      const { data } = await this.httpClient.executeCommand(command, options);
       return {
         acknowledged: true,
         insertedId: data.status.insertedIds[0] //TODOV3

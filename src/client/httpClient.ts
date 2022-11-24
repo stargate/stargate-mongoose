@@ -201,9 +201,9 @@ export class HTTPClient {
     });
   }
 
-  async executeCommand(path: string, data: Record<string, any>, options?: RequestOptions) {
+  async executeCommand(data: Record<string, any>, options?: RequestOptions) {
     return await this._request({
-      url: this.baseUrl + path,
+      url: this.baseUrl,
       method: HTTP_METHODS.post,
       data,
       ...options

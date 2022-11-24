@@ -157,7 +157,7 @@ export class FindCursor {
     if (this.nextPageState) {
       reqParams['page-state'] = this.nextPageState;
     }
-    const res = await this.collection.httpClient.executeCommand('', command, {
+    const res = await this.collection.httpClient.executeCommand(command, {
       params: reqParams
     });
     this.nextPageState = res.pageState;
