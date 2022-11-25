@@ -16,6 +16,7 @@ import assert from 'assert';
 import mongoose from 'mongoose';
 import { astraUri } from '@/tests/fixtures';
 import * as StargateMongooseDriver from '@/src/driver';
+import { delay } from 'lodash';
 
 // @ts-ignore
 mongoose.setDriver(StargateMongooseDriver);
@@ -40,7 +41,7 @@ describe('StargateMongoose - index', () => {
       return this.skip();
     }
     await mongoose.connect(astraUri);
-
+    await new Promise(fn => setTimeout(fn, 1000));//TODOV3 check later - without this delay, this test fails sometimes
     const product1 = new Product({ name: 'Product 1', price: 10 });
     await product1.save();
 

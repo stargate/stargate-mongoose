@@ -26,18 +26,13 @@ interface ParsedUri {
   logLevel: string;
 }
 
-const types = ['String', 'Number', 'Boolean', 'ObjectId'];
-
 export const formatQuery = (query: any, options?: any) => {
   const modified = _.mapValues(query, (value: any) => {
     if (options?.collation) {
-      throw new Error('Collations are not supported');
+      throw new Error('Collations are not supported');//TODOV3 check and update as needed
     }
     if (value == null) {
       return value;
-    }
-    if (types.includes(value.constructor.name)) {
-      return { $eq: value };
     }
     return value;
   });
@@ -64,7 +59,7 @@ export const parseUri = (uri: string): ParsedUri => {
   }
   return {
     baseUrl,
-    baseApiPath: baseApiPath ?? '/api/rest/v2/namespaces',
+    baseApiPath,
     keyspaceName,
     applicationToken,
     logLevel
@@ -120,7 +115,7 @@ export const createStargateUri = async (
 ) => {
   let uri = new url.URL(baseUrl);
   uri.pathname = `/${keyspace}`;
-  uri.searchParams.append('baseApiPath', '/v2/namespaces');
+  //uri.searchParams.append('baseApiPath', '/v2/namespaces');
   if (logLevel) {
     uri.searchParams.append('logLevel', logLevel);
   }
@@ -157,18 +152,6 @@ export const getStargateAccessToken = async (
     }
     throw e;
   }
-};
-
-/**
- *
- * @param doc
- * @returns Object
- */
-export const addDefaultId = (doc: any) => {
-  if (!doc._id) {
-    doc._id = new ObjectId().toHexString();
-  }
-  return doc;
 };
 
 /**

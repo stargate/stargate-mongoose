@@ -24,7 +24,7 @@ import {
 } from 'mongodb';
 import { FindCursor } from './cursor';
 import { HTTPClient } from '@/src/client';
-import { addDefaultId, setOptionsAndCb, executeOperation, getNestedPathRawValue } from './utils';
+import { setOptionsAndCb, executeOperation, getNestedPathRawValue } from './utils';
 import { inspect } from 'util';
 import mpath from 'mpath';
 import { InsertManyResult } from 'mongoose';
@@ -53,7 +53,7 @@ export class Collection {
     }
     // use a clone of the underlying http client to support multiple collections from a single db
     this.httpClient = _.cloneDeep(httpClient);
-    this.httpClient.baseUrl += `/collections/${name}`;
+    this.httpClient.baseUrl += `/${name}`;
     this.name = name;
     this.collectionName = name;
   }
@@ -68,20 +68,29 @@ export class Collection {
   async insertOne(doc: Record<string, any>, options?: any, cb?: DocumentCallback) {
     ({ options, cb } = setOptionsAndCb(options, cb));
     return executeOperation(async (): Promise<InsertOneResult> => {
-      addDefaultId(doc);
-      const { data } = await this.httpClient.put(`/${doc._id}`, doc, options);
-
-      return {
-        acknowledged: true,
-        insertedId: data.documentId
+      const command = {
+        insertOne : {
+            doc : doc
+        }
       };
+      const resp = await this.httpClient.executeCommand(command, options);
+      if(resp.errors && resp.errors.length > 0){
+        return {
+          acknowledged: false,
+          insertedId: null as any //TODOV3
+        };  
+      } else {
+        return {
+          acknowledged: true,
+          insertedId: resp.status.insertedIds[0]
+        };
+      }
     }, cb);
   }
 
   async insertMany(docs: any, options?: any, cb?: any) {
     ({ options, cb } = setOptionsAndCb(options, cb));
     return executeOperation(async (): Promise<InsertManyResult<any>> => {
-      docs = docs.map((doc: any) => addDefaultId(doc));
       const { data } = await this.httpClient.post('/batch', docs, { params: { 'id-path': '_id' } });
 
       return {
@@ -373,9 +382,18 @@ export class Collection {
   async findOne(query: any, options?: any, cb?: any) {
     ({ options, cb } = setOptionsAndCb(options, cb));
     return executeOperation(async (): Promise<any | null> => {
-      const cursor = this.find(query, { ...options, limit: 1 });
-      const res = await cursor.toArray();
-      return res.length ? res[0] : null;
+      const command = {
+        findOne : {
+          filter : query
+        }
+      };
+      const resp = await this.httpClient.executeCommand(command, options);
+      if(resp.errors && resp.errors.length > 0){
+        //TODOV3 log error
+        return null;
+      } else {
+        return resp.data.docs[0];
+      }      
     }, cb);
   }
 

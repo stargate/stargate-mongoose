@@ -28,13 +28,18 @@ import { driver, collections } from 'stargate-mongoose';
 // override the default mongodb native driver
 mongoose.setDriver(driver);
 
-// create an Astra DB URI
+// create an Astra DB URI in one of the following ways
 const astraUri = createAstraUri(
   process.env.ASTRA_DB_ID,
   process.env.ASTRA_DB_REGION,
   process.env.ASTRA_DB_KEYSPACE,
   process.env.ASTRA_DB_APPLICATION_TOKEN
 );
+
+OR
+
+const astraUri = process.env.ASTRA_URI 
+//where ASTRA_URI is of the following format https://${databaseId}-${region}.apps.astra.datastax.com/${keyspace}?applicationToken=${applicationToken}
 
 // get mongoose connected to Astra
 await mongoose.connect(astraUri);
@@ -72,6 +77,7 @@ Tests are run against a local Stargate container and also against your remote As
 First, create an `.env` file in the root of your project that includes your Astra DB connection details:
 
 ```env
+ASTRA_URI=
 ASTRA_DB_APPLICATION_TOKEN=
 ASTRA_DB_KEYSPACE=
 ASTRA_DB_ID=
@@ -80,7 +86,10 @@ STARGATE_BASE_URL=http://localhost:8082
 STARGATE_AUTH_URL=http://localhost:8081/v1/auth
 STARGATE_USERNAME=cassandra
 STARGATE_PASSWORD=cassandra
+AUTH_HEADER_NAME=
 ```
+_When ASTRA_URI is specified, ASTRA_DB_KEYSPACE, ASTRA_DB_ID and ASTRA_DB_REGION are ignored_
+_When not set, the AUTH_HEADER_NAME is defaulted to 'X-Cassandra-Token'
 
 Launch a stargate docker container: 
 
@@ -363,8 +372,6 @@ await mongoose.connect(astraUri);
 <dt><a href="#createStargateUri">createStargateUri</a></dt>
 <dd></dd>
 <dt><a href="#getStargateAccessToken">getStargateAccessToken</a> ⇒</dt>
-<dd></dd>
-<dt><a href="#addDefaultId">addDefaultId</a> ⇒</dt>
 <dd></dd>
 <dt><a href="#setOptionsAndCb">setOptionsAndCb</a> ⇒</dt>
 <dd><p>executeOperation handles running functions that have a callback parameter and that also can
@@ -758,17 +765,6 @@ drill into arrays.</p></dd>
 | Param |
 | --- |
 | doc | 
-
-<a name="addDefaultId"></a>
-
-## addDefaultId ⇒
-**Kind**: global variable  
-**Returns**: <p>Object</p>  
-
-| Param |
-| --- |
-| options | 
-| cb | 
 
 <a name="setOptionsAndCb"></a>
 

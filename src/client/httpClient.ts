@@ -105,10 +105,10 @@ export class HTTPClient {
 
     // set the baseURL to Astra, if the user provides a Stargate URL, use that instead.
     // databaseId and databaseRegion are required if no other URL is provided.
-    if (options.databaseId && options.databaseRegion) {
-      this.baseUrl = `https://${options.databaseId}-${options.databaseRegion}.apps.astra.datastax.com`;
-    } else if (options.baseUrl) {
+    if (options.baseUrl) {
       this.baseUrl = options.baseUrl;
+    } else if (options.databaseId && options.databaseRegion) {
+      this.baseUrl = `https://${options.databaseId}-${options.databaseRegion}.apps.astra.datastax.com`;
     } else {
       throw new Error('baseUrl required for initialization');
     }
@@ -123,12 +123,15 @@ export class HTTPClient {
 
     this.baseApiPath = options.baseApiPath ?? '';
     this.applicationToken = options.applicationToken;
-    this.authHeaderName = options.authHeaderName || DEFAULT_AUTH_HEADER;
+    this.authHeaderName = options.authHeaderName || process.env.AUTH_HEADER_NAME || DEFAULT_AUTH_HEADER;
     this.logLevel = options.logLevel || DEFAULT_LOG_LEVEL;
   }
 
   async _request(options: AxiosRequestConfig) {
     try {
+      //console.log("URL : " + options.url);
+      //console.log("Method : " + options.method);
+      //console.log("data : " + JSON.stringify(options.data));
       const response = await axiosAgent({
         url: options.url,
         data: options.data,
@@ -139,18 +142,17 @@ export class HTTPClient {
           [this.authHeaderName]: this.applicationToken
         }
       });
-      if (response.data.data) {
-        return {
-          status: response.status,
-          ...response.data
-        };
-      }
+      //const resp = {
       return {
-        status: response.status,
-        data: response.data
+        status: response.data.status,
+        data: response.data.data,
+        errors: response.data.errors
       };
+      //console.log(JSON.stringify(resp));
+      //return resp;
     } catch (e: any) {
-      throw new AstraError(e.response?.data?.description || e?.message, e?.response);
+      //console.log(e);
+      throw new AstraError(e.response?.data?.description || e?.message, e?.response);//TODOV3 Check exception messages
     }
   }
 
@@ -193,6 +195,15 @@ export class HTTPClient {
     return await this._request({
       url: this.baseUrl + path,
       method: HTTP_METHODS.delete,
+      ...options
+    });
+  }
+
+  async executeCommand(data: Record<string, any>, options?: RequestOptions) {
+    return await this._request({
+      url: this.baseUrl,
+      method: HTTP_METHODS.post,
+      data,
       ...options
     });
   }
