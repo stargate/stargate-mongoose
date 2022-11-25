@@ -142,19 +142,17 @@ export class HTTPClient {
           [this.authHeaderName]: this.applicationToken
         }
       });
-      if (response.data.data) {
-        return {
-          status: response.status,
-          ...response.data
-        };
-      }
+      //const resp = {
       return {
-        status: response.status,
-        data: response.data
+        status: response.data.status,
+        data: response.data.data,
+        errors: response.data.errors
       };
+      //console.log(JSON.stringify(resp));
+      //return resp;
     } catch (e: any) {
       //console.log(e);
-      throw new AstraError(e.response?.data?.description || e?.message, e?.response);
+      throw new AstraError(e.response?.data?.description || e?.message, e?.response);//TODOV3 Check exception messages
     }
   }
 

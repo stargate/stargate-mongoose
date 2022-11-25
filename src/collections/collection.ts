@@ -73,11 +73,18 @@ export class Collection {
             doc : doc
         }
       };
-      const { data } = await this.httpClient.executeCommand(command, options);
-      return {
-        acknowledged: true,
-        insertedId: data.status.insertedIds[0] //TODOV3
-      };
+      const resp = await this.httpClient.executeCommand(command, options);
+      if(resp.errors && resp.errors.length > 0){
+        return {
+          acknowledged: false,
+          insertedId: null as any //TODOV3
+        };  
+      } else {
+        return {
+          acknowledged: true,
+          insertedId: resp.status.insertedIds[0]
+        };
+      }
     }, cb);
   }
 
@@ -375,9 +382,18 @@ export class Collection {
   async findOne(query: any, options?: any, cb?: any) {
     ({ options, cb } = setOptionsAndCb(options, cb));
     return executeOperation(async (): Promise<any | null> => {
-      const cursor = this.find(query, { ...options, limit: 1 });
-      const res = await cursor.toArray();
-      return res.length ? res[0] : null;
+      const command = {
+        findOne : {
+          filter : query
+        }
+      };
+      const resp = await this.httpClient.executeCommand(command, options);
+      if(resp.errors && resp.errors.length > 0){
+        //TODOV3 log error
+        return null;
+      } else {
+        return resp.data.docs[0];
+      }      
     }, cb);
   }
 

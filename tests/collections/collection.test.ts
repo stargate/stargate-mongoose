@@ -67,12 +67,23 @@ for (const testClient in testClients) {
       });
       it('should findOne document', async () => {
         const idToCheck = 'doc1';
-        const res = await collection.findOne({"_id": idToCheck});//TODOV3
+        const resDoc = await collection.findOne({"_id": idToCheck});
         //console.log('findOne result : ' + JSON.stringify(res));
         //[{"_id":"doc1","username":"aaron"}]
-        assert.strictEqual(res.length, 1);
-        assert.strictEqual(res[0]._id, idToCheck);
-        assert.ok(res);
+        //console.log('findOne result : ' + JSON.stringify(res));
+        //assert.strictEqual(resDoc.length, 1);
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne_$eq document', async () => {
+        const idToCheck = 'doc1';
+        const resDoc = await collection.findOne({"_id": {"$eq":idToCheck}});
+        //console.log('findOne result : ' + JSON.stringify(res));
+        //[{"_id":"doc1","username":"aaron"}]
+        //console.log('findOne result : ' + JSON.stringify(res));
+        //assert.strictEqual(resDoc.length, 1);
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
       });
       it('should insertOne document with a callback', done => {
         collection.insertOne(sampleUser, (err: any, res: any) => {

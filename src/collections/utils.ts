@@ -26,20 +26,14 @@ interface ParsedUri {
   logLevel: string;
 }
 
-const types = ['String', 'Number', 'Boolean', 'ObjectId'];
-
 export const formatQuery = (query: any, options?: any) => {
   const modified = _.mapValues(query, (value: any) => {
     if (options?.collation) {
-      throw new Error('Collations are not supported');
+      throw new Error('Collations are not supported');//TODOV3 check and update as needed
     }
     if (value == null) {
       return value;
     }
-    //TODOV3 enable back and when all operators are supported (right now all are assumed $eq))
-    /*if (types.includes(value.constructor.name)) {
-      return { $eq: value };
-    }*/
     return value;
   });
   return modified;
