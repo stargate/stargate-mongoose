@@ -49,8 +49,16 @@ export const createSampleUser = () => ({
   lastName: randLastName()
 });
 
+export const createSampleDoc = () => ({
+  _id: "doc1",
+  username : "aaron"
+});
+
 export const getSampleUsers = (numUsers: number) =>
   Array.from({ length: numUsers }, createSampleUser);
+
+export const getSampleDocs = (numUsers: number) =>
+  Array.from({ length: numUsers }, createSampleDoc);
 
 export const sleep = async (ms = 100) => new Promise(resolve => setTimeout(resolve, ms));
 

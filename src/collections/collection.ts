@@ -91,13 +91,25 @@ export class Collection {
   async insertMany(docs: any, options?: any, cb?: any) {
     ({ options, cb } = setOptionsAndCb(options, cb));
     return executeOperation(async (): Promise<InsertManyResult<any>> => {
-      const { data } = await this.httpClient.post('/batch', docs, { params: { 'id-path': '_id' } });
-
-      return {
-        acknowledged: true,
-        insertedCount: data.documentIds?.length || 0,
-        insertedIds: data.documentIds
+      const command = {
+        insertMany : {
+            docs : docs
+        }
       };
+      const resp = await this.httpClient.executeCommand(command, options);
+      if(resp.errors && resp.errors.length > 0){
+        return {
+          acknowledged: true,
+          insertedCount: resp.status.insertedIds?.length || 0,
+          insertedIds: resp.status.insertedIds
+        };
+      }else{
+        return {
+          acknowledged: true,
+          insertedCount: resp.status.insertedIds?.length || 0,
+          insertedIds: resp.status.insertedIds
+        };
+      }
     }, cb);
   }
 
