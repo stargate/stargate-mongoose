@@ -186,7 +186,6 @@ for (const testClient in testClients) {
         assert.ok(resDoc);
         assert.strictEqual(resDoc._id, idToCheck);
       });
-
       it('should findOne any level Null EQ document', async () => {
         const idToCheck = 'doc1';
         const resDoc = await collection.findOne({"address.suburb": null});
@@ -196,6 +195,24 @@ for (const testClient in testClients) {
       it('should findOne any level Null EQ $eq document', async () => {
         const idToCheck = 'doc1';
         const resDoc = await collection.findOne({"address.suburb": {"$eq" : null}});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne multiple top level conditions', async () => {
+        const idToCheck = 'doc1';
+        const resDoc = await collection.findOne({"age": 47, "human": true, "password": null});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne multiple level>=2 conditions', async () => {
+        const idToCheck = 'doc1';
+        const resDoc = await collection.findOne({"address.number": 86, "address.street": "monkey street", "address.is_office": false});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne multiple mixed levels conditions', async () => {
+        const idToCheck = 'doc1';
+        const resDoc = await collection.findOne({"age": 47, "address.street": "monkey street", "address.is_office": false});
         assert.ok(resDoc);
         assert.strictEqual(resDoc._id, idToCheck);
       });
