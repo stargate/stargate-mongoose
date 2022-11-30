@@ -150,6 +150,55 @@ for (const testClient in testClients) {
         assert.ok(resDoc);
         assert.strictEqual(resDoc._id, idToCheck);
       });
+      it('should findOne any level String EQ document', async () => {
+        const idToCheck = 'doc1';
+        const resDoc = await collection.findOne({"address.street": "monkey street"});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne any level String EQ $eq document', async () => {
+        const idToCheck = 'doc1';
+        const resDoc = await collection.findOne({"address.street": {"$eq" : "monkey street"}});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne any level Number EQ document', async () => {
+        const idToCheck = 'doc1';
+        const resDoc = await collection.findOne({"address.number": "86"});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne any level Number EQ $eq document', async () => {
+        const idToCheck = 'doc1';
+        const resDoc = await collection.findOne({"address.number": {"$eq" : 86}});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne any level Boolean EQ document', async () => {
+        const idToCheck = 'doc1';
+        const resDoc = await collection.findOne({"address.is_office": false});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne any level Boolean EQ $eq document', async () => {
+        const idToCheck = 'doc1';
+        const resDoc = await collection.findOne({"address.is_office": {"$eq" : false}});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+
+      it('should findOne any level Null EQ document', async () => {
+        const idToCheck = 'doc1';
+        const resDoc = await collection.findOne({"address.suburb": null});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne any level Null EQ $eq document', async () => {
+        const idToCheck = 'doc1';
+        const resDoc = await collection.findOne({"address.suburb": {"$eq" : null}});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
       it.skip('should updateOne document', async () => {
         const { insertedId } = await collection.insertOne({ dang: 'boss' });
         await sleep();
