@@ -382,21 +382,22 @@ export class Collection {
     }, cb);
   }
 
-  find(query: any, options?: any, cb?: any) {
+  find(query: any, projection?: any, options?: any, cb?: any) {
     ({ options, cb } = setOptionsAndCb(options, cb));
-    const cursor = new FindCursor(this, query, options);
+    const cursor = new FindCursor(this, query, projection, options);
     if (cb) {
       return cb(undefined, cursor);
     }
     return cursor;
   }
 
-  async findOne(query: any, options?: any, cb?: any) {
+  async findOne(query: any, projection?: any, options?: any, cb?: any) {
     ({ options, cb } = setOptionsAndCb(options, cb));
     return executeOperation(async (): Promise<any | null> => {
       const command = {
         findOne : {
-          filter : query
+          filter : query,
+          projection: projection
         }
       };
       const resp = await this.httpClient.executeCommand(command, options);

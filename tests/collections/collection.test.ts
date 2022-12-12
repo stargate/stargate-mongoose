@@ -16,7 +16,7 @@ import assert from 'assert';
 import { Db } from '@/src/collections/db';
 import { Collection } from '@/src/collections/collection';
 import { Client } from '@/src/collections/client';
-import { testClients, createSampleUser, getSampleUsers, createSampleDoc, getSampleDocs, sleep } from '@/tests/fixtures';
+import { testClients, createSampleUser, getSampleUsers, createSampleDoc, createSampleDocWithMultiLevel, getSampleDocs, sleep } from '@/tests/fixtures';
 import _ from 'lodash';
 
 const TEST_COLLECTION_NAME = 'collection1';
@@ -215,6 +215,73 @@ for (const testClient in testClients) {
         const resDoc = await collection.findOne({"age": 47, "address.street": "monkey street", "address.is_office": false});
         assert.ok(resDoc);
         assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne doc - return only selected fields', async () => {
+        //insert a new doc
+        const sampleDocWithMultiLevel = createSampleDocWithMultiLevel();
+        const res = await collection.insertOne(sampleDocWithMultiLevel);
+        assert.strictEqual(res.acknowledged, true);
+        assert.ok(res.insertedId);
+        //read that back with project
+        const idToCheck = res.insertedId;
+        const resDoc = await collection.findOne({"_id": idToCheck}, {username:1, "address.city" : true});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+        assert.strictEqual(resDoc.username, sampleDocWithMultiLevel.username);
+        assert.strictEqual(resDoc.address.city, sampleDocWithMultiLevel.address.city);
+        assert.strictEqual(resDoc.address.number, undefined);        
+      });
+      it('should findOne doc - return only selected fields (with exclusion)', async () => {
+        //insert a new doc
+        const sampleDocWithMultiLevel = createSampleDocWithMultiLevel();
+        const res = await collection.insertOne(sampleDocWithMultiLevel);
+        assert.strictEqual(res.acknowledged, true);
+        assert.ok(res.insertedId);
+        //read that back with project
+        const idToCheck = res.insertedId;
+        const resDoc = await collection.findOne({"_id": idToCheck}, {username:1, "address.city" : true, _id: 0});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, undefined);
+        assert.strictEqual(resDoc.username, sampleDocWithMultiLevel.username);
+        assert.strictEqual(resDoc.address.city, sampleDocWithMultiLevel.address.city);
+        assert.strictEqual(resDoc.address.number, undefined);        
+      });
+      it('should find doc - return only selected fields', async () => {
+        //insert a new doc
+        const sampleDocWithMultiLevel = createSampleDocWithMultiLevel();
+        const res = await collection.insertOne(sampleDocWithMultiLevel);
+        assert.strictEqual(res.acknowledged, true);
+        assert.ok(res.insertedId);
+        //read that back with projection
+        const idToCheck = res.insertedId;
+        const findCursor = await collection.find({"_id": idToCheck}, {username:1, "address.city" : true});
+        const resDocArrayList = await findCursor.getAll();
+        //console.log(JSON.stringify(resDoc));
+        const resDoc = resDocArrayList[0][0];
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+        assert.strictEqual(resDoc.username, sampleDocWithMultiLevel.username);
+        assert.strictEqual(resDoc.address.city, sampleDocWithMultiLevel.address.city);
+        assert.strictEqual(resDoc.address.number, undefined);        
+      });
+      it('should find doc - return only selected fields (with exclusion)', async () => {
+        //insert a new doc
+        const sampleDocWithMultiLevel = createSampleDocWithMultiLevel();
+        const res = await collection.insertOne(sampleDocWithMultiLevel);
+        assert.strictEqual(res.acknowledged, true);
+        assert.ok(res.insertedId);
+        //read that back with projection
+        const idToCheck = res.insertedId;
+        const findCursor = await collection.find({"_id": idToCheck}, {username:1, "address.city" : true, _id: 0});
+        //console.log(JSON.stringify(findCursor));
+        const resDocArrayList = await findCursor.getAll();
+        //console.log(JSON.stringify(resDoc));
+        const resDoc = resDocArrayList[0][0];
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, undefined);
+        assert.strictEqual(resDoc.username, sampleDocWithMultiLevel.username);
+        assert.strictEqual(resDoc.address.city, sampleDocWithMultiLevel.address.city);
+        assert.strictEqual(resDoc.address.number, undefined); 
       });
       it.skip('should updateOne document', async () => {
         const { insertedId } = await collection.insertOne({ dang: 'boss' });

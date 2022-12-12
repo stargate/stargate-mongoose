@@ -25,6 +25,7 @@ interface ResultCallback {
 export class FindCursor {
   collection: Collection;
   query: any;
+  projection: any;
   options: any;
   documents: Record<string, any>[] = [];
   status: string = 'uninitialized';
@@ -43,9 +44,10 @@ export class FindCursor {
    * @param query
    * @param options
    */
-  constructor(collection: any, query: any, options?: any) {
+  constructor(collection: any, query: any, projection?: any, options?: any) {
     this.collection = collection;
     this.query = formatQuery(query, options);
+    this.projection = projection;
     this.options = options;
     this.limit = options?.limit || Infinity;
     this.status = 'initialized';
@@ -137,7 +139,8 @@ export class FindCursor {
     const batchSize = Math.min(this.batchSize, this.limit - this.totalNumFetched);
     const command = {
       find : {
-        filter : this.query
+        filter : this.query,
+        projection : this.projection
       }
     };
     const reqParams: any = {
