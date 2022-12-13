@@ -16,7 +16,7 @@ import _ from 'lodash';
 import { Collection } from './collection';
 import { formatQuery, setOptionsAndCb, executeOperation } from './utils';
 
-const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 20;//TODOV3
 
 interface ResultCallback {
   (err: Error | undefined, res: Array<any>): void;
@@ -160,7 +160,7 @@ export class FindCursor {
     if (this.nextPageState == null) {
       this.exhausted = true;
     }
-    this.batch = _.keys(resp.data).map(i => resp.data[i]);
+    this.batch = _.keys(resp.data.docs).map(i => resp.data.docs[i]);
     this.batchIndex = 0;
     this.totalNumFetched += batchSize;
     if (this.totalNumFetched >= this.limit) {
@@ -203,6 +203,6 @@ export class FindCursor {
    * @param options
    */
   stream(options?: any) {
-    throw new Error('Streaming cursors are not supported');
+    throw new Error('Streaming cursors are not supported');//TODOV3
   }
 }

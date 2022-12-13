@@ -255,9 +255,7 @@ for (const testClient in testClients) {
         //read that back with projection
         const idToCheck = res.insertedId;
         const findCursor = await collection.find({"_id": idToCheck}, {username:1, "address.city" : true});
-        const resDocArrayList = await findCursor.getAll();
-        //console.log(JSON.stringify(resDoc));
-        const resDoc = resDocArrayList[0][0];
+        const resDoc = await findCursor.next();
         assert.ok(resDoc);
         assert.strictEqual(resDoc._id, idToCheck);
         assert.strictEqual(resDoc.username, sampleDocWithMultiLevel.username);
@@ -273,10 +271,8 @@ for (const testClient in testClients) {
         //read that back with projection
         const idToCheck = res.insertedId;
         const findCursor = await collection.find({"_id": idToCheck}, {username:1, "address.city" : true, _id: 0});
-        //console.log(JSON.stringify(findCursor));
-        const resDocArrayList = await findCursor.getAll();
-        //console.log(JSON.stringify(resDoc));
-        const resDoc = resDocArrayList[0][0];
+        //console.log(JSON.stringify(findCursor));        
+        const resDoc = await findCursor.next();
         assert.ok(resDoc);
         assert.strictEqual(resDoc._id, undefined);
         assert.strictEqual(resDoc.username, sampleDocWithMultiLevel.username);
