@@ -16,7 +16,7 @@ import _ from 'lodash';
 import { Collection } from './collection';
 import { formatQuery, setOptionsAndCb, executeOperation } from './utils';
 
-const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 20;//TODOV3
 
 interface ResultCallback {
   (err: Error | undefined, res: Array<any>): void;
@@ -25,6 +25,7 @@ interface ResultCallback {
 export class FindCursor {
   collection: Collection;
   query: any;
+  projection: any;
   options: any;
   documents: Record<string, any>[] = [];
   status: string = 'uninitialized';
@@ -43,9 +44,10 @@ export class FindCursor {
    * @param query
    * @param options
    */
-  constructor(collection: any, query: any, options?: any) {
+  constructor(collection: any, query: any, projection?: any, options?: any) {
     this.collection = collection;
     this.query = formatQuery(query, options);
+    this.projection = projection;
     this.options = options;
     this.limit = options?.limit || Infinity;
     this.status = 'initialized';
@@ -137,7 +139,8 @@ export class FindCursor {
     const batchSize = Math.min(this.batchSize, this.limit - this.totalNumFetched);
     const command = {
       find : {
-        filter : this.query
+        filter : this.query,
+        projection : this.projection
       }
     };
     const reqParams: any = {
@@ -157,7 +160,7 @@ export class FindCursor {
     if (this.nextPageState == null) {
       this.exhausted = true;
     }
-    this.batch = _.keys(resp.data).map(i => resp.data[i]);
+    this.batch = _.keys(resp.data.docs).map(i => resp.data.docs[i]);
     this.batchIndex = 0;
     this.totalNumFetched += batchSize;
     if (this.totalNumFetched >= this.limit) {
@@ -200,6 +203,6 @@ export class FindCursor {
    * @param options
    */
   stream(options?: any) {
-    throw new Error('Streaming cursors are not supported');
+    throw new Error('Streaming cursors are not supported');//TODOV3
   }
 }

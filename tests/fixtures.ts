@@ -54,6 +54,20 @@ export const createSampleDoc = () => ({
   username : "aaron"
 });
 
+export const createSampleDocWithMultiLevel = () => ({
+  username : "aaron",
+  human : true,
+  age: 47,
+  password : null,
+  address: {
+    number: 86,
+    street: "monkey street",
+    suburb: null,
+    city: "big banana",
+    is_office: false
+  }
+});
+
 export const getSampleUsers = (numUsers: number) =>
   Array.from({ length: numUsers }, createSampleUser);
 
