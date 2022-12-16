@@ -61,13 +61,15 @@ export class Db {
    */
   async createCollection(collectionName: string, options?: any, cb?: CollectionCallback) {
     return executeOperation(async () => {
-      const data = await this.httpClient
-        .post('/collections', {
+      const command = {
+        createCollection: {
           name: collectionName
-        })
-        .then(res => res.data)
+        }
+      };
+      const data = await this.httpClient.executeCommand(command, options)  
+        .then( resp => resp)      
         .catch(err => {
-          if (err?.response?.status === 409) {
+          if (err?.response?.status === 409) {//TODOV3 new v3 API, might return 200 and error response
             return null; // Collection already exists
           }
           throw err;

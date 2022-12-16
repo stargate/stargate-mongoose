@@ -77,7 +77,7 @@ export class Collection {
       if(resp.errors && resp.errors.length > 0){
         return {
           acknowledged: false,
-          insertedId: null as any //TODOV3
+          insertedId: null as any
         };  
       } else {
         return {
