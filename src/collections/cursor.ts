@@ -46,7 +46,7 @@ export class FindCursor {
    */
   constructor(collection: any, query: any, projection?: any, options?: any) {
     this.collection = collection;
-    this.query = query?formatQuery(query, options):undefined;
+    this.query = formatQuery(query, options);
     this.projection = projection;
     this.options = options;
     this.limit = options?.limit || Infinity;
