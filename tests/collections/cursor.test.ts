@@ -17,34 +17,35 @@ import { Db } from '@/src/collections/db';
 import { FindCursor } from '@/src/collections/cursor';
 import { Collection } from '@/src/collections/collection';
 import { Client } from '@/src/collections/client';
-import { testClients, getSampleUsers } from '@/tests/fixtures';
+import { testClients, Employee, sampleUsersList, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 
 for (const testClient in testClients) {
   describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, async () => {
     let astraClient: Client;
     let db: Db;
     let collection: Collection;
-    let sampleSize = 42;
-    const sampleUsers = getSampleUsers(sampleSize);
+    const sampleUsers = sampleUsersList;
     before(async function() {
       astraClient = await testClients[testClient]();
       if (astraClient == null) {
         return this.skip();
       }
       db = astraClient.db();
-      await db.createCollection('cursor_tests');
-      collection = db.collection('cursor_tests');
-      await collection.insertMany(sampleUsers);
+      const collectionName:string = TEST_COLLECTION_NAME;
+      await db.createCollection(collectionName);
+      collection = db.collection(collectionName);
+      //await collection.insertMany(sampleUsers); TODOV3
     });
 
     after(() => {
       // run drop collection async to save time
-      db?.dropCollection('cursor_tests');
+      db?.dropCollection(TEST_COLLECTION_NAME);
     });
 
     describe('Cursor initialization', () => {
       it('should initialize a Cursor', () => {
-        const cursor = new FindCursor(collection, { firstName: sampleUsers[0].firstName });
+        const cursor = new FindCursor(collection, { username: sampleUsers[0].username });
+        console.log(cursor.status +" : "+ 'initialized');
         assert.strictEqual(cursor.status, 'initialized');
         assert.ok(cursor);
       });
@@ -52,33 +53,33 @@ for (const testClient in testClients) {
 
     describe('Cursor operations', () => {
       it('should execute a query', async () => {
-        const cursor = new FindCursor(collection, { firstName: sampleUsers[0].firstName });
+        const cursor = new FindCursor(collection, { username: sampleUsers[0].username });
         const res = await cursor.toArray();
-        assert.notStrictEqual(res.length, 0);
+        assert.strictEqual(res.length, 1);
       });
       it('should execute a query with a callback', done => {
-        const cursor = new FindCursor(collection, { firstName: sampleUsers[0].firstName });
+        const cursor = new FindCursor(collection, { username: sampleUsers[0].username });
         cursor.toArray((err, res) => {
           assert.strictEqual(undefined, err);
-          assert.notStrictEqual(res.length, 0);
+          assert.strictEqual(res.length, 1);
           done();
         });
       });
       it('should get next document with next()', async () => {
-        const cursor = new FindCursor(collection, {});
+        const cursor = new FindCursor(collection, null);
         const doc = await cursor.next();
         assert.ok(doc);
       });
       it('should execute a limited query', async () => {
-        const cursor = new FindCursor(collection, {}, { limit: 1 });
+        const cursor = new FindCursor(collection, {}, {}, { limit: 2 });
         const res = await cursor.toArray();
-        assert.strictEqual(res.length, 1);
-        assert.equal(cursor.batch.length, 1);
+        assert.strictEqual(res.length, 2);
+        assert.equal(cursor.batch.length, 2);
       });
       it('should execute an all query', async () => {
         const cursor = new FindCursor(collection, {});
         const res = await cursor.toArray();
-        assert.strictEqual(res.length, sampleSize);
+        assert.strictEqual(res.length, sampleUsers.length);
       });
       it('should not execute twice', done => {
         const cursor = new FindCursor(collection, {});
@@ -86,10 +87,11 @@ for (const testClient in testClients) {
           assert.strictEqual(cursor.status, 'executed');
           cursor.count(undefined, (err: Error, count: number) => {
             assert.strictEqual(undefined, err);
-            assert.strictEqual(count, sampleSize);
+            assert.strictEqual(count, sampleUsers.length);
             done();
           });
           assert.strictEqual(cursor.status, 'executed');
+          done();
         });
         assert.strictEqual(cursor.status, 'executing');
       });
@@ -99,7 +101,7 @@ for (const testClient in testClients) {
         await cursor.forEach((_doc: any) => {
           docCount++;
         });
-        assert.strictEqual(docCount, sampleSize);
+        assert.strictEqual(docCount, sampleUsers.length);
       });
       it('should iterate over all documents with a forEach()', async () => {
         const cursor = new FindCursor(collection, {});
@@ -108,13 +110,13 @@ for (const testClient in testClients) {
           await Promise.resolve();
           docCount++;
         });
-        assert.strictEqual(docCount, sampleSize);
+        assert.strictEqual(docCount, sampleUsers.length);
       });
     });
 
     describe('Cursor noops', () => {
       it('should handle noop: stream', async () => {
-        const cursor = new FindCursor(collection, { firstName: sampleUsers[0].firstName });
+        const cursor = new FindCursor(collection, { username: sampleUsers[0].username });
         try {
           const stream = cursor.stream();
           assert.ok(stream);

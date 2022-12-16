@@ -16,10 +16,9 @@ import assert from 'assert';
 import { Db } from '@/src/collections/db';
 import { Collection } from '@/src/collections/collection';
 import { Client } from '@/src/collections/client';
-import { testClients, createSampleUser, getSampleUsers, createSampleDoc, createSampleDocWithMultiLevel, getSampleDocs, sleep } from '@/tests/fixtures';
+import { testClients, createSampleUser, createSampleDoc, createSampleDocWithMultiLevel, getSampleDocs, sleep, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 import _ from 'lodash';
 
-const TEST_COLLECTION_NAME = 'collection1';
 
 for (const testClient in testClients) {
   describe(`StargateMongoose - ${testClient} Connection - collections.collection`, async () => {

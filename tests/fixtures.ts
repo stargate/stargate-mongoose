@@ -16,6 +16,8 @@ import { createAstraUri, createStargateUri } from '@/src/collections/utils';
 import { Client } from '@/src/collections/client';
 import { randFirstName, randLastName } from '@ngneat/falso';
 
+export const TEST_COLLECTION_NAME = 'collection1';
+
 export const astraUri = process.env.ASTRA_URI || createAstraUri(
   process.env.ASTRA_DB_ID ?? '',
   process.env.ASTRA_DB_REGION ?? '',
@@ -54,11 +56,26 @@ export const createSampleDoc = () => ({
   username : "aaron"
 });
 
+export type Employee = {
+  username?: string;
+  human?: boolean;
+  age?: number;
+  password?: string | null;
+  address?:{
+    number?: number;
+    street?: string | null;
+    suburb?: string | null;
+    city?: string | null;
+    is_office?: boolean;
+    country?: string | null;
+  }
+}
+
 export const createSampleDocWithMultiLevel = () => ({
   username : "aaron",
   human : true,
   age: 47,
-  password : null,
+  password: null,
   address: {
     number: 86,
     street: "monkey street",
@@ -66,10 +83,41 @@ export const createSampleDocWithMultiLevel = () => ({
     city: "big banana",
     is_office: false
   }
-});
+} as Employee);
 
-export const getSampleUsers = (numUsers: number) =>
-  Array.from({ length: numUsers }, createSampleUser);
+export const createSampleDoc2WithMultiLevel = () => ({
+  username : "jimr",
+  human : true,
+  age: 52,
+  password : "gasxaq==",
+  address: {
+    number: 45,
+    street: "main street",
+    suburb: null,
+    city: "nyc",
+    is_office: true,
+    country: "usa"
+  }
+} as Employee);
+
+export const createSampleDoc3WithMultiLevel = () => ({
+  username : "saml",
+  human : false,
+  age: 25,
+  password : "jhkasfka==",
+  address: {
+    number: 123,
+    street: "church street",
+    suburb: null,
+    city: "la",
+    is_office: true,
+    country: "usa"
+  }
+} as Employee);
+
+/*export const getSampleUsers = (numUsers: number) =>
+  Array.from({ length: numUsers }, createSampleUser);*/
+export const sampleUsersList = Array.of(createSampleDocWithMultiLevel(), createSampleDoc2WithMultiLevel(), createSampleDoc3WithMultiLevel()) as Employee[];
 
 export const getSampleDocs = (numUsers: number) =>
   Array.from({ length: numUsers }, createSampleDoc);
@@ -79,7 +127,7 @@ export const sleep = async (ms = 100) => new Promise(resolve => setTimeout(resol
 export const testClients = {
   'Astra DB': async () => {
     return await getAstraClient();
-  },
+  }/*,
   Stargate: async () => {
     const stargateClient = await getStargateClient();
     try {
@@ -90,5 +138,5 @@ export const testClients = {
       console.error(e);
     }
     return stargateClient;
-  }
+  }*/ //TODOV3
 };
