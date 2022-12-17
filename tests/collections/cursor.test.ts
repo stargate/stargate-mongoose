@@ -88,7 +88,6 @@ for (const testClient in testClients) {
           cursor.count(undefined, (err: Error, count: number) => {
             assert.strictEqual(undefined, err);
             assert.strictEqual(count, sampleUsers.length);
-            done();
           });
           assert.strictEqual(cursor.status, 'executed');
           done();

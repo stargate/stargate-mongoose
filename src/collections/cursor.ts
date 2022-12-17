@@ -14,7 +14,7 @@
 
 import _ from 'lodash';
 import { Collection } from './collection';
-import { formatQuery, setOptionsAndCb, executeOperation } from './utils';
+import { formatQuery, setOptionsAndCb, executeOperation, QueryOptions } from './utils';
 
 const DEFAULT_PAGE_SIZE = 20;//TODOV3
 
@@ -54,7 +54,7 @@ export class FindCursor {
     this.exhausted = false;
 
     // Load this many documents at a time in `this.batch` when using next()
-    this.batchSize = options?.batchSize || DEFAULT_PAGE_SIZE;
+    this.batchSize = options?.pageSize || DEFAULT_PAGE_SIZE;
     // Current position in batch
     this.batchIndex = 0;
     // Total number of documents returned, should be < limit
@@ -137,23 +137,34 @@ export class FindCursor {
 
   async _getMore() {
     const batchSize = Math.min(this.batchSize, this.limit - this.totalNumFetched);
-    const command = {
-      find : {
-        filter : this.query,
-        projection : this.projection
+    const command: {
+      find: {
+        filter?: string | undefined | null,
+        projection?: string | undefined | null,
+        options?: QueryOptions | undefined | null
+      }
+    } = {
+      find: {
+        filter: this.query,
+        projection: this.projection,
       }
     };
-    const reqParams: any = {
-      //where: this.query,
-      'page-size': batchSize
-    };
-    if (this.nextPageState) {
-      reqParams['page-state'] = this.nextPageState;
+    const options = {} as QueryOptions;
+    if (this.batchSize != DEFAULT_PAGE_SIZE) { //TODOV3 remove based on the decision about server side defaults
+      options.pageSize = batchSize;
     }
-    const resp = await this.collection.httpClient.executeCommand(command, {
-      params: reqParams
-    });
-    if(resp.errors && resp.errors.length > 0){
+    if (this.limit != Infinity) { //TODOV3 remove based on the decision about server side defaults
+      options.limit = this.limit;
+    }
+    if (this.nextPageState) {
+      options.pageState = this.nextPageState;
+    }
+    if(Object.keys(options).length > 0){
+      command.find.options = options;
+    }
+    //console.log('Command : %s', JSON.stringify(command));
+    const resp = await this.collection.httpClient.executeCommand(command);
+    if (resp.errors && resp.errors.length > 0) {
       //TODOV3 throw error properly
     }
     this.nextPageState = resp.pageState;

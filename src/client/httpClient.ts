@@ -127,17 +127,17 @@ export class HTTPClient {
     this.logLevel = options.logLevel || DEFAULT_LOG_LEVEL;
   }
 
-  async _request(options: AxiosRequestConfig) {
+  async _request(requestInfo: AxiosRequestConfig) {
     try {
-      //console.log("URL : " + options.url);
-      //console.log("Method : " + options.method);
-      //console.log("data : " + JSON.stringify(options.data));
+      //console.log("URL : " + requestInfo.url);
+      //console.log("Method : " + requestInfo.method);
+      //console.log("data : " + JSON.stringify(requestInfo.data));
       const response = await axiosAgent({
-        url: options.url,
-        data: options.data,
-        params: options.params,
-        method: options.method || DEFAULT_METHOD,
-        timeout: options.timeout || DEFAULT_TIMEOUT,
+        url: requestInfo.url,
+        data: requestInfo.data,
+        params: requestInfo.params,
+        method: requestInfo.method || DEFAULT_METHOD,
+        timeout: requestInfo.timeout || DEFAULT_TIMEOUT,
         headers: {
           [this.authHeaderName]: this.applicationToken
         }
