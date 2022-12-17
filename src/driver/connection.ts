@@ -92,7 +92,7 @@ export class Connection extends MongooseConnection {
       this.client = client;
       this.db = client.db();
 
-      if (!client.httpClient.isAstra) {
+      /*if (!client.httpClient.isAstra) {
         // Create namespace when using self-hosted Stargate before connecting,
         // otherwise Stargate throws "Unknown namespace test, you must create it first"
         await client.httpClient.post('/v2/schemas/namespaces', {
@@ -104,7 +104,7 @@ export class Connection extends MongooseConnection {
 
           throw err;
         });
-      }
+      }*/
 
       this.readyState = STATES.connected;
 

@@ -17,6 +17,7 @@ import url from 'url';
 import { ObjectId } from 'mongodb';
 import { logger } from '@/src/logger';
 import axios from 'axios';
+import { type } from 'os';
 
 interface ParsedUri {
   baseUrl: string;
@@ -216,4 +217,10 @@ export const getNestedPathRawValue = (doc: any, key: string) => {
   }
 
   return currentValue;
+}
+
+export type QueryOptions = {
+  pageSize?: number,
+  pageState?: string|null,
+  limit?: number
 }
