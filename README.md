@@ -764,7 +764,8 @@ drill into arrays.</p></dd>
 
 | Param |
 | --- |
-| doc | 
+| options | 
+| cb | 
 
 <a name="setOptionsAndCb"></a>
 
