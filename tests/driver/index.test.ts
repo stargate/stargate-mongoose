@@ -41,9 +41,7 @@ describe('StargateMongoose - index', () => {
     if (!process.env.ASTRA_DB_ID || !process.env.ASTRA_DB_APPLICATION_TOKEN) {
       return this.skip();
     }
-    console.log('astraUri ' + astraUri);
     await mongoose.connect(astraUri);
-    console.log('Connected');
     await new Promise(fn => setTimeout(fn, 1000));//TODOV3 check later - without this delay, this test fails sometimes
     const product1 = new Product({ name: 'Product 1', price: 10 });
     await product1.save();
@@ -57,16 +55,6 @@ describe('StargateMongoose - index', () => {
       products: [product1._id, product2._id]
     });
     await cart.save();
-
-    // const res = await Cart.findOne({ name: { $eq: 'My Cart' } })
-    //   .populate('products')
-    //   .exec();
-    // console.log(res);
-
-    // const count = await Cart.find({
-    //   name: { $eq: 'My Cart' }
-    // }).countDocuments();
-    // console.log(count);
 
     mongoose.connection.dropCollection('carts');
     mongoose.connection.dropCollection('products');

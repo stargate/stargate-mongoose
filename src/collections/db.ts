@@ -63,10 +63,11 @@ export class Db {
     return executeOperation(async () => {
       const command = {
         createCollection: {
-          name: collectionName
+          name: collectionName,
+          options: options
         }
       };
-      const data = await this.httpClient.executeCommand(command, options)  
+      const data = await this.httpClient.executeCommand(command)  
         .then( resp => resp)      
         .catch(err => {
           if (err?.response?.status === 409) {//TODOV3 new v3 API, might return 200 and error response
@@ -85,17 +86,7 @@ export class Db {
    * @returns Promise
    */
   async dropCollection(collectionName: string, cb?: CollectionCallback) {
-    return executeOperation(async () => {
-      const data = await this.httpClient.delete(`/collections/${collectionName}`)
-        .then(res => res.data)
-        .catch(err => {
-          if (err?.response?.status === 404) {
-            return null; // No such collection
-          }
-          throw err;
-        });
-      return data;
-    }, cb);
+    throw new Error('Not Implemented');
   }
 
   // NOOPS and unimplemented

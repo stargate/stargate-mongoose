@@ -162,7 +162,6 @@ export class FindCursor {
     if(Object.keys(options).length > 0){
       command.find.options = options;
     }
-    //console.log('Command : %s', JSON.stringify(command));
     const resp = await this.collection.httpClient.executeCommand(command);
     if (resp.errors && resp.errors.length > 0) {
       //TODOV3 throw error properly

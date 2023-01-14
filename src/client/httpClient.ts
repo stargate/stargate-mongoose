@@ -199,12 +199,11 @@ export class HTTPClient {
     });
   }
 
-  async executeCommand(data: Record<string, any>, options?: RequestOptions) {
+  async executeCommand(data: Record<string, any>) {
     return await this._request({
       url: this.baseUrl,
       method: HTTP_METHODS.post,
-      data,
-      ...options
+      data
     });
   }
 }

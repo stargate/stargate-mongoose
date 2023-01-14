@@ -34,7 +34,7 @@ for (const testClient in testClients) {
       const collectionName:string = TEST_COLLECTION_NAME;
       await db.createCollection(collectionName);
       collection = db.collection(collectionName);
-      //await collection.insertMany(sampleUsers); TODOV3
+      await collection.insertMany(sampleUsers);
     });
 
     after(() => {
@@ -45,7 +45,6 @@ for (const testClient in testClients) {
     describe('Cursor initialization', () => {
       it('should initialize a Cursor', () => {
         const cursor = new FindCursor(collection, { username: sampleUsers[0].username });
-        console.log(cursor.status +" : "+ 'initialized');
         assert.strictEqual(cursor.status, 'initialized');
         assert.ok(cursor);
       });

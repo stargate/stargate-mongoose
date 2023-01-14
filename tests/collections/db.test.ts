@@ -74,7 +74,7 @@ for (const testClient in testClients) {
       it('should create a Collection with a callback', done => {
         const collectionName = TEST_COLLECTION_NAME;
         const db = new Db(astraClient.httpClient, process.env.ASTRA_DB_KEYSPACE || '');
-        db.createCollection(collectionName, null, (err, res) => {
+        db.createCollection(collectionName, {}, (err, res) => {
           assert.ok(res);
           assert.strictEqual(res.status.ok, 1);
           //assert.strictEqual(res.status.createdCollection, collectionName);

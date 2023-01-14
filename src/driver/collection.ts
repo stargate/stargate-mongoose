@@ -29,12 +29,10 @@ export class Collection extends MongooseCollection {
     return this.conn.db.collection(this.name);
   }
 
-  //TODOV3 - check on method signature change, and check how to handle sort
   find(query: any, projection?: any, options?: any, cb?: any) {
     return this.collection.find(query, projection, options, cb);
   }
 
-  //TODOV3 - check on method signature change, and check how to handle sort
   findOne(query: any, projection?: any, options?: any, cb?: any) {
     return this.collection.findOne(query, projection, options, cb);
   }
@@ -64,7 +62,7 @@ export class Collection extends MongooseCollection {
   }
 
   findOneAndReplace(query: any, newDoc: any, options?: any, cb?: any) {
-    return this.collection.updateMany(query, newDoc, options, cb);
+    return this.collection.updateMany(query, newDoc, options, cb);//TODOV3 check if this is correct mapping
   }
 
   deleteMany(query: any, options?: any, cb?: any) {

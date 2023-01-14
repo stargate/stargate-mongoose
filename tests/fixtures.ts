@@ -46,17 +46,13 @@ export const getStargateClient = async () => {
   return await Client.connect(stargateUri);
 };
 
-export const createSampleUser = () => ({
-  firstName: randFirstName(),
-  lastName: randLastName()
-});
-
 export const createSampleDoc = () => ({
   _id: "doc1",
   username : "aaron"
 });
 
 export type Employee = {
+  _id?: string;
   username?: string;
   human?: boolean;
   age?: number;
@@ -71,7 +67,7 @@ export type Employee = {
   }
 }
 
-export const createSampleDocWithMultiLevel = () => ({
+const sampleMultiLevelDoc:Employee = {
   username : "aaron",
   human : true,
   age: 47,
@@ -83,7 +79,15 @@ export const createSampleDocWithMultiLevel = () => ({
     city: "big banana",
     is_office: false
   }
-} as Employee);
+} ;
+
+export const createSampleDocWithMultiLevelWithId = (docId:string) => {  
+  let sampleMultiLevelDocWithId = JSON.parse(JSON.stringify(sampleMultiLevelDoc)) as Employee; //parse and stringigy is to clone and modify only the new object
+  sampleMultiLevelDocWithId._id = docId;
+  return sampleMultiLevelDocWithId;
+};
+
+export const createSampleDocWithMultiLevel = () => (sampleMultiLevelDoc as Employee);
 
 export const createSampleDoc2WithMultiLevel = () => ({
   username : "jimr",
@@ -115,8 +119,6 @@ export const createSampleDoc3WithMultiLevel = () => ({
   }
 } as Employee);
 
-/*export const getSampleUsers = (numUsers: number) =>
-  Array.from({ length: numUsers }, createSampleUser);*/
 export const sampleUsersList = Array.of(createSampleDocWithMultiLevel(), createSampleDoc2WithMultiLevel(), createSampleDoc3WithMultiLevel()) as Employee[];
 
 export const getSampleDocs = (numUsers: number) =>
