@@ -472,11 +472,12 @@ drill into arrays.</p></dd>
 * [Collection](#Collection)
     * [new Collection(httpClient, name)](#new_Collection_new)
     * [.insertOne(mongooseDoc, options, cb)](#Collection+insertOne) ⇒
+    * ~~[.count()](#Collection+count)~~
+    * ~~[.update()](#Collection+update)~~
     * [.aggregate(pipeline, options)](#Collection+aggregate)
     * [.bulkWrite(ops, options, cb)](#Collection+bulkWrite)
     * [.createIndex(index, options, cb)](#Collection+createIndex) ⇒
     * [.dropIndexes(index, options, cb)](#Collection+dropIndexes) ⇒
-    * [._upsertDoc(filter, update)](#Collection+_upsertDoc) ⇒
 
 <a name="new_Collection_new"></a>
 
@@ -499,6 +500,18 @@ drill into arrays.</p></dd>
 | options | 
 | cb | 
 
+<a name="Collection+count"></a>
+
+### ~~collection.count()~~
+***Deprecated***
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+<a name="Collection+update"></a>
+
+### ~~collection.update()~~
+***Deprecated***
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
 <a name="Collection+aggregate"></a>
 
 ### collection.aggregate(pipeline, options)
@@ -543,19 +556,6 @@ drill into arrays.</p></dd>
 | index | 
 | options | 
 | cb | 
-
-<a name="Collection+_upsertDoc"></a>
-
-### collection.\_upsertDoc(filter, update) ⇒
-<p>Calculates the document to upsert based on query and filter</p>
-
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-**Returns**: <p>any</p>  
-
-| Param |
-| --- |
-| filter | 
-| update | 
 
 <a name="FindCursor"></a>
 
