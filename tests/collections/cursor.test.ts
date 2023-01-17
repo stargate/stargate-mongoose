@@ -34,9 +34,10 @@ for (const testClient in testClients) {
       const collectionName:string = TEST_COLLECTION_NAME;
       await db.createCollection(collectionName);
       collection = db.collection(collectionName);
+      await collection?.deleteMany({});
       await collection.insertMany(sampleUsers);
     });
-
+    
     after(() => {
       // run drop collection async to save time
       db?.dropCollection(TEST_COLLECTION_NAME);
