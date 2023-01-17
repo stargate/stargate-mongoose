@@ -85,6 +85,10 @@ export class Collection extends MongooseCollection {
     return this.collection.updateMany(query, update, options, cb);
   }
 
+  update(query: any, update: any, options?: any, cb?: any) {
+    return this.collection.updateMany(query, update, options, cb);
+  }
+
   dropIndexes(cb?: any) {
     return this.collection.dropIndexes(cb);
   }
