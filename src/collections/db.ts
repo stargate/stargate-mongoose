@@ -69,10 +69,7 @@ export class Db {
       };
       const data = await this.httpClient.executeCommand(command)  
         .then( resp => resp)      
-        .catch(err => {
-          if (err?.response?.status === 409) {//TODOV3 new v3 API, might return 200 and error response
-            return null; // Collection already exists
-          }
+        .catch(err => {          
           throw err;
         });
       return data;

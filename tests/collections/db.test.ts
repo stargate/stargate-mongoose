@@ -65,7 +65,7 @@ for (const testClient in testClients) {
         assert.ok(res);
         assert.strictEqual(res.status.ok, 1);
         //assert.strictEqual(res.status.createdCollection, collectionName);
-        //'does not throw if Collection already exists' //TODOV3 check if this is the behavior in mongoose
+        //'does not throw if Collection already exists'
         const res2 = await db.createCollection(collectionName);
         assert.ok(res2);
         assert.strictEqual(res2.status.ok, 1);

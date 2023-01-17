@@ -129,16 +129,5 @@ export const sleep = async (ms = 100) => new Promise(resolve => setTimeout(resol
 export const testClients = {
   'Astra DB': async () => {
     return await getAstraClient();
-  }/*,
-  Stargate: async () => {
-    const stargateClient = await getStargateClient();
-    try {
-      await stargateClient.httpClient.post('/v2/schemas/namespaces', {
-        name: process.env.ASTRA_DB_KEYSPACE
-      });
-    } catch (e) {
-      console.error(e);
-    }
-    return stargateClient;
-  }*/ //TODOV3
+  }
 };
