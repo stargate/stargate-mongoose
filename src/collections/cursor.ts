@@ -14,9 +14,11 @@
 
 import _ from 'lodash';
 import { Collection } from './collection';
+import { logger } from '@/src/logger';
 import { formatQuery, setOptionsAndCb, executeOperation, QueryOptions } from './utils';
 
-const DEFAULT_PAGE_SIZE = 20;//TODOV3
+//this is as in mongo shell https://www.mongodb.com/docs/v5.0/tutorial/configure-mongo-shell/#change-the-mongo-shell-batch-size
+const DEFAULT_PAGE_SIZE = 20;
 
 interface ResultCallback {
   (err: Error | undefined, res: Array<any>): void;
@@ -150,10 +152,10 @@ export class FindCursor {
       }
     };
     const options = {} as QueryOptions;
-    if (this.batchSize != DEFAULT_PAGE_SIZE) { //TODOV3 remove based on the decision about server side defaults
+    if (this.batchSize != DEFAULT_PAGE_SIZE) { 
       options.pageSize = batchSize;
     }
-    if (this.limit != Infinity) { //TODOV3 remove based on the decision about server side defaults
+    if (this.limit != Infinity) { 
       options.limit = this.limit;
     }
     if (this.nextPageState) {
@@ -164,7 +166,7 @@ export class FindCursor {
     }
     const resp = await this.collection.httpClient.executeCommand(command);
     if (resp.errors && resp.errors.length > 0) {
-      //TODOV3 throw error properly
+      logger.error(resp.errors);
     }
     this.nextPageState = resp.pageState;
     if (this.nextPageState == null) {
@@ -213,6 +215,6 @@ export class FindCursor {
    * @param options
    */
   stream(options?: any) {
-    throw new Error('Streaming cursors are not supported');//TODOV3
+    throw new Error('Streaming cursors are not supported');
   }
 }

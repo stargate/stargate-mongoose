@@ -92,7 +92,7 @@ for (const testClient in testClients) {
           done();          
         });
       });
-      it.skip('should not insertOne document that is invalid', async () => { //TODOV3
+      it.skip('should not insertOne document that is invalid', async () => {
         try {
           const res = await collection.insertOne({ 'dang.bro.yep': 'boss' });
           assert.ok(res);

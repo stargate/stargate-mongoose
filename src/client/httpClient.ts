@@ -151,8 +151,14 @@ export class HTTPClient {
       //console.log(JSON.stringify(resp));
       //return resp;
     } catch (e: any) {
-      //console.log(e);
-      throw new AstraError(e.response?.data?.description || e?.message, e?.response);//TODOV3 Check exception messages
+      console.log(e);
+       return {
+        errors: [
+          {
+            message: "Server call failed, please retry!"
+          }
+        ]
+       }
     }
   }
 

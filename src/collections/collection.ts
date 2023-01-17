@@ -127,7 +127,7 @@ export class Collection {
       };
       const updateOneResp = await this.httpClient.executeCommand(command);
       if(updateOneResp.errors && updateOneResp.errors.length > 0){
-        //log error TODOV3
+        logger.error(updateOneResp.errors);
         return {
           modifiedCount: updateOneResp.status?.modifiedCount,
           matchedCount: updateOneResp.status?.matchedCount,
@@ -193,7 +193,7 @@ export class Collection {
       };
       const deleteOneResp = await this.httpClient.executeCommand(command);
       if (deleteOneResp.errors && deleteOneResp.errors.length > 0) {        
-        //TODOV3 log or throw error
+        logger.error(deleteOneResp.errors);
         return { acknowledged: false, deletedCount: 0 };
       }
       return { acknowledged: true, deletedCount: deleteOneResp.status.deletedCount };
@@ -226,7 +226,7 @@ export class Collection {
       };
       const resp = await this.httpClient.executeCommand(command);
       if(resp.errors && resp.errors.length > 0){
-        //TODOV3 log error
+        logger.error(resp.errors);
         return null;
       } else {
         return resp.data.docs[0];

@@ -30,7 +30,7 @@ interface ParsedUri {
 export const formatQuery = (query: any, options?: any) => {
   const modified = _.mapValues(query, (value: any) => {
     if (options?.collation) {
-      throw new Error('Collations are not supported');//TODOV3 check and update as needed
+      throw new Error('Collations are not supported');
     }
     if (value == null) {
       return value;
