@@ -363,8 +363,6 @@ await mongoose.connect(astraUri);
 ## Members
 
 <dl>
-<dt><a href="#formatQuery">formatQuery</a> ⇒</dt>
-<dd><p>Parse an Astra connection URI</p></dd>
 <dt><a href="#parseUri">parseUri</a> ⇒</dt>
 <dd><p>Create a production Astra connection URI</p></dd>
 <dt><a href="#createAstraUri">createAstraUri</a> ⇒</dt>
@@ -379,6 +377,13 @@ return a promise.</p></dd>
 <dt><a href="#executeOperation">executeOperation</a> ⇒</dt>
 <dd><p>Gets the raw value at the given path. Differs from <code>mpath.get()</code> because it doesn't
 drill into arrays.</p></dd>
+</dl>
+
+## Functions
+
+<dl>
+<dt><a href="#parseUri">parseUri(uri)</a> ⇒</dt>
+<dd><p>Parse an Astra connection URI</p></dd>
 </dl>
 
 <a name="Client"></a>
@@ -563,7 +568,7 @@ drill into arrays.</p></dd>
 **Kind**: global class  
 
 * [FindCursor](#FindCursor)
-    * [new FindCursor(collection, query, options)](#new_FindCursor_new)
+    * [new FindCursor(collection, filter, options)](#new_FindCursor_new)
     * [.getAll()](#FindCursor+getAll) ⇒
     * [.toArray(cb)](#FindCursor+toArray) ⇒
     * [.next(iterator, cb)](#FindCursor+next)
@@ -573,12 +578,12 @@ drill into arrays.</p></dd>
 
 <a name="new_FindCursor_new"></a>
 
-### new FindCursor(collection, query, options)
+### new FindCursor(collection, filter, options)
 
 | Param |
 | --- |
 | collection | 
-| query | 
+| filter | 
 | options | 
 
 <a name="FindCursor+getAll"></a>
@@ -700,18 +705,6 @@ drill into arrays.</p></dd>
 | --- |
 | cb | 
 
-<a name="formatQuery"></a>
-
-## formatQuery ⇒
-<p>Parse an Astra connection URI</p>
-
-**Kind**: global variable  
-**Returns**: <p>ParsedUri</p>  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| uri | <code>databaseId</code> | <p>a uri in the format of: https://$-${region}.apps.astra.datastax.com/${keyspace}?applicationToken=${applicationToken}</p> |
-
 <a name="parseUri"></a>
 
 ## parseUri ⇒
@@ -794,4 +787,16 @@ drill into arrays.</p>
 | --- | --- |
 | doc | <p>object to get value from</p> |
 | key | <p>path to get</p> |
+
+<a name="parseUri"></a>
+
+## parseUri(uri) ⇒
+<p>Parse an Astra connection URI</p>
+
+**Kind**: global function  
+**Returns**: <p>ParsedUri</p>  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| uri | <code>databaseId</code> | <p>a uri in the format of: https://$-${region}.apps.astra.datastax.com/${keyspace}?applicationToken=${applicationToken}</p> |
 
