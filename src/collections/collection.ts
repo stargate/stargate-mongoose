@@ -76,6 +76,7 @@ export class Collection {
       };
       const resp = await this.httpClient.executeCommand(command);
       if(resp.errors && resp.errors.length > 0){
+        logger.error('Error returned from server %s', JSON.stringify(resp.errors));
         return {
           acknowledged: false,
           insertedId: null as any
@@ -100,6 +101,7 @@ export class Collection {
       };
       const resp = await this.httpClient.executeCommand(command);
       if(resp.errors && resp.errors.length > 0){
+        logger.error('Error returned from server %s', JSON.stringify(resp.errors));
         return {
           acknowledged: false,
           insertedCount: resp.status?.insertedIds?.length || 0,
@@ -127,7 +129,7 @@ export class Collection {
       };
       const updateOneResp = await this.httpClient.executeCommand(command);
       if(updateOneResp.errors && updateOneResp.errors.length > 0){
-        logger.error(updateOneResp.errors);
+        logger.error('Error returned from server %s', JSON.stringify(updateOneResp.errors));
         return {
           modifiedCount: updateOneResp.status?.modifiedCount,
           matchedCount: updateOneResp.status?.matchedCount,
@@ -159,6 +161,7 @@ export class Collection {
       };
       const updateManyResp = await this.httpClient.executeCommand(command);
       if(updateManyResp.errors && updateManyResp.errors.length > 0){
+        logger.error('Error returned from server %s', JSON.stringify(updateManyResp.errors));
         return {
           modifiedCount: updateManyResp.status?.modifiedCount,
           matchedCount: updateManyResp.status?.matchedCount,
@@ -193,7 +196,7 @@ export class Collection {
       };
       const deleteOneResp = await this.httpClient.executeCommand(command);
       if (deleteOneResp.errors && deleteOneResp.errors.length > 0) {        
-        logger.error(deleteOneResp.errors);
+        logger.error('Error returned from server %s', JSON.stringify(deleteOneResp.errors));
         return { acknowledged: false, deletedCount: 0 };
       }
       return { acknowledged: true, deletedCount: deleteOneResp.status.deletedCount };
@@ -226,12 +229,16 @@ export class Collection {
       };
       const resp = await this.httpClient.executeCommand(command);
       if(resp.errors && resp.errors.length > 0){
-        logger.error(resp.errors);
+        logger.error('Error returned from server %s', JSON.stringify(resp.errors));
         return null;
       } else {
         return resp.data.docs[0];
       }      
     }, cb);
+  }
+
+  async findOneAndReplace(query: any, newDoc: any, options?: any, cb?: any){
+    throw new Error('Not Implemented');
   }
 
   async distinct(key: any, filter: any, options?: any, cb?: any) {
@@ -283,6 +290,7 @@ export class Collection {
       };
       const resp = await this.httpClient.executeCommand(command);
       if(resp.errors){
+        logger.error('Error returned from server %s', JSON.stringify(resp.errors));
         res.ok = 0;
         //lastErrorObject TODOV3
       } else{

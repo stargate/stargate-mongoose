@@ -64,12 +64,9 @@ for (const testClient in testClients) {
         const res = await db.createCollection(collectionName);
         assert.ok(res);
         assert.strictEqual(res.status.ok, 1);
-        //assert.strictEqual(res.status.createdCollection, collectionName);
-        //'does not throw if Collection already exists'
         const res2 = await db.createCollection(collectionName);
         assert.ok(res2);
         assert.strictEqual(res2.status.ok, 1);
-        //assert.strictEqual(res2.status.createdCollection, collectionName);
       });
       it('should create a Collection with a callback', done => {
         const collectionName = TEST_COLLECTION_NAME;

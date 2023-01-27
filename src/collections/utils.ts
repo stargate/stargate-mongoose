@@ -27,19 +27,6 @@ interface ParsedUri {
   logLevel: string;
 }
 
-export const formatQuery = (query: any, options?: any) => {
-  const modified = _.mapValues(query, (value: any) => {
-    if (options?.collation) {
-      throw new Error('Collations are not supported');
-    }
-    if (value == null) {
-      return value;
-    }
-    return value;
-  });
-  return modified;
-};
-
 /**
  * Parse an Astra connection URI
  * @param uri a uri in the format of: https://${databaseId}-${region}.apps.astra.datastax.com/${keyspace}?applicationToken=${applicationToken}
@@ -116,7 +103,6 @@ export const createStargateUri = async (
 ) => {
   let uri = new url.URL(baseUrl);
   uri.pathname = `/${keyspace}`;
-  //uri.searchParams.append('baseApiPath', '/v2/namespaces');
   if (logLevel) {
     uri.searchParams.append('logLevel', logLevel);
   }

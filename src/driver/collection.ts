@@ -62,7 +62,7 @@ export class Collection extends MongooseCollection {
   }
 
   findOneAndReplace(query: any, newDoc: any, options?: any, cb?: any) {
-    //return this.collection.updateMany(query, newDoc, options, cb);
+    return this.collection.findOneAndReplace(query, newDoc, options, cb);
   }
 
   deleteMany(query: any, options?: any, cb?: any) {

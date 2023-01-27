@@ -13,8 +13,8 @@
 // limitations under the License.
 import winston, { format } from 'winston';
 
-const productionFormat = format.combine(format.timestamp(), format.json());
-const developmentFormat = format.combine(format.colorize(), format.simple());
+const productionFormat = format.combine(format.timestamp(), format.splat(), format.json());
+const developmentFormat = format.combine(format.colorize(), format.splat(), format.simple());
 const consoleTransport = new winston.transports.Console();
 export const logger = winston.createLogger({
   level: process.env.NODE_ENV === 'production' ? 'error' : 'info',

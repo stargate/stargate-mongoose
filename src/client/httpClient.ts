@@ -21,7 +21,6 @@ const REQUESTED_WITH = 'astra-mongoose 0.1.0';
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
 const DEFAULT_METHOD = 'get';
 const DEFAULT_TIMEOUT = 30000;
-const DEFAULT_LOG_LEVEL = process.env.NODE_ENV === 'production' ? 'error' : 'info';
 const HTTP_METHODS = {
   get: 'GET',
   post: 'POST',
@@ -92,7 +91,6 @@ export class HTTPClient {
   baseUrl: string;
   applicationToken: string;
   authHeaderName: string;
-  logLevel: string;
   isAstra: boolean;
 
   constructor(options: AstraClientOptions) {
@@ -124,14 +122,11 @@ export class HTTPClient {
     this.baseApiPath = options.baseApiPath ?? '';
     this.applicationToken = options.applicationToken;
     this.authHeaderName = options.authHeaderName || process.env.AUTH_HEADER_NAME || DEFAULT_AUTH_HEADER;
-    this.logLevel = options.logLevel || DEFAULT_LOG_LEVEL;
   }
 
   async _request(requestInfo: AxiosRequestConfig) {
     try {
-      //console.log("URL : " + requestInfo.url);
-      //console.log("Method : " + requestInfo.method);
-      //console.log("data : " + JSON.stringify(requestInfo.data));
+      logger.debug("_request with URL %s", requestInfo.url);
       const response = await axiosAgent({
         url: requestInfo.url,
         data: requestInfo.data,
@@ -142,20 +137,17 @@ export class HTTPClient {
           [this.authHeaderName]: this.applicationToken
         }
       });
-      //const resp = {
       return {
         status: response.data.status,
         data: response.data.data,
         errors: response.data.errors
       };
-      //console.log(JSON.stringify(resp));
-      //return resp;
     } catch (e: any) {
-      console.log(e);
+       logger.error(e);
        return {
         errors: [
           {
-            message: "Server call failed, please retry!"
+            message: e.message? e.message : "Server call failed, please retry!"
           }
         ]
        }

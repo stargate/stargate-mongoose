@@ -15,9 +15,8 @@
 import _ from 'lodash';
 import { Collection } from './collection';
 import { logger } from '@/src/logger';
-import { formatQuery, setOptionsAndCb, executeOperation, QueryOptions } from './utils';
+import { setOptionsAndCb, executeOperation, QueryOptions } from './utils';
 
-//this is as in mongo shell https://www.mongodb.com/docs/v5.0/tutorial/configure-mongo-shell/#change-the-mongo-shell-batch-size
 const DEFAULT_PAGE_SIZE = 20;
 
 interface ResultCallback {
@@ -26,29 +25,29 @@ interface ResultCallback {
 
 export class FindCursor {
   collection: Collection;
-  query: any;
+  filter: any;
   projection: any;
   options: any;
   documents: Record<string, any>[] = [];
   status: string = 'uninitialized';
-  nextPageState?: string;
+  pageState?: string;
   limit: number;
 
-  batch: Record<string, any>[] = [];
-  batchSize: number;
-  batchIndex: number;
+  page: Record<string, any>[] = [];
+  pageSize: number;
+  pageIndex: number;
   totalNumFetched: number;
   exhausted: boolean;
 
   /**
    *
    * @param collection
-   * @param query
+   * @param filter
    * @param options
    */
-  constructor(collection: any, query: any, projection?: any, options?: any) {
+  constructor(collection: Collection, filter: any, projection?: any, options?: any) {
     this.collection = collection;
-    this.query = formatQuery(query, options);
+    this.filter = filter;
     this.projection = projection;
     this.options = options;
     this.limit = options?.limit || Infinity;
@@ -56,9 +55,9 @@ export class FindCursor {
     this.exhausted = false;
 
     // Load this many documents at a time in `this.batch` when using next()
-    this.batchSize = options?.pageSize || DEFAULT_PAGE_SIZE;
+    this.pageSize = options?.pageSize || DEFAULT_PAGE_SIZE;
     // Current position in batch
-    this.batchIndex = 0;
+    this.pageIndex = 0;
     // Total number of documents returned, should be < limit
     this.totalNumFetched = 0;
   }
@@ -99,8 +98,8 @@ export class FindCursor {
 
   async next(cb?: any): Promise<any> {
     return executeOperation(async () => {
-      if (this.batchIndex < this.batch.length) {
-        const doc = this.batch[this.batchIndex++];
+      if (this.pageIndex < this.page.length) {
+        const doc = this.page[this.pageIndex++];
         if (cb != null) {
           return cb(null, doc);
         }
@@ -124,7 +123,7 @@ export class FindCursor {
   
       await this._getMore();
   
-      const doc = this.batch[this.batchIndex++] || null;
+      const doc = this.page[this.pageIndex++] || null;
       if (cb != null) {
         return cb(null, doc);
       }
@@ -138,7 +137,7 @@ export class FindCursor {
    */
 
   async _getMore() {
-    const batchSize = Math.min(this.batchSize, this.limit - this.totalNumFetched);
+    const pageSize = Math.min(this.pageSize, this.limit - this.totalNumFetched);
     const command: {
       find: {
         filter?: string | undefined | null,
@@ -147,37 +146,37 @@ export class FindCursor {
       }
     } = {
       find: {
-        filter: this.query,
+        filter: this.filter,
         projection: this.projection,
       }
     };
     const options = {} as QueryOptions;
-    if (this.batchSize != DEFAULT_PAGE_SIZE) { 
-      options.pageSize = batchSize;
+    if (this.pageSize != DEFAULT_PAGE_SIZE) { 
+      options.pageSize = pageSize;
     }
     if (this.limit != Infinity) { 
       options.limit = this.limit;
     }
-    if (this.nextPageState) {
-      options.pageState = this.nextPageState;
+    if (this.pageState) {
+      options.pageState = this.pageState;
     }
     if(Object.keys(options).length > 0){
       command.find.options = options;
     }
     const resp = await this.collection.httpClient.executeCommand(command);
     if (resp.errors && resp.errors.length > 0) {
-      logger.error(resp.errors);
+      logger.error('Error returned from server %s', JSON.stringify(resp.errors));
     }
-    this.nextPageState = resp.pageState;
-    if (this.nextPageState == null) {
+    this.pageState = resp.pageState;
+    if (this.pageState == null) {
       this.exhausted = true;
     }
-    this.batch = _.keys(resp.data.docs).map(i => resp.data.docs[i]);
-    this.batchIndex = 0;
-    this.totalNumFetched += batchSize;
+    this.page = _.keys(resp.data.docs).map(i => resp.data.docs[i]);
+    this.pageIndex = 0;
+    this.totalNumFetched += pageSize;
     if (this.totalNumFetched >= this.limit) {
       this.exhausted = true;
-      delete this.nextPageState;
+      delete this.pageState;
     }
   }
 

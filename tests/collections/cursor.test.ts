@@ -66,7 +66,7 @@ for (const testClient in testClients) {
         });
       });
       it('should get next document with next()', async () => {
-        const cursor = new FindCursor(collection, null);
+        const cursor = new FindCursor(collection, {});
         const doc = await cursor.next();
         assert.ok(doc);
       });
@@ -74,7 +74,7 @@ for (const testClient in testClients) {
         const cursor = new FindCursor(collection, {}, {}, { limit: 2 });
         const res = await cursor.toArray();
         assert.strictEqual(res.length, 2);
-        assert.equal(cursor.batch.length, 2);
+        assert.equal(cursor.page.length, 2);
       });
       it('should execute an all query', async () => {
         const cursor = new FindCursor(collection, {});
