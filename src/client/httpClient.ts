@@ -16,6 +16,7 @@ import http from 'http';
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { logger, setLevel } from '@/src/logger';
 import _ from 'lodash';
+import { inspect } from 'util';
 
 const REQUESTED_WITH = 'astra-mongoose 0.1.0';
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
@@ -143,7 +144,11 @@ export class HTTPClient {
         errors: response.data.errors
       };
     } catch (e: any) {
-       logger.error(e);
+       logger.error(requestInfo.url + ': ' + e.message);
+       logger.error('Data: ' + inspect(requestInfo.data));
+       if (e?.response?.data) {
+         logger.error('Response Data: ' + inspect(e.response.data));
+       }
        return {
         errors: [
           {
