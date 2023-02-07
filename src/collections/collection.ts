@@ -65,13 +65,12 @@ export class Collection {
    * @param cb
    * @returns Promise
    */
-  async insertOne(doc: Record<string, any>, options?: any, cb?: DocumentCallback) {
+  async insertOne(document: Record<string, any>, options?: any, cb?: DocumentCallback) {
     ({ options, cb } = setOptionsAndCb(options, cb));
     return executeOperation(async (): Promise<InsertOneResult> => {
       let command = {
         insertOne : {
-            doc : doc,
-            options: options
+            document
         }
       };
       const resp = await this.httpClient.executeCommand(command);

@@ -31,7 +31,9 @@ for (const testClient in testClients) {
       if (!astraClient) {
         return this.skip();
       }
+
       db = astraClient.db();
+      await db.createCollection(TEST_COLLECTION_NAME);
       collection = db.collection(TEST_COLLECTION_NAME);
     });
 
