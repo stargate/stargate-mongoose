@@ -17,7 +17,7 @@ import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { logger, setLevel } from '@/src/logger';
 import _ from 'lodash';
 
-const REQUESTED_WITH = 'astra-mongoose 0.1.0';
+const REQUESTED_WITH = 'astra-mongoose/0.1.0';
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
 const DEFAULT_METHOD = 'get';
 const DEFAULT_TIMEOUT = 30000;
