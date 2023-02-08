@@ -67,8 +67,7 @@ export class Db {
           options: options
         }
       };
-      const data = await this.httpClient.executeCommand(command);
-      return data;
+      return await this.httpClient.executeCommand(command);
     }, cb);
   }
 

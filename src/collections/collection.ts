@@ -75,11 +75,7 @@ export class Collection {
       };
       const resp = await this.httpClient.executeCommand(command);
       if(resp.errors && resp.errors.length > 0){
-        logger.error('Error returned from server %s', JSON.stringify(resp.errors));
-        return {
-          acknowledged: false,
-          insertedId: null as any
-        };  
+        throw new Error(JSON.stringify(resp.errors));
       } else {
         return {
           acknowledged: true,
@@ -100,12 +96,7 @@ export class Collection {
       };
       const resp = await this.httpClient.executeCommand(command);
       if(resp.errors && resp.errors.length > 0){
-        logger.error('Error returned from server %s', JSON.stringify(resp.errors));
-        return {
-          acknowledged: false,
-          insertedCount: resp.status?.insertedIds?.length || 0,
-          insertedIds: resp.status?.insertedIds
-        };
+        throw new Error(JSON.stringify(resp.errors));
       }else{
         return {
           acknowledged: true,
@@ -128,14 +119,7 @@ export class Collection {
       };
       const updateOneResp = await this.httpClient.executeCommand(command);
       if(updateOneResp.errors && updateOneResp.errors.length > 0){
-        logger.error('Error returned from server %s', JSON.stringify(updateOneResp.errors));
-        return {
-          modifiedCount: updateOneResp.status?.modifiedCount,
-          matchedCount: updateOneResp.status?.matchedCount,
-          acknowledged: false,
-          upsertedCount: updateOneResp.status?.upsertedCount,
-          upsertedId: updateOneResp.status?.upsertedId
-        } as UpdateResult;
+        throw new Error(JSON.stringify(updateOneResp.errors));
       } else {
         return {
           modifiedCount: updateOneResp.status.modifiedCount,
@@ -160,14 +144,7 @@ export class Collection {
       };
       const updateManyResp = await this.httpClient.executeCommand(command);
       if(updateManyResp.errors && updateManyResp.errors.length > 0){
-        logger.error('Error returned from server %s', JSON.stringify(updateManyResp.errors));
-        return {
-          modifiedCount: updateManyResp.status?.modifiedCount,
-          matchedCount: updateManyResp.status?.matchedCount,
-          acknowledged: true,
-          upsertedCount: updateManyResp.status?.upsertedCount,
-          upsertedId: updateManyResp.status?.upsertedId
-        } as UpdateResult;
+        throw new Error(JSON.stringify(updateManyResp.errors));
       }else {
         return {
           modifiedCount: updateManyResp.status.modifiedCount,
@@ -195,8 +172,7 @@ export class Collection {
       };
       const deleteOneResp = await this.httpClient.executeCommand(command);
       if (deleteOneResp.errors && deleteOneResp.errors.length > 0) {        
-        logger.error('Error returned from server %s', JSON.stringify(deleteOneResp.errors));
-        return { acknowledged: false, deletedCount: 0 };
+        throw new Error(JSON.stringify(deleteOneResp.errors));
       }
       return { acknowledged: true, deletedCount: deleteOneResp.status.deletedCount };
     }, cb);
@@ -228,8 +204,7 @@ export class Collection {
       };
       const resp = await this.httpClient.executeCommand(command);
       if(resp.errors && resp.errors.length > 0){
-        logger.error('Error returned from server %s', JSON.stringify(resp.errors));
-        return null;
+        throw new Error(JSON.stringify(resp.errors));
       } else {
         return resp.data.docs[0];
       }      
@@ -288,10 +263,8 @@ export class Collection {
         }
       };
       const resp = await this.httpClient.executeCommand(command);
-      if(resp.errors){
-        logger.error('Error returned from server %s', JSON.stringify(resp.errors));
-        res.ok = 0;
-        //lastErrorObject TODOV3
+      if(resp.errors && resp.errors.length > 0){
+        throw new Error(JSON.stringify(resp.errors));
       } else{
         res.value = resp.data?.docs[0];
         res.ok = 1;

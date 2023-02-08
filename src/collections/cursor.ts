@@ -165,7 +165,7 @@ export class FindCursor {
     }
     const resp = await this.collection.httpClient.executeCommand(command);
     if (resp.errors && resp.errors.length > 0) {
-      logger.error('Error returned from server %s', JSON.stringify(resp.errors));
+      throw new Error(JSON.stringify(resp.errors));
     }
     this.pageState = resp.pageState;
     if (this.pageState == null) {
