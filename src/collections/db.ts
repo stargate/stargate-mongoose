@@ -69,7 +69,7 @@ export class Db {
       };
       return await this.httpClient.executeCommand(command);
     }, cb);
-  }
+}
 
   /**
    *
