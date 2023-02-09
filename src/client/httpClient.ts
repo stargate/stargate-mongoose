@@ -205,10 +205,27 @@ export class HTTPClient {
   }
 
   async executeCommand(data: Record<string, any>) {
-    return await this._request({
+    const response = await this._request({
       url: this.baseUrl,
       method: HTTP_METHODS.post,
       data
     });
+    handleIfErrorResponse(response);
+    return response;
   }
 }
+
+export class StargateServerError extends Error {
+  errors: any[]
+  constructor(response: any) {
+    super(JSON.stringify(response.errors));
+    this.errors = response.errors;
+  }
+}
+
+const handleIfErrorResponse = (response: any) => {
+  if(response.errors && response.errors.length > 0){
+    throw new StargateServerError(response);
+  }
+}
+

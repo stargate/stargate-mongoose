@@ -104,10 +104,18 @@ for (const testClient in testClients) {
       });
       it('should not create a Collection with an invalid name', async () => {
         const db = new Db(astraClient.httpClient, process.env.ASTRA_DB_KEYSPACE || '');
-        const res = await db.createCollection('test/?w.`');
-        assert.ok(res);
-        assert.strictEqual(res.status.ok, 0);
-        assert.strictEqual(res.errors.message, "Collection name has invalid characters!");
+        try{ 
+          const res = await db.createCollection('test/?w.`');
+        } catch(e: any){
+          assert.strictEqual(e.errors[0].message, "Collection name has invalid characters!");
+        }
+      });
+      it('should not create a Collection with an invalid name with callback', done  => {
+        const db = new Db(astraClient.httpClient, process.env.ASTRA_DB_KEYSPACE || '');
+        const res = db.createCollection('test/?w.`', {}, (err, res) => {
+          assert.strictEqual(err.errors[0].message, "Collection name has invalid characters!"); 
+          done(); 
+        });
       });
     });
   });

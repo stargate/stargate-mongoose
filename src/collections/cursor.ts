@@ -164,9 +164,6 @@ export class FindCursor {
       command.find.options = options;
     }
     const resp = await this.collection.httpClient.executeCommand(command);
-    if (resp.errors && resp.errors.length > 0) {
-      throw new Error(JSON.stringify(resp.errors));
-    }
     this.pageState = resp.pageState;
     if (this.pageState == null) {
       this.exhausted = true;

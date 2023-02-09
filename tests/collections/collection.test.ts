@@ -123,16 +123,18 @@ for (const testClient in testClients) {
         docList.forEach((doc, index) => {
           doc.username = doc.username+(index+1);
         });
-        const res = await collection.insertMany(docList);
-        assert.strictEqual(res.insertedCount, 0);
-        assert.strictEqual(res.acknowledged, false);
-        assert.strictEqual(res.insertedIds, undefined);
+        try{
+          const res = await collection.insertMany(docList);
+        } catch (e: any){
+          assert.strictEqual(e.errors[0].message, "insertMany can not take more than 100 docs");
+        }
       });
       it('should error out when docs list is empty in insertMany', async () => {        
-        const res = await collection.insertMany([]);
-        assert.strictEqual(res.insertedCount, 0);
-        assert.strictEqual(res.acknowledged, false);
-        assert.strictEqual(res.insertedIds, undefined);
+        try{
+          const res = await collection.insertMany([]);
+        } catch (e: any){
+          assert.strictEqual(e.errors[0].message, "docs can not be null or empty");
+        }
       });
       it('should findOne document', async () => {
         const insertDocResp = await collection.insertOne(createSampleDocWithMultiLevel());

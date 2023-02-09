@@ -74,14 +74,10 @@ export class Collection {
         }
       };
       const resp = await this.httpClient.executeCommand(command);
-      if(resp.errors && resp.errors.length > 0){
-        throw new Error(JSON.stringify(resp.errors));
-      } else {
-        return {
-          acknowledged: true,
-          insertedId: resp.status.insertedIds[0]
-        };
-      }
+      return {
+        acknowledged: true,
+        insertedId: resp.status.insertedIds[0]
+      };
     }, cb);
   }
 
@@ -95,15 +91,11 @@ export class Collection {
         }
       };
       const resp = await this.httpClient.executeCommand(command);
-      if(resp.errors && resp.errors.length > 0){
-        throw new Error(JSON.stringify(resp.errors));
-      }else{
-        return {
-          acknowledged: true,
-          insertedCount: resp.status.insertedIds?.length || 0,
-          insertedIds: resp.status.insertedIds
-        };
-      }
+      return {
+        acknowledged: true,
+        insertedCount: resp.status.insertedIds?.length || 0,
+        insertedIds: resp.status.insertedIds
+      };      
     }, cb);
   }
 
@@ -118,17 +110,13 @@ export class Collection {
         }
       };
       const updateOneResp = await this.httpClient.executeCommand(command);
-      if(updateOneResp.errors && updateOneResp.errors.length > 0){
-        throw new Error(JSON.stringify(updateOneResp.errors));
-      } else {
-        return {
-          modifiedCount: updateOneResp.status.modifiedCount,
-          matchedCount: updateOneResp.status.matchedCount,
-          acknowledged: true,
-          upsertedCount: updateOneResp.status.upsertedCount,
-          upsertedId: updateOneResp.status.upsertedId
-        } as UpdateResult;
-      }
+      return {
+        modifiedCount: updateOneResp.status.modifiedCount,
+        matchedCount: updateOneResp.status.matchedCount,
+        acknowledged: true,
+        upsertedCount: updateOneResp.status.upsertedCount,
+        upsertedId: updateOneResp.status.upsertedId
+      } as UpdateResult;      
     }, cb);
   }
 
@@ -143,17 +131,13 @@ export class Collection {
         }
       };
       const updateManyResp = await this.httpClient.executeCommand(command);
-      if(updateManyResp.errors && updateManyResp.errors.length > 0){
-        throw new Error(JSON.stringify(updateManyResp.errors));
-      }else {
-        return {
-          modifiedCount: updateManyResp.status.modifiedCount,
-          matchedCount: updateManyResp.status.matchedCount,
-          acknowledged: true,
-          upsertedCount: updateManyResp.status.upsertedCount,
-          upsertedId: updateManyResp.status.upsertedId
-        } as UpdateResult;
-      }
+      return {
+        modifiedCount: updateManyResp.status.modifiedCount,
+        matchedCount: updateManyResp.status.matchedCount,
+        acknowledged: true,
+        upsertedCount: updateManyResp.status.upsertedCount,
+        upsertedId: updateManyResp.status.upsertedId
+      } as UpdateResult;
     }, cb);
   }
 
@@ -171,9 +155,6 @@ export class Collection {
         }
       };
       const deleteOneResp = await this.httpClient.executeCommand(command);
-      if (deleteOneResp.errors && deleteOneResp.errors.length > 0) {        
-        throw new Error(JSON.stringify(deleteOneResp.errors));
-      }
       return { acknowledged: true, deletedCount: deleteOneResp.status.deletedCount };
     }, cb);
   }
@@ -203,11 +184,7 @@ export class Collection {
         }
       };
       const resp = await this.httpClient.executeCommand(command);
-      if(resp.errors && resp.errors.length > 0){
-        throw new Error(JSON.stringify(resp.errors));
-      } else {
-        return resp.data.docs[0];
-      }      
+      return resp.data.docs[0];
     }, cb);
   }
 
@@ -263,12 +240,8 @@ export class Collection {
         }
       };
       const resp = await this.httpClient.executeCommand(command);
-      if(resp.errors && resp.errors.length > 0){
-        throw new Error(JSON.stringify(resp.errors));
-      } else{
-        res.value = resp.data?.docs[0];
-        res.ok = 1;
-      }
+      res.value = resp.data?.docs[0];
+      res.ok = 1;
       return res;
     }, cb);
   }
