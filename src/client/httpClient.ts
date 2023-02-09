@@ -17,8 +17,10 @@ import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { logger, setLevel } from '@/src/logger';
 import _ from 'lodash';
 import { inspect } from 'util';
+import { LIB_NAME, LIB_VERSION } from '../version';
 
-const REQUESTED_WITH = 'astra-mongoose/0.1.0';
+
+const REQUESTED_WITH = LIB_NAME + '/' + LIB_VERSION;
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
 const DEFAULT_METHOD = 'get';
 const DEFAULT_TIMEOUT = 30000;
