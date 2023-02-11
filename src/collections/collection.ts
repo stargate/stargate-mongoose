@@ -110,13 +110,14 @@ export class Collection {
         }
       };
       const updateOneResp = await this.httpClient.executeCommand(command);
-      return {
+      const updateResult: UpdateResult = {
         modifiedCount: updateOneResp.status.modifiedCount,
         matchedCount: updateOneResp.status.matchedCount,
         acknowledged: true,
         upsertedCount: updateOneResp.status.upsertedCount,
         upsertedId: updateOneResp.status.upsertedId
-      } as UpdateResult;      
+      };
+      return updateResult;     
     }, cb);
   }
 
@@ -131,13 +132,14 @@ export class Collection {
         }
       };
       const updateManyResp = await this.httpClient.executeCommand(command);
-      return {
+      const updateResult:UpdateResult = {
         modifiedCount: updateManyResp.status.modifiedCount,
         matchedCount: updateManyResp.status.matchedCount,
         acknowledged: true,
         upsertedCount: updateManyResp.status.upsertedCount,
-        upsertedId: updateManyResp.status.upsertedId
-      } as UpdateResult;
+        upsertedId: updateManyResp.status.upsertedId,
+      } ;
+      return updateResult;
     }, cb);
   }
 
@@ -231,7 +233,6 @@ export class Collection {
 
   async findOneAndUpdate(query: any, update: any, options?: FindOneAndUpdateOptions, cb?: any) {
     return executeOperation(async (): Promise<ModifyResult> => {
-      let res = { value: null } as ModifyResult;
       const command = {
         findOneAndUpdate : {
             filter : query,
@@ -240,9 +241,11 @@ export class Collection {
         }
       };
       const resp = await this.httpClient.executeCommand(command);
-      res.value = resp.data?.docs[0];
-      res.ok = 1;
-      return res;
+      const modifyResult:ModifyResult = {
+        value : resp.data?.docs[0],
+        ok : 1
+      }
+      return modifyResult;
     }, cb);
   }
 
