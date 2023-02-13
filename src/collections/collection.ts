@@ -110,14 +110,13 @@ export class Collection {
         }
       };
       const updateOneResp = await this.httpClient.executeCommand(command);
-      const updateResult: UpdateResult = {
+      return {
         modifiedCount: updateOneResp.status.modifiedCount,
         matchedCount: updateOneResp.status.matchedCount,
         acknowledged: true,
         upsertedCount: updateOneResp.status.upsertedCount,
         upsertedId: updateOneResp.status.upsertedId
       };
-      return updateResult;     
     }, cb);
   }
 
@@ -132,14 +131,13 @@ export class Collection {
         }
       };
       const updateManyResp = await this.httpClient.executeCommand(command);
-      const updateResult:UpdateResult = {
+      return {
         modifiedCount: updateManyResp.status.modifiedCount,
         matchedCount: updateManyResp.status.matchedCount,
         acknowledged: true,
         upsertedCount: updateManyResp.status.upsertedCount,
-        upsertedId: updateManyResp.status.upsertedId,
-      } ;
-      return updateResult;
+        upsertedId: updateManyResp.status.upsertedId
+      };
     }, cb);
   }
 
@@ -157,7 +155,10 @@ export class Collection {
         }
       };
       const deleteOneResp = await this.httpClient.executeCommand(command);
-      return { acknowledged: true, deletedCount: deleteOneResp.status.deletedCount };
+      return {
+        acknowledged: true,
+        deletedCount: deleteOneResp.status.deletedCount 
+      };
     }, cb);
   }
 
@@ -241,11 +242,10 @@ export class Collection {
         }
       };
       const resp = await this.httpClient.executeCommand(command);
-      const modifyResult:ModifyResult = {
+      return {
         value : resp.data?.docs[0],
         ok : 1
-      }
-      return modifyResult;
+      };
     }, cb);
   }
 
