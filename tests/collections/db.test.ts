@@ -15,7 +15,7 @@
 import assert from 'assert';
 import { Db } from '@/src/collections/db';
 import { Client } from '@/src/collections/client';
-import { testClients } from '@/tests/fixtures';
+import { testClients, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 import { randAlphaNumeric } from '@ngneat/falso';
 
 for (const testClient in testClients) {
@@ -59,46 +59,39 @@ for (const testClient in testClients) {
         }
       });
       it('should create a Collection', async () => {
-        const db = new Db(astraClient.httpClient, process.env.ASTRA_DB_KEYSPACE || '');
-        const suffix = randAlphaNumeric({ length: 4 }).join('');
-        const res = await db.createCollection(`test_db_collection_${suffix}`);
-        assert.strictEqual(res, '');
-        // run drop collection async to save time
-        db.dropCollection(`test_db_collection_${suffix}`);
-      });
-      it('does not throw if Collection already exists', async () => {
-        const db = new Db(astraClient.httpClient, process.env.ASTRA_DB_KEYSPACE || '');
-        const suffix = randAlphaNumeric({ length: 4 }).join('');
-        const res = await db.createCollection(`test_db_collection_${suffix}`);
-        assert.strictEqual(res, '');
-
-        const res2 = await db.createCollection(`test_db_collection_${suffix}`);
-        assert.strictEqual(res2, null);
-        // run drop collection async to save time
-        db.dropCollection(`test_db_collection_${suffix}`);
+        const collectionName = TEST_COLLECTION_NAME;
+        const db = new Db(astraClient.httpClient, process.env.ASTRA_DB_KEYSPACE || '');        
+        const res = await db.createCollection(collectionName);
+        assert.ok(res);
+        assert.strictEqual(res.status.ok, 1);
+        const res2 = await db.createCollection(collectionName);
+        assert.ok(res2);
+        assert.strictEqual(res2.status.ok, 1);
       });
       it('should create a Collection with a callback', done => {
+        const collectionName = TEST_COLLECTION_NAME;
         const db = new Db(astraClient.httpClient, process.env.ASTRA_DB_KEYSPACE || '');
-        const suffix = randAlphaNumeric({ length: 4 }).join('');
-        db.createCollection(`test_db_collection_${suffix}`, null, (err, res) => {
-          assert.strictEqual(res, '');
-          assert.strictEqual(err, undefined);
+        db.createCollection(collectionName, {}, (err, res) => {
+          assert.ok(res);
+          assert.strictEqual(res.status.ok, 1);
+          //assert.strictEqual(res.status.createdCollection, collectionName);
           // run drop collection async to save time
-          db.dropCollection(`test_db_collection_${suffix}`, (err, res) => {
+          //TODOV3 enable drop collection once implemented
+          /*db.dropCollection(`test_db_collection_${suffix}`, (err, res) => {
             assert.strictEqual(res, '');
             assert.strictEqual(err, undefined);
-          });
+          });*/
           done();
         });
       });
-      it('should drop a Collection', async () => {
+      it.skip('should drop a Collection', async () => {
         const db = new Db(astraClient.httpClient, process.env.ASTRA_DB_KEYSPACE || '');
         const suffix = randAlphaNumeric({ length: 4 }).join('');
         await db.createCollection(`test_db_collection_${suffix}`);
         const res = await db.dropCollection(`test_db_collection_${suffix}`);
         assert.strictEqual(res, '');
       });
-      it('should drop a Collection with a callback', done => {
+      it.skip('should drop a Collection with a callback', done => {
         const db = new Db(astraClient.httpClient, process.env.ASTRA_DB_KEYSPACE || '');
         const suffix = randAlphaNumeric({ length: 4 }).join('');
         db.createCollection(`test_db_collection_${suffix}`, null, (_err, _res) => {
@@ -111,12 +104,18 @@ for (const testClient in testClients) {
       });
       it('should not create a Collection with an invalid name', async () => {
         const db = new Db(astraClient.httpClient, process.env.ASTRA_DB_KEYSPACE || '');
-        try {
+        try{ 
           const res = await db.createCollection('test/?w.`');
-          assert.strictEqual(res, undefined);
-        } catch (e) {
-          assert.ok(e);
+        } catch(e: any){
+          assert.strictEqual(e.errors[0].message, "Collection name has invalid characters!");
         }
+      });
+      it('should not create a Collection with an invalid name with callback', done  => {
+        const db = new Db(astraClient.httpClient, process.env.ASTRA_DB_KEYSPACE || '');
+        const res = db.createCollection('test/?w.`', {}, (err, res) => {
+          assert.strictEqual(err.errors[0].message, "Collection name has invalid characters!"); 
+          done(); 
+        });
       });
     });
   });

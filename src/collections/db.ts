@@ -61,20 +61,15 @@ export class Db {
    */
   async createCollection(collectionName: string, options?: any, cb?: CollectionCallback) {
     return executeOperation(async () => {
-      const data = await this.httpClient
-        .post('/collections', {
-          name: collectionName
-        })
-        .then(res => res.data)
-        .catch(err => {
-          if (err?.response?.status === 409) {
-            return null; // Collection already exists
-          }
-          throw err;
-        });
-      return data;
+      const command = {
+        createCollection: {
+          name: collectionName,
+          options: options
+        }
+      };
+      return await this.httpClient.executeCommand(command);
     }, cb);
-  }
+}
 
   /**
    *
@@ -83,17 +78,7 @@ export class Db {
    * @returns Promise
    */
   async dropCollection(collectionName: string, cb?: CollectionCallback) {
-    return executeOperation(async () => {
-      const data = await this.httpClient.delete(`/collections/${collectionName}`)
-        .then(res => res.data)
-        .catch(err => {
-          if (err?.response?.status === 404) {
-            return null; // No such collection
-          }
-          throw err;
-        });
-      return data;
-    }, cb);
+    throw new Error('Not Implemented');
   }
 
   // NOOPS and unimplemented

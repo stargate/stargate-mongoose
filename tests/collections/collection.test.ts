@@ -16,27 +16,34 @@ import assert from 'assert';
 import { Db } from '@/src/collections/db';
 import { Collection } from '@/src/collections/collection';
 import { Client } from '@/src/collections/client';
-import { testClients, createSampleUser, getSampleUsers, sleep } from '@/tests/fixtures';
+import { testClients, createSampleDoc, sampleUsersList, createSampleDocWithMultiLevel, createSampleDocWithMultiLevelWithId, getSampleDocs, sleep, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 import _ from 'lodash';
+
 
 for (const testClient in testClients) {
   describe(`StargateMongoose - ${testClient} Connection - collections.collection`, async () => {
     let astraClient: Client;
     let db: Db;
     let collection: Collection;
-    const sampleUser = createSampleUser();
+    const sampleDoc = createSampleDoc();
     before(async function() {
       astraClient = await testClients[testClient]();
       if (!astraClient) {
         return this.skip();
       }
+
       db = astraClient.db();
-      collection = db.collection('collection_tests');
+      await db.createCollection(TEST_COLLECTION_NAME);
+      collection = db.collection(TEST_COLLECTION_NAME);
+    });
+
+    beforeEach(async function() {
+      await collection?.deleteMany({});
     });
 
     after(() => {
       // run drop collection async to save time
-      db?.dropCollection('collection_tests');
+      db?.dropCollection(TEST_COLLECTION_NAME);
     });
 
     describe('Collection initialization', () => {
@@ -56,20 +63,38 @@ for (const testClient in testClients) {
 
     describe('Collection operations', () => {
       it('should insertOne document', async () => {
-        const res = await collection.insertOne(sampleUser);
-        assert.strictEqual(res.documentId, undefined);
+        const res = await collection.insertOne(createSampleDocWithMultiLevel());
+        assert.ok(res);        
         assert.strictEqual(res.acknowledged, true);
-        assert.ok(res.insertedId);
-        assert.ok(res);
+        assert.ok(res.insertedId);        
       });
       it('should insertOne document with a callback', done => {
-        collection.insertOne(sampleUser, (err: any, res: any) => {
-          assert.strictEqual(undefined, err);
-          assert.ok(res);
-          done();
+        collection.insertOne(createSampleDocWithMultiLevel(), {}, (err: any, res: any) => {
+          assert.ok(res);        
+          assert.strictEqual(res.acknowledged, true);
+          assert.ok(res.insertedId);
+          done();          
         });
       });
-      it('should not insertOne document that is invalid', async () => {
+      it('should insertOne document with id', async () => {
+        const docId = "docml1";
+        const docToInsert = createSampleDocWithMultiLevelWithId(docId);
+        const res = await collection.insertOne(docToInsert);
+        assert.ok(res);        
+        assert.strictEqual(res.acknowledged, true);
+        assert.ok(res.insertedId, docId);        
+      });
+      it('should insertOne document with id with a callback', done => {
+        const docId = "docml1";
+        const docToInsert = createSampleDocWithMultiLevelWithId(docId);
+        collection.insertOne(docToInsert, {}, (err: any, res: any) => {
+          assert.ok(res);        
+          assert.strictEqual(res.acknowledged, true);
+          assert.ok(res.insertedId);
+          done();          
+        });
+      });
+      it.skip('should not insertOne document that is invalid', async () => {
         try {
           const res = await collection.insertOne({ 'dang.bro.yep': 'boss' });
           assert.ok(res);
@@ -78,282 +103,340 @@ for (const testClient in testClients) {
         }
       });
       it('should insertMany documents', async () => {
-        const res = await collection.insertMany(getSampleUsers(3));
-        assert.strictEqual(res.documentIds, undefined);
+        const res = await collection.insertMany(sampleUsersList);
+        assert.strictEqual(res.insertedCount, sampleUsersList.length);
         assert.strictEqual(res.acknowledged, true);
         assert.strictEqual(_.keys(res.insertedIds).length, 3);
       });
-      it('should updateOne document', async () => {
-        const { insertedId } = await collection.insertOne({ dang: 'boss' });
-        await sleep();
-        const res = await collection.updateOne(
-          { _id: insertedId },
-          { dang: 'yep', $set: { wew: 'son' }, $inc: { count: 1 } }
-        );
-        assert.strictEqual(res.modifiedCount, 1);
-        assert.strictEqual(res.matchedCount, 1);
+      it('should insertMany documents with ids', async () => {
+        let sampleDocsWithIdList = JSON.parse(JSON.stringify(sampleUsersList));
+        sampleDocsWithIdList[0]._id="docml1";
+        sampleDocsWithIdList[1]._id="docml2";
+        sampleDocsWithIdList[2]._id="docml3";
+        const res = await collection.insertMany(sampleDocsWithIdList);
+        assert.strictEqual(res.insertedCount, sampleDocsWithIdList.length);
         assert.strictEqual(res.acknowledged, true);
-        await sleep();
-        const doc = await collection.findOne({ _id: insertedId });
-        assert.strictEqual(doc.dang, 'yep');
-        assert.strictEqual(doc.wew, 'son');
-        assert.strictEqual(doc.count, 1);
+        assert.strictEqual(_.keys(res.insertedIds).length, 3);
       });
-      it('should updateOne with upsert', async () => {
-        const res = await collection.updateOne(
-          { name: 'test name' },
-          { $setOnInsert: { prop: 'test prop' } },
-          { upsert: true }
-        );
-        assert.ok(res.acknowledged);
-        assert.equal(res.upsertedCount, 1);
-        assert.ok(res.upsertedId);
-        await sleep();
-        const doc = await collection.findOne({ name: 'test name' });
-        assert.strictEqual(doc.name, 'test name');
-        assert.strictEqual(doc.prop, 'test prop');
-      });
-      it('should updateMany documents', async () => {
-        const { insertedIds } = await collection.insertMany([
-          { many: true },
-          { many: true, count: 1 }
-        ]);
-        await sleep();
-        const res = await collection.updateMany(
-          { many: true },
-          { dang: 'yep', $inc: { count: 1 } }
-        );
-        assert.strictEqual(res.modifiedCount, 2);
-        assert.strictEqual(res.matchedCount, 2);
-        assert.strictEqual(res.acknowledged, true);
-        await sleep();
-        const doc = await collection.findOne({ _id: insertedIds[1] });
-        assert.strictEqual(doc.dang, 'yep');
-        assert.strictEqual(doc.count, 2);
-      });
-      // TODO: unskip
-      it.skip('should updateMany documents with upsert', async () => {
-        const res = await collection.updateMany(
-          { name: 'test name' },
-          { $setOnInsert: { prop: 'test prop' } },
-          { upsert: true }
-        );
-        assert.ok(res.acknowledged);
-        assert.equal(res.upsertedCount, 1);
-        assert.ok(res.upsertedId);
-        await sleep();
-        const doc = await collection.findOne({ name: 'test name' });
-        assert.strictEqual(doc.name, 'test name');
-        assert.strictEqual(doc.prop, 'test prop');
-      });
-      it('should replaceOne document', async () => {
-        const { insertedId } = await collection.insertOne({ will: 'end' });
-        await sleep();
-        const res = await collection.replaceOne({ _id: insertedId }, { will: 'start' });
-        assert.strictEqual(res.modifiedCount, 1);
-        assert.strictEqual(res.matchedCount, 1);
-        assert.strictEqual(res.acknowledged, true);
-      });
-      it('should replaceOne document with upsert', async () => {
-        const res = await collection.replaceOne(
-          { name: 'test' },
-          { prop: 'test prop' },
-          { upsert: true }
-        );
-        assert.strictEqual(res.modifiedCount, 0);
-        assert.strictEqual(res.matchedCount, 0);
-        assert.strictEqual(res.acknowledged, true);
-        assert.strictEqual(res.upsertedCount, 1);
-
-        const doc = await collection.findOne({ _id: res.upsertedId });
-        assert.ok(doc);
-        assert.strictEqual(doc.name, 'test');
-        assert.strictEqual(doc.prop, 'test prop');
-      });
-      it('should deleteOne document', async () => {
-        const { insertedId } = await collection.insertOne({ will: 'die' });
-        await sleep();
-        const res = await collection.deleteOne({ _id: insertedId });
-        assert.strictEqual(res.deletedCount, 1);
-      });
-      it('should findOneAndUpdate', async () => {
-        const { insertedId: _id } = await collection.insertOne({ name: 'before' });
-        await sleep();
-        let res = await collection.findOneAndUpdate({ _id }, { name: 'after' });
-        assert.ok(res.value);
-        assert.equal(res.value._id.toString(), _id.toString());
-        assert.equal(res.value.name, 'before');
-
-        res = await collection.findOneAndUpdate(
-          { _id },
-          { name: 'after 2' },
-          { returnDocument: 'after' }
-        );
-        assert.ok(res.value);
-        assert.equal(res.value._id.toString(), _id.toString());
-        assert.equal(res.value.name, 'after 2');
-      });
-      it('should findOneAndUpdate with upsert', async () => {
-        let res = await collection.findOneAndUpdate(
-          { name: 'before' },
-          { name: 'after' },
-          { upsert: true }
-        );
-        assert.ok(!res.value);
-
-        let doc = await collection.findOne({ name: 'after' });
-        assert.ok(doc);
-
-        await collection.deleteOne({ name: 'after' });
-
-        res = await collection.findOneAndUpdate(
-          { name: 'before' },
-          { name: 'after' },
-          { upsert: true, returnDocument: 'after' }
-        );
-        assert.ok(res.value);
-        assert.equal(res.value.name, 'after');
-      });
-    });
-
-    describe('Collection noops', () => {
-      it('should handle noop: aggregate', async () => {
-        try {
-          const aggregation = collection.aggregate();
-          assert.ok(aggregation);
-        } catch (e) {
-          assert.ok(e);
+      it('should not insert more than 100 documents in insertMany', async () => {
+        let docList = Array.from({ length: 101 }, ()=>({"username": "id"}));
+        docList.forEach((doc, index) => {
+          doc.username = doc.username+(index+1);
+        });
+        try{
+          const res = await collection.insertMany(docList);
+        } catch (e: any){
+          assert.strictEqual(e.errors[0].message, "insertMany can not take more than 100 docs");
         }
       });
-    });
-
-    describe('convertUpdateOperators', () => {
-      it('supports $push with $each', () => {
-        const doc = { tags: ['javascript'] };
-        const update = {
-          $push: {
-            tags: {
-              $each: ['typescript', 'coffeescript']
-            }
-          }
-        };
-
-        collection._convertUpdateOperators(doc, update);
-
-        assert.deepStrictEqual(update, {
-          tags: ['javascript', 'typescript', 'coffeescript']
-        });
+      it('should error out when docs list is empty in insertMany', async () => {        
+        try{
+          const res = await collection.insertMany([]);
+        } catch (e: any){
+          assert.strictEqual(e.errors[0].message, "docs can not be null or empty");
+        }
       });
-
-      it('converts $push on nested paths', () => {
-        const doc = {
-          guestOnboarding: {
-            completedSteps: ['add-payment-method']
-          }
-        };
-        const update = {
-          $push: {
-            'guestOnboarding.completedSteps': 'verify-telephone'
-          }
-        };
-
-        collection._convertUpdateOperators(doc, update);
-
-        assert.deepStrictEqual(update, {
-          guestOnboarding: {
-            completedSteps: ['add-payment-method', 'verify-telephone']
-          }
-        });
+      it('should findOne document', async () => {
+        const insertDocResp = await collection.insertOne(createSampleDocWithMultiLevel());
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"_id": idToCheck});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
       });
-
-      it('supports $addToSet', () => {
-        const doc = { tags: ['javascript'] };
-        const update = {
-          $addToSet: {
-            tags: { $each: ['javascript', 'typescript'] }
-          }
-        };
-
-        collection._convertUpdateOperators(doc, update);
-
-        assert.deepStrictEqual(update, {
-          tags: ['javascript', 'typescript']
-        });
+      it('should findOne eq document', async () => {
+        const insertDocResp = await collection.insertOne(createSampleDocWithMultiLevel());
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"_id": {"$eq":idToCheck}});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
       });
-
-      it('supports $addToSet on null value', () => {
-        const doc = { tags: null };
-        const update = { $addToSet: { tags: 'javascript' } };
-
-        collection._convertUpdateOperators(doc, update);
-
-        assert.deepStrictEqual(update, { tags: ['javascript'] });
+      it('should findOne L1 String EQ document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"username": doc.username});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
       });
-
-      it('supports $inc', () => {
-        const doc = { answer: 42 };
-        const update = { $inc: { answer: 57 } };
-
-        collection._convertUpdateOperators(doc, update);
-
-        assert.deepStrictEqual(update, { answer: 99 });
+      it('should findOne L1 String EQ $eq document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"username": {"$eq":doc.username}});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
       });
-
-      it('supports $inc on multiple paths', () => {
-        const doc = { answer: 42, musketeers: 3 };
-        const update = { $inc: { answer: 57, musketeers: 1 } };
-
-        collection._convertUpdateOperators(doc, update);
-
-        assert.deepStrictEqual(update, { answer: 99, musketeers: 4 });
+      it('should findOne L1 Number EQ document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"age": doc.age});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
       });
-
-      it('supports $inc on nested paths', () => {
-        const doc = { nested: { answer: 42 } };
-        const update = { $inc: { 'nested.answer': 57 } };
-
-        collection._convertUpdateOperators(doc, update);
-
-        assert.deepStrictEqual(update, { nested: { answer: 99 } });
+      it('should findOne L1 Number EQ $eq document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"age": {"$eq":doc.age}});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
       });
-
-      it('supports $pull', () => {
-        const doc = { tags: ['javascript', 'typescript', 'coffeescript'] };
-        const update = { $pull: { tags: 'coffeescript' } };
-
-        collection._convertUpdateOperators(doc, update);
-
-        assert.deepStrictEqual(update, { tags: ['javascript', 'typescript'] });
+      it('should findOne L1 Boolean EQ document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"human": doc.human});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
       });
-
-      it('supports $pullAll', () => {
-        const doc = { tags: ['javascript', 'typescript', 'coffeescript'] };
-        const update = { $pullAll: { tags: ['typescript', 'coffeescript'] } };
-
-        collection._convertUpdateOperators(doc, update);
-
-        assert.deepStrictEqual(update, { tags: ['javascript'] });
+      it('should findOne L1 Boolean EQ $eq document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"human": {"$eq":doc.human}});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
       });
-
-      it('converts $set on nested operators', () => {
-        const doc = {
-          guestOnboarding: {
-            completedSteps: []
-          }
-        };
-        const update = {
-          $set: {
-            'guestOnboarding.completedSteps': ['verify-telephone']
-          }
-        };
-
-        collection._convertUpdateOperators(doc, update);
-
-        assert.deepStrictEqual(update, {
-          guestOnboarding: {
-            completedSteps: ['verify-telephone']
-          }
-        });
+      it('should findOne L1 Null EQ document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"password": doc.password});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne L1 Null EQ $eq document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"password": {"$eq":doc.password}});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne any level String EQ document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"address.street": doc.address?.street});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne any level String EQ $eq document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"address.street": {"$eq" : doc.address?.street}});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne any level Number EQ document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"address.number": doc.address?.number});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne any level Number EQ $eq document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"address.number": {"$eq" : doc.address?.number}});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne any level Boolean EQ document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"address.is_office": doc.address?.is_office});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne any level Boolean EQ $eq document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"address.is_office": {"$eq" : doc.address?.is_office}});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne any level Null EQ document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"address.suburb": doc.address?.suburb});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne any level Null EQ $eq document', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"address.suburb": {"$eq" : doc.address?.suburb}});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne multiple top level conditions', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"age": doc.age, "human": doc.human, "password": doc.password});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne multiple level>=2 conditions', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"address.number": doc.address?.number, "address.street": doc.address?.street, "address.is_office": doc.address?.is_office});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne multiple mixed levels conditions', async () => {
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"age": doc.age, "address.street": doc.address?.street, "address.is_office": doc.address?.is_office});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+      });
+      it('should findOne doc - return only selected fields', async () => {
+        //insert a new doc
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        //read that back with project
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"_id": idToCheck}, {username:1, "address.city" : true});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+        assert.strictEqual(resDoc.username, doc.username);
+        assert.strictEqual(resDoc.address.city, doc.address?.city);
+        assert.strictEqual(resDoc.address.number, undefined);        
+      });
+      it('should findOne doc - return only selected fields (with exclusion)', async () => {
+        //insert a new doc
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        //read that back with project
+        const idToCheck = insertDocResp.insertedId;
+        const resDoc = await collection.findOne({"_id": idToCheck}, {username:1, "address.city" : true, _id: 0});
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, undefined);
+        assert.strictEqual(resDoc.username, doc.username);
+        assert.strictEqual(resDoc.address.city, doc.address?.city);
+        assert.strictEqual(resDoc.address.number, undefined);        
+      });
+      it('should find doc - return only selected fields', async () => {
+        //insert a new doc
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        //read that back with projection
+        const idToCheck = insertDocResp.insertedId;
+        const findCursor = await collection.find({"_id": idToCheck}, {username:1, "address.city" : true});
+        const resDoc = await findCursor.next();
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, idToCheck);
+        assert.strictEqual(resDoc.username, doc.username);
+        assert.strictEqual(resDoc.address.city, doc.address?.city);
+        assert.strictEqual(resDoc.address.number, undefined);        
+      });
+      it('should find doc - return only selected fields (with exclusion)', async () => {
+        //insert a new doc
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        //read that back with projection
+        const idToCheck = insertDocResp.insertedId;
+        const findCursor = await collection.find({"_id": idToCheck}, {username:1, "address.city" : true, _id: 0});
+        const resDoc = await findCursor.next();
+        assert.ok(resDoc);
+        assert.strictEqual(resDoc._id, undefined);
+        assert.strictEqual(resDoc.username, doc.username);
+        assert.strictEqual(resDoc.address.city, doc.address?.city);
+        assert.strictEqual(resDoc.address.number, undefined); 
+      });
+      it('should updateOne document by id', async () => {
+        //insert a new doc
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        //update doc
+        const updateOneResp = await collection.updateOne({"_id": idToCheck}, 
+                              {
+                                "$set": { "username" : "aaronm" },
+                                "$unset" : { "address.city" : ""}                                
+                              });
+        assert.strictEqual(updateOneResp.modifiedCount, 1);
+        assert.strictEqual(updateOneResp.matchedCount, 1);
+        assert.strictEqual(updateOneResp.acknowledged, true);
+        assert.strictEqual(updateOneResp.upsertedId, null);
+        assert.strictEqual(updateOneResp.upsertedCount, 0);
+        const updatedDoc = await collection.findOne({"username":"aaronm"});
+        assert.strictEqual(updatedDoc._id, idToCheck);
+        assert.strictEqual(updatedDoc.username, "aaronm");
+        assert.strictEqual(updatedDoc.address.city, "");
+      });      
+      it('should updateMany documents with ids', async () => {
+        let sampleDocsWithIdList = JSON.parse(JSON.stringify(sampleUsersList));
+        sampleDocsWithIdList[0]._id="docml1";
+        sampleDocsWithIdList[1]._id="docml2";
+        sampleDocsWithIdList[2]._id="docml3";
+        const res = await collection.insertMany(sampleDocsWithIdList);
+        assert.strictEqual(res.insertedCount, sampleDocsWithIdList.length);
+        assert.strictEqual(res.acknowledged, true);
+        assert.strictEqual(_.keys(res.insertedIds).length, 3);
+        const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
+        const updateManyResp = await collection.updateMany({"_id": idToUpdateAndCheck},
+                                                  {
+                                                    "$set" : { "username" : "aaronm" },
+                                                    "$unset" : { "address.city" : ""}
+                                                  });
+        assert.strictEqual(updateManyResp.matchedCount, 1);
+        assert.strictEqual(updateManyResp.modifiedCount, 1);
+        assert.strictEqual(updateManyResp.acknowledged, true);
+        assert.strictEqual(updateManyResp.upsertedCount, 0);
+        assert.strictEqual(updateManyResp.upsertedId, null);
+        const updatedDoc = await collection.findOne({"username":"aaronm"});
+        assert.strictEqual(updatedDoc._id, idToUpdateAndCheck);
+        assert.strictEqual(updatedDoc.username, "aaronm");
+        assert.strictEqual(updatedDoc.address.city, "");                                                  
+      });
+      it('should findOneAndUpdate', async () => {
+        const res = await collection.insertOne(createSampleDocWithMultiLevel());
+        const docId = res.insertedId;
+        const findOneAndUpdateResp = await collection.findOneAndUpdate({"_id":docId}, 
+          {
+            "$set": {
+              "username": "aaronm"
+            },
+            "$unset": {
+              "address.city": ""
+            }            
+          },
+          {
+            "returnDocument": "after"
+          },
+          null
+        );        
+        assert.equal(findOneAndUpdateResp.ok, 1);
+        assert.equal(findOneAndUpdateResp.value._id, docId);
+        assert.equal(findOneAndUpdateResp.value.username, "aaronm");
+        assert.equal(findOneAndUpdateResp.value.address.city, "");
+      });      
+      it('should deleteOne document', async () => {
+        const res = await collection.insertOne(createSampleDocWithMultiLevel());
+        const docId = res.insertedId;
+        const deleteOneResp = await collection.deleteOne({ _id: docId });
+        assert.strictEqual(deleteOneResp.deletedCount, 1);
+        assert.strictEqual(deleteOneResp.acknowledged, true);
+      });
+      it('should not delete any when no match in deleteOne', async () => {
+        const res = await collection.insertOne(createSampleDocWithMultiLevel());
+        const docId = res.insertedId;
+        const deleteOneResp = await collection.deleteOne({ "username": "samlxyz" });
+        assert.strictEqual(deleteOneResp.deletedCount, 0);
+        assert.strictEqual(deleteOneResp.acknowledged, true);
       });
     });
   });

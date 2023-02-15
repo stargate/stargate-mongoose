@@ -16,12 +16,14 @@ import http from 'http';
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { logger, setLevel } from '@/src/logger';
 import _ from 'lodash';
+import { inspect } from 'util';
+import { LIB_NAME, LIB_VERSION } from '../version';
 
-const REQUESTED_WITH = 'astra-mongoose 0.1.0';
+
+const REQUESTED_WITH = LIB_NAME + '/' + LIB_VERSION;
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
 const DEFAULT_METHOD = 'get';
 const DEFAULT_TIMEOUT = 30000;
-const DEFAULT_LOG_LEVEL = process.env.NODE_ENV === 'production' ? 'error' : 'info';
 const HTTP_METHODS = {
   get: 'GET',
   post: 'POST',
@@ -92,7 +94,6 @@ export class HTTPClient {
   baseUrl: string;
   applicationToken: string;
   authHeaderName: string;
-  logLevel: string;
   isAstra: boolean;
 
   constructor(options: AstraClientOptions) {
@@ -105,10 +106,10 @@ export class HTTPClient {
 
     // set the baseURL to Astra, if the user provides a Stargate URL, use that instead.
     // databaseId and databaseRegion are required if no other URL is provided.
-    if (options.databaseId && options.databaseRegion) {
-      this.baseUrl = `https://${options.databaseId}-${options.databaseRegion}.apps.astra.datastax.com`;
-    } else if (options.baseUrl) {
+    if (options.baseUrl) {
       this.baseUrl = options.baseUrl;
+    } else if (options.databaseId && options.databaseRegion) {
+      this.baseUrl = `https://${options.databaseId}-${options.databaseRegion}.apps.astra.datastax.com`;
     } else {
       throw new Error('baseUrl required for initialization');
     }
@@ -123,34 +124,40 @@ export class HTTPClient {
 
     this.baseApiPath = options.baseApiPath ?? '';
     this.applicationToken = options.applicationToken;
-    this.authHeaderName = options.authHeaderName || DEFAULT_AUTH_HEADER;
-    this.logLevel = options.logLevel || DEFAULT_LOG_LEVEL;
+    this.authHeaderName = options.authHeaderName || process.env.AUTH_HEADER_NAME || DEFAULT_AUTH_HEADER;
   }
 
-  async _request(options: AxiosRequestConfig) {
+  async _request(requestInfo: AxiosRequestConfig) {
     try {
+      logger.debug("_request with URL %s", requestInfo.url);
       const response = await axiosAgent({
-        url: options.url,
-        data: options.data,
-        params: options.params,
-        method: options.method || DEFAULT_METHOD,
-        timeout: options.timeout || DEFAULT_TIMEOUT,
+        url: requestInfo.url,
+        data: requestInfo.data,
+        params: requestInfo.params,
+        method: requestInfo.method || DEFAULT_METHOD,
+        timeout: requestInfo.timeout || DEFAULT_TIMEOUT,
         headers: {
           [this.authHeaderName]: this.applicationToken
         }
       });
-      if (response.data.data) {
-        return {
-          status: response.status,
-          ...response.data
-        };
-      }
       return {
-        status: response.status,
-        data: response.data
+        status: response.data.status,
+        data: response.data.data,
+        errors: response.data.errors
       };
     } catch (e: any) {
-      throw new AstraError(e.response?.data?.description || e?.message, e?.response);
+       logger.error(requestInfo.url + ': ' + e.message);
+       logger.error('Data: ' + inspect(requestInfo.data));
+       if (e?.response?.data) {
+         logger.error('Response Data: ' + inspect(e.response.data));
+       }
+       return {
+        errors: [
+          {
+            message: e.message? e.message : "Server call failed, please retry!"
+          }
+        ]
+       }
     }
   }
 
@@ -196,4 +203,29 @@ export class HTTPClient {
       ...options
     });
   }
+
+  async executeCommand(data: Record<string, any>) {
+    const response = await this._request({
+      url: this.baseUrl,
+      method: HTTP_METHODS.post,
+      data
+    });
+    handleIfErrorResponse(response);
+    return response;
+  }
 }
+
+export class StargateServerError extends Error {
+  errors: any[]
+  constructor(response: any) {
+    super(JSON.stringify(response.errors));
+    this.errors = response.errors;
+  }
+}
+
+const handleIfErrorResponse = (response: any) => {
+  if(response.errors && response.errors.length > 0){
+    throw new StargateServerError(response);
+  }
+}
+

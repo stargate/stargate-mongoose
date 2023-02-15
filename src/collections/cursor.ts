@@ -14,7 +14,8 @@
 
 import _ from 'lodash';
 import { Collection } from './collection';
-import { formatQuery, setOptionsAndCb, executeOperation } from './utils';
+import { logger } from '@/src/logger';
+import { setOptionsAndCb, executeOperation, QueryOptions } from './utils';
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -24,37 +25,39 @@ interface ResultCallback {
 
 export class FindCursor {
   collection: Collection;
-  query: any;
+  filter: any;
+  projection: any;
   options: any;
   documents: Record<string, any>[] = [];
   status: string = 'uninitialized';
-  nextPageState?: string;
+  pageState?: string;
   limit: number;
 
-  batch: Record<string, any>[] = [];
-  batchSize: number;
-  batchIndex: number;
+  page: Record<string, any>[] = [];
+  pageSize: number;
+  pageIndex: number;
   totalNumFetched: number;
   exhausted: boolean;
 
   /**
    *
    * @param collection
-   * @param query
+   * @param filter
    * @param options
    */
-  constructor(collection: any, query: any, options?: any) {
+  constructor(collection: Collection, filter: any, projection?: any, options?: any) {
     this.collection = collection;
-    this.query = formatQuery(query, options);
+    this.filter = filter;
+    this.projection = projection;
     this.options = options;
     this.limit = options?.limit || Infinity;
     this.status = 'initialized';
     this.exhausted = false;
 
     // Load this many documents at a time in `this.batch` when using next()
-    this.batchSize = options?.batchSize || DEFAULT_PAGE_SIZE;
+    this.pageSize = options?.pageSize || DEFAULT_PAGE_SIZE;
     // Current position in batch
-    this.batchIndex = 0;
+    this.pageIndex = 0;
     // Total number of documents returned, should be < limit
     this.totalNumFetched = 0;
   }
@@ -95,8 +98,8 @@ export class FindCursor {
 
   async next(cb?: any): Promise<any> {
     return executeOperation(async () => {
-      if (this.batchIndex < this.batch.length) {
-        const doc = this.batch[this.batchIndex++];
+      if (this.pageIndex < this.page.length) {
+        const doc = this.page[this.pageIndex++];
         if (cb != null) {
           return cb(null, doc);
         }
@@ -120,7 +123,7 @@ export class FindCursor {
   
       await this._getMore();
   
-      const doc = this.batch[this.batchIndex++] || null;
+      const doc = this.page[this.pageIndex++] || null;
       if (cb != null) {
         return cb(null, doc);
       }
@@ -134,28 +137,43 @@ export class FindCursor {
    */
 
   async _getMore() {
-    const batchSize = Math.min(this.batchSize, this.limit - this.totalNumFetched);
-
-    const reqParams: any = {
-      where: this.query,
-      'page-size': batchSize
+    const pageSize = Math.min(this.pageSize, this.limit - this.totalNumFetched);
+    const command: {
+      find: {
+        filter?: string | undefined | null,
+        projection?: string | undefined | null,
+        options?: QueryOptions | undefined | null
+      }
+    } = {
+      find: {
+        filter: this.filter,
+        projection: this.projection,
+      }
     };
-    if (this.nextPageState) {
-      reqParams['page-state'] = this.nextPageState;
+    const options = {} as QueryOptions;
+    if (this.pageSize != DEFAULT_PAGE_SIZE) { 
+      options.pageSize = pageSize;
     }
-    const res = await this.collection.httpClient.get('', {
-      params: reqParams
-    });
-    this.nextPageState = res.pageState;
-    if (this.nextPageState == null) {
+    if (this.limit != Infinity) { 
+      options.limit = this.limit;
+    }
+    if (this.pageState) {
+      options.pageState = this.pageState;
+    }
+    if(Object.keys(options).length > 0){
+      command.find.options = options;
+    }
+    const resp = await this.collection.httpClient.executeCommand(command);
+    this.pageState = resp.pageState;
+    if (this.pageState == null) {
       this.exhausted = true;
     }
-    this.batch = _.keys(res.data).map(i => res.data[i]);
-    this.batchIndex = 0;
-    this.totalNumFetched += batchSize;
+    this.page = _.keys(resp.data.docs).map(i => resp.data.docs[i]);
+    this.pageIndex = 0;
+    this.totalNumFetched += pageSize;
     if (this.totalNumFetched >= this.limit) {
       this.exhausted = true;
-      delete this.nextPageState;
+      delete this.pageState;
     }
   }
 

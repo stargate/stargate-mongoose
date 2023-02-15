@@ -16,7 +16,9 @@ import { createAstraUri, createStargateUri } from '@/src/collections/utils';
 import { Client } from '@/src/collections/client';
 import { randFirstName, randLastName } from '@ngneat/falso';
 
-export const astraUri = createAstraUri(
+export const TEST_COLLECTION_NAME = 'collection1';
+
+export const astraUri = process.env.ASTRA_URI || createAstraUri(
   process.env.ASTRA_DB_ID ?? '',
   process.env.ASTRA_DB_REGION ?? '',
   process.env.ASTRA_DB_KEYSPACE ?? '',
@@ -24,7 +26,7 @@ export const astraUri = createAstraUri(
 );
 
 export const getAstraClient = async () => {
-  if (!process.env.ASTRA_DB_ID || !process.env.ASTRA_DB_APPLICATION_TOKEN) {
+  if (!process.env.ASTRA_URI && (!process.env.ASTRA_DB_ID || !process.env.ASTRA_DB_APPLICATION_TOKEN)) {
     return null;
   }
   return await Client.connect(astraUri);
@@ -44,29 +46,88 @@ export const getStargateClient = async () => {
   return await Client.connect(stargateUri);
 };
 
-export const createSampleUser = () => ({
-  firstName: randFirstName(),
-  lastName: randLastName()
+export const createSampleDoc = () => ({
+  _id: "doc1",
+  username : "aaron"
 });
 
-export const getSampleUsers = (numUsers: number) =>
-  Array.from({ length: numUsers }, createSampleUser);
+export type Employee = {
+  _id?: string;
+  username?: string;
+  human?: boolean;
+  age?: number;
+  password?: string | null;
+  address?:{
+    number?: number;
+    street?: string | null;
+    suburb?: string | null;
+    city?: string | null;
+    is_office?: boolean;
+    country?: string | null;
+  }
+}
+
+const sampleMultiLevelDoc:Employee = {
+  username : "aaron",
+  human : true,
+  age: 47,
+  password: null,
+  address: {
+    number: 86,
+    street: "monkey street",
+    suburb: null,
+    city: "big banana",
+    is_office: false
+  }
+} ;
+
+export const createSampleDocWithMultiLevelWithId = (docId:string) => {  
+  let sampleMultiLevelDocWithId = JSON.parse(JSON.stringify(sampleMultiLevelDoc)) as Employee; //parse and stringigy is to clone and modify only the new object
+  sampleMultiLevelDocWithId._id = docId;
+  return sampleMultiLevelDocWithId;
+};
+
+export const createSampleDocWithMultiLevel = () => (sampleMultiLevelDoc as Employee);
+
+export const createSampleDoc2WithMultiLevel = () => ({
+  username : "jimr",
+  human : true,
+  age: 52,
+  password : "gasxaq==",
+  address: {
+    number: 45,
+    street: "main street",
+    suburb: null,
+    city: "nyc",
+    is_office: true,
+    country: "usa"
+  }
+} as Employee);
+
+export const createSampleDoc3WithMultiLevel = () => ({
+  username : "saml",
+  human : false,
+  age: 25,
+  password : "jhkasfka==",
+  address: {
+    number: 123,
+    street: "church street",
+    suburb: null,
+    city: "la",
+    is_office: true,
+    country: "usa"
+  }
+} as Employee);
+
+export const sampleUsersList = Array.of(createSampleDocWithMultiLevel(), createSampleDoc2WithMultiLevel(), createSampleDoc3WithMultiLevel()) as Employee[];
+
+export const getSampleDocs = (numUsers: number) =>
+  Array.from({ length: numUsers }, createSampleDoc);
 
 export const sleep = async (ms = 100) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const testClients = {
   'Astra DB': async () => {
     return await getAstraClient();
-  },
-  Stargate: async () => {
-    const stargateClient = await getStargateClient();
-    try {
-      await stargateClient.httpClient.post('/v2/schemas/namespaces', {
-        name: process.env.ASTRA_DB_KEYSPACE
-      });
-    } catch (e) {
-      console.error(e);
-    }
-    return stargateClient;
   }
 };

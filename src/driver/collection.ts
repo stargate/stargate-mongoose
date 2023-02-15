@@ -29,12 +29,12 @@ export class Collection extends MongooseCollection {
     return this.conn.db.collection(this.name);
   }
 
-  find(query: any, options?: any, cb?: any) {
-    return this.collection.find(query, options, cb);
+  find(query: any, projection?: any, options?: any, cb?: any) {
+    return this.collection.find(query, projection, options, cb);
   }
 
-  findOne(query: any, options?: any, cb?: any) {
-    return this.collection.findOne(query, options, cb);
+  findOne(query: any, projection?: any, options?: any, cb?: any) {
+    return this.collection.findOne(query, projection, options, cb);
   }
 
   insertOne(doc: any, options?: any, cb?: any) {
@@ -62,7 +62,7 @@ export class Collection extends MongooseCollection {
   }
 
   findOneAndReplace(query: any, newDoc: any, options?: any, cb?: any) {
-    return this.collection.updateMany(query, newDoc, options, cb);
+    return this.collection.findOneAndReplace(query, newDoc, options, cb);
   }
 
   deleteMany(query: any, options?: any, cb?: any) {
@@ -82,6 +82,10 @@ export class Collection extends MongooseCollection {
   }
 
   updateMany(query: any, update: any, options?: any, cb?: any) {
+    return this.collection.updateMany(query, update, options, cb);
+  }
+
+  update(query: any, update: any, options?: any, cb?: any) {
     return this.collection.updateMany(query, update, options, cb);
   }
 
