@@ -124,7 +124,7 @@ export class HTTPClient {
 
     this.baseApiPath = options.baseApiPath ?? '';
     this.applicationToken = options.applicationToken;
-    this.authHeaderName = options.authHeaderName || process.env.AUTH_HEADER_NAME || DEFAULT_AUTH_HEADER;
+    this.authHeaderName = options.authHeaderName || DEFAULT_AUTH_HEADER;
   }
 
   async _request(requestInfo: AxiosRequestConfig) {
