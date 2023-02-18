@@ -186,6 +186,10 @@ export class Collection {
           options: options
         }
       };
+      // Avoid empty projections
+      if (projection == null || Object.keys(projection).length === 0) {
+        delete command.findOne.projection;
+      }
       const resp = await this.httpClient.executeCommand(command);
       return resp.data.docs[0];
     }, cb);

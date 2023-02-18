@@ -146,10 +146,12 @@ export class FindCursor {
       }
     } = {
       find: {
-        filter: this.filter,
-        projection: this.projection,
+        filter: this.filter
       }
     };
+    if (this.projection && Object.keys(this.projection).length > 0) {
+      command.find.projection = this.projection;
+    }
     const options = {} as QueryOptions;
     if (this.pageSize != DEFAULT_PAGE_SIZE) { 
       options.pageSize = pageSize;
