@@ -78,7 +78,12 @@ export class Db {
    * @returns Promise
    */
   async dropCollection(collectionName: string, cb?: CollectionCallback) {
-    throw new Error('Not Implemented');
+    const command = {
+      deleteCollection: {
+        name: collectionName
+      }
+    };
+    return await this.httpClient.executeCommand(command);
   }
 
   // NOOPS and unimplemented
