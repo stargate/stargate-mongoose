@@ -86,7 +86,7 @@ export class Collection {
     return executeOperation(async (): Promise<InsertManyResult<any>> => {
       const command = {
         insertMany : {
-            docs : docs,
+            documents : docs,
             options: options
         }
       };
