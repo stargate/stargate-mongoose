@@ -33,7 +33,8 @@ const HTTP_METHODS = {
 };
 
 interface AstraClientOptions {
-  applicationToken: string;
+  //applicationToken is optional, since adding username and password eventually will be an alternate option for this.
+  applicationToken?: string;
   baseApiPath?: string;
   baseUrl?: string;
   databaseId?: string;
@@ -115,15 +116,17 @@ export class HTTPClient {
     }
 
     if (!options.applicationToken) {
+      //TODOV3 Replace this with auth call to get logged in user by providing username and password
       throw new Error('applicationToken required for initialization');
+    } else{
+      this.applicationToken = options.applicationToken;
     }
 
     if (options.logLevel) {
       setLevel(options.logLevel);
     }
 
-    this.baseApiPath = options.baseApiPath ?? '';
-    this.applicationToken = options.applicationToken;
+    this.baseApiPath = options.baseApiPath ?? '';    
     this.authHeaderName = options.authHeaderName || DEFAULT_AUTH_HEADER;
   }
 

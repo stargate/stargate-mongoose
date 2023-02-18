@@ -88,7 +88,7 @@ export class Connection extends MongooseConnection {
         model.init(() => {});
       }
 
-      const client = await Client.connect(uri);
+      const client = await Client.connect(uri, options);
       this.client = client;
       this.db = client.db();
 
