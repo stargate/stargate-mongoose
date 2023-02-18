@@ -210,22 +210,25 @@ export class HTTPClient {
       method: HTTP_METHODS.post,
       data
     });
-    handleIfErrorResponse(response);
+    handleIfErrorResponse(response, data);
     return response;
   }
 }
 
 export class StargateServerError extends Error {
-  errors: any[]
-  constructor(response: any) {
-    super(JSON.stringify(response.errors));
+  errors: any[];
+  command: Record<string, any>;
+  constructor(response: any, command: Record<string, any>) {
+    const commandName = Object.keys(command)[0] || 'unknown';
+    super(`Command "${commandName}" failed with the following errors: ${JSON.stringify(response.errors)}`);
     this.errors = response.errors;
+    this.command = command;
   }
 }
 
-const handleIfErrorResponse = (response: any) => {
+const handleIfErrorResponse = (response: any, data: Record<string, any>) => {
   if(response.errors && response.errors.length > 0){
-    throw new StargateServerError(response);
+    throw new StargateServerError(response, data);
   }
 }
 
