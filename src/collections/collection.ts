@@ -102,6 +102,10 @@ export class Collection {
   async updateOne(query: any, update: any, options?: UpdateOptions, cb?: any) {
     ({ options, cb } = setOptionsAndCb(options, cb));
     return executeOperation(async (): Promise<AstraUpdateResult> => {
+      if (options != null && 'session' in options) {
+        options = { ...options };
+        delete options.session;
+      }
       const command = {
         updateOne: {
           filter: query,
@@ -167,29 +171,35 @@ export class Collection {
     return;//TODOV3 returning as succeeded for now for testing
   }
 
-  find(query: any, projection?: any, options?: any, cb?: any) {
+  find(query: any, options?: any, cb?: any) {
     ({ options, cb } = setOptionsAndCb(options, cb));
-    const cursor = new FindCursor(this, query, projection, options);
+    const cursor = new FindCursor(this, query, options);
     if (cb) {
       return cb(undefined, cursor);
     }
     return cursor;
   }
 
-  async findOne(query: any, projection?: any, options?: any, cb?: any) {
+  async findOne(query: any, options?: any, cb?: any) {
     ({ options, cb } = setOptionsAndCb(options, cb));
     return executeOperation(async (): Promise<any | null> => {
+      // Workaround for Automattic/mongoose#13052
+      if (options && options.session == null) {
+        delete options.session;
+      }
+      // Workaround because Mongoose `save()` uses `findOne({ _id }, { projection: { _id: 1 } })`
+      // if there's no updates, which causes Stargate server to return an error
+      if (options && 'projection' in options) {
+        delete options.projection;
+      }
+
       const command = {
         findOne : {
           filter : query,
-          projection: projection,
           options: options
         }
       };
-      // Avoid empty projections
-      if (projection == null || Object.keys(projection).length === 0) {
-        delete command.findOne.projection;
-      }
+
       const resp = await this.httpClient.executeCommand(command);
       return resp.data.docs[0];
     }, cb);

@@ -208,5 +208,6 @@ export const getNestedPathRawValue = (doc: any, key: string) => {
 export type QueryOptions = {
   pageSize?: number,
   pageState?: string|null,
-  limit?: number
+  limit?: number,
+  projection?: any
 }
