@@ -29,12 +29,12 @@ export class Collection extends MongooseCollection {
     return this.conn.db.collection(this.name);
   }
 
-  find(query: any, projection?: any, options?: any, cb?: any) {
-    return this.collection.find(query, projection, options, cb);
+  find(query: any, options?: any, cb?: any) {
+    return this.collection.find(query, options, cb);
   }
 
-  findOne(query: any, projection?: any, options?: any, cb?: any) {
-    return this.collection.findOne(query, projection, options, cb);
+  findOne(query: any, options?: any, cb?: any) {
+    return this.collection.findOne(query, options, cb);
   }
 
   insertOne(doc: any, options?: any, cb?: any) {

@@ -33,17 +33,16 @@ for (const testClient in testClients) {
       }
 
       db = astraClient.db();
+      await db.dropCollection(TEST_COLLECTION_NAME);
+    });
+
+    beforeEach(async function() {
       await db.createCollection(TEST_COLLECTION_NAME);
       collection = db.collection(TEST_COLLECTION_NAME);
     });
 
-    beforeEach(async function() {
-      await collection?.deleteMany({});
-    });
-
-    after(() => {
-      // run drop collection async to save time
-      db?.dropCollection(TEST_COLLECTION_NAME);
+    afterEach(async function() {
+      await db.dropCollection(TEST_COLLECTION_NAME);
     });
 
     describe('Collection initialization', () => {

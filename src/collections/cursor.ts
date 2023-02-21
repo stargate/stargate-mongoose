@@ -26,7 +26,6 @@ interface ResultCallback {
 export class FindCursor {
   collection: Collection;
   filter: any;
-  projection: any;
   options: any;
   documents: Record<string, any>[] = [];
   status: string = 'uninitialized';
@@ -45,10 +44,9 @@ export class FindCursor {
    * @param filter
    * @param options
    */
-  constructor(collection: Collection, filter: any, projection?: any, options?: any) {
+  constructor(collection: Collection, filter: any, options?: any) {
     this.collection = collection;
     this.filter = filter;
-    this.projection = projection;
     this.options = options;
     this.limit = options?.limit || Infinity;
     this.status = 'initialized';
@@ -146,10 +144,13 @@ export class FindCursor {
       }
     } = {
       find: {
-        filter: this.filter,
-        projection: this.projection,
+        filter: this.filter
       }
     };
+    // Workaround for Automattic/mongoose#13050
+    if (this.options && this.options.projection && Object.keys(this.options.projection).length > 0) {
+      command.find.projection = this.options.projection;
+    }
     const options = {} as QueryOptions;
     if (this.pageSize != DEFAULT_PAGE_SIZE) { 
       options.pageSize = pageSize;
