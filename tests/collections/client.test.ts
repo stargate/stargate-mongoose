@@ -57,31 +57,27 @@ describe('StargateMongoose - collections.Client', () => {
         done();
       });
     });
-    it('should initialize a Client connection with a uri using connect with overrides and a callback', done => {
+    it('should initialize a Client connection with a uri using connect with overrides', async () => {
       const AUTH_TOKEN_TO_CHECK = "123";
       const KEYSPACE_TO_CHECK = "keyspace1";
       const BASE_API_PATH_TO_CHECK = "baseAPIPath1";
       const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
-      Client.connect(astraUri, {
+      const client = await Client.connect(astraUri, {
           applicationToken: AUTH_TOKEN_TO_CHECK,
           keyspaceName: KEYSPACE_TO_CHECK,
           baseApiPath: BASE_API_PATH_TO_CHECK,
           logLevel: LOG_LEVEL_TO_CHECK,
           authHeaderName: AUTH_HEADER_NAME_TO_CHECK
-        },
-        (err, client) => {
-          assert.strictEqual(err, undefined);
-          assert.ok(client);
-          assert.ok(client.httpClient);
-          assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
-          assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
-          assert.strictEqual(client.httpClient.baseApiPath, BASE_API_PATH_TO_CHECK);          
-          assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
-          const db = client.db();
-          assert.ok(db);
-          done();
-        });
+        });        
+        assert.ok(client);
+        assert.ok(client.httpClient);
+        assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
+        assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
+        assert.strictEqual(client.httpClient.baseApiPath, BASE_API_PATH_TO_CHECK);          
+        assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
+        const db = client.db();
+        assert.ok(db);
     });
     it('should initialize a Client connection with a uri using the constructor', () => {
       const client = new Client(baseUrl  , {      
