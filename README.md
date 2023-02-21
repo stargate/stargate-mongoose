@@ -86,10 +86,8 @@ STARGATE_BASE_URL=http://localhost:8082
 STARGATE_AUTH_URL=http://localhost:8081/v1/auth
 STARGATE_USERNAME=cassandra
 STARGATE_PASSWORD=cassandra
-AUTH_HEADER_NAME=
 ```
 _When ASTRA_URI is specified, ASTRA_DB_KEYSPACE, ASTRA_DB_ID and ASTRA_DB_REGION are ignored_
-_When not set, the AUTH_HEADER_NAME is defaulted to 'X-Cassandra-Token'
 
 Launch a stargate docker container: 
 

@@ -25,6 +25,7 @@ interface ParsedUri {
   keyspaceName: string;
   applicationToken: string;
   logLevel: string;
+  authHeaderName: string;
 }
 
 /**
@@ -39,6 +40,7 @@ export const parseUri = (uri: string): ParsedUri => {
   const applicationToken = parsedUrl.query?.applicationToken as string;
   const baseApiPath = parsedUrl.query?.baseApiPath as string;
   const logLevel = parsedUrl.query?.logLevel as string;
+  const authHeaderName = parsedUrl.query?.authHeaderName as string;
   if (!keyspaceName) {
     throw new Error('Invalid URI: keyspace is required');
   }
@@ -50,7 +52,8 @@ export const parseUri = (uri: string): ParsedUri => {
     baseApiPath,
     keyspaceName,
     applicationToken,
-    logLevel
+    logLevel,
+    authHeaderName
   };
 };
 
@@ -68,7 +71,8 @@ export const createAstraUri = (
   region: string,
   keyspace?: string,
   applicationToken?: string,
-  logLevel?: string
+  logLevel?: string,
+  authHeaderName?: string,
 ) => {
   let uri = new url.URL(`https://${databaseId}-${region}.apps.astra.datastax.com`);
   if (keyspace) {
@@ -79,6 +83,9 @@ export const createAstraUri = (
   }
   if (logLevel) {
     uri.searchParams.append('logLevel', logLevel);
+  }
+  if(authHeaderName){
+    uri.searchParams.append('authHeaderName', authHeaderName);
   }
   return uri.toString();
 };

@@ -18,10 +18,11 @@ import { HTTPClient } from '@/src/client';
 import _ from 'lodash';
 
 interface ClientOptions {
-  applicationToken: string;
-  baseApiPath: string;
+  applicationToken?: string;
+  baseApiPath?: string;
   keyspaceName?: string;
   logLevel?: string;
+  authHeaderName?: string;
 }
 
 interface ClientCallback {
@@ -29,8 +30,6 @@ interface ClientCallback {
 }
 
 export class Client {
-  applicationToken: string;
-  baseURL: string;
   httpClient: HTTPClient;
   keyspaceName?: string;
 
@@ -40,17 +39,16 @@ export class Client {
    *            Astra: https://${databaseId}-${region}.apps.astra.datastax.com
    * @param options provide the Astra applicationToken here along with the keyspace name (optional)
    */
-  constructor(uri: string, options: ClientOptions) {
-    this.baseURL = uri;
+  constructor(baseUrl: string, options: ClientOptions) {
     this.keyspaceName = options.keyspaceName;
-    this.applicationToken = options.applicationToken;
     this.httpClient = new HTTPClient({
       baseApiPath: options.baseApiPath,
-      baseUrl: this.baseURL,
+      baseUrl: baseUrl,
       applicationToken: options.applicationToken,
-      logLevel: options.logLevel
-    });
-  }
+      logLevel: options.logLevel,
+      authHeaderName: options.authHeaderName
+});
+}
 
   /**
    * Setup a connection to the Astra/Stargate document API
@@ -60,14 +58,19 @@ export class Client {
    * @param cb an optional callback whose parameters are (err, client)
    * @returns MongoClient
    */
-  static async connect(uri: string, cb?: ClientCallback): Promise<Client> {
+  static async connect(uri: string, options?: ClientOptions | null, cb?: ClientCallback): Promise<Client> {
+    if (typeof options === 'function') {
+      cb = options;
+      options = null;
+    }
     return executeOperation(async () => {
       const parsedUri = parseUri(uri);
       const client = new Client(parsedUri.baseUrl, {
-        applicationToken: parsedUri.applicationToken,
-        baseApiPath: parsedUri.baseApiPath,
-        keyspaceName: parsedUri.keyspaceName,
-        logLevel: parsedUri.logLevel
+        applicationToken: options?.applicationToken ? options?.applicationToken : parsedUri.applicationToken,
+        baseApiPath: options?.baseApiPath ? options?.baseApiPath : parsedUri.baseApiPath,
+        keyspaceName: options?.keyspaceName ? options?.keyspaceName : parsedUri.keyspaceName,
+        logLevel: options?.logLevel,
+        authHeaderName: options?.authHeaderName,
       });
       await client.connect();
 

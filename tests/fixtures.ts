@@ -29,7 +29,7 @@ export const getAstraClient = async () => {
   if (!process.env.ASTRA_URI && (!process.env.ASTRA_DB_ID || !process.env.ASTRA_DB_APPLICATION_TOKEN)) {
     return null;
   }
-  return await Client.connect(astraUri);
+  return await Client.connect(astraUri, {authHeaderName: process.env.AUTH_HEADER_NAME});
 };
 
 export const getStargateUri = async () =>

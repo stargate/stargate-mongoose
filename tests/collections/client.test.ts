@@ -15,9 +15,11 @@
 import assert from 'assert';
 import { Client } from '@/src/collections/client';
 import { getAstraClient, astraUri } from '@/tests/fixtures';
+import { parseUri } from '@/src/collections/utils';
+
 
 describe('StargateMongoose - collections.Client', () => {
-  const baseUrl = `https://${process.env.ASTRA_DB_ID}-${process.env.ASTRA_DB_REGION}.apps.astra.datastax.com`;
+  const baseUrl = `https://db_id-region-1.apps.astra.datastax.com`;
   let astraClient: Client;
   before(async function () {
     astraClient = await getAstraClient();
@@ -39,8 +41,9 @@ describe('StargateMongoose - collections.Client', () => {
       }
     });
     it('should have unique httpClients for each db', async () => {
-      const dbFromUri = astraClient.db();
-      assert.strictEqual(dbFromUri.name, process.env.ASTRA_DB_KEYSPACE);
+      const dbFromUri = astraClient.db();      
+      const parsedUri = parseUri(astraUri);
+      assert.strictEqual(dbFromUri.name, parsedUri.keyspaceName);
       const newDb = astraClient.db('test-db');
       assert.strictEqual(newDb.name, 'test-db');
     });
@@ -54,9 +57,31 @@ describe('StargateMongoose - collections.Client', () => {
         done();
       });
     });
+    it('should initialize a Client connection with a uri using connect with overrides', async () => {
+      const AUTH_TOKEN_TO_CHECK = "123";
+      const KEYSPACE_TO_CHECK = "keyspace1";
+      const BASE_API_PATH_TO_CHECK = "baseAPIPath1";
+      const LOG_LEVEL_TO_CHECK = "info";
+      const AUTH_HEADER_NAME_TO_CHECK = "x-token";
+      const client = await Client.connect(astraUri, {
+          applicationToken: AUTH_TOKEN_TO_CHECK,
+          keyspaceName: KEYSPACE_TO_CHECK,
+          baseApiPath: BASE_API_PATH_TO_CHECK,
+          logLevel: LOG_LEVEL_TO_CHECK,
+          authHeaderName: AUTH_HEADER_NAME_TO_CHECK
+        });        
+        assert.ok(client);
+        assert.ok(client.httpClient);
+        assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
+        assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
+        assert.strictEqual(client.httpClient.baseApiPath, BASE_API_PATH_TO_CHECK);          
+        assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
+        const db = client.db();
+        assert.ok(db);
+    });
     it('should initialize a Client connection with a uri using the constructor', () => {
-      const client = new Client(baseUrl, {
-        applicationToken: process.env.ASTRA_DB_APPLICATION_TOKEN || ''
+      const client = new Client(baseUrl  , {      
+        applicationToken: "123"
       });
       assert.ok(client);
     });
@@ -70,21 +95,21 @@ describe('StargateMongoose - collections.Client', () => {
     });
     it('should initialize a Client connection with a uri using the constructor and a keyspace', () => {
       const client = new Client(baseUrl, {
-        applicationToken: process.env.ASTRA_DB_APPLICATION_TOKEN || '',
-        keyspaceName: process.env.ASTRA_DB_KEYSPACE || ''
+        applicationToken: "123",
+        keyspaceName: "keyspace1"
       });
       assert.ok(client.keyspaceName);
     });
     it('should initialize a Client connection with a uri using the constructor and a blank keyspace', () => {
       const client = new Client(baseUrl, {
-        applicationToken: process.env.ASTRA_DB_APPLICATION_TOKEN || '',
+        applicationToken: '123',
         keyspaceName: ''
       });
       assert.strictEqual(client.keyspaceName, '');
     });
     it('should connect after setting up the client with a constructor', async () => {
       const client = new Client(baseUrl, {
-        applicationToken: process.env.ASTRA_DB_APPLICATION_TOKEN || ''
+        applicationToken: '123'
       });
       await client.connect();
       assert.ok(client);
@@ -92,7 +117,7 @@ describe('StargateMongoose - collections.Client', () => {
     });
     it('should connect after setting up the client with a constructor using a callback', done => {
       const client = new Client(baseUrl, {
-        applicationToken: process.env.ASTRA_DB_APPLICATION_TOKEN || ''
+        applicationToken: '123'
       });
       client.connect((err, connectedClient) => {
         assert.ok(connectedClient);
@@ -100,19 +125,31 @@ describe('StargateMongoose - collections.Client', () => {
         done();
       });
     });
+    it('should set the auth header name as set in the options', done => {
+      const TEST_HEADER_NAME = 'test-header';
+      const client = new Client(baseUrl, {
+        applicationToken: '123',
+        authHeaderName: TEST_HEADER_NAME
+      });
+      client.connect((err, connectedClient) => {
+        assert.ok(connectedClient);
+        assert.strictEqual(connectedClient.httpClient.authHeaderName, TEST_HEADER_NAME);
+        done();
+      });
+    });
   });
   describe('Client Db operations', () => {
     it('should return a db after setting up the client with a constructor', async () => {
       const client = new Client(baseUrl, {
-        applicationToken: process.env.ASTRA_DB_APPLICATION_TOKEN || ''
+        applicationToken: '123'
       });
       await client.connect();
-      const db = client.db(process.env.ASTRA_DB_KEYSPACE);
+      const db = client.db('keyspace1');
       assert.ok(db);
     });
     it('should not return a db if no name is provided', async () => {
       const client = new Client(baseUrl, {
-        applicationToken: process.env.ASTRA_DB_APPLICATION_TOKEN || ''
+        applicationToken: '123'
       });
       await client.connect();
       try {
