@@ -161,7 +161,7 @@ export class Collection {
       const deleteOneResp = await this.httpClient.executeCommand(command);
       return {
         acknowledged: true,
-        deletedCount: deleteOneResp.status.deletedCount 
+        deletedCount: deleteOneResp.status.deletedIds.length 
       };
     }, cb);
   }
