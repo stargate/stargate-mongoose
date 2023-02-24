@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { createAstraUri, createStargateUri } from '@/src/collections/utils';
-import { Client } from '@/src/collections/client';
+import { Client, ClientOptions } from '@/src/collections/client';
 import { randFirstName, randLastName } from '@ngneat/falso';
 
 export const TEST_COLLECTION_NAME = 'collection1';
@@ -29,7 +29,14 @@ export const getAstraClient = async () => {
   if (!process.env.ASTRA_URI && (!process.env.ASTRA_DB_ID || !process.env.ASTRA_DB_APPLICATION_TOKEN)) {
     return null;
   }
-  return await Client.connect(astraUri, {authHeaderName: process.env.AUTH_HEADER_NAME});
+  let options:ClientOptions = {authHeaderName: process.env.AUTH_HEADER_NAME};
+  if(process.env.STARGATE_AUTH_URL && process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD){
+    options.authUrl = process.env.STARGATE_AUTH_URL;
+    options.username = process.env.STARGATE_USERNAME;
+    options.password = process.env.STARGATE_PASSWORD;
+  }
+  options.logLevel = 'debug';
+  return await Client.connect(astraUri, options);
 };
 
 export const getStargateUri = async () =>
