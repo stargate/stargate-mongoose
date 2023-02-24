@@ -35,7 +35,7 @@ export const getAstraClient = async () => {
     options.username = process.env.STARGATE_USERNAME;
     options.password = process.env.STARGATE_PASSWORD;
   }
-  options.logLevel = 'debug';
+  //options.logLevel = 'debug';
   return await Client.connect(astraUri, options);
 };
 

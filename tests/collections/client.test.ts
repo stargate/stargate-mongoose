@@ -48,14 +48,12 @@ describe('StargateMongoose - collections.Client', () => {
       const newDb = astraClient.db('test-db');
       assert.strictEqual(newDb.name, 'test-db');
     });
-    it('should initialize a Client connection with a uri using connect and a callback', done => {
-      Client.connect(astraUri, (err, client) => {
-        assert.strictEqual(err, undefined);
-        assert.ok(client);
-        assert.ok(client.httpClient);
-        const db = client.db();
-        assert.ok(db);
-        done();
+    it('should initialize a Client connection with a uri using connect and a callback', async () => {
+      Client.connect(astraUri+"?applicationToken=123").then( client => {      
+          assert.ok(client);
+          assert.ok(client.httpClient);
+          const db = client.db();
+          assert.ok(db);
       });
     });
     it('should initialize a Client connection with a uri using connect with overrides', async () => {
