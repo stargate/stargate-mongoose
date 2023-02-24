@@ -54,7 +54,7 @@ interface RequestOptions {
   ttl?: string;
 }
 
-class APIResponse{
+export interface APIResponse{
   status?: any
   data?: any
   errors?: any
@@ -148,7 +148,7 @@ export class HTTPClient {
     this.authHeaderName = options.authHeaderName || DEFAULT_AUTH_HEADER;
   }
 
-  async _request(requestInfo: AxiosRequestConfig):Promise<APIResponse> {
+  async _request(requestInfo: AxiosRequestConfig): Promise<APIResponse> {
     try {
       if(this.applicationToken === ''){
         logger.debug("@stargate-mongoose/rest: getting token");
