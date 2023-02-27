@@ -28,7 +28,7 @@ jobs:
       jsonapi:
         image: stargateio/jsonapi:v1.0.0-ALPHA-1
         env:
-          QUARKUS_GRPC_CLIENTS_BRIDGE_HOST: coordinator
+          QUARKUS_GRPC_CLIENTS_BRIDGE_HOST: localhost
           QUARKUS_GRPC_CLIENTS_BRIDGE_PORT: 8091
           QUARKUS_HTTP_ACCESS_LOG_ENABLED: true
           QUARKUS_LOG_LEVEL: INFO     
