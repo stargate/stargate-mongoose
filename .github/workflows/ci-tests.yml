@@ -26,7 +26,7 @@ jobs:
           - 8081:8081
           - 9042:9042
       jsonapi:
-        image: stargateio/jsonapi:1.0.0-ALPHA-2-SNAPSHOT
+        image: stargateio/jsonapi:v1.0.0-ALPHA-1
         env:
           QUARKUS_GRPC_CLIENTS_BRIDGE_HOST: coordinator
           QUARKUS_GRPC_CLIENTS_BRIDGE_PORT: 8091
