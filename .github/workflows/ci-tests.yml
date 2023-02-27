@@ -4,54 +4,54 @@ on:
     branches:
       - main
   push:
-services:
-  coordinator:
-    image: stargateio/coordinator-dse-68:v2.0.8
-    env:
-      CLUSTER_NAME: stargate
-      DEVELOPER_MODE: true
-      CLUSTER_VERSION: 6.8
-      DSE: 1
-      RACK_NAME: rack1
-      DATACENTER_NAME: dc1
-      ENABLE_AUTH: true           
-    ports:
-      - 8090:8090
-      - 8081:8081
-      - 9042:9042
-      - 8091:8091
-    options:
-      --health-cmd "curl http://localhost:8081/swagger-ui"
-      --health-interval 10s
-      --health-timeout 10s
-      --health-retries 10
-      --health-start-period 10s
-  jsonapi:
-    image: stargateio/jsonapi:v1.0.0-ALPHA-1
-    env:
-      QUARKUS_GRPC_CLIENTS_BRIDGE_HOST: localhost
-      QUARKUS_GRPC_CLIENTS_BRIDGE_PORT: 8091
-      QUARKUS_HTTP_ACCESS_LOG_ENABLED: true
-      QUARKUS_LOG_LEVEL: INFO     
-    ports:
-      - 8080:8080
-    options:
-      --health-cmd "curl http://localhost:8080/swagger-ui"
-      --health-interval 10s
-      --health-timeout 10s
-      --health-retries 10
-      --health-start-period 10s
-    depends_on:
-      - coordinator
+
 jobs:
   tests:
     runs-on: ubuntu-latest
     env:
       ASTRA_URI: http://localhost:8080/v1/testks1?applicationToken=d3eeb6db-8361-40dd-b9e1-2e89697376fd
     services:
-      coordinator:
+      coorinator:
+        image: stargateio/coordinator-dse-68:v2.0.8
+        env:
+          CLUSTER_NAME: stargate
+          DEVELOPER_MODE: true
+          CLUSTER_VERSION: 6.8
+          DSE: 1
+          RACK_NAME: rack1
+          DATACENTER_NAME: dc1
+          ENABLE_AUTH: true           
+        ports:
+          - 8090:8090
+          - 8081:8081
+          - 9042:9042
+          - 8091:8091
+        options:
+          --health-cmd "curl http://localhost:8081/swagger-ui"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 10
+          --health-start-period 10s
       jsonapi:
+        image: stargateio/jsonapi:v1.0.0-ALPHA-1
+        env:
+          QUARKUS_GRPC_CLIENTS_BRIDGE_HOST: localhost
+          QUARKUS_GRPC_CLIENTS_BRIDGE_PORT: 8091
+          QUARKUS_HTTP_ACCESS_LOG_ENABLED: true
+          QUARKUS_LOG_LEVEL: INFO     
+        ports:
+          - 8080:8080
+        options:
+          --health-cmd "curl http://localhost:8080/swagger-ui"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 10
+          --health-start-period 10s
     steps:
+      - name: Wait for services
+        run: |
+          while ! nc -z localhost 8080; do sleep 1; done
+          while ! nc -z localhost 8081; do sleep 1; done
       - uses: actions/checkout@v3
       - name: Setting up the node version
         uses: actions/setup-node@v3
