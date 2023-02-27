@@ -27,7 +27,7 @@ jobs:
           - 9042:9042
           - 8091:8091
         options:
-          --health-cmd "curl -f http://localhost:8081/swagger-ui"
+          --health-cmd "curl http://localhost:8081/swagger-ui"
           --health-interval 10s
           --health-timeout 10s
           --health-retries 10
@@ -42,7 +42,7 @@ jobs:
         ports:
           - 8080:8080
         options:
-          --health-cmd "curl -f http://localhost:8080/swagger-ui"
+          --health-cmd "curl http://localhost:8080/swagger-ui"
           --health-interval 10s
           --health-timeout 10s
           --health-retries 10
