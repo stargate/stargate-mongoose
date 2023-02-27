@@ -169,7 +169,7 @@ export const setOptionsAndCb = (options: any, cb: any) => {
  * @param cb a node callback function
  * @returns Promise
  */
-export const executeOperation = async (operation: any, cb: any) => {
+export const executeOperation = async (operation: any, cb?: any) => {
   let res = {};
   let err = undefined;
   try {

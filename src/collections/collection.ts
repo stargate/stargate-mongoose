@@ -219,10 +219,6 @@ export class Collection {
 
   // deprecated and overloaded
 
-  async remove(query: any, options: any, cb?: any) {
-    return await this.deleteMany(query, options, cb);
-  }
-
   async insert(docs: any[], options?: any, cb?: any) {
     return await this.insertMany(docs, options, cb);
   }
@@ -236,14 +232,6 @@ export class Collection {
   */
   async count(query: any, options: any, cb?: any) {
     throw new Error('Not Implemented');
-  }
-
-
- /** 
-  * @deprecated
-  */
-  async update(query: any, update: any, options: any, cb?: any) {
-    return await this.updateMany(query, update, options, cb);
   }
 
   async findOneAndUpdate(query: any, update: any, options?: FindOneAndUpdateOptions, cb?: any) {
