@@ -46,4 +46,4 @@ jobs:
       - name: generating token given username and password
         run: |
           echo "JSONAPI_AUTH_TOKEN=`curl -k --location 'http://localhost:8081/v1/auth' --header 'Content-Type: application/json' --data '{ \"username\": \"cassandra\", \"password\": \"cassandra\" }' | jq '.authToken'`" >> $GITHUB_ENV
-          echo "$JSONAPI_AUTH_TOKEN"
+          echo "JSONAPI_AUTH_TOKEN : ${{ env.JSONAPI_AUTH_TOKEN }}"
