@@ -1,0 +1,47 @@
+name: Tests - stargate-mongoose
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      ASTRA_URI: http://localhost:8080/v1/testks1?applicationToken=d3eeb6db-8361-40dd-b9e1-2e89697376fd
+    services:
+      coorinator:
+        image: stargateio/coordinator-dse-68
+        env:
+          CLUSTER_NAME: stargate
+          DEVELOPER_MODE: true
+          CLUSTER_VERSION: 6.8
+          DSE: 1
+          RACK_NAME: rack1
+          DATACENTER_NAME: dc1
+          ENABLE_AUTH: true           
+        ports:
+          - 8090:8090
+          - 8081:8081
+          - 8084:8084
+          - 9042:9042
+      jsonapi:
+        image: stargateio/jsonapi
+        env:
+          QUARKUS_GRPC_CLIENTS_BRIDGE_HOST: coordinator
+          QUARKUS_GRPC_CLIENTS_BRIDGE_PORT: 8091
+          QUARKUS_HTTP_ACCESS_LOG_ENABLED: true
+          QUARKUS_LOG_LEVEL: INFO     
+        ports:
+          - 8080:8080
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setting up the node version
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.15.0
+      - name: setup project
+        run: npm i
+      - name: run tests
+        run: npm test
