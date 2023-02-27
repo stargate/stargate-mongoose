@@ -42,5 +42,11 @@ jobs:
           node-version: 16.15.0
       - name: setup project
         run: npm i
+      - name: generating token given username and password
+        run: |
+          echo "JSONAPI_AUTH_TOKEN=curl --location 'http://coordinator:8081/v1/auth' --header 'Content-Type: application/json' --data '{ \"username\": \"cassandra\", \"password\": \"cassandra\" }' | jq '.authToken'" >> $GITHUB_ENV
+      - name: create required keyspace
+        run: |
+          curl -X 'POST' 'http://jsonapi:8080/v1' -H 'accept: application/json' -H 'X-Cassandra-Token: ${{ env.JSONAPI_AUTH_TOKEN }}' -H 'Content-Type: application/json' -d '{"createNamespace": {"name": "testks1"}}'
       - name: run tests
         run: npm test
