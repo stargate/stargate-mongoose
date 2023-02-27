@@ -9,7 +9,7 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     env:
-      ASTRA_URI: http://localhost:8080/v1/testks1?applicationToken=d3eeb6db-8361-40dd-b9e1-2e89697376fd
+      ASTRA_URI: http://jsonapi:8080/v1/testks1?applicationToken=d3eeb6db-8361-40dd-b9e1-2e89697376fd
     services:
       coorinator:
         image: stargateio/coordinator-dse-68:v2.0.8
