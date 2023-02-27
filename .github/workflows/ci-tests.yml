@@ -25,6 +25,7 @@ jobs:
           - 8090:8090
           - 8081:8081
           - 9042:9042
+          - 8091:8091
       jsonapi:
         image: stargateio/jsonapi:v1.0.0-ALPHA-1
         env:
