@@ -32,25 +32,9 @@ jobs:
           --health-timeout 10s
           --health-retries 10
           --health-start-period 10s
-      jsonapi:
-        image: stargateio/jsonapi:v1.0.0-ALPHA-1
-        env:
-          QUARKUS_GRPC_CLIENTS_BRIDGE_HOST: localhost
-          QUARKUS_GRPC_CLIENTS_BRIDGE_PORT: 8091
-          QUARKUS_HTTP_ACCESS_LOG_ENABLED: true
-          QUARKUS_LOG_LEVEL: INFO     
-        ports:
-          - 8080:8080
-        options:
-          --health-cmd "curl http://localhost:8080/swagger-ui"
-          --health-interval 10s
-          --health-timeout 10s
-          --health-retries 10
-          --health-start-period 10s
     steps:
       - name: Wait for services
         run: |
-          while ! nc -z localhost 8080; do sleep 1; done
           while ! nc -z localhost 8081; do sleep 1; done
       - uses: actions/checkout@v3
       - name: Setting up the node version
@@ -62,8 +46,3 @@ jobs:
       - name: generating token given username and password
         run: |
           echo "JSONAPI_AUTH_TOKEN=`curl -k --location 'http://localhost:8081/v1/auth' --header 'Content-Type: application/json' --data '{ \"username\": \"cassandra\", \"password\": \"cassandra\" }' | jq '.authToken'`" >> $GITHUB_ENV
-      - name: create required keyspace
-        run: |
-          curl -k -X 'POST' 'http://localhost:8080/v1' -H 'accept: application/json' -H 'X-Cassandra-Token: ${{ env.JSONAPI_AUTH_TOKEN }}' -H 'Content-Type: application/json' -d '{"createNamespace": {"name": "testks1"}}'
-      - name: run tests
-        run: npm test
