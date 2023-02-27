@@ -12,7 +12,7 @@ jobs:
       ASTRA_URI: http://localhost:8080/v1/testks1?applicationToken=d3eeb6db-8361-40dd-b9e1-2e89697376fd
     services:
       coorinator:
-        image: stargateio/coordinator-dse-68
+        image: stargateio/coordinator-dse-68:v2.0.8
         env:
           CLUSTER_NAME: stargate
           DEVELOPER_MODE: true
@@ -27,7 +27,7 @@ jobs:
           - 8084:8084
           - 9042:9042
       jsonapi:
-        image: stargateio/jsonapi
+        image: stargateio/jsonapi:1.0.0-ALPHA-2-SNAPSHOT
         env:
           QUARKUS_GRPC_CLIENTS_BRIDGE_HOST: coordinator
           QUARKUS_GRPC_CLIENTS_BRIDGE_PORT: 8091
