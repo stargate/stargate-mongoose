@@ -41,6 +41,7 @@ jobs:
           QUARKUS_LOG_LEVEL: INFO     
         ports:
           - 8080:8080
+        depends_on: coorinator
         options:
           --health-cmd "curl http://localhost:8080/swagger-ui"
           --health-interval 10s
