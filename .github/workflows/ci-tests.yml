@@ -28,7 +28,11 @@ jobs:
           node-version: 16.15.0
       - name: setup project
         run: npm i
-      - name: generating token given username and password
+      - name: generate token given username and password
         run: |
           json_api_token=`curl -k --location 'http://localhost:8081/v1/auth' --header 'Content-Type: application/json' --data '{ "username": "cassandra", "password": "cassandra" }' | jq '.authToken'`
           echo "token: $json_api_token"
+      - name: create keyspace as required
+        run: |
+          create_keyspace_response=`curl -k -X 'POST' 'http://localhost:8080/v1' -H 'accept: application/json' -H 'X-Cassandra-Token: $json_api_token' -H 'Content-Type: application/json' -d '{"createNamespace": {"name": "testks1"}}'`
+          echo "Create keyspace response: $create_keyspace_response"
