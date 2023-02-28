@@ -165,6 +165,15 @@ export class HTTPClient {
         }        
       }
       logger.debug("_request with URL %s", requestInfo.url);      
+      if(!this.applicationToken){
+        return {
+          errors: [
+            {
+              message: "Unable to get token for the credentials provided"
+            }
+          ]
+         }
+      }
       const response = await axiosAgent({
         url: requestInfo.url,
         data: requestInfo.data,
