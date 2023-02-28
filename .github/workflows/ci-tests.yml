@@ -11,10 +11,10 @@ jobs:
     env:
       ASTRA_URI: http://localhost:8080/v1/testks1?applicationToken=d3eeb6db-8361-40dd-b9e1-2e89697376fd    
     steps:      
+      - uses: actions/checkout@v3
       - name: Set up JSON API server
         run: |
           bin/start_json_api.sh
-      - uses: actions/checkout@v3
       - name: Setting up the node version
         uses: actions/setup-node@v3
         with:
