@@ -30,7 +30,7 @@ jobs:
         run: npm i
       - name: generating token given username and password
         run: |
-          json_api_token= $(curl -k --location 'http://localhost:8081/v1/auth' --header 'Content-Type: application/json' --data '{ "username": "cassandra", "password": "cassandra" }')
+          json_api_token=`curl -k --location 'http://localhost:8081/v1/auth' --header 'Content-Type: application/json' --data '{ "username": "cassandra", "password": "cassandra" }'`
           echo "token: $json_api_token"
           echo "JSONAPI_AUTH_TOKEN=$json_api_token" >> $GITHUB_ENV
           echo "JSONAPI_AUTH_TOKEN : $JSONAPI_AUTH_TOKEN"
