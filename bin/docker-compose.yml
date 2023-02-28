@@ -20,7 +20,7 @@ services:
       - ENABLE_AUTH=true
       - DEVELOPER_MODE=true
     healthcheck:
-      test: curl -f http://localhost:8084/checker/readiness || exit 1
+      test: curl -f http://localhost:8081/swagger-ui || exit 1
       interval: 15s
       timeout: 10s
       retries: 10
