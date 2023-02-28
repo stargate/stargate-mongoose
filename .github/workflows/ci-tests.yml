@@ -13,8 +13,7 @@ jobs:
     steps:      
       - name: disable and stop mono-xsp4.service
         run: |
-          sudo systemctl stop mono-xsp4.service || true
-          sudo systemctl disable mono-xsp4.service || true
+          sudo kill -9 $(sudo lsof -t -i:8084)
       - uses: actions/checkout@v3
       - name: Set up JSON API server
         run: |
