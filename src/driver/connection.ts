@@ -91,22 +91,7 @@ export class Connection extends MongooseConnection {
 
       const client = await Client.connect(uri, options);
       this.client = client;
-
-      // client.keyspaceName = 'v1/cycling'
-      if (client.keyspaceName) {
-        const name = client.keyspaceName.replace(/^v1\//, '');
-        const data = {
-          createNamespace: {
-            name
-          }
-        };
-        const response = await client.httpClient._request({
-          url: client.httpClient.baseUrl + '/v1',
-          method: 'POST',
-          data
-        });
-        handleIfErrorResponse(response, data);
-      }
+      
 
       this.db = client.db();
 

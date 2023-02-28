@@ -91,7 +91,6 @@ axiosAgent.interceptors.request.use(requestInterceptor);
 axiosAgent.interceptors.response.use(responseInterceptor);
 
 export class HTTPClient {
-  baseApiPath: string;
   baseUrl: string;
   applicationToken: string;
   authHeaderName: string;
@@ -125,8 +124,9 @@ export class HTTPClient {
     if (options.logLevel) {
       setLevel(options.logLevel);
     }
-
-    this.baseApiPath = options.baseApiPath ?? '';    
+    if(options.baseApiPath){
+      this.baseUrl = this.baseUrl + "/" + options.baseApiPath;
+    }
     this.authHeaderName = options.authHeaderName || DEFAULT_AUTH_HEADER;
   }
 

@@ -18,6 +18,8 @@ import { ObjectId } from 'mongodb';
 import { logger } from '@/src/logger';
 import axios from 'axios';
 import { type } from 'os';
+import { Client } from '@/src/collections/client';
+import { handleIfErrorResponse } from '@/src/client/httpClient'
 
 interface ParsedUri {
   baseUrl: string;
@@ -36,7 +38,7 @@ interface ParsedUri {
 export const parseUri = (uri: string): ParsedUri => {
   const parsedUrl = url.parse(uri, true);
   const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
-  const keyspaceName = parsedUrl.pathname?.replace('/', '');
+  const keyspaceName = parsedUrl.pathname?.substring(parsedUrl.pathname?.lastIndexOf('/') + 1)
   const applicationToken = parsedUrl.query?.applicationToken as string;
   const baseApiPath = parsedUrl.query?.baseApiPath as string;
   const logLevel = parsedUrl.query?.logLevel as string;
@@ -217,4 +219,18 @@ export type QueryOptions = {
   pageState?: string|null,
   limit?: number,
   projection?: any
+}
+
+export async function createNamespace(client:Client, name: string) {  
+  const data = {
+    createNamespace: {
+      name
+    }
+  };
+  const response = await client.httpClient._request({
+    url: client.httpClient.baseUrl,
+    method: 'POST',
+    data
+  });
+  handleIfErrorResponse(response, data);
 }

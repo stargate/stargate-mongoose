@@ -68,13 +68,14 @@ describe('StargateMongoose - collections.Client', () => {
           keyspaceName: KEYSPACE_TO_CHECK,
           baseApiPath: BASE_API_PATH_TO_CHECK,
           logLevel: LOG_LEVEL_TO_CHECK,
-          authHeaderName: AUTH_HEADER_NAME_TO_CHECK
+          authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
+          createNamespaceOnConnect: false
         });        
         assert.ok(client);
         assert.ok(client.httpClient);
         assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
         assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
-        assert.strictEqual(client.httpClient.baseApiPath, BASE_API_PATH_TO_CHECK);          
+        assert.strictEqual(client.httpClient.baseUrl, parseUri(astraUri).baseUrl + "/" + BASE_API_PATH_TO_CHECK);          
         assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
         const db = client.db();
         assert.ok(db);
@@ -109,7 +110,8 @@ describe('StargateMongoose - collections.Client', () => {
     });
     it('should connect after setting up the client with a constructor', async () => {
       const client = new Client(baseUrl, {
-        applicationToken: '123'
+        applicationToken: '123',
+        createNamespaceOnConnect: false
       });
       await client.connect();
       assert.ok(client);
@@ -117,7 +119,8 @@ describe('StargateMongoose - collections.Client', () => {
     });
     it('should connect after setting up the client with a constructor using a callback', done => {
       const client = new Client(baseUrl, {
-        applicationToken: '123'
+        applicationToken: '123',
+        createNamespaceOnConnect: false
       });
       client.connect((err, connectedClient) => {
         assert.ok(connectedClient);
@@ -129,7 +132,8 @@ describe('StargateMongoose - collections.Client', () => {
       const TEST_HEADER_NAME = 'test-header';
       const client = new Client(baseUrl, {
         applicationToken: '123',
-        authHeaderName: TEST_HEADER_NAME
+        authHeaderName: TEST_HEADER_NAME,
+        createNamespaceOnConnect: false
       });
       client.connect((err, connectedClient) => {
         assert.ok(connectedClient);
@@ -141,7 +145,8 @@ describe('StargateMongoose - collections.Client', () => {
   describe('Client Db operations', () => {
     it('should return a db after setting up the client with a constructor', async () => {
       const client = new Client(baseUrl, {
-        applicationToken: '123'
+        applicationToken: '123',
+        createNamespaceOnConnect: false
       });
       await client.connect();
       const db = client.db('keyspace1');
@@ -149,7 +154,8 @@ describe('StargateMongoose - collections.Client', () => {
     });
     it('should not return a db if no name is provided', async () => {
       const client = new Client(baseUrl, {
-        applicationToken: '123'
+        applicationToken: '123',
+        createNamespaceOnConnect: false
       });
       await client.connect();
       try {
