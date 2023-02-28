@@ -36,7 +36,8 @@ jobs:
           json_api_token=`curl -k --location 'http://localhost:8081/v1/auth' --header 'Content-Type: application/json' --data '{ "username": "cassandra", "password": "cassandra" }' | jq '.authToken'`
           echo "token: $json_api_token"
       - name: Wait for services
-        run: |          
+        run: |       
+          docker ps   
           while ! nc -z localhost 8081; do sleep 1; done
       - name: create keyspace as required
         run: |
