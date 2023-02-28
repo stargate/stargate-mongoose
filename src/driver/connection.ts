@@ -18,6 +18,7 @@ import { default as MongooseConnection } from 'mongoose/lib/connection';
 import STATES from 'mongoose/lib/connectionstate';
 import _ from 'lodash';
 import { executeOperation } from '../collections/utils';
+import { handleIfErrorResponse } from '../client/httpClient';
 
 export class Connection extends MongooseConnection {
   debugType = 'StargateMongooseConnection';
@@ -90,6 +91,23 @@ export class Connection extends MongooseConnection {
 
       const client = await Client.connect(uri, options);
       this.client = client;
+
+      // client.keyspaceName = 'v1/cycling'
+      if (client.keyspaceName) {
+        const name = client.keyspaceName.replace(/^v1\//, '');
+        const data = {
+          createNamespace: {
+            name
+          }
+        };
+        const response = await client.httpClient._request({
+          url: client.httpClient.baseUrl + '/v1',
+          method: 'POST',
+          data
+        });
+        handleIfErrorResponse(response, data);
+      }
+
       this.db = client.db();
 
       this.readyState = STATES.connected;

@@ -229,7 +229,7 @@ export class StargateServerError extends Error {
   }
 }
 
-const handleIfErrorResponse = (response: any, data: Record<string, any>) => {
+export const handleIfErrorResponse = (response: any, data: Record<string, any>) => {
   if(response.errors && response.errors.length > 0){
     throw new StargateServerError(response, data);
   }
