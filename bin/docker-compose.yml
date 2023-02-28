@@ -9,6 +9,7 @@ services:
       - "9042:9042"
       - "8081:8081"
       - "8090:8090"
+      - "8084:8084"
     mem_limit: 2G
     environment:
       - JAVA_OPTS="-Xmx2G"
@@ -20,7 +21,7 @@ services:
       - ENABLE_AUTH=true
       - DEVELOPER_MODE=true
     healthcheck:
-      test: curl -f http://localhost:8081/swagger-ui || exit 1
+      test: curl -f http://localhost:8084/checker/readiness || exit 1
       interval: 15s
       timeout: 10s
       retries: 10

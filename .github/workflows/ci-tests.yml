@@ -11,6 +11,10 @@ jobs:
     env:
       ASTRA_URI: http://localhost:8080/v1/testks1?applicationToken=d3eeb6db-8361-40dd-b9e1-2e89697376fd    
     steps:      
+      - name: disable and stop mono-xsp4.service
+        run: |
+          sudo systemctl stop mono-xsp4.service || true
+          sudo systemctl disable mono-xsp4.service || true
       - uses: actions/checkout@v3
       - name: Set up JSON API server
         run: |
