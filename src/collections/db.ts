@@ -16,6 +16,7 @@ import { HTTPClient } from '@/src/client';
 import { Collection } from './collection';
 import { executeOperation } from './utils';
 import _ from 'lodash';
+import type { APIResponse } from '@/src/client/httpClient';
 
 interface CollectionCallback {
   (err: Error | undefined, res: undefined): void;

@@ -16,6 +16,7 @@ import assert from 'assert';
 import { Client } from '@/src/collections/client';
 import { getAstraClient, astraUri } from '@/tests/fixtures';
 import { parseUri } from '@/src/collections/utils';
+import { AUTH_API_PATH } from '@/src/client/httpClient';
 
 
 describe('StargateMongoose - collections.Client', () => {
@@ -47,14 +48,12 @@ describe('StargateMongoose - collections.Client', () => {
       const newDb = astraClient.db('test-db');
       assert.strictEqual(newDb.name, 'test-db');
     });
-    it('should initialize a Client connection with a uri using connect and a callback', done => {
-      Client.connect(astraUri, (err, client) => {
-        assert.strictEqual(err, undefined);
-        assert.ok(client);
-        assert.ok(client.httpClient);
-        const db = client.db();
-        assert.ok(db);
-        done();
+    it('should initialize a Client connection with a uri using connect and a callback', async () => {
+      Client.connect(astraUri+"?applicationToken=123").then( client => {      
+          assert.ok(client);
+          assert.ok(client.httpClient);
+          const db = client.db();
+          assert.ok(db);
       });
     });
     it('should initialize a Client connection with a uri using connect with overrides', async () => {
@@ -136,6 +135,45 @@ describe('StargateMongoose - collections.Client', () => {
         assert.strictEqual(connectedClient.httpClient.authHeaderName, TEST_HEADER_NAME);
         done();
       });
+    });
+    it('should create client when token is not present, but auth details are present', async () => {
+      const client = new Client(baseUrl, {        
+        username: "user1",
+        password: "pass1",
+      });
+      const connectedClient = client.connect();
+      assert.ok(connectedClient);
+    });
+    it('should not create client when token is not present & one/more of auth details are missing', async () => {
+      try {
+        const client = new Client(baseUrl, {        
+          username: "user1"          
+        });
+        const connectedClient = client.connect();
+      } catch (e: any){
+        assert.ok(e);
+        assert.strictEqual(e.message, 'applicationToken/auth info required for initialization');
+      }
+    });
+    it('should set the auth url based on options when provided', async () => {
+      const TEST_AUTH_URL = 'authurl1';
+      const client = new Client(baseUrl, {        
+        username: "user1",
+        password: "pass1",
+        authUrl: TEST_AUTH_URL
+      });
+      const connectedClient = client.connect();
+      assert.ok(connectedClient);
+      assert.strictEqual((await connectedClient).httpClient.authUrl, TEST_AUTH_URL);
+    });
+    it('should construct the auth url with baseUrl when not provided', async () => {
+      const client = new Client(baseUrl, {        
+        username: "user1",
+        password: "pass1",
+      });
+      const connectedClient = client.connect();
+      assert.ok(connectedClient);
+      assert.strictEqual((await connectedClient).httpClient.authUrl, baseUrl + AUTH_API_PATH );
     });
   });
   describe('Client Db operations', () => {

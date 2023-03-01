@@ -37,11 +37,12 @@ const Product = mongoose.model('Product', productSchema);
 
 describe('StargateMongoose - index', () => {
   //TODOV3 skipping this test for now, this can be only run against real server, otherwise we will have to keep adding multiple mock collections in the Postman for this.
-  it.skip('should leverage astradb', async function () {
-    if (!process.env.ASTRA_DB_ID || !process.env.ASTRA_DB_APPLICATION_TOKEN) {
-      return this.skip();
-    }
-    await mongoose.connect(astraUri);
+  it('should leverage astradb', async function () {    
+    await mongoose.connect(astraUri, {
+      username: "cassandra",
+      password: "cassandra",
+      authUrl: "http://localhost:8081/v1/auth"
+    });
     await new Promise(fn => setTimeout(fn, 1000));//TODOV3 check later - without this delay, this test fails sometimes
     const product1 = new Product({ name: 'Product 1', price: 10 });
     await product1.save();
@@ -61,7 +62,12 @@ describe('StargateMongoose - index', () => {
   });
 
   it('asPromise() resolves to connection', async () => {
-    const conn = mongoose.createConnection(astraUri);
+    const conn = mongoose.createConnection(astraUri, 
+        {
+          username: "cassandra",
+          password: "cassandra",
+          authUrl: "http://localhost:8081/v1/auth"
+        });
 
     assert.strictEqual(await conn.asPromise(), conn);
   });
