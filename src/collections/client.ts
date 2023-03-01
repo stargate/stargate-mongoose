@@ -18,13 +18,16 @@ import { HTTPClient } from '@/src/client';
 import _ from 'lodash';
 import { logger } from '@/src/logger';
 
-interface ClientOptions {
+export interface ClientOptions {
   applicationToken?: string;
   baseApiPath?: string;
   keyspaceName?: string;
   logLevel?: string;
   authHeaderName?: string;
   createNamespaceOnConnect?: boolean;
+  username?: string;
+  password?: string;
+  authUrl?: string;
 }
 
 interface ClientCallback {
@@ -50,8 +53,11 @@ export class Client {
       baseUrl: baseUrl,
       applicationToken: options.applicationToken,
       logLevel: options.logLevel,
-      authHeaderName: options.authHeaderName
-});
+      authHeaderName: options.authHeaderName,
+      username: options.username,
+      password: options.password,
+      authUrl: options.authUrl
+  });
 }
 
   /**
@@ -59,39 +65,30 @@ export class Client {
    * @param uri an Astra/Stargate connection uri. It should be formed like so if using
    *            Astra: https://${databaseId}-${region}.apps.astra.datastax.com/${keyspace}?applicationToken=${applicationToken}
    *            You can also have it formed for you using utils.createAstraUri()
-   * @param cb an optional callback whose parameters are (err, client)
    * @returns MongoClient
    */
-  static async connect(uri: string, options?: ClientOptions | null, cb?: ClientCallback): Promise<Client> {
-    if (typeof options === 'function') {
-      cb = options;
-      options = null;
-    }
-    return executeOperation(async () => {
-      const parsedUri = parseUri(uri);
-      const client = new Client(parsedUri.baseUrl, {
-        applicationToken: options?.applicationToken ? options?.applicationToken : parsedUri.applicationToken,
+  static async connect(uri: string, options?: ClientOptions | null): Promise<Client> {
+    const parsedUri = parseUri(uri);
+    const client = new Client(parsedUri.baseUrl, {
+      applicationToken: options?.applicationToken ? options?.applicationToken : parsedUri.applicationToken,
         baseApiPath: options?.baseApiPath ? options?.baseApiPath : parsedUri.baseApiPath,
         keyspaceName: options?.keyspaceName ? options?.keyspaceName : parsedUri.keyspaceName,
         logLevel: options?.logLevel,
         authHeaderName: options?.authHeaderName,
-        createNamespaceOnConnect: options?.createNamespaceOnConnect ?? true
+        createNamespaceOnConnect: options?.createNamespaceOnConnect ?? true,
+        username: options?.username,
+        password: options?.password,
+        authUrl: options?.authUrl
       });
-      await client.connect();
-
-      return client;
-    }, cb);
+    await client.connect();
+    return client;
   }
 
   /**
    * Connect the MongoClient instance to Astra
-   * @param cb an optional callback whose parameters are (err, client)
    * @returns a MongoClient instance
    */
-  async connect(cb?: ClientCallback): Promise<Client> {
-    if (cb) {
-      cb(undefined, this);
-    }
+  async connect(): Promise<Client> {
     if(this.createNamespaceOnConnect){
       logger.debug('Creating Namespace ' + this.keyspaceName);
       await createNamespace(this, this.keyspaceName);
@@ -129,13 +126,9 @@ export class Client {
 
   /**
    *
-   * @param cb
    * @returns Client
    */
-  close(cb?: ClientCallback) {
-    if (cb) {
-      cb(undefined, this);
-    }
+  close() {
     return this;
   }
 }

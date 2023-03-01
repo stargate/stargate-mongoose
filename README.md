@@ -2,7 +2,7 @@
 
 ![tests workflow](https://github.com/riptano/stargate-mongoose/actions/workflows/main.yml/badge.svg)
 
-`stargate-mongoose` is a mongoose driver for [Astra DB](https://astra.datastax.com).
+`stargate-mongoose` is a mongoose driver for [JSON API Server](https://github.com/stargate/jsonapi)/[Astra DB](https://astra.datastax.com).
 
 ## Table of contents
 
@@ -14,13 +14,13 @@
 
 ## Quickstart
 
-To get started, install the the package and then override the `node-mongodb-native` driver that mongoose sets up by default. After that, set up your connection to Astra DB and get started! Refer to the combatability section of the README to see what will just work and what won't.
+To get started, install the the package and then override the `node-mongodb-native` driver that mongoose sets up by default. After that, set up your connection to JSON API Server/Astra DB and get started! Refer to the combatability section of the README to see what will just work and what won't.
 
 ```bash
 npm i -s stargate-mongoose
 ```
 
-### Connect to an Astra DB instance
+### Connect to an Astra DB/ JSON API local instance
 ```javascript
 import mongoose from 'mongoose';
 import { driver, collections } from 'stargate-mongoose';
@@ -28,71 +28,47 @@ import { driver, collections } from 'stargate-mongoose';
 // override the default mongodb native driver
 mongoose.setDriver(driver);
 
-// create an Astra DB URI in one of the following ways
-const astraUri = createAstraUri(
-  process.env.ASTRA_DB_ID,
-  process.env.ASTRA_DB_REGION,
-  process.env.ASTRA_DB_KEYSPACE,
-  process.env.ASTRA_DB_APPLICATION_TOKEN
-);
-
-OR
-
+//Option 1: When we have the Authentication token to pass
 const astraUri = process.env.ASTRA_URI 
 //where ASTRA_URI is of the following format https://${databaseId}-${region}.apps.astra.datastax.com/${keyspace}?applicationToken=${applicationToken}
 
 // get mongoose connected to Astra
 await mongoose.connect(astraUri);
-```
 
-### Connect to a Stargate instance
-```javascript
-import mongoose from 'mongoose';
-import { driver, collections } from 'stargate-mongoose';
+//OR
 
-// override the default mongodb native driver
-mongoose.setDriver(driver);
+//Option 2 : When we want to just pass the username and password instead of token.
+//In the case of a JSON API installation, we need to pass something called 'authUrl' in addition to the user credentials to let the driver know against which authenticator this needs to be validated (for example http://localhost:8081/v1/auth)
 
-// create an Astra DB URI
-const stargateUri = createStargateUri(
-  process.env.STARGATE_BASE_URL,
-  process.env.STARGATE_AUTH_URL,
-  process.env.ASTRA_DB_KEYSPACE,
-  process.env.STARGATE_USERNAME,
-  process.env.STARGATE_PASSWORD
-);
+const options:ClientOptions = {  
+  options.username = process.env.STARGATE_USERNAME;
+  options.password = process.env.STARGATE_PASSWORD;
+  options.authUrl = process.env.STARGATE_AUTH_URL;
+}
+await mongoose.connect(astraUri, options);
 
-// get mongoose connected to Stargate
-await mongoose.connect(stargateUri);
 ```
 
 ## Testing
 
 Prerequisites:
 - [Docker](https://docker.com/)
-- An [Astra DB Instance](https://astra.datastax.com/) 
+- An [JSON API Server](https://github.com/stargate/jsonapi)/[Astra DB Instance](https://astra.datastax.com/) 
 
-Tests are run against a local Stargate container and also against your remote Astra DB instance. Astra DB instances are free to try.
 
 First, create an `.env` file in the root of your project that includes your Astra DB connection details:
 
 ```env
-ASTRA_URI=
-ASTRA_DB_APPLICATION_TOKEN=
-ASTRA_DB_KEYSPACE=
-ASTRA_DB_ID=
-ASTRA_DB_REGION=
-STARGATE_BASE_URL=http://localhost:8082
+ASTRA_URI=http://localhost:8080/v1/testks1
 STARGATE_AUTH_URL=http://localhost:8081/v1/auth
 STARGATE_USERNAME=cassandra
 STARGATE_PASSWORD=cassandra
 ```
-_When ASTRA_URI is specified, ASTRA_DB_KEYSPACE, ASTRA_DB_ID and ASTRA_DB_REGION are ignored_
 
-Launch a stargate docker container: 
+Launch a JSON API docker container: 
 
 ```bash
-bin/start_stargate
+bin/start_jsonapi
 ```
 
 Finally, run the tests:
@@ -100,8 +76,6 @@ Finally, run the tests:
 ```
 npm test
 ```
-
-When you add tests that you would like to run against both your local Stargate instance and your remote Astra DB instance, ensure that they are inside of the `for (const testClient in testClients) {` block inside the test file.
 
 ## Releasing
 
@@ -244,16 +218,8 @@ MongoDB compatible index operations are not supported. There is one caveat for `
 ```javascript
 import { Client, createAstraUri } from 'stargate-mongoose';
 
-// create an Astra DB URI
-const astraUri = createAstraUri(
-  process.env.ASTRA_DB_ID,
-  process.env.ASTRA_DB_REGION,
-  process.env.ASTRA_DB_KEYSPACE,
-  process.env.ASTRA_DB_APPLICATION_TOKEN
-);
-
 // connect to Astra
-const client = await Client.connect(astraUri);
+const client = await Client.connect(process.env.ASTRA_URI);
 
 // get a collection
 const collection = client.db().collection('docs');
@@ -294,15 +260,9 @@ Finally, modify your connection so that your driver connects to Astra
 import { MongoClient, createAstraUri } from 'stargate-mongoose';
 
 // create an Astra DB URI
-const astraUri = createAstraUri(
-  process.env.ASTRA_DB_ID,
-  process.env.ASTRA_DB_REGION,
-  process.env.ASTRA_DB_KEYSPACE,
-  process.env.ASTRA_DB_APPLICATION_TOKEN
-);
 
 // connect to Astra
-const client = await MongoClient.connect(astraUri);
+const client = await MongoClient.connect(process.env.ASTRA_URI);
 ```
 
 If you have an application dependency that uses `mongodb`, you can override it's usage like so (this example uses `mongoose`):
@@ -333,13 +293,7 @@ import mongoose from 'mongoose';
 import { createAstraUri } from 'stargate-mongoose';
 
 // create an Astra DB URI
-const astraUri = createAstraUri(
-  process.env.ASTRA_DB_ID,
-  process.env.ASTRA_DB_REGION,
-  process.env.ASTRA_DB_KEYSPACE,
-  process.env.ASTRA_DB_APPLICATION_TOKEN
-);
 
 // connect to Astra
-await mongoose.connect(astraUri);
+await mongoose.connect(process.env.ASTRA_URI);
 ```

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Connection } from './connection';
+export { Connection } from './connection';
 export { Binary, ObjectId, Decimal128, ReadPreference } from 'mongodb';
 export { Collection } from './collection';
-export const getConnection = () => Connection;

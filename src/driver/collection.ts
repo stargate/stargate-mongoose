@@ -29,77 +29,65 @@ export class Collection extends MongooseCollection {
     return this.conn.db.collection(this.name);
   }
 
-  find(query: any, options?: any, cb?: any) {
-    return this.collection.find(query, options, cb);
+  find(query: any, options?: any) {
+    return this.collection.find(query, options);
   }
 
-  findOne(query: any, options?: any, cb?: any) {
-    return this.collection.findOne(query, options, cb);
+  findOne(query: any, options?: any) {
+    return this.collection.findOne(query, options);
   }
 
-  insertOne(doc: any, options?: any, cb?: any) {
-    return this.collection.insertOne(doc, options, cb);
+  insertOne(doc: any, options?: any) {
+    return this.collection.insertOne(doc, options);
   }
 
-  insert(docs: any, options?: any, cb?: any) {
-    return this.collection.insertMany(docs, options, cb);
+  insert(docs: any, options?: any) {
+    return this.collection.insertMany(docs, options);
   }
 
-  insertMany(docs: any, options?: any, cb?: any) {
-    return this.collection.insertMany(docs, options, cb);
+  insertMany(docs: any, options?: any) {
+    return this.collection.insertMany(docs, options);
   }
 
-  findAndModify(query: any, update: any, options?: any, cb?: any) {
-    return this.collection.updateMany(query, update, options, cb);
+  findOneAndUpdate(query: any, update: any, options?: any) {
+    return this.collection.findOneAndUpdate(query, update, options);
   }
 
-  findOneAndUpdate(query: any, update: any, options?: any, cb?: any) {
-    return this.collection.findOneAndUpdate(query, update, options, cb);
+  findOneAndDelete(query: any, options?: any) {
+    return this.collection.findOneAndDelete(query, options);
   }
 
-  findOneAndDelete(query: any, options?: any, cb?: any) {
-    return this.collection.findOneAndDelete(query, options, cb);
+  findOneAndReplace(query: any, newDoc: any, options?: any) {
+    return this.collection.findOneAndReplace(query, newDoc, options);
   }
 
-  findOneAndReplace(query: any, newDoc: any, options?: any, cb?: any) {
-    return this.collection.findOneAndReplace(query, newDoc, options, cb);
+  deleteMany(query: any, options?: any) {
+    return this.collection.deleteMany(query, options);
   }
 
-  deleteMany(query: any, options?: any, cb?: any) {
-    return this.collection.deleteMany(query, options, cb);
+  deleteOne(query: any, options?: any) {
+    return this.collection.deleteOne(query, options);
   }
 
-  deleteOne(query: any, options?: any, cb?: any) {
-    return this.collection.deleteOne(query, options, cb);
+  updateOne(query: any, update: any, options?: any) {
+    return this.collection.updateOne(query, update, options);
   }
 
-  remove(query: any, options: any, cb: any) {
-    return this.collection.remove(query, options, cb);
+  updateMany(query: any, update: any, options?: any) {
+    return this.collection.updateMany(query, update, options);
   }
 
-  updateOne(query: any, update: any, options?: any, cb?: any) {
-    return this.collection.updateOne(query, update, options, cb);
-  }
-
-  updateMany(query: any, update: any, options?: any, cb?: any) {
-    return this.collection.updateMany(query, update, options, cb);
-  }
-
-  update(query: any, update: any, options?: any, cb?: any) {
-    return this.collection.updateMany(query, update, options, cb);
-  }
-
-  dropIndexes(cb?: any) {
-    return this.collection.dropIndexes(cb);
+  dropIndexes() {
+    return this.collection.dropIndexes();
   }
 
   // No-ops
-  bulkWrite(ops: any[], options?: any, cb?: any) {
+  bulkWrite(ops: any[], options?: any) {
     throw new Error('bulkWrite() Not Implemented');
   }
 
-  createIndex(index: any, options?: any, cb?: any) {
-    return this.collection.createIndex(index, options, cb);
+  createIndex(index: any, options?: any) {
+    return this.collection.createIndex(index, options);
   }
 }
 
@@ -109,10 +97,6 @@ export class Collection extends MongooseCollection {
 
 // Collection.prototype.save = function() {
 //   throw new Error('Collection#save unimplemented by driver');
-// };
-
-// Collection.prototype.update = function() {
-//   throw new Error('Collection#update unimplemented by driver');
 // };
 
 // Collection.prototype.getIndexes = function() {
