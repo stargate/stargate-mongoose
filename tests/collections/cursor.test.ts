@@ -63,7 +63,7 @@ for (const testClient in testClients) {
         assert.ok(doc);
       });
       it('should execute a limited query', async () => {
-        const cursor = new FindCursor(collection, {}, {}, { limit: 2 });
+        const cursor = new FindCursor(collection, {}, { limit: 2 });
         const res = await cursor.toArray();
         assert.strictEqual(res.length, 2);
         assert.equal(cursor.page.length, 2);

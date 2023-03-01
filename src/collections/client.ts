@@ -17,12 +17,15 @@ import { executeOperation, parseUri } from './utils';
 import { HTTPClient } from '@/src/client';
 import _ from 'lodash';
 
-interface ClientOptions {
+export interface ClientOptions {
   applicationToken?: string;
   baseApiPath?: string;
   keyspaceName?: string;
   logLevel?: string;
   authHeaderName?: string;
+  username?: string;
+  password?: string;
+  authUrl?: string;
 }
 
 interface ClientCallback {
@@ -46,8 +49,11 @@ export class Client {
       baseUrl: baseUrl,
       applicationToken: options.applicationToken,
       logLevel: options.logLevel,
-      authHeaderName: options.authHeaderName
-});
+      authHeaderName: options.authHeaderName,
+      username: options.username,
+      password: options.password,
+      authUrl: options.authUrl
+  });
 }
 
   /**
@@ -61,10 +67,13 @@ export class Client {
     const parsedUri = parseUri(uri);
     const client = new Client(parsedUri.baseUrl, {
       applicationToken: options?.applicationToken ? options?.applicationToken : parsedUri.applicationToken,
-      baseApiPath: options?.baseApiPath ? options?.baseApiPath : parsedUri.baseApiPath,
-      keyspaceName: options?.keyspaceName ? options?.keyspaceName : parsedUri.keyspaceName,
-      logLevel: options?.logLevel,
-      authHeaderName: options?.authHeaderName,
+        baseApiPath: options?.baseApiPath ? options?.baseApiPath : parsedUri.baseApiPath,
+        keyspaceName: options?.keyspaceName ? options?.keyspaceName : parsedUri.keyspaceName,
+        logLevel: options?.logLevel,
+        authHeaderName: options?.authHeaderName,
+        username: options?.username,
+        password: options?.password,
+        authUrl: options?.authUrl
     });
     await client.connect();
 

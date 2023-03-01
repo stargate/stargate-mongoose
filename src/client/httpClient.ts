@@ -18,12 +18,14 @@ import { logger, setLevel } from '@/src/logger';
 import _ from 'lodash';
 import { inspect } from 'util';
 import { LIB_NAME, LIB_VERSION } from '../version';
+import { getStargateAccessToken, StargateAuthError } from '../collections/utils';
 
 
 const REQUESTED_WITH = LIB_NAME + '/' + LIB_VERSION;
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
 const DEFAULT_METHOD = 'get';
 const DEFAULT_TIMEOUT = 30000;
+export const AUTH_API_PATH = '/v1/auth';
 const HTTP_METHODS = {
   get: 'GET',
   post: 'POST',
@@ -41,12 +43,21 @@ interface AstraClientOptions {
   databaseRegion?: string;
   authHeaderName?: string;
   logLevel?: string;
+  username?: string;
+  password?: string;
+  authUrl?: string;
 }
 
 interface RequestOptions {
   'page-size': string;
   where?: any;
   ttl?: string;
+}
+
+export interface APIResponse{
+  status?: any
+  data?: any
+  errors?: any
 }
 
 class AstraError extends Error {
@@ -96,6 +107,9 @@ export class HTTPClient {
   applicationToken: string;
   authHeaderName: string;
   isAstra: boolean;
+  username: string;
+  password: string;
+  authUrl: string;
 
   constructor(options: AstraClientOptions) {
     // do not support usage in browsers
@@ -114,12 +128,16 @@ export class HTTPClient {
     } else {
       throw new Error('baseUrl required for initialization');
     }
-
-    if (!options.applicationToken) {
-      //TODOV3 Replace this with auth call to get logged in user by providing username and password
-      throw new Error('applicationToken required for initialization');
-    } else{
+    this.username = options.username || '';
+    this.password = options.password || '';
+    this.authUrl = options.authUrl || this.baseUrl + AUTH_API_PATH;
+    if (options.applicationToken) {
       this.applicationToken = options.applicationToken;
+    }else{      
+      if(this.username === '' || this.password === ''){
+        throw new Error('applicationToken/auth info required for initialization');
+      }
+      this.applicationToken = '';//We will set this by accessing the auth url when the first request is received
     }
 
     if (options.logLevel) {
@@ -130,9 +148,32 @@ export class HTTPClient {
     this.authHeaderName = options.authHeaderName || DEFAULT_AUTH_HEADER;
   }
 
-  async _request(requestInfo: AxiosRequestConfig) {
+  async _request(requestInfo: AxiosRequestConfig): Promise<APIResponse> {
     try {
-      logger.debug("_request with URL %s", requestInfo.url);
+      if(this.applicationToken === ''){
+        logger.debug("@stargate-mongoose/rest: getting token");
+        try{
+          this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
+        } catch (authError: any){
+          return {
+            errors: [
+              {
+                message: authError.message? authError.message : "Authentication failed, please retry!"
+              }
+            ]
+           }
+        }        
+      }
+      logger.debug("_request with URL %s", requestInfo.url);      
+      if(!this.applicationToken){
+        return {
+          errors: [
+            {
+              message: "Unable to get token for the credentials provided"
+            }
+          ]
+         }
+      }
       const response = await axiosAgent({
         url: requestInfo.url,
         data: requestInfo.data,
@@ -143,6 +184,21 @@ export class HTTPClient {
           [this.authHeaderName]: this.applicationToken
         }
       });
+      if (response.status === 401 || (response.data?.errors?.length > 0 && response.data.errors[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
+        console.log("@stargate-mongoose/rest: reconnecting");
+        try{
+          this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
+        } catch (authError: any){
+          return {
+            errors: [
+              {
+                message: authError.message? authError.message : "Authentication failed, please retry!"
+              }
+            ]
+           }
+        }
+        return this._request(requestInfo);
+      }
       return {
         status: response.data.status,
         data: response.data.data,

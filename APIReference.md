@@ -21,7 +21,7 @@
 <dd><p>Create a stargate  connection URI</p></dd>
 <dt><a href="#createStargateUri">createStargateUri</a></dt>
 <dd></dd>
-<dt><a href="#getStargateAccessToken">getStargateAccessToken</a> ⇒</dt>
+<dt><a href="#StargateAuthError">StargateAuthError</a> ⇒</dt>
 <dd></dd>
 <dt><a href="#setOptionsAndCb">setOptionsAndCb</a> ⇒</dt>
 <dd><p>executeOperation handles running functions that have a callback parameter and that also can
@@ -401,9 +401,9 @@ drill into arrays.</p></dd>
 | username | 
 | password | 
 
-<a name="getStargateAccessToken"></a>
+<a name="StargateAuthError"></a>
 
-## getStargateAccessToken ⇒
+## StargateAuthError ⇒
 **Kind**: global variable  
 **Returns**: <p>Object</p>  
 

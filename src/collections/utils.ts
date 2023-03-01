@@ -44,9 +44,6 @@ export const parseUri = (uri: string): ParsedUri => {
   if (!keyspaceName) {
     throw new Error('Invalid URI: keyspace is required');
   }
-  if (!applicationToken) {
-    throw new Error('Invalid URI: applicationToken is required');
-  }
   return {
     baseUrl,
     baseApiPath,
@@ -124,11 +121,10 @@ export const createStargateUri = async (
  * @param username
  * @param password
  */
-export const getStargateAccessToken = async (
+export async function getStargateAccessToken(
   authUrl: string,
   username: string,
-  password: string
-) => {
+  password: string) {
   try {
     const response = await axios({
       url: authUrl,
@@ -139,7 +135,10 @@ export const getStargateAccessToken = async (
         'Content-Type': 'application/json'
       }
     });
-    return response.data.authToken;
+    if (response.status === 401) {
+      throw new StargateAuthError(response.data?.description || 'Invalid credentials provided');
+    }
+    return response.data?.authToken;
   } catch (e: any) {
     if (e.response?.data?.description) {
       e.message = e.response?.data?.description;
@@ -147,6 +146,14 @@ export const getStargateAccessToken = async (
     throw e;
   }
 };
+
+export class StargateAuthError extends Error  {
+  message: string
+  constructor(message: string) {
+    super(message);
+    this.message = message;
+  }
+}
 
 /**
  * executeOperation handles running functions that have a callback parameter and that also can
