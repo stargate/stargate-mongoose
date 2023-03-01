@@ -47,16 +47,7 @@ describe('StargateMongoose - collections.Client', () => {
       const newDb = astraClient.db('test-db');
       assert.strictEqual(newDb.name, 'test-db');
     });
-    it('should initialize a Client connection with a uri using connect and a callback', done => {
-      Client.connect(astraUri, (err, client) => {
-        assert.strictEqual(err, undefined);
-        assert.ok(client);
-        assert.ok(client.httpClient);
-        const db = client.db();
-        assert.ok(db);
-        done();
-      });
-    });
+
     it('should initialize a Client connection with a uri using connect with overrides', async () => {
       const AUTH_TOKEN_TO_CHECK = "123";
       const KEYSPACE_TO_CHECK = "keyspace1";
@@ -115,16 +106,7 @@ describe('StargateMongoose - collections.Client', () => {
       assert.ok(client);
       assert.ok(client.httpClient);
     });
-    it('should connect after setting up the client with a constructor using a callback', done => {
-      const client = new Client(baseUrl, {
-        applicationToken: '123'
-      });
-      client.connect((err, connectedClient) => {
-        assert.ok(connectedClient);
-        assert.ok(connectedClient.httpClient);
-        done();
-      });
-    });
+
     it('should set the auth header name as set in the options', done => {
       const TEST_HEADER_NAME = 'test-header';
       const client = new Client(baseUrl, {
@@ -168,11 +150,6 @@ describe('StargateMongoose - collections.Client', () => {
     it('should handle noop: close', async () => {
       const closedClient = astraClient.close();
       assert.ok(closedClient);
-    });
-    it('should handle noop: close with a callback', async () => {
-      astraClient.close((err, closedClient) => {
-        assert.ok(closedClient);
-      });
     });
   });
 });

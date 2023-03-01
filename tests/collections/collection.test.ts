@@ -67,14 +67,6 @@ for (const testClient in testClients) {
         assert.strictEqual(res.acknowledged, true);
         assert.ok(res.insertedId);        
       });
-      it('should insertOne document with a callback', done => {
-        collection.insertOne(createSampleDocWithMultiLevel(), {}, (err: any, res: any) => {
-          assert.ok(res);        
-          assert.strictEqual(res.acknowledged, true);
-          assert.ok(res.insertedId);
-          done();          
-        });
-      });
       it('should insertOne document with id', async () => {
         const docId = "docml1";
         const docToInsert = createSampleDocWithMultiLevelWithId(docId);
@@ -82,16 +74,6 @@ for (const testClient in testClients) {
         assert.ok(res);        
         assert.strictEqual(res.acknowledged, true);
         assert.ok(res.insertedId, docId);        
-      });
-      it('should insertOne document with id with a callback', done => {
-        const docId = "docml1";
-        const docToInsert = createSampleDocWithMultiLevelWithId(docId);
-        collection.insertOne(docToInsert, {}, (err: any, res: any) => {
-          assert.ok(res);        
-          assert.strictEqual(res.acknowledged, true);
-          assert.ok(res.insertedId);
-          done();          
-        });
       });
       it.skip('should not insertOne document that is invalid', async () => {
         try {
