@@ -55,8 +55,8 @@
     "dotenv": "^16.0.1",
     "jsdoc-babel": "^0.5.0",
     "jsdoc-to-markdown": "^7.1.1",
-    "mongoose": "^6.4.0",
-    "mongodb": "^4.6.0",
+    "mongoose": "7.x",
+    "mongodb": "5.x",
     "nyc": "^15.1.0",
     "ts-mocha": "^10.0.0",
     "ts-node": "^10.8.1",
@@ -70,7 +70,7 @@
     "winston": "^3.7.2"
   },
   "peerDependencies": {
-    "mongoose": "^6.4.0",
-    "mongodb": "^4.6.0"
+    "mongoose": "7.x",
+    "mongodb": "5.x"
   }
 }

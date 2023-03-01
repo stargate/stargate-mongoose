@@ -156,27 +156,12 @@ export class StargateAuthError extends Error  {
 }
 
 /**
- *
- * @param options
- * @param cb
- * @returns Object
- */
-export const setOptionsAndCb = (options: any, cb: any) => {
-  if (typeof options === 'function') {
-    cb = options;
-    options = {};
-  }
-  return { options, cb };
-};
-
-/**
  * executeOperation handles running functions that have a callback parameter and that also can
  * return a promise.
  * @param operation a function that takes no parameters and returns a response
- * @param cb a node callback function
  * @returns Promise
  */
-export const executeOperation = async (operation: any, cb: any) => {
+export const executeOperation = async (operation: any) => {
   let res = {};
   let err = undefined;
   try {
@@ -184,9 +169,6 @@ export const executeOperation = async (operation: any, cb: any) => {
   } catch (e: any) {
     logger.error(e?.stack || e?.message);
     err = e;
-  }
-  if (cb) {
-    return cb(err, res);
   }
   if (err) {
     throw err;

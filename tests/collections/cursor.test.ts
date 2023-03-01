@@ -57,14 +57,6 @@ for (const testClient in testClients) {
         const res = await cursor.toArray();
         assert.strictEqual(res.length, 1);
       });
-      it('should execute a query with a callback', done => {
-        const cursor = new FindCursor(collection, { username: sampleUsers[0].username });
-        cursor.toArray((err, res) => {
-          assert.strictEqual(undefined, err);
-          assert.strictEqual(res.length, 1);
-          done();
-        });
-      });
       it('should get next document with next()', async () => {
         const cursor = new FindCursor(collection, {});
         const doc = await cursor.next();

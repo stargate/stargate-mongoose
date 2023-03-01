@@ -61,18 +61,12 @@ export class Client {
    * @param uri an Astra/Stargate connection uri. It should be formed like so if using
    *            Astra: https://${databaseId}-${region}.apps.astra.datastax.com/${keyspace}?applicationToken=${applicationToken}
    *            You can also have it formed for you using utils.createAstraUri()
-   * @param cb an optional callback whose parameters are (err, client)
    * @returns MongoClient
    */
-  static async connect(uri: string, options?: ClientOptions | null, cb?: ClientCallback): Promise<Client> {
-    if (typeof options === 'function') {
-      cb = options;
-      options = null;
-    }
-    return executeOperation(async () => {
-      const parsedUri = parseUri(uri);
-      const client = new Client(parsedUri.baseUrl, {
-        applicationToken: options?.applicationToken ? options?.applicationToken : parsedUri.applicationToken,
+  static async connect(uri: string, options?: ClientOptions | null): Promise<Client> {
+    const parsedUri = parseUri(uri);
+    const client = new Client(parsedUri.baseUrl, {
+      applicationToken: options?.applicationToken ? options?.applicationToken : parsedUri.applicationToken,
         baseApiPath: options?.baseApiPath ? options?.baseApiPath : parsedUri.baseApiPath,
         keyspaceName: options?.keyspaceName ? options?.keyspaceName : parsedUri.keyspaceName,
         logLevel: options?.logLevel,
@@ -80,22 +74,17 @@ export class Client {
         username: options?.username,
         password: options?.password,
         authUrl: options?.authUrl
-      });
-      await client.connect();
+    });
+    await client.connect();
 
-      return client;
-    }, cb);
+    return client;
   }
 
   /**
    * Connect the MongoClient instance to Astra
-   * @param cb an optional callback whose parameters are (err, client)
    * @returns a MongoClient instance
    */
-  async connect(cb?: ClientCallback): Promise<Client> {
-    if (cb) {
-      cb(undefined, this);
-    }
+  async connect(): Promise<Client> {
     return this;
   }
 
@@ -127,13 +116,9 @@ export class Client {
 
   /**
    *
-   * @param cb
    * @returns Client
    */
-  close(cb?: ClientCallback) {
-    if (cb) {
-      cb(undefined, this);
-    }
+  close() {
     return this;
   }
 }

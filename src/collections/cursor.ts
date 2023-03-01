@@ -15,7 +15,7 @@
 import _ from 'lodash';
 import { Collection } from './collection';
 import { logger } from '@/src/logger';
-import { setOptionsAndCb, executeOperation, QueryOptions } from './utils';
+import { executeOperation, QueryOptions } from './utils';
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -78,29 +78,21 @@ export class FindCursor {
 
   /**
    *
-   * @param cb
    * @returns Promise
    */
-  async toArray(cb?: ResultCallback): Promise<Array<any>> {
-    return executeOperation(async () => {
-      await this.getAll();
-      return this.documents;
-    }, cb);
+  async toArray(): Promise<any[]> {
+    await this.getAll();
+    return this.documents;
   }
 
   /**
-   *
-   * @param iterator
-   * @param cb
+   * @returns Promise
    */
 
-  async next(cb?: any): Promise<any> {
+  async next(): Promise<any> {
     return executeOperation(async () => {
       if (this.pageIndex < this.page.length) {
         const doc = this.page[this.pageIndex++];
-        if (cb != null) {
-          return cb(null, doc);
-        }
   
         return doc;
       }
@@ -109,11 +101,7 @@ export class FindCursor {
         this.status = 'executed';
       }
   
-      if (this.status === 'executed') {
-        if (cb != null) {
-          return cb(null, null);
-        }
-  
+      if (this.status === 'executed') {  
         return null;
       }
   
@@ -122,12 +110,9 @@ export class FindCursor {
       await this._getMore();
   
       const doc = this.page[this.pageIndex++] || null;
-      if (cb != null) {
-        return cb(null, doc);
-      }
   
       return doc;
-    }, cb);
+    });
   }
 
   /*!
@@ -181,28 +166,25 @@ export class FindCursor {
   /**
    *
    * @param iterator
-   * @param cb
    */
-  async forEach(iterator: any, cb?: any) {
+  async forEach(iterator: any) {
     return executeOperation(async () => {
       for (let doc = await this.next(); doc != null; doc = await this.next()) {
         iterator(doc);
       }
-    }, cb);
+    });
   }
 
   /**
    *
    * @param options
-   * @param cb
    * @returns Promise<number>
    */
-  async count(options?: any, cb?: any) {
-    ({ options, cb } = setOptionsAndCb(options, cb));
+  async count(options?: any) {
     return executeOperation(async () => {
       await this.getAll();
       return this.documents.length;
-    }, cb);
+    });
   }
 
   // NOOPS and unimplemented

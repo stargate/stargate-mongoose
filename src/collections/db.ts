@@ -57,10 +57,9 @@ export class Db {
    *
    * @param collectionName
    * @param options
-   * @param cb
    * @returns Promise
    */
-  async createCollection(collectionName: string, options?: any, cb?: CollectionCallback) {
+  async createCollection(collectionName: string, options?: any) {
     return executeOperation(async () => {
       const command = {
         createCollection: {
@@ -69,16 +68,15 @@ export class Db {
         }
       };
       return await this.httpClient.executeCommand(command);
-    }, cb);
+    });
 }
 
   /**
    *
    * @param collectionName
-   * @param cb
    * @returns Promise
    */
-  async dropCollection(collectionName: string, cb?: CollectionCallback) {
+  async dropCollection(collectionName: string) {
     const command = {
       deleteCollection: {
         name: collectionName
@@ -91,13 +89,9 @@ export class Db {
 
   /**
    *
-   * @param cb
    * @returns Promise
    */
-  dropDatabase(cb?: CollectionCallback) {
-    if (cb != null) {
-      return cb(new Error('dropDatabase not implemented'), undefined);
-    }
+  dropDatabase() {
     throw new Error('dropDatabase not implemented');
   }
 }

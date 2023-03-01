@@ -69,22 +69,7 @@ for (const testClient in testClients) {
         assert.ok(res2);
         assert.strictEqual(res2.status.ok, 1);
       });
-      it('should create a Collection with a callback', done => {
-        const collectionName = TEST_COLLECTION_NAME;
-        const db = new Db(astraClient.httpClient, parseUri(process.env.ASTRA_URI).keyspaceName);
-        db.createCollection(collectionName, {}, (err, res) => {
-          assert.ok(res);
-          assert.strictEqual(res.status.ok, 1);
-          //assert.strictEqual(res.status.createdCollection, collectionName);
-          // run drop collection async to save time
-          //TODOV3 enable drop collection once implemented
-          /*db.dropCollection(`test_db_collection_${suffix}`, (err, res) => {
-            assert.strictEqual(res, '');
-            assert.strictEqual(err, undefined);
-          });*/
-          done();
-        });
-      });
+
       it.skip('should drop a Collection', async () => {
         const db = new Db(astraClient.httpClient, process.env.ASTRA_DB_KEYSPACE || '');
         const suffix = randAlphaNumeric({ length: 4 }).join('');
@@ -92,26 +77,6 @@ for (const testClient in testClients) {
         const res = await db.dropCollection(`test_db_collection_${suffix}`);
         assert.strictEqual(res, '');
       });
-      it.skip('should drop a Collection with a callback', done => {
-        const db = new Db(astraClient.httpClient, process.env.ASTRA_DB_KEYSPACE || '');
-        const suffix = randAlphaNumeric({ length: 4 }).join('');
-        db.createCollection(`test_db_collection_${suffix}`, null, (_err, _res) => {
-          db.dropCollection(`test_db_collection_${suffix}`, (err, res) => {
-            assert.strictEqual(res, '');
-            assert.strictEqual(err, undefined);
-            done();
-          });
-        });
-      });
-      //TODOV3 skipping this until, https://github.com/stargate/jsonapi/issues/167 is resolved
-      it.skip('should not create a Collection with an invalid name', async () => {        
-        const db = new Db(astraClient.httpClient, parseUri(process.env.ASTRA_URI).keyspaceName );
-        try{ 
-          const res = await db.createCollection('test/?w.`');
-        } catch(e: any){
-          assert.strictEqual(e.errors[0].message, "Collection name has invalid characters!");
-        }
-      });      
     });
   });
 }

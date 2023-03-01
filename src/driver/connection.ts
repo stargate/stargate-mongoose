@@ -49,28 +49,23 @@ export class Connection extends MongooseConnection {
     return super.collection(name, options);
   }
 
-  async createCollection(name: string, options: any, callback: any) {
+  async createCollection(name: string, options: any) {
     return executeOperation(async () => {
       await this._waitForClient();
       const db = this.client.db();
-      return db.createCollection(name, options, callback);
-    }, callback);
+      return db.createCollection(name, options);
+    });
   }
 
-  async dropCollection(name: string, callback: any) {
+  async dropCollection(name: string) {
     return executeOperation(async () => {
       await this._waitForClient();
       const db = this.client.db();
       return db.dropCollection(name);
-    }, callback);
+    });
   }
 
-  async openUri(uri: string, options: any, callback: any) {
-    if (typeof options === 'function') {
-      callback = options;
-      options = null;
-    }
-
+  async openUri(uri: string, options: any) {
     let resolveInitialConnection: Function;
     let rejectInitialConnection: Function;
     this.initialConnection = new Promise((resolve, reject) => {
@@ -85,7 +80,7 @@ export class Connection extends MongooseConnection {
 
       for (const model of Object.values(this.models)) {
         // @ts-ignore
-        model.init(() => {});
+        model.init().catch(() => {});
       }
 
       const client = await Client.connect(uri, options);
@@ -98,21 +93,12 @@ export class Connection extends MongooseConnection {
 
       // @ts-ignore
       resolveInitialConnection(this);
-
-      if (callback != null) {
-        setImmediate(() => callback(null));
-        return null;
-      }
     } catch (err) {
       this.readyState = STATES.disconnected;
 
       // @ts-ignore
       rejectInitialConnection(err);
 
-      if (callback != null) {
-        setImmediate(() => callback(null));
-        return null;
-      }
       throw err;
     }
 
@@ -125,13 +111,9 @@ export class Connection extends MongooseConnection {
 
   /**
    *
-   * @param cb
    * @returns Client
    */
-  doClose(force?: boolean, cb?: (err: Error | undefined) => void) {
-    if (cb) {
-      cb(undefined);
-    }
+  doClose(force?: boolean) {
     return this;
   }
 }

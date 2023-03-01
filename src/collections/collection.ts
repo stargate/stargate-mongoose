@@ -24,7 +24,7 @@ import {
 } from 'mongodb';
 import { FindCursor } from './cursor';
 import { HTTPClient } from '@/src/client';
-import { setOptionsAndCb, executeOperation, getNestedPathRawValue } from './utils';
+import { executeOperation, getNestedPathRawValue } from './utils';
 import { inspect } from 'util';
 import mpath from 'mpath';
 import { InsertManyResult } from 'mongoose';
@@ -62,11 +62,9 @@ export class Collection {
    *
    * @param mongooseDoc
    * @param options
-   * @param cb
    * @returns Promise
    */
-  async insertOne(document: Record<string, any>, options?: any, cb?: DocumentCallback) {
-    ({ options, cb } = setOptionsAndCb(options, cb));
+  async insertOne(document: Record<string, any>, options?: any) {
     return executeOperation(async (): Promise<InsertOneResult> => {
       let command = {
         insertOne : {
@@ -78,11 +76,10 @@ export class Collection {
         acknowledged: true,
         insertedId: resp.status.insertedIds[0]
       };
-    }, cb);
+    });
   }
 
-  async insertMany(docs: any, options?: any, cb?: any) {
-    ({ options, cb } = setOptionsAndCb(options, cb));
+  async insertMany(docs: any, options?: any) {
     return executeOperation(async (): Promise<InsertManyResult<any>> => {
       const command = {
         insertMany : {
@@ -96,11 +93,10 @@ export class Collection {
         insertedCount: resp.status.insertedIds?.length || 0,
         insertedIds: resp.status.insertedIds
       };      
-    }, cb);
+    });
   }
 
-  async updateOne(query: any, update: any, options?: UpdateOptions, cb?: any) {
-    ({ options, cb } = setOptionsAndCb(options, cb));
+  async updateOne(query: any, update: any, options?: UpdateOptions) {
     return executeOperation(async (): Promise<AstraUpdateResult> => {
       if (options != null && 'session' in options) {
         options = { ...options };
@@ -121,11 +117,10 @@ export class Collection {
         upsertedCount: updateOneResp.status.upsertedCount,
         upsertedId: updateOneResp.status.upsertedId
       };
-    }, cb);
+    });
   }
 
-  async updateMany(query: any, update: any, options?: UpdateOptions, cb?: any) {
-    ({ options, cb } = setOptionsAndCb(options, cb));
+  async updateMany(query: any, update: any, options?: UpdateOptions) {
     return executeOperation(async (): Promise<AstraUpdateResult> => {
       const command = {
         updateMany: {
@@ -142,15 +137,14 @@ export class Collection {
         upsertedCount: updateManyResp.status.upsertedCount,
         upsertedId: updateManyResp.status.upsertedId
       };
-    }, cb);
+    });
   }
 
-  async replaceOne(query: any, newDoc: any, options?: any, cb?: any) {
+  async replaceOne(query: any, newDoc: any, options?: any) {
     throw new Error('Not Implemented');
   }
 
-  async deleteOne(query: any, options?: any, cb?: any) {
-    ({ options, cb } = setOptionsAndCb(options, cb));
+  async deleteOne(query: any, options?: any) {
     return executeOperation(async (): Promise<DeleteResult> => {
       const command = {
         deleteOne: {
@@ -163,25 +157,20 @@ export class Collection {
         acknowledged: true,
         deletedCount: deleteOneResp.status.deletedIds.length 
       };
-    }, cb);
+    });
   }
 
-  async deleteMany(query: any, options?: any, cb?: any) {
+  async deleteMany(query: any, options?: any) {
     //throw new Error('Not Implemented');
     return;//TODOV3 returning as succeeded for now for testing
   }
 
-  find(query: any, options?: any, cb?: any) {
-    ({ options, cb } = setOptionsAndCb(options, cb));
+  find(query: any, options?: any) {
     const cursor = new FindCursor(this, query, options);
-    if (cb) {
-      return cb(undefined, cursor);
-    }
     return cursor;
   }
 
-  async findOne(query: any, options?: any, cb?: any) {
-    ({ options, cb } = setOptionsAndCb(options, cb));
+  async findOne(query: any, options?: any) {
     return executeOperation(async (): Promise<any | null> => {
       // Workaround for Automattic/mongoose#13052
       if (options && options.session == null) {
@@ -202,51 +191,39 @@ export class Collection {
 
       const resp = await this.httpClient.executeCommand(command);
       return resp.data.docs[0];
-    }, cb);
+    });
   }
 
-  async findOneAndReplace(query: any, newDoc: any, options?: any, cb?: any){
+  async findOneAndReplace(query: any, newDoc: any, options?: any){
     throw new Error('Not Implemented');
   }
 
-  async distinct(key: any, filter: any, options?: any, cb?: any) {
+  async distinct(key: any, filter: any, options?: any) {
     throw new Error('Not Implemented');
   }
 
-  async countDocuments(query: any, options?: any, cb?: any) {
+  async countDocuments(query: any, options?: any) {
     throw new Error('Not Implemented');
   }
 
   // deprecated and overloaded
 
-  async remove(query: any, options: any, cb?: any) {
-    return await this.deleteMany(query, options, cb);
+  async insert(docs: any[], options?: any) {
+    return await this.insertMany(docs, options);
   }
 
-  async insert(docs: any[], options?: any, cb?: any) {
-    return await this.insertMany(docs, options, cb);
-  }
-
-  async findOneAndDelete(query: any, options: any, cb: any) {
+  async findOneAndDelete(query: any, options: any) {
     throw new Error('Not Implemented');
   }
 
  /** 
   * @deprecated
   */
-  async count(query: any, options: any, cb?: any) {
+  async count(query: any, options: any) {
     throw new Error('Not Implemented');
   }
 
-
- /** 
-  * @deprecated
-  */
-  async update(query: any, update: any, options: any, cb?: any) {
-    return await this.updateMany(query, update, options, cb);
-  }
-
-  async findOneAndUpdate(query: any, update: any, options?: FindOneAndUpdateOptions, cb?: any) {
+  async findOneAndUpdate(query: any, update: any, options?: FindOneAndUpdateOptions) {
     return executeOperation(async (): Promise<ModifyResult> => {
       const command = {
         findOneAndUpdate : {
@@ -260,7 +237,7 @@ export class Collection {
         value : resp.data?.docs[0],
         ok : 1
       };
-    }, cb);
+    });
   }
 
   // NOOPS and unimplemented
@@ -270,7 +247,7 @@ export class Collection {
    * @param pipeline
    * @param options
    */
-  aggregate<T>(pipeline?: any[], options?: any, cb?: any) {
+  aggregate<T>(pipeline?: any[], options?: any) {
     throw new Error('Not Implemented');
   }
 
@@ -278,9 +255,8 @@ export class Collection {
    *
    * @param ops
    * @param options
-   * @param cb
    */
-  bulkWrite(ops: any[], options?: any, cb?: any) {
+  bulkWrite(ops: any[], options?: any) {
     throw new Error('bulkWrite() Not Implemented');
   }
 
@@ -288,10 +264,9 @@ export class Collection {
    *
    * @param index
    * @param options
-   * @param cb
    * @returns any
    */
-  async createIndex(index: any, options: any, cb?: any) {
+  async createIndex(index: any, options: any) {
     throw new Error('Not Implemented');
   }
 
@@ -299,10 +274,9 @@ export class Collection {
    *
    * @param index
    * @param options
-   * @param cb
    * @returns any
    */
-  async dropIndexes(cb?: any) {
+  async dropIndexes() {
     throw new Error('Not Implemented');
   }
 
