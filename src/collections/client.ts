@@ -13,9 +13,10 @@
 // limitations under the License.
 
 import { Db } from './db';
-import { executeOperation, parseUri } from './utils';
+import { createNamespace, executeOperation, parseUri } from './utils';
 import { HTTPClient } from '@/src/client';
 import _ from 'lodash';
+import { logger } from '@/src/logger';
 
 export interface ClientOptions {
   applicationToken?: string;
@@ -23,6 +24,7 @@ export interface ClientOptions {
   keyspaceName?: string;
   logLevel?: string;
   authHeaderName?: string;
+  createNamespaceOnConnect?: boolean;
   username?: string;
   password?: string;
   authUrl?: string;
@@ -35,6 +37,7 @@ interface ClientCallback {
 export class Client {
   httpClient: HTTPClient;
   keyspaceName?: string;
+  createNamespaceOnConnect?: boolean;
 
   /**
    * Set up a MongoClient that works with the Stargate/Astra document API
@@ -43,7 +46,8 @@ export class Client {
    * @param options provide the Astra applicationToken here along with the keyspace name (optional)
    */
   constructor(baseUrl: string, options: ClientOptions) {
-    this.keyspaceName = options.keyspaceName;
+    this.keyspaceName = options?.keyspaceName;
+    this.createNamespaceOnConnect = options?.createNamespaceOnConnect ?? true;
     this.httpClient = new HTTPClient({
       baseApiPath: options.baseApiPath,
       baseUrl: baseUrl,
@@ -71,12 +75,12 @@ export class Client {
         keyspaceName: options?.keyspaceName ? options?.keyspaceName : parsedUri.keyspaceName,
         logLevel: options?.logLevel,
         authHeaderName: options?.authHeaderName,
+        createNamespaceOnConnect: options?.createNamespaceOnConnect ?? true,
         username: options?.username,
         password: options?.password,
         authUrl: options?.authUrl
-    });
+      });
     await client.connect();
-
     return client;
   }
 
@@ -85,6 +89,12 @@ export class Client {
    * @returns a MongoClient instance
    */
   async connect(): Promise<Client> {
+    if(this.createNamespaceOnConnect){
+      logger.debug('Creating Namespace ' + this.keyspaceName);
+      await createNamespace(this, this.keyspaceName);
+    } else {
+      logger.debug('Not creating Namespace on connection!');
+    }
     return this;
   }
 

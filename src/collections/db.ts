@@ -37,7 +37,7 @@ export class Db {
     }
     // use a clone of the underlying http client to support multiple db's from a single connection
     this.httpClient = _.cloneDeep(httpClient);
-    this.httpClient.baseUrl = `${this.httpClient.baseUrl}${this.httpClient.baseApiPath}/${name}`;
+    this.httpClient.baseUrl = `${this.httpClient.baseUrl}/${name}`;
     this.name = name;
   }
 

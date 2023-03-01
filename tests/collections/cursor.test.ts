@@ -73,18 +73,18 @@ for (const testClient in testClients) {
         const res = await cursor.toArray();
         assert.strictEqual(res.length, sampleUsers.length);
       });
-      it('should not execute twice', done => {
+      it('should not execute twice', async () => {
         const cursor = new FindCursor(collection, {});
-        cursor.toArray((_err, _res) => {
-          assert.strictEqual(cursor.status, 'executed');
-          cursor.count(undefined, (err: Error, count: number) => {
-            assert.strictEqual(undefined, err);
-            assert.strictEqual(count, sampleUsers.length);
-          });
-          assert.strictEqual(cursor.status, 'executed');
-          done();
-        });
-        assert.strictEqual(cursor.status, 'executing');
+        assert.strictEqual(cursor.status, 'initialized');
+        const cursorRes = await cursor.toArray();
+        assert.strictEqual(cursor.status, 'executed');
+        const count = await cursor.count();
+        assert.strictEqual(count, sampleUsers.length);
+        //run again
+        const cursorRes2 = await cursor.toArray();   
+        assert.strictEqual(cursor.status, 'executed');
+        const count2 = await cursor.count();
+        assert.strictEqual(count2, sampleUsers.length);
       });
       it('should iterate over all documents', async () => {
         const cursor = new FindCursor(collection, {});

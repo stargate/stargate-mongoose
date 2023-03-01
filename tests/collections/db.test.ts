@@ -70,12 +70,13 @@ for (const testClient in testClients) {
         assert.strictEqual(res2.status.ok, 1);
       });
 
-      it.skip('should drop a Collection', async () => {
-        const db = new Db(astraClient.httpClient, process.env.ASTRA_DB_KEYSPACE || '');
+      it('should drop a Collection', async () => {
+        const db = new Db(astraClient.httpClient, parseUri(process.env.ASTRA_URI).keyspaceName);
         const suffix = randAlphaNumeric({ length: 4 }).join('');
         await db.createCollection(`test_db_collection_${suffix}`);
         const res = await db.dropCollection(`test_db_collection_${suffix}`);
-        assert.strictEqual(res, '');
+        assert.strictEqual(res.status?.ok, 1);
+        assert.strictEqual(res.errors, undefined);
       });
     });
   });

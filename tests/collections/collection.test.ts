@@ -338,7 +338,7 @@ for (const testClient in testClients) {
         assert.strictEqual(resDoc.address.number, undefined); 
       });
       //TODOV3 skipped until https://github.com/stargate/stargate-mongoose/discussions/24 is resolved
-      it.skip('should updateOne document by id', async () => {
+      it('should updateOne document by id', async () => {
         //insert a new doc
         const doc = createSampleDocWithMultiLevel();
         const insertDocResp = await collection.insertOne(doc);
@@ -352,14 +352,14 @@ for (const testClient in testClients) {
         assert.strictEqual(updateOneResp.modifiedCount, 1);
         assert.strictEqual(updateOneResp.matchedCount, 1);
         assert.strictEqual(updateOneResp.acknowledged, true);
-        assert.strictEqual(updateOneResp.upsertedId, null);
-        assert.strictEqual(updateOneResp.upsertedCount, 0);
+        assert.strictEqual(updateOneResp.upsertedId, undefined);
+        assert.strictEqual(updateOneResp.upsertedCount, undefined);
         const updatedDoc = await collection.findOne({"username":"aaronm"});
         assert.strictEqual(updatedDoc._id, idToCheck);
         assert.strictEqual(updatedDoc.username, "aaronm");
-        assert.strictEqual(updatedDoc.address.city, "");
+        assert.strictEqual(updatedDoc.address.city, undefined);
       });      
-      it.skip('should updateMany documents with ids', async () => {
+      it('should updateMany documents with ids', async () => {
         let sampleDocsWithIdList = JSON.parse(JSON.stringify(sampleUsersList));
         sampleDocsWithIdList[0]._id="docml1";
         sampleDocsWithIdList[1]._id="docml2";
@@ -377,14 +377,14 @@ for (const testClient in testClients) {
         assert.strictEqual(updateManyResp.matchedCount, 1);
         assert.strictEqual(updateManyResp.modifiedCount, 1);
         assert.strictEqual(updateManyResp.acknowledged, true);
-        assert.strictEqual(updateManyResp.upsertedCount, 0);
-        assert.strictEqual(updateManyResp.upsertedId, null);
+        assert.strictEqual(updateManyResp.upsertedCount, undefined);
+        assert.strictEqual(updateManyResp.upsertedId, undefined);
         const updatedDoc = await collection.findOne({"username":"aaronm"});
         assert.strictEqual(updatedDoc._id, idToUpdateAndCheck);
         assert.strictEqual(updatedDoc.username, "aaronm");
-        assert.strictEqual(updatedDoc.address.city, "");                                                  
+        assert.strictEqual(updatedDoc.address.city, undefined);                                                  
       });
-      it.skip('should findOneAndUpdate', async () => {
+      it('should findOneAndUpdate', async () => {
         const res = await collection.insertOne(createSampleDocWithMultiLevel());
         const docId = res.insertedId;
         const findOneAndUpdateResp = await collection.findOneAndUpdate({"_id":docId}, 
@@ -398,13 +398,12 @@ for (const testClient in testClients) {
           },
           {
             "returnDocument": "after"
-          },
-          null
+          }          
         );        
         assert.equal(findOneAndUpdateResp.ok, 1);
         assert.equal(findOneAndUpdateResp.value._id, docId);
         assert.equal(findOneAndUpdateResp.value.username, "aaronm");
-        assert.equal(findOneAndUpdateResp.value.address.city, "");
+        assert.equal(findOneAndUpdateResp.value.address.city, undefined);
       });      
       it('should deleteOne document', async () => {
         const res = await collection.insertOne(createSampleDocWithMultiLevel());

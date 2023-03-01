@@ -22,8 +22,6 @@
 <dt><a href="#createStargateUri">createStargateUri</a></dt>
 <dd></dd>
 <dt><a href="#StargateAuthError">StargateAuthError</a> ⇒</dt>
-<dd></dd>
-<dt><a href="#setOptionsAndCb">setOptionsAndCb</a> ⇒</dt>
 <dd><p>executeOperation handles running functions that have a callback parameter and that also can
 return a promise.</p></dd>
 <dt><a href="#executeOperation">executeOperation</a> ⇒</dt>
@@ -46,12 +44,12 @@ drill into arrays.</p></dd>
 * [Client](#Client)
     * [new Client(uri, options)](#new_Client_new)
     * _instance_
-        * [.connect(cb)](#Client+connect) ⇒
+        * [.connect()](#Client+connect) ⇒
         * [.db(dbName)](#Client+db) ⇒
         * [.setMaxListeners(maxListeners)](#Client+setMaxListeners) ⇒
-        * [.close(cb)](#Client+close) ⇒
+        * [.close()](#Client+close) ⇒
     * _static_
-        * [.connect(uri, cb)](#Client.connect) ⇒
+        * [.connect(uri)](#Client.connect) ⇒
 
 <a name="new_Client_new"></a>
 
@@ -66,16 +64,11 @@ drill into arrays.</p></dd>
 
 <a name="Client+connect"></a>
 
-### client.connect(cb) ⇒
+### client.connect() ⇒
 <p>Connect the MongoClient instance to Astra</p>
 
 **Kind**: instance method of [<code>Client</code>](#Client)  
 **Returns**: <p>a MongoClient instance</p>  
-
-| Param | Description |
-| --- | --- |
-| cb | <p>an optional callback whose parameters are (err, client)</p> |
-
 <a name="Client+db"></a>
 
 ### client.db(dbName) ⇒
@@ -100,17 +93,12 @@ drill into arrays.</p></dd>
 
 <a name="Client+close"></a>
 
-### client.close(cb) ⇒
+### client.close() ⇒
 **Kind**: instance method of [<code>Client</code>](#Client)  
 **Returns**: <p>Client</p>  
-
-| Param |
-| --- |
-| cb | 
-
 <a name="Client.connect"></a>
 
-### Client.connect(uri, cb) ⇒
+### Client.connect(uri) ⇒
 <p>Setup a connection to the Astra/Stargate document API</p>
 
 **Kind**: static method of [<code>Client</code>](#Client)  
@@ -119,7 +107,6 @@ drill into arrays.</p></dd>
 | Param | Type | Description |
 | --- | --- | --- |
 | uri | <code>databaseId</code> | <p>an Astra/Stargate connection uri. It should be formed like so if using Astra: https://$-${region}.apps.astra.datastax.com/${keyspace}?applicationToken=${applicationToken} You can also have it formed for you using utils.createAstraUri()</p> |
-| cb |  | <p>an optional callback whose parameters are (err, client)</p> |
 
 <a name="Collection"></a>
 
@@ -128,13 +115,12 @@ drill into arrays.</p></dd>
 
 * [Collection](#Collection)
     * [new Collection(httpClient, name)](#new_Collection_new)
-    * [.insertOne(mongooseDoc, options, cb)](#Collection+insertOne) ⇒
+    * [.insertOne(mongooseDoc, options)](#Collection+insertOne) ⇒
     * ~~[.count()](#Collection+count)~~
-    * ~~[.update()](#Collection+update)~~
     * [.aggregate(pipeline, options)](#Collection+aggregate)
-    * [.bulkWrite(ops, options, cb)](#Collection+bulkWrite)
-    * [.createIndex(index, options, cb)](#Collection+createIndex) ⇒
-    * [.dropIndexes(index, options, cb)](#Collection+dropIndexes) ⇒
+    * [.bulkWrite(ops, options)](#Collection+bulkWrite)
+    * [.createIndex(index, options)](#Collection+createIndex) ⇒
+    * [.dropIndexes(index, options)](#Collection+dropIndexes) ⇒
 
 <a name="new_Collection_new"></a>
 
@@ -147,7 +133,7 @@ drill into arrays.</p></dd>
 
 <a name="Collection+insertOne"></a>
 
-### collection.insertOne(mongooseDoc, options, cb) ⇒
+### collection.insertOne(mongooseDoc, options) ⇒
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 **Returns**: <p>Promise</p>  
 
@@ -155,17 +141,10 @@ drill into arrays.</p></dd>
 | --- |
 | mongooseDoc | 
 | options | 
-| cb | 
 
 <a name="Collection+count"></a>
 
 ### ~~collection.count()~~
-***Deprecated***
-
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-<a name="Collection+update"></a>
-
-### ~~collection.update()~~
 ***Deprecated***
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
@@ -181,18 +160,17 @@ drill into arrays.</p></dd>
 
 <a name="Collection+bulkWrite"></a>
 
-### collection.bulkWrite(ops, options, cb)
+### collection.bulkWrite(ops, options)
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 
 | Param |
 | --- |
 | ops | 
 | options | 
-| cb | 
 
 <a name="Collection+createIndex"></a>
 
-### collection.createIndex(index, options, cb) ⇒
+### collection.createIndex(index, options) ⇒
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 **Returns**: <p>any</p>  
 
@@ -200,11 +178,10 @@ drill into arrays.</p></dd>
 | --- |
 | index | 
 | options | 
-| cb | 
 
 <a name="Collection+dropIndexes"></a>
 
-### collection.dropIndexes(index, options, cb) ⇒
+### collection.dropIndexes(index, options) ⇒
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 **Returns**: <p>any</p>  
 
@@ -212,7 +189,6 @@ drill into arrays.</p></dd>
 | --- |
 | index | 
 | options | 
-| cb | 
 
 <a name="FindCursor"></a>
 
@@ -222,10 +198,10 @@ drill into arrays.</p></dd>
 * [FindCursor](#FindCursor)
     * [new FindCursor(collection, filter, options)](#new_FindCursor_new)
     * [.getAll()](#FindCursor+getAll) ⇒
-    * [.toArray(cb)](#FindCursor+toArray) ⇒
-    * [.next(iterator, cb)](#FindCursor+next)
-    * [.forEach(iterator, cb)](#FindCursor+forEach)
-    * [.count(options, cb)](#FindCursor+count) ⇒
+    * [.toArray()](#FindCursor+toArray) ⇒
+    * [.next()](#FindCursor+next) ⇒
+    * [.forEach(iterator)](#FindCursor+forEach)
+    * [.count(options)](#FindCursor+count) ⇒
     * [.stream(options)](#FindCursor+stream)
 
 <a name="new_FindCursor_new"></a>
@@ -245,44 +221,32 @@ drill into arrays.</p></dd>
 **Returns**: <p>void</p>  
 <a name="FindCursor+toArray"></a>
 
-### findCursor.toArray(cb) ⇒
+### findCursor.toArray() ⇒
 **Kind**: instance method of [<code>FindCursor</code>](#FindCursor)  
 **Returns**: <p>Promise</p>  
-
-| Param |
-| --- |
-| cb | 
-
 <a name="FindCursor+next"></a>
 
-### findCursor.next(iterator, cb)
+### findCursor.next() ⇒
 **Kind**: instance method of [<code>FindCursor</code>](#FindCursor)  
-
-| Param |
-| --- |
-| iterator | 
-| cb | 
-
+**Returns**: <p>Promise</p>  
 <a name="FindCursor+forEach"></a>
 
-### findCursor.forEach(iterator, cb)
+### findCursor.forEach(iterator)
 **Kind**: instance method of [<code>FindCursor</code>](#FindCursor)  
 
 | Param |
 | --- |
 | iterator | 
-| cb | 
 
 <a name="FindCursor+count"></a>
 
-### findCursor.count(options, cb) ⇒
+### findCursor.count(options) ⇒
 **Kind**: instance method of [<code>FindCursor</code>](#FindCursor)  
 **Returns**: <p>Promise<number></p>  
 
 | Param |
 | --- |
 | options | 
-| cb | 
 
 <a name="FindCursor+stream"></a>
 
@@ -301,9 +265,9 @@ drill into arrays.</p></dd>
 * [Db](#Db)
     * [new Db(astraClient, name)](#new_Db_new)
     * [.collection(collectionName)](#Db+collection) ⇒
-    * [.createCollection(collectionName, options, cb)](#Db+createCollection) ⇒
-    * [.dropCollection(collectionName, cb)](#Db+dropCollection) ⇒
-    * [.dropDatabase(cb)](#Db+dropDatabase) ⇒
+    * [.createCollection(collectionName, options)](#Db+createCollection) ⇒
+    * [.dropCollection(collectionName)](#Db+dropCollection) ⇒
+    * [.dropDatabase()](#Db+dropDatabase) ⇒
 
 <a name="new_Db_new"></a>
 
@@ -326,7 +290,7 @@ drill into arrays.</p></dd>
 
 <a name="Db+createCollection"></a>
 
-### db.createCollection(collectionName, options, cb) ⇒
+### db.createCollection(collectionName, options) ⇒
 **Kind**: instance method of [<code>Db</code>](#Db)  
 **Returns**: <p>Promise</p>  
 
@@ -334,29 +298,22 @@ drill into arrays.</p></dd>
 | --- |
 | collectionName | 
 | options | 
-| cb | 
 
 <a name="Db+dropCollection"></a>
 
-### db.dropCollection(collectionName, cb) ⇒
+### db.dropCollection(collectionName) ⇒
 **Kind**: instance method of [<code>Db</code>](#Db)  
 **Returns**: <p>Promise</p>  
 
 | Param |
 | --- |
 | collectionName | 
-| cb | 
 
 <a name="Db+dropDatabase"></a>
 
-### db.dropDatabase(cb) ⇒
+### db.dropDatabase() ⇒
 **Kind**: instance method of [<code>Db</code>](#Db)  
 **Returns**: <p>Promise</p>  
-
-| Param |
-| --- |
-| cb | 
-
 <a name="parseUri"></a>
 
 ## parseUri ⇒
@@ -404,17 +361,6 @@ drill into arrays.</p></dd>
 <a name="StargateAuthError"></a>
 
 ## StargateAuthError ⇒
-**Kind**: global variable  
-**Returns**: <p>Object</p>  
-
-| Param |
-| --- |
-| options | 
-| cb | 
-
-<a name="setOptionsAndCb"></a>
-
-## setOptionsAndCb ⇒
 <p>executeOperation handles running functions that have a callback parameter and that also can
 return a promise.</p>
 
@@ -424,7 +370,6 @@ return a promise.</p>
 | Param | Description |
 | --- | --- |
 | operation | <p>a function that takes no parameters and returns a response</p> |
-| cb | <p>a node callback function</p> |
 
 <a name="executeOperation"></a>
 

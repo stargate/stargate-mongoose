@@ -102,7 +102,6 @@ axiosAgent.interceptors.request.use(requestInterceptor);
 axiosAgent.interceptors.response.use(responseInterceptor);
 
 export class HTTPClient {
-  baseApiPath: string;
   baseUrl: string;
   applicationToken: string;
   authHeaderName: string;
@@ -143,8 +142,9 @@ export class HTTPClient {
     if (options.logLevel) {
       setLevel(options.logLevel);
     }
-
-    this.baseApiPath = options.baseApiPath ?? '';    
+    if(options.baseApiPath){
+      this.baseUrl = this.baseUrl + "/" + options.baseApiPath;
+    }
     this.authHeaderName = options.authHeaderName || DEFAULT_AUTH_HEADER;
   }
 
@@ -285,7 +285,7 @@ export class StargateServerError extends Error {
   }
 }
 
-const handleIfErrorResponse = (response: any, data: Record<string, any>) => {
+export const handleIfErrorResponse = (response: any, data: Record<string, any>) => {
   if(response.errors && response.errors.length > 0){
     throw new StargateServerError(response, data);
   }
