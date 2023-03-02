@@ -89,7 +89,7 @@ export class Client {
    * @returns a MongoClient instance
    */
   async connect(): Promise<Client> {
-    if(this.createNamespaceOnConnect){
+    if (this.createNamespaceOnConnect && this.keyspaceName) {
       logger.debug('Creating Namespace ' + this.keyspaceName);
       await createNamespace(this, this.keyspaceName);
     } else {
