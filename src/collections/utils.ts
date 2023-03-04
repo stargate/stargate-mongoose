@@ -37,7 +37,7 @@ interface ParsedUri {
  */
 export const parseUri = (uri: string): ParsedUri => {
   const parsedUrl = url.parse(uri, true);
-  const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}/v1`;
+  const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
   const keyspaceName = parsedUrl.pathname?.substring(parsedUrl.pathname?.lastIndexOf('/') + 1)
   const applicationToken = parsedUrl.query?.applicationToken as string;
   const baseApiPath = parsedUrl.query?.baseApiPath as string;
