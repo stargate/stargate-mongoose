@@ -49,9 +49,8 @@ export class Client {
     this.keyspaceName = options?.keyspaceName;
     this.createNamespaceOnConnect = options?.createNamespaceOnConnect ?? true;
 
-    const baseApiPath = options.baseApiPath ?? 'v1';
     this.httpClient = new HTTPClient({
-      baseApiPath,
+      baseApiPath : options.baseApiPath,
       baseUrl: baseUrl,
       applicationToken: options.applicationToken,
       logLevel: options.logLevel,

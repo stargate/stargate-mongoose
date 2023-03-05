@@ -15,8 +15,6 @@
 ## Members
 
 <dl>
-<dt><a href="#parseUri">parseUri</a> ⇒</dt>
-<dd><p>Create a production Astra connection URI</p></dd>
 <dt><a href="#createAstraUri">createAstraUri</a> ⇒</dt>
 <dd><p>Create a stargate  connection URI</p></dd>
 <dt><a href="#createStargateUri">createStargateUri</a></dt>
@@ -34,6 +32,8 @@ drill into arrays.</p></dd>
 <dl>
 <dt><a href="#parseUri">parseUri(uri)</a> ⇒</dt>
 <dd><p>Parse an Astra connection URI</p></dd>
+<dt><a href="#createAstraUri">createAstraUri(databaseId, region, keyspace, applicationToken, logLevel)</a> ⇒</dt>
+<dd><p>Create a production Astra connection URI</p></dd>
 </dl>
 
 <a name="Client"></a>
@@ -314,22 +314,6 @@ drill into arrays.</p></dd>
 ### db.dropDatabase() ⇒
 **Kind**: instance method of [<code>Db</code>](#Db)  
 **Returns**: <p>Promise</p>  
-<a name="parseUri"></a>
-
-## parseUri ⇒
-<p>Create a production Astra connection URI</p>
-
-**Kind**: global variable  
-**Returns**: <p>string</p>  
-
-| Param | Description |
-| --- | --- |
-| databaseId | <p>the database id of the Astra database</p> |
-| region | <p>the region of the Astra database</p> |
-| keyspace | <p>the keyspace to connect to</p> |
-| applicationToken | <p>an Astra application token</p> |
-| logLevel | <p>an winston log level</p> |
-
 <a name="createAstraUri"></a>
 
 ## createAstraUri ⇒
@@ -396,4 +380,20 @@ drill into arrays.</p>
 | Param | Type | Description |
 | --- | --- | --- |
 | uri | <code>databaseId</code> | <p>a uri in the format of: https://$-${region}.apps.astra.datastax.com/${keyspace}?applicationToken=${applicationToken}</p> |
+
+<a name="createAstraUri"></a>
+
+## createAstraUri(databaseId, region, keyspace, applicationToken, logLevel) ⇒
+<p>Create a production Astra connection URI</p>
+
+**Kind**: global function  
+**Returns**: <p>string</p>  
+
+| Param | Description |
+| --- | --- |
+| databaseId | <p>the database id of the Astra database</p> |
+| region | <p>the region of the Astra database</p> |
+| keyspace | <p>the keyspace to connect to</p> |
+| applicationToken | <p>an Astra application token</p> |
+| logLevel | <p>an winston log level</p> |
 

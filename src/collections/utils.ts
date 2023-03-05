@@ -38,9 +38,9 @@ interface ParsedUri {
 export const parseUri = (uri: string): ParsedUri => {
   const parsedUrl = url.parse(uri, true);
   const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
-  const keyspaceName = parsedUrl.pathname?.substring(parsedUrl.pathname?.lastIndexOf('/') + 1)
+  const keyspaceName = parsedUrl.pathname?.substring(parsedUrl.pathname?.lastIndexOf('/') + 1);
+  const baseApiPath = getBaseAPIPath(keyspaceName, parsedUrl.pathname);
   const applicationToken = parsedUrl.query?.applicationToken as string;
-  const baseApiPath = parsedUrl.query?.baseApiPath as string;
   const logLevel = parsedUrl.query?.logLevel as string;
   const authHeaderName = parsedUrl.query?.authHeaderName as string;
   if (!keyspaceName) {
@@ -55,6 +55,19 @@ export const parseUri = (uri: string): ParsedUri => {
     authHeaderName
   };
 };
+
+function getBaseAPIPath(keyspaceName?: string, pathFromUrl?: string | null){
+  if(!pathFromUrl){
+    return '';
+  }
+  if(!keyspaceName){
+    return pathFromUrl;
+  }
+  const pathElements = pathFromUrl.split("/");
+  pathElements[pathElements.lastIndexOf(keyspaceName)] = '';
+  const baseApiPath = pathElements.join('/');
+  return baseApiPath === '/' ? '' : baseApiPath.substring(1, baseApiPath.length - 1);
+}
 
 /**
  * Create a production Astra connection URI
