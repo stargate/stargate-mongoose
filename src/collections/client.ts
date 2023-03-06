@@ -48,8 +48,9 @@ export class Client {
   constructor(baseUrl: string, options: ClientOptions) {
     this.keyspaceName = options?.keyspaceName;
     this.createNamespaceOnConnect = options?.createNamespaceOnConnect ?? true;
+
     this.httpClient = new HTTPClient({
-      baseApiPath: options.baseApiPath,
+      baseApiPath : options.baseApiPath,
       baseUrl: baseUrl,
       applicationToken: options.applicationToken,
       logLevel: options.logLevel,
@@ -89,7 +90,7 @@ export class Client {
    * @returns a MongoClient instance
    */
   async connect(): Promise<Client> {
-    if(this.createNamespaceOnConnect){
+    if (this.createNamespaceOnConnect && this.keyspaceName) {
       logger.debug('Creating Namespace ' + this.keyspaceName);
       await createNamespace(this, this.keyspaceName);
     } else {
