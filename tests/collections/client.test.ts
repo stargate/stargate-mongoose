@@ -78,7 +78,7 @@ describe('StargateMongoose - collections.Client', () => {
       const BASE_API_PATH_TO_CHECK = "baseAPIPath1";
       const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
-      const client = await Client.connect("http://localhost:8080/" + BASE_API_PATH_TO_CHECK + "/testks1", {
+      const client = await Client.connect(parseUri(astraUri).baseUrl + "/" + BASE_API_PATH_TO_CHECK + "/testks1", {
           applicationToken: AUTH_TOKEN_TO_CHECK,
           keyspaceName: KEYSPACE_TO_CHECK,
           logLevel: LOG_LEVEL_TO_CHECK,
@@ -100,7 +100,7 @@ describe('StargateMongoose - collections.Client', () => {
       const BASE_API_PATH_TO_CHECK = "apis/baseAPIPath1";
       const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
-      const client = await Client.connect("http://localhost:8080/" + BASE_API_PATH_TO_CHECK + "/testks1", {
+      const client = await Client.connect(parseUri(astraUri).baseUrl + "/" + BASE_API_PATH_TO_CHECK + "/testks1", {
           applicationToken: AUTH_TOKEN_TO_CHECK,
           keyspaceName: KEYSPACE_TO_CHECK,
           logLevel: LOG_LEVEL_TO_CHECK,
