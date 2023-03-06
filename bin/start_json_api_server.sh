@@ -2,6 +2,7 @@
 
 # Default to INFO as root log level
 LOGLEVEL=INFO
+REQUESTLOG=false
 
 # Default to images used in project integration tests
 DSETAG="6.8.32"
@@ -37,4 +38,4 @@ export JSONTAG
 
 echo "Running with DSE $DSETAG, Stargate $SGTAG, JSON API $JSONTAG"
 
-docker-compose -f docker-compose.yml --verbose up -d
+docker-compose -f bin/docker-compose.yml --verbose up -d

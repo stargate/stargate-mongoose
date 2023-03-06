@@ -1,0 +1,37 @@
+name: Tests - stargate-mongoose
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      ASTRA_URI: http://localhost:8080/v1/testks1
+    steps:      
+      - name: disable and stop mono-xsp4.service
+        run: |
+          sudo kill -9 $(sudo lsof -t -i:8084)
+      - uses: actions/checkout@v3
+      - name: Set up JSON API server
+        run: |
+          chmod +x bin/start_json_api_server.sh
+          bin/start_json_api_server.sh
+      - name: Wait for services
+        run: |
+          while ! nc -z localhost 8080; do sleep 1; done
+          while ! nc -z localhost 8081; do sleep 1; done
+      - name: Setting up the node version
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.15.0
+      - name: setup project
+        run: npm i      
+      - name: Wait for services
+        run: |          
+          while ! nc -z localhost 8081; do sleep 1; done
+      - name: run test
+        run: |
+          npm run test
