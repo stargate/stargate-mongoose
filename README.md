@@ -1,6 +1,6 @@
 # stargate-mongoose
 
-![ci-tests](https://github.com/riptano/stargate-mongoose/actions/workflows/ci-tests.yml/badge.svg)
+![ci-tests](https://github.com/stargate/stargate-mongoose/actions/workflows/ci-tests.yml/badge.svg)
 
 `stargate-mongoose` is a mongoose driver for [JSON API Server](https://github.com/stargate/jsonapi)/[Astra DB](https://astra.datastax.com).
 
