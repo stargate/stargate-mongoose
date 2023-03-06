@@ -13,7 +13,7 @@ services:
     mem_limit: 2G
     environment:
       - JAVA_OPTS="-Xmx2G"
-      - CLUSTER_NAME=dse-${DSETAG}-cluster
+      - CLUSTER_NAME=dse-6.8-cluster
       - CLUSTER_VERSION=6.8
       - DSE=1
       - RACK_NAME=rack1

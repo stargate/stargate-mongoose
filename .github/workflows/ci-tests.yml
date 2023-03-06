@@ -13,6 +13,8 @@ jobs:
       STARGATE_AUTH_URL: http://localhost:8081/v1/auth
       STARGATE_USERNAME: cassandra
       STARGATE_PASSWORD: cassandra
+      SGTAG: v2.0.8
+      JSONTAG: v1.0.0-ALPHA-1
     steps:      
       - name: disable and stop mono-xsp4.service
         run: |
@@ -21,7 +23,7 @@ jobs:
       - name: Set up JSON API server
         run: |
           chmod +x bin/start_json_api_server.sh
-          bin/start_json_api_server.sh
+          bin/start_json_api_server.sh -t $SGTAG -j $JSONTAG
       - name: Wait for services
         run: |
           while ! nc -z localhost 8080; do sleep 1; done

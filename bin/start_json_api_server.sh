@@ -4,12 +4,7 @@
 LOGLEVEL=INFO
 REQUESTLOG=false
 
-# Default to images used in project integration tests
-DSETAG="6.8.32"
-SGTAG="v2.0.8"
-JSONTAG="v1.0.0-ALPHA-1"
-
-while getopts "qr:t:" opt; do
+while getopts "qr:t:j:" opt; do
   case $opt in
     q)
       REQUESTLOG=true
@@ -20,9 +15,13 @@ while getopts "qr:t:" opt; do
     t)
       SGTAG=$OPTARG
       ;;
+    j)
+      JSONTAG=$OPTARG
+      ;;
     \?)
       echo "Valid options:"
       echo "  -t <tag> - use Docker images tagged with specified Stargate version (will pull images from Docker Hub if needed)"
+      echo "  -j <tag> - use Docker images tagged with specified JSON API version (will pull images from Docker Hub if needed)"
       echo "  -q - enable request logging for APIs in 'io.quarkus.http.access-log' (default: disabled)"
       echo "  -r - specify root log level for APIs (defaults to INFO); usually DEBUG, WARN or ERROR"
       exit 1
@@ -30,12 +29,23 @@ while getopts "qr:t:" opt; do
   esac
 done
 
+if [ -z "$SGTAG" ]
+then
+  echo "Missing stargate version (option -t). For example -t v2.0.8"
+  exit 1
+fi
+
+if [ -z "$JSONTAG" ]
+then
+  echo "Missing JSON API version (option -j). For example -j v1.0.0-ALPHA-1"
+  exit 1
+fi
+
 export LOGLEVEL
 export REQUESTLOG
-export DSETAG
 export SGTAG
 export JSONTAG
 
-echo "Running with DSE $DSETAG, Stargate $SGTAG, JSON API $JSONTAG"
+echo "Running with Stargate $SGTAG, JSON API $JSONTAG"
 
 docker-compose -f bin/docker-compose.yml up -d
