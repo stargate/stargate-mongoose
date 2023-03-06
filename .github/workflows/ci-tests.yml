@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ASTRA_URI: http://localhost:8080/v1/testks1
+      STARGATE_AUTH_URL: http://localhost:8081/v1/auth
+      STARGATE_USERNAME: cassandra
+      STARGATE_PASSWORD: cassandra
     steps:      
       - name: disable and stop mono-xsp4.service
         run: |
@@ -29,9 +32,6 @@ jobs:
           node-version: 16.15.0
       - name: setup project
         run: npm i      
-      - name: Wait for services
-        run: |          
-          while ! nc -z localhost 8081; do sleep 1; done
-      - name: run test
+      - name: run tests
         run: |
           npm run test
