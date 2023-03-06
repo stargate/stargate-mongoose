@@ -39,7 +39,7 @@ export const parseUri = (uri: string): ParsedUri => {
   const parsedUrl = url.parse(uri, true);
   const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
   const keyspaceName = parsedUrl.pathname?.substring(parsedUrl.pathname?.lastIndexOf('/') + 1);
-  const baseApiPath = getBaseAPIPath(keyspaceName, parsedUrl.pathname);
+  const baseApiPath = getBaseAPIPath(parsedUrl.pathname);
   const applicationToken = parsedUrl.query?.applicationToken as string;
   const logLevel = parsedUrl.query?.logLevel as string;
   const authHeaderName = parsedUrl.query?.authHeaderName as string;
@@ -56,15 +56,17 @@ export const parseUri = (uri: string): ParsedUri => {
   };
 };
 
-function getBaseAPIPath(keyspaceName?: string, pathFromUrl?: string | null){
+/* Removes the last part of the api path (which is assumed as the keyspace name). for example below are the sample input => output from this function
+ * /v1/testks1 => v1
+ * /apis/v1/testks1 => apis/v1
+ * /testks1 => '' (empty string)
+*/
+function getBaseAPIPath(pathFromUrl?: string | null){
   if(!pathFromUrl){
     return '';
   }
-  if(!keyspaceName){
-    return pathFromUrl;
-  }
   const pathElements = pathFromUrl.split("/");
-  pathElements[pathElements.lastIndexOf(keyspaceName)] = '';
+  pathElements[pathElements.length - 1] = '';
   const baseApiPath = pathElements.join('/');
   return baseApiPath === '/' ? '' : baseApiPath.substring(1, baseApiPath.length - 1);
 }
