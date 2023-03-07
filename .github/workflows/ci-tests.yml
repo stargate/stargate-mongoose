@@ -14,8 +14,8 @@ jobs:
       STARGATE_AUTH_URL: http://localhost:8081/v1/auth
       STARGATE_USERNAME: cassandra
       STARGATE_PASSWORD: cassandra
-      SGTAG: v2.0.8
-      JSONTAG: v1.0.0-ALPHA-1
+      SGTAG: v2.0.9
+      JSONTAG: v1.0.0-ALPHA-2
     steps:      
       - name: disable and stop mono-xsp4.service
         run: |
