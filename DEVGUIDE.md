@@ -2,7 +2,7 @@
 # Contents
 1. [Build & Run tests locally](#build--test)
 2. [Build API Reference Documentation](#build-api-reference-documentation)
-3. [Contributing](#CONTRIBUTING.md)
+3. [Contributing](CONTRIBUTING.md)
 4. [Creating a release](#releasing)
 
 ## Build & Test
