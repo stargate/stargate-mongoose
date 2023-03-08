@@ -29,7 +29,7 @@ STARGATE_PASSWORD=cassandra
 ```
 - Run the tests
 ```shell
-npm test
+npm run test
 ```
 
 ## Build API Reference Documentation

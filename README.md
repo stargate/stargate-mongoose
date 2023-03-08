@@ -7,12 +7,12 @@
 3. [Features](#compatability)
 4. [MongoDB Driver Overriding](#nodejs-mongodb-driver-overriding-experimental)
 5. [API Reference](APIReference.md)
-6. [Developer Guide](#DEVGUIDE.md)
+6. [Developer Guide](DEVGUIDE.md)
 
 
 ## Quickstart
 Prerequisites:
-npm, node, Docker (for testing the sample app locally using docker compose) or a JSON API Server
+npm, node, Docker (for testing the sample app locally using docker compose)
 - Start `Docker` on your local.
 - Execute the script ``bin/start_json_api_server.sh`` and wait for it to complete, which starts a simple JSON API Server on local with a DSE 6.8 (DataStax Enterprise) as database backend.
 - Make a directory called `sample-app`
@@ -27,33 +27,43 @@ const driver = require('stargate-mongoose').driver;
 
 // override the default mongodb native driver
 mongoose.setDriver(driver);
-const JSON_API_URI="http://localhost:8080/v1"; // JSON API URL
-const AUTH_URL="http://localhost:8081/v1/auth", //Stargate Coordinator Authentication URL
+// JSON API URL
+const JSON_API_URI="http://localhost:8080/v1";
+//Stargate Coordinator Authentication URL
+const AUTH_URL="http://localhost:8081/v1/auth";
 // Define Product schema
 const productSchema = new Schema({ name: String, price: Number});
 // Create Product model
 const Product = mongoose.model('Product', productSchema);
-
+//Connect to server
 mongoose.connect(JSON_API_URI, {
-                    "username":"cassandra", //Default user name
-                    "password":"cassandra", //Default password
+                    //Default user name
+                    "username":"cassandra",
+                    //Default password
+                    "password":"cassandra",
                     "authUrl": AUTH_URL,
-                    "keyspaceName": "inventory", //Name of the Namespace
+                    //Name of the Namespace
+                    "keyspaceName": "inventory",
                 });
+//Wait for collections to get created
 Object.values(mongoose.connection.models).map(Model => Model.init());
+//Start the express server
 const HOST="0.0.0.0";
 const PORT=8097;
 const app = express();
+//Add product API
 app.get('/addproduct', (req, res) => {
   const newProduct = new Product(
     {name:"product"+Math.floor(Math.random() * 99 + 1), 
     "price:": "" + Math.floor(Math.random() * 900 + 100) });
   res.send('Added a product!');
 });
+//Get products API
 app.get('/getproducts', (req, res) => {
   Product.find()
     .then(products => res.json(products));
 });
+//Start server
 app.listen(PORT, HOST, () => {
   console.log(`Running on http://${HOST}:${PORT}` 
               + '\nNavigate to'
@@ -74,7 +84,7 @@ app.listen(PORT, HOST, () => {
 - Cassandra Cluster - Apache Cassandra / DataStax Enterprise Cluster as backend database.
 - Stargate Coordinator Nodes - [Stargate](https://stargate.io/) is an opensource Data API Gateway for Cassandra. Coordinator is one of the primary components of Stargate which connects the API layer to the backend database. More details can be found [here](https://stargate.io/docs/latest/concepts/concepts.html#stargate-v2-0).
 - Stargate JSON API - [JSON API Server](https://github.com/stargate/jsonapi) is an opensource JSON API that runs on top of Stargate's coordinator.
-- JavaScript Clients that use mongoose - mongoose is an elegant mongodb object modeling library for node.js applications. By implementing a driver required by the mongoose interface to connect to the JSON API server instead of native mongodb access layer, now a JavaScript client can store/retries documents on an Apache Cassandra backend.
+- JavaScript Clients that use mongoose - mongoose is an elegant mongodb object modeling library for node.js applications. By implementing a driver required by the mongoose interface to connect to the JSON API server instead of native mongodb access layer, now a JavaScript client can store/retrieve documents on an Apache Cassandra/DSE backend.
 
 ## Version compatibility
 | Component/Library Name |    Version |
