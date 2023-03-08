@@ -18,7 +18,7 @@ import { randFirstName, randLastName } from '@ngneat/falso';
 
 export const TEST_COLLECTION_NAME = 'collection1';
 
-export const astraUri = process.env.ASTRA_URI || createAstraUri(
+export const astraUri = process.env.JSON_API_URI || createAstraUri(
   process.env.ASTRA_DB_ID ?? '',
   process.env.ASTRA_DB_REGION ?? '',
   process.env.ASTRA_DB_KEYSPACE ?? '',
@@ -26,7 +26,7 @@ export const astraUri = process.env.ASTRA_URI || createAstraUri(
 );
 
 export const getAstraClient = async () => {
-  if (!process.env.ASTRA_URI && (!process.env.ASTRA_DB_ID || !process.env.ASTRA_DB_APPLICATION_TOKEN)) {
+  if (!process.env.JSON_API_URI && (!process.env.ASTRA_DB_ID || !process.env.ASTRA_DB_APPLICATION_TOKEN)) {
     return null;
   }
   let options:ClientOptions = {authHeaderName: process.env.AUTH_HEADER_NAME};

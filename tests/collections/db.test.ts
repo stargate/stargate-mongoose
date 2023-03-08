@@ -61,7 +61,7 @@ for (const testClient in testClients) {
       });
       it('should create a Collection', async () => {
         const collectionName = TEST_COLLECTION_NAME;
-        const db = new Db(astraClient.httpClient, parseUri(process.env.ASTRA_URI).keyspaceName);        
+        const db = new Db(astraClient.httpClient, parseUri(process.env.JSON_API_URI).keyspaceName);        
         const res = await db.createCollection(collectionName);
         assert.ok(res);
         assert.strictEqual(res.status.ok, 1);
@@ -71,7 +71,7 @@ for (const testClient in testClients) {
       });
 
       it('should drop a Collection', async () => {
-        const db = new Db(astraClient.httpClient, parseUri(process.env.ASTRA_URI).keyspaceName);
+        const db = new Db(astraClient.httpClient, parseUri(process.env.JSON_API_URI).keyspaceName);
         const suffix = randAlphaNumeric({ length: 4 }).join('');
         await db.createCollection(`test_db_collection_${suffix}`);
         const res = await db.dropCollection(`test_db_collection_${suffix}`);
