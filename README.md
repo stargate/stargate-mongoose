@@ -58,8 +58,8 @@ const app = express();
 //Add product API
 app.get('/addproduct', (req, res) => {
   const newProduct = new Product(
-    {name:"product"+Math.floor(Math.random() * 99 + 1), 
-    "price:": "" + Math.floor(Math.random() * 900 + 100) });
+    { name:"product"+Math.floor(Math.random() * 99 + 1), 
+      price: "" + Math.floor(Math.random() * 900 + 100) });
   res.send('Added a product!');
 });
 //Get products API
