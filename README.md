@@ -22,8 +22,9 @@ npm, node, Docker (for testing the sample app locally using docker compose)
 ```typescript
 const express = require('express');
 const mongoose = require('mongoose');
+const stargate_mongoose = require('stargate-mongoose');
 const Schema = mongoose.Schema;
-const driver = require('stargate-mongoose').driver;
+const driver = stargate_mongoose.driver;
 
 // override the default mongodb native driver
 mongoose.setDriver(driver);
