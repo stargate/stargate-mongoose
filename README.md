@@ -28,6 +28,8 @@ const driver = stargate_mongoose.driver;
 
 // override the default mongodb native driver
 mongoose.setDriver(driver);
+
+//Set up mongoose
 // JSON API URL
 const JSON_API_URI="http://localhost:8080/v1";
 //Stargate Coordinator Authentication URL
@@ -48,6 +50,7 @@ mongoose.connect(JSON_API_URI, {
                 });
 //Wait for collections to get created
 Object.values(mongoose.connection.models).map(Model => Model.init());
+
 //Start the express server
 const HOST="0.0.0.0";
 const PORT=8097;
