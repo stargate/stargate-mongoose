@@ -190,7 +190,7 @@ Index operations are not supported. There is one caveat for `ttl` indexes: When 
 
 ```javascript
 import { Client } from 'stargate-mongoose';
-// connect to Astra
+// connect to JSON API Server
 const client = await Client.connect(process.env.JSON_API_URI);
 // get a collection
 const collection = client.db().collection('docs');
@@ -208,7 +208,7 @@ Transaction operations are not supported.
 
 ## NodeJS MongoDB Driver Overriding (experimental)
 
-If you have an application that uses the NodeJS MongoDB driver, or a dependency that uses the NodeJS MongoDB driver, it is possible to override it's use with the collections package of `stargate-mongoose`. This makes your application use Astra DB documents instead of MongoDB documents. Doing so requires code changes in your application that address the compatibility section of this README, and a change in how you set up your client connection.
+If you have an application that uses the NodeJS MongoDB driver, or a dependency that uses the NodeJS MongoDB driver, it is possible to override it's use with the collections package of `stargate-mongoose`. This makes your application use JSON API Server documents instead of MongoDB documents. Doing so requires code changes in your application that address the compatibility section of this README, and a change in how you set up your client connection.
 
 If your application uses `mongodb` you can override it's usage like so:
 
@@ -224,12 +224,12 @@ Then, re-install your dependencies
 npm i
 ```
 
-Finally, modify your connection so that your driver connects to Astra
+Finally, modify your connection so that your driver connects to JSON API Server
 
 ```javascript
 import { MongoClient } from 'stargate-mongoose';
 
-// connect to Astra
+// connect to JSON API Server
 const client = await MongoClient.connect(process.env.JSON_API_URI);
 ```
 
@@ -254,11 +254,11 @@ Then, re-install your dependencies
 npm i
 ```
 
-Finally, modify your depdendencies connection so that your driver connects to Astra
+Finally, modify your depdendencies connection so that your driver connects to JSON API Server
 
 ```javascript
 import mongoose from 'mongoose';
 
-// connect to Astra
+// connect to JSON API Server
 await mongoose.connect(process.env.JSON_API_URI);
 ```
