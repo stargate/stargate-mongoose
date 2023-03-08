@@ -9,7 +9,6 @@
 5. [API Reference](APIReference.md)
 6. [Developer Guide](DEVGUIDE.md)
 
-
 ## Quickstart
 Prerequisites:
 npm, node, Docker (for testing the sample app locally using docker compose)
