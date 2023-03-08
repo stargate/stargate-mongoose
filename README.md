@@ -1,4 +1,4 @@
-# stargate-mongoose ![tests workflow](https://github.com/riptano/stargate-mongoose/actions/workflows/main.yml/badge.svg)
+# stargate-mongoose ![ci-tests](https://github.com/stargate/stargate-mongoose/actions/workflows/ci-tests.yml/badge.svg)
 
 `stargate-mongoose` is a mongoose driver for [JSON API Server](https://github.com/stargate/jsonapi) which runs on top of Apache Cassandra / DataStax Enterprise.
 
