@@ -119,77 +119,75 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 | ------------------- | --------------- |
 | Create collection   | `mongoose.model('ModelName',modelSchema)` creates a collection as required |
 | Drop Collection     | `model.dropCollection()` drops the collection |
-| Find Collections    | _Description to be added_ |
+| Find Collections    | Not supported |
 
 ### Collection Commands
 | <nobr>Operation Name</nobr> |  Description    |
 | ------------------- | --------------- |
 | Count Documents     | `Model.countDocuments()` returns the count of documents
-| estimatedDocumentCount | _Description to be added_
-| deleteMany | _Description to be added_ |
-| deleteOne | _Description to be added_
-| find | _Description to be added_
-| findOne | _Description to be added_
-| findOneAndDelete | _Description to be added_
-| findOneAndReplace | _Description to be added_
-| findOneAndUpdate | _Description to be added_
-| insertMany | _Description to be added_
-| insertOne | _Description to be added_
-| updateMany | _Description to be added_
-| updateOne | _Description to be added_
+| Estimated Document Count | Not supported |
+| Delete Many | `Model.deleteMany(filter)` |
+| deleteOne | `Model.deleteOne(filter)` |
+| find | `Model.find(filter, projection)`. Projections are yet to be supported. |
+| findOne | `Model.findOne(filter, projection)` |
+| findOneAndDelete | `Model.findOneAndDelete(filter)` |
+| findOneAndReplace | `Model.findOneAndReplace(filter, replacement)` |
+| findOneAndUpdate | `Model.findOneAndUpdate(filter, update)` |
+| insertMany | `Model.insertMany([{docs}])` |
+| insertOne | `Model.insertOne({doc})` |
+| updateMany | `Model.updateMany(filter, update)` |
+| updateOne | `Model.updateOne(filter, update)` |
 
 ### Filter Clause
 | Operator |  Description    |
 | ------------------- | --------------- |
-| literal comparison | _Description to be added_ |
-| $eq | _Description to be added_ |
-| $gt | _Description to be added_ |
-| $gte | _Description to be added_ |
-| $lt | _Description to be added_ |
-| $lte | _Description to be added_ |
-| $ne | _Description to be added_ |
-| $in | _Description to be added_ |
-| $nin | _Description to be added_ |
-| $not | _Description to be added_ |
-| $exists | _Description to be added_ |
-| $all | _Description to be added_ |
-| $elemMatch | _Description to be added_ |
-| $size | _Description to be added_ |
-| $and | _Description to be added_ |
-| $or | _Description to be added_ |
-| $not | _Description to be added_ |
+| literal comparison | Equal to. Example: `{ "first_name" : "jim" }` |
+| $eq | Example: `{ "first_name" : { "$eq" : "jim" } }` |
+| $gt | Example (age > 25): `{ "age" : { "$gt" : 25 } }` |
+| $gte | Example (age >= 25): `{ "age" : { "$gte" : 25 } }` |
+| $lt | Example (age < 25): `{ "age" : { "$lt" : 25 } }` |
+| $lte | Example (age <= 25): `{ "age" : { "$lte" : 25 } }` |
+| $ne | Not Equal to. Example: `{ "first_name" : { "$ne" : "jim" } }` |
+| $in | Example: `{ "address.city" : { "$in" : ["nyc", "la"] } }` |
+| $nin | Example: `{ "address.city" : { "$nin" : ["nyc", "la"] } }` |
+| $not | Example: `{ "first_name" : { "$not" : { "$eq" : "jim" }}}` |
+| $exists | Example: `{ "address.city" : { "$exists" : true} }` |
+| $all | Array operation. Matches if all the elements of an array matches the given values. Example: `{ "tags" : { "$all" : [ "home", "school" ] } }` |
+| $elemMatch | Array operation. Matches if the elements of an array in a document matches the given conditions. Example: `{"goals": { "$elemMatch": { "$gte": 2, "$lt": 10 }}}` |
+| $size | Array Operation. Example: `{ "tags" : { "$size" : 1 } }` |
+| $and | Logical expression. Example : ` { "$and" : [ {first_name : “jim”}, {"age" : {"$gt" : 25 } } ] } ` |
+| $or | Not supported |
 
 ### Projection Clause
 | Operator |  Description    |
 | ------------------- | --------------- |
-| $elemMatch (projection) | _Description to be added_ |
-| $slice | _Description to be added_ |
-| $ (projection) | _Description to be added_ |
+| $elemMatch (projection) | Not supported |
+| $slice | Array related operation. Example: `{ "tags" : { "$slice": 1 }}` returns only the first element from the array field called tags.
+| $ (projection) | Not supported |
 
 ### Sort Clause
 | Operator  |  Description    |
 | ------------------- | --------------- |
-| Multi Field Sort | _Description to be added_ |
+| Multi Field Sort | Not supported |
 
 ### Update Clause
 | Operator  |  Description    |
 | ------------------- | --------------- |
-| $inc | _Description to be added_ |
-| $min | _Description to be added_ |
-| $max | _Description to be added_ |
-| $mul | _Description to be added_ |
-| $rename | _Description to be added_ |
-| $set | _Description to be added_ |
-| $setOnInsert | _Description to be added_ |
-| $unset | _Description to be added_ |
-| $ (update) | _Description to be added_ |
-| $[] (update) | _Description to be added_ |
-| $[<identifier>] | _Description to be added_ |
-| $addToSet | _Description to be added_ |
-| $pop | _Description to be added_ |
-| $pull | _Description to be added_ |
-| $push | _Description to be added_ |
-| $pullAll | _Description to be added_ |
+| $inc | Example: `{ $inc: { "points" : 5 } }`
+| $min | Not supported |
+| $max | Not supported |
+| $rename | Not supported |
+| $set | Example: `"$set": {"location": "New York"}`
+| $setOnInsert | Not supported |
+| $unset | Example: `{"$unset" : {"password": ""}}`
+| $ (update) | Not supported |
+| $[] (update) | Not supported |
+| $[<identifier>] | Not supported |
+| $addToSet | Example: `{"$addToSet" : {"points": 10}}`. This will add 10 to an array called `points` in the documents, without duplicates (i.e. ll skip if 10 is already present in the array)
+| $pop | Example: `{"$pop" : {"points": 1 }}`. This removes the last 1 item from an array called `points`. -1 will remove the first 1 item.
+| $pull | Not supported |
+| $push | Example. `"$push": {"tags": "work"}`. This pushes an element called `work` to the array `tags`
+| $pullAll | Not supported |
 
 
 ### Index Operations
