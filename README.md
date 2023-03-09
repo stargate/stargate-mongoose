@@ -110,19 +110,19 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 ## Features
 
 ### Service Commands
-| <div style="width:150px">Operation Name</div> |  Description    |
+| <div style="width:200px">Operation Name</div> |  Description    |
 | ------------------- | --------------- |
 | Create Namespace    | When flag `createNamespaceOnConnect` is set to `true` the keyspace passed on to the `mongoose.connect` function is created automatically when the function is invoked.
 
 ### Namespace Commands
-| <div style="width:150px">Operation Name</div>      |  Description    |
+| <div style="width:200px">Operation Name</div>      |  Description    |
 | ------------------- | --------------- |
 | Create collection   | `mongoose.model('ModelName',modelSchema)` creates a collection as required |
 | Drop Collection     | `model.dropCollection()` drops the collection |
 | Find Collections    | _Description to be added_ |
 
 ### Collection Commands
-| <div style="width:150px">Operation Name</div>      |  Description    |
+| <div style="width:200px">Operation Name</div>      |  Description    |
 | ------------------- | --------------- |
 | Count Documents     | `Model.countDocuments()` returns the count of documents
 | estimatedDocumentCount | _Description to be added_
@@ -139,7 +139,7 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 | updateOne | _Description to be added_
 
 ### Filter Clause
-| <div style="width:150px">Operator</div> |  Description    |
+| <div style="width:200px">Operator</div> |  Description    |
 | ------------------- | --------------- |
 | literal comparison | _Description to be added_ |
 | $eq | _Description to be added_ |
@@ -160,19 +160,19 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 | $not | _Description to be added_ |
 
 ### Projection Clause
-| <div style="width:150px">Operator</div> |  Description    |
+| <div style="width:200px">Operator</div> |  Description    |
 | ------------------- | --------------- |
 | $elemMatch (projection) | _Description to be added_ |
 | $slice | _Description to be added_ |
 | $ (projection) | _Description to be added_ |
 
 ### Sort Clause
-| <div style="width:150px">Operator</div>  |  Description    |
+| <div style="width:200px">Operator</div>  |  Description    |
 | ------------------- | --------------- |
 | Multi Field Sort | _Description to be added_ |
 
 ### Update Clause
-| <div style="width:150px">Operator</div>  |  Description    |
+| <div style="width:200px">Operator</div>  |  Description    |
 | ------------------- | --------------- |
 | $inc | _Description to be added_ |
 | $min | _Description to be added_ |
