@@ -1,18 +1,20 @@
 # stargate-mongoose ![ci-tests](https://github.com/stargate/stargate-mongoose/actions/workflows/ci-tests.yml/badge.svg)
 
-`stargate-mongoose` is a mongoose driver for [JSON API](https://github.com/stargate/jsonapi) which runs on top of Apache Cassandra / DataStax Enterprise.
+`stargate-mongoose` is a Mongoose driver for [JSON API](https://github.com/stargate/jsonapi) which runs on top of Apache Cassandra / DataStax Enterprise.
 
 1. [Quickstart](#quickstart)
 2. [Architecture](#architecture)
-3. [Features](#compatability)
-4. [MongoDB Driver Overriding](#nodejs-mongodb-driver-overriding-experimental)
-5. [API Reference](APIReference.md)
-6. [Developer Guide](DEVGUIDE.md)
+3. [Version compatibility](#version-compatibility)
+4. [Sample Applications]()
+5. [Features](#features)
+6. [MongoDB Driver Overriding](#nodejs-mongodb-driver-overriding-experimental)
+7. [API Reference](APIReference.md)
+8. [Developer Guide](DEVGUIDE.md)
 
 ## Quickstart
 Prerequisites:
 npm, node, Docker (for testing the sample app locally using docker compose)
-- Start `Docker` on your local.
+- Start `Docker` on your local machine.
 - Execute the script ``bin/start_json_api.sh`` and wait for it to complete, which starts a simple JSON API on local with a DSE 6.8 (DataStax Enterprise) as database backend.
 - Make a directory called `sample-app`
 - `cd sample-app`
@@ -85,35 +87,42 @@ app.listen(PORT, HOST, () => {
 
 ### Components
 - Cassandra Cluster - Apache Cassandra / DataStax Enterprise Cluster as backend database.
-- Stargate Coordinator Nodes - [Stargate](https://stargate.io/) is an opensource Data API Gateway for Cassandra. Coordinator is one of the primary components of Stargate which connects the API layer to the backend database. More details can be found [here](https://stargate.io/docs/latest/concepts/concepts.html#stargate-v2-0).
-- Stargate JSON API - [JSON API](https://github.com/stargate/jsonapi) is an opensource JSON API that runs on top of Stargate's coordinator.
-- JavaScript Clients that use mongoose - mongoose is an elegant mongodb object modeling library for node.js applications. By implementing a driver required by the mongoose interface to connect to the JSON API instead of native mongodb access layer, now a JavaScript client can store/retrieve documents on an Apache Cassandra/DSE backend.
+- Stargate Coordinator Nodes - [Stargate](https://stargate.io/) is an open source Data API Gateway for Cassandra. Coordinator is one of the primary components of Stargate which connects the API layer to the backend database. More details can be found [here](https://stargate.io/docs/latest/concepts/concepts.html#stargate-v2-0).
+- Stargate JSON API - [JSON API](https://github.com/stargate/jsonapi) is an open source JSON API that runs on top of Stargate's coordinator.
+- JavaScript Clients that use Mongoose - Mongoose is an elegant mongodb object modeling library for node.js applications. By implementing a driver required by the Mongoose interface to connect to the JSON API instead of native mongodb access layer, now a JavaScript client can store/retrieve documents on an Apache Cassandra/DSE backend.
+
+The current implementation of the JSON API uses DataStax Enterprise (DSE) as the backend database.
 
 ## Version compatibility
 | Component/Library Name |    Version |
 |------------------------|------------|
-|    mongoose  | 7.x |
-|    Stargate coordinator  | v2.0.9 |
-|    JSON API | v1.0.0-ALPHA-2 |
+|    Mongoose  | 7.x |
+|    DataStax Enterprise  | 6.8.x |
 
-CI tests run using the versions specified in the `api-compatibility.versions` file.
+CI tests are run using the Stargate and JSON API versions specified in the [api-compatibility.versions](api-compatibility.versions) file.
+
+## Sample Applications
+
+Sample applications developed using `stargate-mongoose` driver are available in below repository.
+
+https://github.com/stargate/stargate-mongoose-sample-apps
 
 ## Features
 
 ### Service Commands
-| Operation Name      |  Description    |
+| <div style="width:150px">Operation Name</div> |  Description    |
 | ------------------- | --------------- |
-| Create Namespace    | When flag `createNamespaceOnConnect` is set to `true`, the keyspace passed on to the `mongoose.connect` function is created automatically when the function is invoked.
+| Create Namespace    | When flag `createNamespaceOnConnect` is set to `true` the keyspace passed on to the `mongoose.connect` function is created automatically when the function is invoked.
 
 ### Namespace Commands
-| Operation Name      |  Description    |
+| <div style="width:150px">Operation Name</div>      |  Description    |
 | ------------------- | --------------- |
 | Create collection   | `mongoose.model('ModelName',modelSchema)` creates a collection as required |
 | Drop Collection     | `model.dropCollection()` drops the collection |
 | Find Collections    | _Description to be added_ |
 
 ### Collection Commands
-| Operation Name      |  Description    |
+| <div style="width:150px">Operation Name</div>      |  Description    |
 | ------------------- | --------------- |
 | Count Documents     | `Model.countDocuments()` returns the count of documents
 | estimatedDocumentCount | _Description to be added_
@@ -130,7 +139,7 @@ CI tests run using the versions specified in the `api-compatibility.versions` fi
 | updateOne | _Description to be added_
 
 ### Filter Clause
-| Operator            |  Description    |
+| <div style="width:150px">Operator</div> |  Description    |
 | ------------------- | --------------- |
 | literal comparison | _Description to be added_ |
 | $eq | _Description to be added_ |
@@ -151,19 +160,19 @@ CI tests run using the versions specified in the `api-compatibility.versions` fi
 | $not | _Description to be added_ |
 
 ### Projection Clause
-| Operator            |  Description    |
+| <div style="width:150px">Operator</div> |  Description    |
 | ------------------- | --------------- |
 | $elemMatch (projection) | _Description to be added_ |
 | $slice | _Description to be added_ |
 | $ (projection) | _Description to be added_ |
 
 ### Sort Clause
-| Operator            |  Description    |
+| <div style="width:150px">Operator</div>  |  Description    |
 | ------------------- | --------------- |
 | Multi Field Sort | _Description to be added_ |
 
 ### Update Clause
-| Operator            |  Description    |
+| <div style="width:150px">Operator</div>  |  Description    |
 | ------------------- | --------------- |
 | $inc | _Description to be added_ |
 | $min | _Description to be added_ |
@@ -207,7 +216,7 @@ Transaction operations are not supported.
 
 ## NodeJS MongoDB Driver Overriding (experimental)
 
-If you have an application that uses the NodeJS MongoDB driver, or a dependency that uses the NodeJS MongoDB driver, it is possible to override it's use with the collections package of `stargate-mongoose`. This makes your application use JSON API documents instead of MongoDB documents. Doing so requires code changes in your application that address the compatibility section of this README, and a change in how you set up your client connection.
+If you have an application that uses the NodeJS MongoDB driver, or a dependency that uses the NodeJS MongoDB driver, it is possible to override it's use with the collections package of `stargate-mongoose`. This makes your application use JSON API documents instead of MongoDB documents. Doing so requires code changes in your application that address the features section of this README, and a change in how you set up your client connection.
 
 If your application uses `mongodb` you can override it's usage like so:
 

@@ -11,7 +11,10 @@ Prerequisites:
 - [Docker](https://docker.com/) / [JSON API](https://github.com/stargate/jsonapi)
 
 ### Build
-- Run `npm install && npm run build`
+```shell
+npm install 
+npm run build
+```
 
 ### Test
 - Start Docker
@@ -45,6 +48,6 @@ npm run build:docs
 
 We are using [npm-publish](https://github.com/JS-DevTools/npm-publish) to handle publishing, so to publish a release to NPM, we just need to adjust the version in `package.json`.
 
-In order to do so, form up a PR with just the version change in it with the output from the changelog in the body of the PR (generate it from the releases ui of github).
+In order to do so, form up a PR with just the version change in it with the output from the changelog in the body of the PR (generate it from the releases UI of github).
 
 After the release PR is merged, be sure to tag it as a release (with the same release notes).
