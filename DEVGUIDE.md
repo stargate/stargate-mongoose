@@ -8,16 +8,16 @@
 ## Build & Test
 
 Prerequisites:
-- [Docker](https://docker.com/) / [JSON API Server](https://github.com/stargate/jsonapi)
+- [Docker](https://docker.com/) / [JSON API](https://github.com/stargate/jsonapi)
 
 ### Build
 - Run `npm install && npm run build`
 
 ### Test
 - Start Docker
-- Start JSON API Server 
+- Start JSON API
 ```shell
-bin/start_json_api_server.sh
+bin/start_json_api.sh
 ```
 - Copy the `.env.example` file and create a new `.env` file that should have all of the connection details as shown below.
 
