@@ -29,6 +29,10 @@ while getopts "qr:t:j:" opt; do
   esac
 done
 
+. ./api-compatibility.versions
+SGTAG=$stargate_version
+JSONTAG=$json_api_version
+
 if [ -z "$SGTAG" ]
 then
   echo "Missing stargate version (option -t). For example -t v2.0.8"

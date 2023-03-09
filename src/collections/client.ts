@@ -21,7 +21,6 @@ import { logger } from '@/src/logger';
 export interface ClientOptions {
   applicationToken?: string;
   baseApiPath?: string;
-  keyspaceName?: string;
   logLevel?: string;
   authHeaderName?: string;
   createNamespaceOnConnect?: boolean;
@@ -45,8 +44,8 @@ export class Client {
    *            Astra: https://${databaseId}-${region}.apps.astra.datastax.com
    * @param options provide the Astra applicationToken here along with the keyspace name (optional)
    */
-  constructor(baseUrl: string, options: ClientOptions) {
-    this.keyspaceName = options?.keyspaceName;
+  constructor(baseUrl: string, keyspaceName: string, options: ClientOptions) {
+    this.keyspaceName = keyspaceName;
     this.createNamespaceOnConnect = options?.createNamespaceOnConnect ?? true;
 
     this.httpClient = new HTTPClient({
@@ -70,10 +69,9 @@ export class Client {
    */
   static async connect(uri: string, options?: ClientOptions | null): Promise<Client> {
     const parsedUri = parseUri(uri);
-    const client = new Client(parsedUri.baseUrl, {
+    const client = new Client(parsedUri.baseUrl, parsedUri.keyspaceName, {
       applicationToken: options?.applicationToken ? options?.applicationToken : parsedUri.applicationToken,
         baseApiPath: options?.baseApiPath ? options?.baseApiPath : parsedUri.baseApiPath,
-        keyspaceName: options?.keyspaceName ? options?.keyspaceName : parsedUri.keyspaceName,
         logLevel: options?.logLevel,
         authHeaderName: options?.authHeaderName,
         createNamespaceOnConnect: options?.createNamespaceOnConnect ?? true,
