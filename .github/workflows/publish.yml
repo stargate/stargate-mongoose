@@ -5,7 +5,7 @@ on:
     tags:
       - 'rel-*.*.*'
 jobs:
-  tests:
+  Publish:
     runs-on: ubuntu-latest
     env:
       JSON_API_URI: http://localhost:8080/v1/testks1
@@ -19,9 +19,6 @@ jobs:
         run: |
           sudo kill -9 $(sudo lsof -t -i:8084)
       - uses: actions/checkout@v3
-      - name: Exit if not on main branch
-        if: endsWith(github.ref, 'main') == false
-        run: exit -1
       - name: Set up JSON API
         run: |
           chmod +x bin/start_json_api.sh
