@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      JSON_API_URI: http://localhost:8080/v1/testks1
+      STARGATE_AUTH_URL: http://localhost:8081/v1/auth
+      STARGATE_USERNAME: cassandra
+      STARGATE_PASSWORD: cassandra
+      SGTAG: v2.0.9
+      JSONTAG: v1.0.0-ALPHA-2
+    steps:      
+      - name: disable and stop mono-xsp4.service
+        run: |
+          sudo kill -9 $(sudo lsof -t -i:8084)
+      - uses: actions/checkout@v3
+      - name: Set up JSON API
+        run: |
+          chmod +x bin/start_json_api.sh
+          bin/start_json_api.sh -t $SGTAG -j $JSONTAG
+      - name: Wait for services
+        run: |
+          while ! nc -z localhost 8080; do sleep 1; done
+          while ! nc -z localhost 8081; do sleep 1; done
+      - name: Setting up the node version
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.15.0
+      - name: setup project
+        run: |
+          npm i      
+      - name: build project
+        run: |
+          npm run build
+      - name: run tests
+        run: |
+          npm run test
+      - name: publish
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
