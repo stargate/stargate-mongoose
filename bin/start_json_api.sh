@@ -29,7 +29,7 @@ while getopts "qr:t:j:" opt; do
   esac
 done
 
-source api-compatibility.versions
+. ./api-compatibility.versions
 SGTAG=$stargate_version
 JSONTAG=$json_api_version
 
