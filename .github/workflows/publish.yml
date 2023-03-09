@@ -5,7 +5,7 @@ on:
     tags:
       - 'rel-*.*.*'
 jobs:
-  tests:
+  Publish:
     runs-on: ubuntu-latest
     env:
       JSON_API_URI: http://localhost:8080/v1/testks1
