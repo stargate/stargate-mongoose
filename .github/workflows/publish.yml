@@ -19,9 +19,6 @@ jobs:
         run: |
           sudo kill -9 $(sudo lsof -t -i:8084)
       - uses: actions/checkout@v3
-      - name: Exit if not on main branch
-        if: endsWith(github.ref, 'main') == false
-        run: exit -1
       - name: Set up JSON API
         run: |
           chmod +x bin/start_json_api.sh
