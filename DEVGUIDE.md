@@ -46,6 +46,19 @@ npm run build:docs
 
 ## Releasing
 
-We are using [npm-publish](https://github.com/JS-DevTools/npm-publish) to handle publishing, so to publish a release to NPM, we need to adjust the version in `package.json`, run `npm install`, submit a PR and get this merged.
-
-Then create a tag with the required version, prefixed with 'rel-' (for example: rel-0.2.0-ALPHA) on the main branch. This will trigger a workflow that publishes the current version to npm.
+We are using [npm-publish](https://github.com/JS-DevTools/npm-publish) to handle publishing.
+So to publish a release to NPM, we need to 
+- Change the version in `package.json` as needed.
+- Run `npm install` (this will update `package-lock.json` and `src/version.ts` files).
+- Submit a PR and get that merged.
+- Check out 'main' branch & pull the latest
+```shell
+ git checkout main 
+ git pull origin main
+``` 
+- Then create a tag with the required version, prefixed with 'rel-'. This will trigger a workflow that publishes the current version to npm. For example: `rel-0.2.0-ALPHA`
+```
+git tag rel-x.y.z
+git push origin rel-x.y.z
+```
+- Finally, check the stargate-mongoose npm registry page https://www.npmjs.com/package/stargate-mongoose and make sure the latest version is updated.
