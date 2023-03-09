@@ -46,8 +46,6 @@ npm run build:docs
 
 ## Releasing
 
-We are using [npm-publish](https://github.com/JS-DevTools/npm-publish) to handle publishing, so to publish a release to NPM, we just need to adjust the version in `package.json`.
+We are using [npm-publish](https://github.com/JS-DevTools/npm-publish) to handle publishing, so to publish a release to NPM, we need to adjust the version in `package.json`, run `npm install`, submit a PR and get this merged.
 
-In order to do so, form up a PR with just the version change in it with the output from the changelog in the body of the PR (generate it from the releases UI of github).
-
-After the release PR is merged, be sure to tag it as a release (with the same release notes).
+Then create a tag with the required version, prefixed with 'rel-' (for example: rel-0.2.0-ALPHA) on the main branch. This will trigger a workflow that publishes the current version to npm.
