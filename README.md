@@ -31,8 +31,8 @@ const driver = stargate_mongoose.driver;
 mongoose.setDriver(driver);
 
 //Set up mongoose
-// JSON API URL
-const JSON_API_URI="http://localhost:8080/v1";
+// JSON API URL & inventory is the Name of the Namespace
+const JSON_API_URI="http://localhost:8080/v1/inventory";
 //Stargate Coordinator Authentication URL
 const AUTH_URL="http://localhost:8081/v1/auth";
 // Define Product schema
@@ -45,9 +45,7 @@ mongoose.connect(JSON_API_URI, {
                     "username":"cassandra",
                     //Default password
                     "password":"cassandra",
-                    "authUrl": AUTH_URL,
-                    //Name of the Namespace
-                    "keyspaceName": "inventory",
+                    "authUrl": AUTH_URL                    
                 });
 //Wait for collections to get created
 Object.values(mongoose.connection.models).map(Model => Model.init());
@@ -61,6 +59,7 @@ app.get('/addproduct', (req, res) => {
   const newProduct = new Product(
     { name:"product"+Math.floor(Math.random() * 99 + 1), 
       price: "" + Math.floor(Math.random() * 900 + 100) });
+  newProduct.save();
   res.send('Added a product!');
 });
 //Get products API
@@ -68,11 +67,12 @@ app.get('/getproducts', (req, res) => {
   Product.find()
     .then(products => res.json(products));
 });
+
 //Start server
 app.listen(PORT, HOST, () => {
   console.log(`Running on http://${HOST}:${PORT}` 
               + '\nNavigate to'
-              + '\n\thttp://localhost:'+PORT+'/addproducts'
+              + '\n\thttp://localhost:'+PORT+'/addproduct'
               + '\n\thttp://localhost:'+PORT+'/getproducts');
 });
 ```

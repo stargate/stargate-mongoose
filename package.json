@@ -8,6 +8,22 @@
     "Aaron Morton (https://github.com/amorton)",
     "Kathiresan Selvaraj (https://github.com/kathirsvn)"
   ],
+  "keywords": [
+    "cassandra",
+    "dse",
+    "document",
+    "model",
+    "schema",
+    "database",
+    "odm",
+    "data",
+    "datastore",
+    "query",
+    "nosql",
+    "orm",
+    "db",
+    "jsonapi"
+  ],
   "homepage": "https://github.com/stargate/stargate-mongoose",
   "license": "Apache-2.0",
   "main": "dist/index.js",
