@@ -10,7 +10,7 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     env:
-      ASTRA_URI: http://localhost:8080/v1/testks1
+      JSON_API_URI: http://localhost:8080/v1/testks1
       STARGATE_AUTH_URL: http://localhost:8081/v1/auth
       STARGATE_USERNAME: cassandra
       STARGATE_PASSWORD: cassandra
@@ -21,10 +21,10 @@ jobs:
         run: |
           sudo kill -9 $(sudo lsof -t -i:8084)
       - uses: actions/checkout@v3
-      - name: Set up JSON API server
+      - name: Set up JSON API
         run: |
-          chmod +x bin/start_json_api_server.sh
-          bin/start_json_api_server.sh -t $SGTAG -j $JSONTAG
+          chmod +x bin/start_json_api.sh
+          bin/start_json_api.sh -t $SGTAG -j $JSONTAG
       - name: Wait for services
         run: |
           while ! nc -z localhost 8080; do sleep 1; done
