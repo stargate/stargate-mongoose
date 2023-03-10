@@ -36,8 +36,8 @@ mkdir sample-app
 cd sample-app
 npm init && npm install express mongoose stargate-mongoose
 ```
-- Copy below code into a file called `index.js` on the root of 'sample-app' directory
-```typescript
+- Create a file called `index.js` under the 'sample-app' directory and copy below code into the file.
+```javascript
 const express = require('express');
 const mongoose = require('mongoose');
 const stargate_mongoose = require('stargate-mongoose');
@@ -134,16 +134,16 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 ### Namespace Commands
 | <nobr>Operation Name</nobr> |  Description    |
 | ------------------- | --------------- |
-| Create collection   | `mongoose.model('ModelName',modelSchema)` creates a collection as required |
-| Drop Collection     | `model.dropCollection()` drops the collection |
-| Find Collections    | Not supported |
+| createCollection   | `mongoose.model('ModelName',modelSchema)` creates a collection as required |
+| dropCollection     | `model.dropCollection()` drops the collection |
+| findCollections    | Not supported |
 
 ### Collection Commands
 | <nobr>Operation Name</nobr> |  Description    |
 | ------------------- | --------------- |
-| Count Documents     | `Model.countDocuments()` returns the count of documents
-| Estimated Document Count | Not supported |
-| Delete Many | `Model.deleteMany(filter)` |
+| countDocuments     | `Model.countDocuments(filter)` returns the count of documents
+| estimatedDocumentCount | Not supported |
+| deleteMany | `Model.deleteMany(filter)` |
 | deleteOne | `Model.deleteOne(filter)` |
 | find | `Model.find(filter, projection)`. Projections are yet to be supported. |
 | findOne | `Model.findOne(filter, projection)` |
