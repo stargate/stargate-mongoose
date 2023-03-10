@@ -20,6 +20,8 @@ import { delay } from 'lodash';
 
 // @ts-ignore
 mongoose.setDriver(StargateMongooseDriver);
+mongoose.set('autoCreate', true);
+mongoose.set('autoIndex', false);
 
 const cartSchema = new mongoose.Schema({
   name: String,
@@ -43,7 +45,7 @@ describe('StargateMongoose - index', () => {
       password: "cassandra",
       authUrl: "http://localhost:8081/v1/auth"
     });
-    await new Promise(fn => setTimeout(fn, 3000));//TODOV3 check later - without this delay, this test fails sometimes
+    await Promise.all(Object.values(mongoose.connection.models).map(Model => Model.init()));
     const product1 = new Product({ name: 'Product 1', price: 10 });
     await product1.save();
 
