@@ -114,7 +114,7 @@ for (const testClient in testClients) {
         try{
           const res = await collection.insertMany([]);
         } catch (e: any){
-          assert.strictEqual(e.errors[0].message, "docs can not be null or empty");
+          assert.strictEqual(e.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: must not be empty.");
         }
       });
       it('should findOne document', async () => {
