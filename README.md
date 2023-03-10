@@ -5,7 +5,7 @@
 1. [Quickstart](#quickstart)
 2. [Architecture](#architecture)
 3. [Version compatibility](#version-compatibility)
-4. [Sample Applications]()
+4. [Sample Applications](#sample-applications)
 5. [Features](#features)
 6. [MongoDB Driver Overriding](#nodejs-mongodb-driver-overriding-experimental)
 7. [API Reference](APIReference.md)
