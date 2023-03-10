@@ -28,7 +28,7 @@ bin/start_json_api.sh
 ```
 For Windows
 ```shell
-bin/start_json_api.cmd
+bin/start_json_api.bat
 ```
 - Create a sample project called 'sample-app'
 ```shell
