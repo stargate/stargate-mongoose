@@ -5,7 +5,7 @@
 1. [Quickstart](#quickstart)
 2. [Architecture](#architecture)
 3. [Version compatibility](#version-compatibility)
-4. [Sample Applications]()
+4. [Sample Applications](#sample-applications)
 5. [Features](#features)
 6. [MongoDB Driver Overriding](#nodejs-mongodb-driver-overriding-experimental)
 7. [API Reference](APIReference.md)
@@ -15,11 +15,28 @@
 Prerequisites:
 npm, node, Docker (for testing the sample app locally using docker compose)
 - Start `Docker` on your local machine.
-- Execute the script ``bin/start_json_api.sh`` and wait for it to complete, which starts a simple JSON API on local with a DSE 6.8 (DataStax Enterprise) as database backend.
-- Make a directory called `sample-app`
-- `cd sample-app`
-- `npm init && npm install express mongoose stargate-mongoose`
-- Copy below code into a file called `index.js`
+- Clone this repository
+```git
+git clone https://github.com/stargate/stargate-mongoose.git
+cd stargate-mongoose
+```
+- Execute below script and wait for it to complete, which starts a simple JSON API on local with a DSE 6.8 (DataStax Enterprise) as database backend.
+
+For macOS/Linux
+```shell
+bin/start_json_api.sh
+```
+For Windows
+```shell
+bin\start_json_api.bat
+```
+- Create a sample project called 'sample-app'
+```shell
+mkdir sample-app
+cd sample-app
+npm init && npm install express mongoose stargate-mongoose
+```
+- Copy below code into a file called `index.js` on the root of 'sample-app' directory
 ```typescript
 const express = require('express');
 const mongoose = require('mongoose');
