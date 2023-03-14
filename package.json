@@ -89,5 +89,8 @@
   "peerDependencies": {
     "mongoose": "7.x",
     "mongodb": "5.x"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
