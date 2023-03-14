@@ -38,7 +38,6 @@ const Cart = mongoose.model('Cart', cartSchema);
 const Product = mongoose.model('Product', productSchema);
 
 describe('StargateMongoose - index', () => {
-  //TODOV3 skipping this test for now, this can be only run against real server, otherwise we will have to keep adding multiple mock collections in the Postman for this.
   it('should leverage astradb', async function () {    
     await mongoose.connect(astraUri, {
       username: "cassandra",
