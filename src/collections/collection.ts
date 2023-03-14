@@ -206,12 +206,6 @@ export class Collection {
     throw new Error('Not Implemented');
   }
 
-  // deprecated and overloaded
-
-  async insert(docs: any[], options?: any) {
-    return await this.insertMany(docs, options);
-  }
-
   async findOneAndDelete(query: any, options: any) {
     throw new Error('Not Implemented');
   }

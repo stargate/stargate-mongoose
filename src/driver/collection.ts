@@ -41,10 +41,6 @@ export class Collection extends MongooseCollection {
     return this.collection.insertOne(doc, options);
   }
 
-  insert(docs: any, options?: any) {
-    return this.collection.insertMany(docs, options);
-  }
-
   insertMany(docs: any, options?: any) {
     return this.collection.insertMany(docs, options);
   }
