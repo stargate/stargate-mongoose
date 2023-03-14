@@ -68,7 +68,8 @@ export class Collection {
     return executeOperation(async (): Promise<InsertOneResult> => {
       let command = {
         insertOne : {
-            document
+            document,
+            options
         }
       };
       const resp = await this.httpClient.executeCommand(command);
