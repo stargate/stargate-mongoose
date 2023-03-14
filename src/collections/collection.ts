@@ -64,12 +64,11 @@ export class Collection {
    * @param options
    * @returns Promise
    */
-  async insertOne(document: Record<string, any>, options?: any) {
+  async insertOne(document: Record<string, any>) {
     return executeOperation(async (): Promise<InsertOneResult> => {
       let command = {
         insertOne : {
-            document,
-            options
+            document
         }
       };
       const resp = await this.httpClient.executeCommand(command);
