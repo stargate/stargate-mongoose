@@ -24,14 +24,14 @@ import {
 } from 'mongodb';
 import { FindCursor } from './cursor';
 import { HTTPClient } from '@/src/client';
-import { executeOperation, getNestedPathRawValue } from './utils';
+import { executeOperation } from './utils';
 import { inspect } from 'util';
 import mpath from 'mpath';
 import { InsertManyResult } from 'mongoose';
 import { logger } from '@/src/logger';
 
 // https://github.com/mongodb/node-mongodb-native/pull/3323
-type AstraUpdateResult = Omit<UpdateResult, 'upsertedId'> & { upsertedId: ObjectId | null };
+type JSONAPIUpdateResult = Omit<UpdateResult, 'upsertedId'> & { upsertedId: ObjectId | null };
 
 interface DocumentCallback {
   (err: Error | undefined, res: any): void;
@@ -97,7 +97,7 @@ export class Collection {
   }
 
   async updateOne(query: any, update: any, options?: UpdateOptions) {
-    return executeOperation(async (): Promise<AstraUpdateResult> => {
+    return executeOperation(async (): Promise<JSONAPIUpdateResult> => {
       if (options != null && 'session' in options) {
         options = { ...options };
         delete options.session;
@@ -121,7 +121,7 @@ export class Collection {
   }
 
   async updateMany(query: any, update: any, options?: UpdateOptions) {
-    return executeOperation(async (): Promise<AstraUpdateResult> => {
+    return executeOperation(async (): Promise<JSONAPIUpdateResult> => {
       const command = {
         updateMany: {
           filter: query,
@@ -234,26 +234,6 @@ export class Collection {
     });
   }
 
-  // NOOPS and unimplemented
-
-  /**
-   *
-   * @param pipeline
-   * @param options
-   */
-  aggregate<T>(pipeline?: any[], options?: any) {
-    throw new Error('Not Implemented');
-  }
-
-  /**
-   *
-   * @param ops
-   * @param options
-   */
-  bulkWrite(ops: any[], options?: any) {
-    throw new Error('bulkWrite() Not Implemented');
-  }
-
   /**
    *
    * @param index
@@ -270,7 +250,7 @@ export class Collection {
    * @param options
    * @returns any
    */
-  async dropIndexes() {
+  async dropIndexes(index: any, options: any) {
     throw new Error('Not Implemented');
   }
 

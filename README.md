@@ -7,7 +7,7 @@
 3. [Version compatibility](#version-compatibility)
 4. [Sample Applications](#sample-applications)
 5. [Features](#features)
-6. [MongoDB Driver Overriding](#nodejs-mongodb-driver-overriding-experimental)
+6. [NodeJS MongoDB Driver Overriding (experimental)](#nodejs-mongodb-driver-overriding-experimental)
 7. [API Reference](APIReference.md)
 8. [Developer Guide](DEVGUIDE.md)
 
@@ -28,7 +28,7 @@ bin/start_json_api.sh
 ```
 For Windows
 ```shell
-bin\start_json_api.bat
+bin\start_json_api.cmd
 ```
 - Create a sample project called 'sample-app'
 ```shell
