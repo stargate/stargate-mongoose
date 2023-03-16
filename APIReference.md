@@ -20,19 +20,16 @@
 <dt><a href="#createStargateUri">createStargateUri</a></dt>
 <dd></dd>
 <dt><a href="#StargateAuthError">StargateAuthError</a> ⇒</dt>
-<dd><p>executeOperation handles running functions that have a callback parameter and that also can
+<dd><p>executeOperation handles running functions
 return a promise.</p></dd>
-<dt><a href="#executeOperation">executeOperation</a> ⇒</dt>
-<dd><p>Gets the raw value at the given path. Differs from <code>mpath.get()</code> because it doesn't
-drill into arrays.</p></dd>
 </dl>
 
 ## Functions
 
 <dl>
 <dt><a href="#parseUri">parseUri(uri)</a> ⇒</dt>
-<dd><p>Parse an Astra connection URI</p></dd>
-<dt><a href="#createAstraUri">createAstraUri(databaseId, region, keyspace, applicationToken, logLevel)</a> ⇒</dt>
+<dd><p>Parse a connection URI</p></dd>
+<dt><a href="#createAstraUri">createAstraUri(databaseId, region, keyspace, applicationToken, logLevel, authHeaderName)</a> ⇒</dt>
 <dd><p>Create a production Astra connection URI</p></dd>
 </dl>
 
@@ -42,7 +39,7 @@ drill into arrays.</p></dd>
 **Kind**: global class  
 
 * [Client](#Client)
-    * [new Client(uri, options)](#new_Client_new)
+    * [new Client(baseUrl, keyspaceName, options)](#new_Client_new)
     * _instance_
         * [.connect()](#Client+connect) ⇒
         * [.db(dbName)](#Client+db) ⇒
@@ -53,33 +50,34 @@ drill into arrays.</p></dd>
 
 <a name="new_Client_new"></a>
 
-### new Client(uri, options)
-<p>Set up a MongoClient that works with the Stargate/Astra document API</p>
+### new Client(baseUrl, keyspaceName, options)
+<p>Set up a MongoClient that works with the Stargate JSON API</p>
 
 
-| Param | Type | Description |
-| --- | --- | --- |
-| uri | <code>databaseId</code> | <p>an Astra/Stargate connection uri. It should be formed like so if using Astra: https://$-${region}.apps.astra.datastax.com</p> |
-| options |  | <p>provide the Astra applicationToken here along with the keyspace name (optional)</p> |
+| Param | Description |
+| --- | --- |
+| baseUrl | <p>A JSON API Connection URI (Eg. http://localhost:8080/v1)</p> |
+| keyspaceName | <p>Name of the Namespace (or Keyspace in Apache Cassandra terminology)</p> |
+| options | <p>ClientOptions</p> |
 
 <a name="Client+connect"></a>
 
 ### client.connect() ⇒
-<p>Connect the MongoClient instance to Astra</p>
+<p>Connect the MongoClient instance to JSON API (create Namespace automatically when the 'createNamespaceOnConnect' flag is set to true)</p>
 
 **Kind**: instance method of [<code>Client</code>](#Client)  
 **Returns**: <p>a MongoClient instance</p>  
 <a name="Client+db"></a>
 
 ### client.db(dbName) ⇒
-<p>Use a Astra keyspace</p>
+<p>Use a JSON API keyspace</p>
 
 **Kind**: instance method of [<code>Client</code>](#Client)  
 **Returns**: <p>Db</p>  
 
 | Param | Description |
 | --- | --- |
-| dbName | <p>the Astra keyspace to connect to</p> |
+| dbName | <p>the JSON API keyspace to connect to</p> |
 
 <a name="Client+setMaxListeners"></a>
 
@@ -99,14 +97,14 @@ drill into arrays.</p></dd>
 <a name="Client.connect"></a>
 
 ### Client.connect(uri) ⇒
-<p>Setup a connection to the Astra/Stargate document API</p>
+<p>Setup a connection to the Astra/Stargate JSON API</p>
 
 **Kind**: static method of [<code>Client</code>](#Client)  
 **Returns**: <p>MongoClient</p>  
 
-| Param | Type | Description |
-| --- | --- | --- |
-| uri | <code>databaseId</code> | <p>an Astra/Stargate connection uri. It should be formed like so if using Astra: https://$-${region}.apps.astra.datastax.com/${keyspace}?applicationToken=${applicationToken} You can also have it formed for you using utils.createAstraUri()</p> |
+| Param | Description |
+| --- | --- |
+| uri | <p>an Stargate JSON API uri (Eg. http://localhost:8080/v1/testks1) where testks1 is the name of the keyspace/Namespace which should always be the last part of the URL</p> |
 
 <a name="Collection"></a>
 
@@ -117,8 +115,6 @@ drill into arrays.</p></dd>
     * [new Collection(httpClient, name)](#new_Collection_new)
     * [.insertOne(mongooseDoc, options)](#Collection+insertOne) ⇒
     * ~~[.count()](#Collection+count)~~
-    * [.aggregate(pipeline, options)](#Collection+aggregate)
-    * [.bulkWrite(ops, options)](#Collection+bulkWrite)
     * [.createIndex(index, options)](#Collection+createIndex) ⇒
     * [.dropIndexes(index, options)](#Collection+dropIndexes) ⇒
 
@@ -148,26 +144,6 @@ drill into arrays.</p></dd>
 ***Deprecated***
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
-<a name="Collection+aggregate"></a>
-
-### collection.aggregate(pipeline, options)
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-
-| Param |
-| --- |
-| pipeline | 
-| options | 
-
-<a name="Collection+bulkWrite"></a>
-
-### collection.bulkWrite(ops, options)
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-
-| Param |
-| --- |
-| ops | 
-| options | 
-
 <a name="Collection+createIndex"></a>
 
 ### collection.createIndex(index, options) ⇒
@@ -223,7 +199,7 @@ drill into arrays.</p></dd>
 
 ### findCursor.toArray() ⇒
 **Kind**: instance method of [<code>FindCursor</code>](#FindCursor)  
-**Returns**: <p>Promise</p>  
+**Returns**: <p>Record&lt;string, any&gt;[]</p>  
 <a name="FindCursor+next"></a>
 
 ### findCursor.next() ⇒
@@ -263,7 +239,7 @@ drill into arrays.</p></dd>
 **Kind**: global class  
 
 * [Db](#Db)
-    * [new Db(astraClient, name)](#new_Db_new)
+    * [new Db(httpClient, name)](#new_Db_new)
     * [.collection(collectionName)](#Db+collection) ⇒
     * [.createCollection(collectionName, options)](#Db+createCollection) ⇒
     * [.dropCollection(collectionName)](#Db+dropCollection) ⇒
@@ -271,11 +247,11 @@ drill into arrays.</p></dd>
 
 <a name="new_Db_new"></a>
 
-### new Db(astraClient, name)
+### new Db(httpClient, name)
 
 | Param |
 | --- |
-| astraClient | 
+| httpClient | 
 | name | 
 
 <a name="Db+collection"></a>
@@ -303,7 +279,7 @@ drill into arrays.</p></dd>
 
 ### db.dropCollection(collectionName) ⇒
 **Kind**: instance method of [<code>Db</code>](#Db)  
-**Returns**: <p>Promise</p>  
+**Returns**: <p>APIResponse</p>  
 
 | Param |
 | --- |
@@ -320,7 +296,7 @@ drill into arrays.</p></dd>
 <p>Create a stargate  connection URI</p>
 
 **Kind**: global variable  
-**Returns**: <p>string</p>  
+**Returns**: <p>URL as string</p>  
 
 | Param |
 | --- |
@@ -345,7 +321,7 @@ drill into arrays.</p></dd>
 <a name="StargateAuthError"></a>
 
 ## StargateAuthError ⇒
-<p>executeOperation handles running functions that have a callback parameter and that also can
+<p>executeOperation handles running functions
 return a promise.</p>
 
 **Kind**: global variable  
@@ -355,39 +331,25 @@ return a promise.</p>
 | --- | --- |
 | operation | <p>a function that takes no parameters and returns a response</p> |
 
-<a name="executeOperation"></a>
-
-## executeOperation ⇒
-<p>Gets the raw value at the given path. Differs from <code>mpath.get()</code> because it doesn't
-drill into arrays.</p>
-
-**Kind**: global variable  
-**Returns**: <p>any</p>  
-
-| Param | Description |
-| --- | --- |
-| doc | <p>object to get value from</p> |
-| key | <p>path to get</p> |
-
 <a name="parseUri"></a>
 
 ## parseUri(uri) ⇒
-<p>Parse an Astra connection URI</p>
+<p>Parse a connection URI</p>
 
 **Kind**: global function  
 **Returns**: <p>ParsedUri</p>  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| uri | <code>databaseId</code> | <p>a uri in the format of: https://$-${region}.apps.astra.datastax.com/${keyspace}?applicationToken=${applicationToken}</p> |
+| uri | <code>baseUrl</code> | <p>a uri in the format of: https://$/${baseAPIPath}/${keyspace}?applicationToken=${applicationToken}</p> |
 
 <a name="createAstraUri"></a>
 
-## createAstraUri(databaseId, region, keyspace, applicationToken, logLevel) ⇒
+## createAstraUri(databaseId, region, keyspace, applicationToken, logLevel, authHeaderName) ⇒
 <p>Create a production Astra connection URI</p>
 
 **Kind**: global function  
-**Returns**: <p>string</p>  
+**Returns**: <p>URL as string</p>  
 
 | Param | Description |
 | --- | --- |
@@ -396,4 +358,5 @@ drill into arrays.</p>
 | keyspace | <p>the keyspace to connect to</p> |
 | applicationToken | <p>an Astra application token</p> |
 | logLevel | <p>an winston log level</p> |
+| authHeaderName |  |
 

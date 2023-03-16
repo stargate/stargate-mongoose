@@ -41,10 +41,6 @@ export class Collection extends MongooseCollection {
     return this.collection.insertOne(doc, options);
   }
 
-  insert(docs: any, options?: any) {
-    return this.collection.insertMany(docs, options);
-  }
-
   insertMany(docs: any, options?: any) {
     return this.collection.insertMany(docs, options);
   }
@@ -81,32 +77,13 @@ export class Collection extends MongooseCollection {
     return this.collection.dropIndexes();
   }
 
+  createIndex(index: any, options?: any) {
+    return this.collection.createIndex(index, options);
+  }
+
   // No-ops
   bulkWrite(ops: any[], options?: any) {
     throw new Error('bulkWrite() Not Implemented');
   }
 
-  createIndex(index: any, options?: any) {
-    return this.collection.createIndex(index, options);
-  }
 }
-
-//  Collection.prototype.ensureIndex = function() {
-//   throw new Error('Collection#ensureIndex unimplemented by driver');
-// };
-
-// Collection.prototype.save = function() {
-//   throw new Error('Collection#save unimplemented by driver');
-// };
-
-// Collection.prototype.getIndexes = function() {
-//   throw new Error('Collection#getIndexes unimplemented by driver');
-// };
-
-// Collection.prototype.mapReduce = function() {
-//   throw new Error('Collection#mapReduce unimplemented by driver');
-// };
-
-// Collection.prototype.watch = function() {
-//   throw new Error('Collection#watch unimplemented by driver');
-// };

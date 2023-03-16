@@ -39,10 +39,10 @@ export class Client {
   createNamespaceOnConnect?: boolean;
 
   /**
-   * Set up a MongoClient that works with the Stargate/Astra document API
-   * @param uri an Astra/Stargate connection uri. It should be formed like so if using
-   *            Astra: https://${databaseId}-${region}.apps.astra.datastax.com
-   * @param options provide the Astra applicationToken here along with the keyspace name (optional)
+   * Set up a MongoClient that works with the Stargate JSON API
+   * @param baseUrl A JSON API Connection URI (Eg. http://localhost:8080/v1)
+   * @param keyspaceName Name of the Namespace (or Keyspace in Apache Cassandra terminology)
+   * @param options ClientOptions
    */
   constructor(baseUrl: string, keyspaceName: string, options: ClientOptions) {
     this.keyspaceName = keyspaceName;
@@ -61,10 +61,8 @@ export class Client {
 }
 
   /**
-   * Setup a connection to the Astra/Stargate document API
-   * @param uri an Astra/Stargate connection uri. It should be formed like so if using
-   *            Astra: https://${databaseId}-${region}.apps.astra.datastax.com/${keyspace}?applicationToken=${applicationToken}
-   *            You can also have it formed for you using utils.createAstraUri()
+   * Setup a connection to the Astra/Stargate JSON API
+   * @param uri an Stargate JSON API uri (Eg. http://localhost:8080/v1/testks1) where testks1 is the name of the keyspace/Namespace which should always be the last part of the URL
    * @returns MongoClient
    */
   static async connect(uri: string, options?: ClientOptions | null): Promise<Client> {
@@ -84,7 +82,7 @@ export class Client {
   }
 
   /**
-   * Connect the MongoClient instance to Astra
+   * Connect the MongoClient instance to JSON API (create Namespace automatically when the 'createNamespaceOnConnect' flag is set to true)
    * @returns a MongoClient instance
    */
   async connect(): Promise<Client> {
@@ -98,8 +96,8 @@ export class Client {
   }
 
   /**
-   * Use a Astra keyspace
-   * @param dbName the Astra keyspace to connect to
+   * Use a JSON API keyspace
+   * @param dbName the JSON API keyspace to connect to
    * @returns Db
    */
   db(dbName?: string) {
@@ -111,8 +109,6 @@ export class Client {
     }
     throw new Error('Database name must be provided');
   }
-
-  // NOOPS and unimplemented
 
   /**
    *

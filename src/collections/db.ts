@@ -16,11 +16,6 @@ import { HTTPClient } from '@/src/client';
 import { Collection } from './collection';
 import { executeOperation } from './utils';
 import _ from 'lodash';
-import type { APIResponse } from '@/src/client/httpClient';
-
-interface CollectionCallback {
-  (err: Error | undefined, res: undefined): void;
-}
 
 export class Db {
   httpClient: HTTPClient;
@@ -28,7 +23,7 @@ export class Db {
 
   /**
    *
-   * @param astraClient
+   * @param httpClient
    * @param name
    */
   constructor(httpClient: HTTPClient, name: string) {
@@ -74,7 +69,7 @@ export class Db {
   /**
    *
    * @param collectionName
-   * @returns Promise
+   * @returns APIResponse
    */
   async dropCollection(collectionName: string) {
     const command = {
@@ -86,7 +81,6 @@ export class Db {
   }
 
   // NOOPS and unimplemented
-
   /**
    *
    * @returns Promise

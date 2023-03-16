@@ -337,7 +337,6 @@ for (const testClient in testClients) {
         assert.strictEqual(resDoc.address.city, doc.address?.city);
         assert.strictEqual(resDoc.address.number, undefined); 
       });
-      //TODOV3 skipped until https://github.com/stargate/stargate-mongoose/discussions/24 is resolved
       it('should updateOne document by id', async () => {
         //insert a new doc
         const doc = createSampleDocWithMultiLevel();

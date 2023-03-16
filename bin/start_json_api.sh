@@ -1,6 +1,8 @@
 #!/bin/sh
 
 # Default to INFO as root log level
+SCRIPTS_HOME=$(dirname $0)
+echo $SCRIPTS_HOME
 LOGLEVEL=INFO
 REQUESTLOG=false
 
@@ -29,7 +31,7 @@ while getopts "qr:t:j:" opt; do
   esac
 done
 
-. ./api-compatibility.versions
+. $SCRIPTS_HOME/../api-compatibility.versions
 SGTAG=$stargate_version
 JSONTAG=$json_api_version
 
@@ -52,4 +54,4 @@ export JSONTAG
 
 echo "Running with Stargate $SGTAG, JSON API $JSONTAG"
 
-docker-compose -f bin/docker-compose.yml up -d
+docker-compose -f $SCRIPTS_HOME/docker-compose.yml up -d

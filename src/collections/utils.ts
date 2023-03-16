@@ -31,8 +31,8 @@ interface ParsedUri {
 }
 
 /**
- * Parse an Astra connection URI
- * @param uri a uri in the format of: https://${databaseId}-${region}.apps.astra.datastax.com/${keyspace}?applicationToken=${applicationToken}
+ * Parse a connection URI
+ * @param uri - a uri in the format of: https://${baseUrl}/${baseAPIPath}/${keyspace}?applicationToken=${applicationToken}
  * @returns ParsedUri
  */
 export const parseUri = (uri: string): ParsedUri => {
@@ -78,7 +78,8 @@ function getBaseAPIPath(pathFromUrl?: string | null){
  * @param keyspace the keyspace to connect to
  * @param applicationToken an Astra application token
  * @param logLevel an winston log level
- * @returns string
+ * @param authHeaderName
+ * @returns URL as string
  */
 export const createAstraUri = (
   databaseId: string,
@@ -112,7 +113,7 @@ export const createAstraUri = (
  * @param username
  * @param password
  * @param logLevel
- * @returns string
+* @returns URL as string
  */
 export const createStargateUri = async (
   baseUrl: string,
@@ -173,50 +174,21 @@ export class StargateAuthError extends Error  {
 }
 
 /**
- * executeOperation handles running functions that have a callback parameter and that also can
+ * executeOperation handles running functions
  * return a promise.
  * @param operation a function that takes no parameters and returns a response
  * @returns Promise
  */
-export const executeOperation = async (operation: any) => {
+export const executeOperation = async (operation: Function) => {
   let res = {};
-  let err = undefined;
   try {
     res = await operation();
   } catch (e: any) {
     logger.error(e?.stack || e?.message);
-    err = e;
-  }
-  if (err) {
-    throw err;
+    throw e;
   }
   return res;
 };
-
-/**
- * Gets the raw value at the given path. Differs from `mpath.get()` because it doesn't
- * drill into arrays.
- * @param doc object to get value from
- * @param key path to get
- * @returns any
- */
-export const getNestedPathRawValue = (doc: any, key: string) => {
-  let currentValue = null;
-  if (key.indexOf('.') === -1) {
-    currentValue = doc[key];
-  } else {
-    const subpaths = key.split('.');
-    currentValue = doc[subpaths[0]];
-    for (let i = 1; i < subpaths.length; ++i) {
-      if (currentValue == null) {
-        break;
-      }
-      currentValue = currentValue[subpaths[i]];
-    }
-  }
-
-  return currentValue;
-}
 
 export type QueryOptions = {
   pageSize?: number,
