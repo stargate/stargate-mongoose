@@ -49,7 +49,7 @@ npm run build:docs
 We are using [npm-publish](https://github.com/JS-DevTools/npm-publish) to handle publishing.
 So to publish a release to NPM, we need to 
 - Change the version in `package.json` as needed.
-- Run `npm install` (this will update `package-lock.json` and `src/version.ts` files).
+- Run `npm install` (this will update `src/version.ts` file).
 - Submit a PR and get that merged.
 - Check out 'main' branch & pull the latest
 ```shell
