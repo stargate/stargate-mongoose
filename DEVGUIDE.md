@@ -34,6 +34,10 @@ STARGATE_PASSWORD=cassandra
 ```shell
 npm run test
 ```
+## Update Stargate and JSON API versions
+
+Stargate and the JSON API versions are maintained in the file `api-compatibility.versions`. Update the versions accordingly, submit a PR and make sure that the Github Actions that verify the new versions run fine.
+
 
 ## Build API Reference Documentation
 
@@ -44,7 +48,7 @@ Run below to genreate API documentation. This takes the `APIReference.hbs` and t
 npm run build:docs
 ```
 
-## Releasing
+## Publishing to npm registry
 
 We are using [npm-publish](https://github.com/JS-DevTools/npm-publish) to handle publishing.
 So to publish a release to NPM, we need to 
