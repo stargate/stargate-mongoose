@@ -78,7 +78,7 @@ export class FindCursor {
 
   /**
    *
-   * @returns Promise
+   * @returns Record<string, any>[]
    */
   async toArray(): Promise<any[]> {
     await this.getAll();
@@ -88,7 +88,6 @@ export class FindCursor {
   /**
    * @returns Promise
    */
-
   async next(): Promise<any> {
     return executeOperation(async () => {
       if (this.pageIndex < this.page.length) {
@@ -114,10 +113,6 @@ export class FindCursor {
       return doc;
     });
   }
-
-  /*!
-   * ignore
-   */
 
   async _getMore() {
     const pageSize = Math.min(this.pageSize, this.limit - this.totalNumFetched);

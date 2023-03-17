@@ -34,7 +34,7 @@ const HTTP_METHODS = {
   delete: 'DELETE'
 };
 
-interface AstraClientOptions {
+interface APIClientOptions {
   //applicationToken is optional, since adding username and password eventually will be an alternate option for this.
   applicationToken?: string;
   baseApiPath?: string;
@@ -48,28 +48,10 @@ interface AstraClientOptions {
   authUrl?: string;
 }
 
-interface RequestOptions {
-  'page-size': string;
-  where?: any;
-  ttl?: string;
-}
-
 export interface APIResponse{
   status?: any
   data?: any
   errors?: any
-}
-
-class AstraError extends Error {
-  message: string = '';
-  response?: AxiosResponse;
-
-  constructor(message: string, response?: AxiosResponse) {
-    super(message);
-    this.message = message;
-    this.name = 'AstraError';
-    this.response = response;
-  }
 }
 
 const axiosAgent = axios.create({
@@ -105,20 +87,16 @@ export class HTTPClient {
   baseUrl: string;
   applicationToken: string;
   authHeaderName: string;
-  isAstra: boolean;
   username: string;
   password: string;
   authUrl: string;
 
-  constructor(options: AstraClientOptions) {
+  constructor(options: APIClientOptions) {
     // do not support usage in browsers
     if (typeof window !== 'undefined') {
       throw new Error('not for use in a web browser');
     }
-
-    this.isAstra = options.applicationToken != null && options.applicationToken.startsWith('AstraCS');
-
-    // set the baseURL to Astra, if the user provides a Stargate URL, use that instead.
+    // set the baseURL to Astra, if the user provides a JSON API URL, use that instead.
     // databaseId and databaseRegion are required if no other URL is provided.
     if (options.baseUrl) {
       this.baseUrl = options.baseUrl;
@@ -185,7 +163,7 @@ export class HTTPClient {
         }
       });
       if (response.status === 401 || (response.data?.errors?.length > 0 && response.data.errors[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
-        console.log("@stargate-mongoose/rest: reconnecting");
+        logger.debug("@stargate-mongoose/rest: reconnecting");
         try{
           this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
         } catch (authError: any){
@@ -199,11 +177,23 @@ export class HTTPClient {
         }
         return this._request(requestInfo);
       }
-      return {
-        status: response.data.status,
-        data: response.data.data,
-        errors: response.data.errors
-      };
+      if(response.status === 200){
+        return {
+          status: response.data.status,
+          data: response.data.data,
+          errors: response.data.errors
+        };
+      } else {
+        logger.error(requestInfo.url + ': ' + response.status);
+        logger.error('Data: ' + inspect(requestInfo.data));
+        return {
+          errors: [
+            {
+              message: "Server response received : " + response.status + "!"
+            }
+          ]
+         }
+      }
     } catch (e: any) {
        logger.error(requestInfo.url + ': ' + e.message);
        logger.error('Data: ' + inspect(requestInfo.data));
@@ -218,49 +208,6 @@ export class HTTPClient {
         ]
        }
     }
-  }
-
-  async get(path: string, options?: RequestOptions) {
-    return await this._request({
-      url: this.baseUrl + path,
-      method: HTTP_METHODS.get,
-      ...options
-    });
-  }
-
-  async post(path: string, data: Record<string, any>, options?: RequestOptions) {
-    return await this._request({
-      url: this.baseUrl + path,
-      method: HTTP_METHODS.post,
-      data,
-      ...options
-    });
-  }
-
-  async put(path: string, data: Record<string, any>, options?: RequestOptions) {
-    return await this._request({
-      url: this.baseUrl + path,
-      method: HTTP_METHODS.put,
-      data,
-      ...options
-    });
-  }
-
-  async patch(path: string, data: Record<string, any>, options?: RequestOptions) {
-    return await this._request({
-      url: this.baseUrl + path,
-      method: HTTP_METHODS.patch,
-      data,
-      ...options
-    });
-  }
-
-  async delete(path: string, options?: RequestOptions) {
-    return await this._request({
-      url: this.baseUrl + path,
-      method: HTTP_METHODS.delete,
-      ...options
-    });
   }
 
   async executeCommand(data: Record<string, any>) {
