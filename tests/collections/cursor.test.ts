@@ -34,17 +34,22 @@ for (const testClient in testClients) {
       const collectionName:string = TEST_COLLECTION_NAME;
       await db.createCollection(collectionName);
       collection = db.collection(collectionName);
-      await collection?.deleteMany({});
-      await collection.insertMany(sampleUsers);
+      await collection?.deleteMany({});      
+    });
+
+    beforeEach(async function() {
+      await db.createCollection(TEST_COLLECTION_NAME);
+      collection = db.collection(TEST_COLLECTION_NAME);
     });
     
-    after(() => {
+    afterEach( async () => {
       // run drop collection async to save time
-      db?.dropCollection(TEST_COLLECTION_NAME);
+      await db?.dropCollection(TEST_COLLECTION_NAME);
     });
 
     describe('Cursor initialization', () => {
-      it('should initialize a Cursor', () => {
+      it('should initialize a Cursor', async () => {
+        await collection.insertMany(sampleUsers);
         const cursor = new FindCursor(collection, { username: sampleUsers[0].username });
         assert.strictEqual(cursor.status, 'initialized');
         assert.ok(cursor);
@@ -53,27 +58,77 @@ for (const testClient in testClients) {
 
     describe('Cursor operations', () => {
       it('should execute a query', async () => {
+        await collection.insertMany(sampleUsers);
         const cursor = new FindCursor(collection, { username: sampleUsers[0].username });
         const res = await cursor.toArray();
         assert.strictEqual(res.length, 1);
       });
       it('should get next document with next()', async () => {
+        await collection.insertMany(sampleUsers);
         const cursor = new FindCursor(collection, {});
         const doc = await cursor.next();
         assert.ok(doc);
       });
       it('should execute a limited query', async () => {
-        const cursor = new FindCursor(collection, {}, { limit: 2 });
+        await collection.insertMany(sampleUsers);
+        const cursor = new FindCursor(collection, {}, { limit: 3 });
         const res = await cursor.toArray();
-        assert.strictEqual(res.length, 2);
-        assert.equal(cursor.page.length, 2);
+        assert.strictEqual(res.length, 3);
+        assert.equal(cursor.page.length, 3);
+      });
+      it('should execute a limited query with limit set less than default page size', async () => {
+        let docList = Array.from({ length: 101 }, ()=>({"username": "id"}));
+        docList.forEach((doc, index) => {
+          doc.username = doc.username+(index+1);
+        });
+        const insertManyResp = await collection.insertMany(docList);
+        assert.ok(insertManyResp);
+        assert.strictEqual(insertManyResp.insertedCount, 101);        
+        const cursorWithLimitSet = new FindCursor(collection, {}, { limit: 5 });
+        let countWithLimitSet = 0;        
+        for(let doc = await cursorWithLimitSet.next(); doc != null; doc = await cursorWithLimitSet.next()){          
+          countWithLimitSet++;
+        }
+        assert.strictEqual(countWithLimitSet, 5);        
+      });
+      it('should execute a limited query with limit set equal to default page size', async () => {
+        let docList = Array.from({ length: 101 }, ()=>({"username": "id"}));
+        docList.forEach((doc, index) => {
+          doc.username = doc.username+(index+1);
+        });
+        const insertManyResp = await collection.insertMany(docList);
+        assert.ok(insertManyResp);
+        assert.strictEqual(insertManyResp.insertedCount, 101);        
+        const cursorWithLimitSet = new FindCursor(collection, {}, { limit: 20 });
+        let countWithLimitSet = 0;        
+        for(let doc = await cursorWithLimitSet.next(); doc != null; doc = await cursorWithLimitSet.next()){          
+          countWithLimitSet++;
+        }
+        assert.strictEqual(countWithLimitSet, 20);        
+      });
+      it('should execute a limited query with limit set greater than available', async () => {
+        let docList = Array.from({ length: 101 }, ()=>({"username": "id"}));
+        docList.forEach((doc, index) => {
+          doc.username = doc.username+(index+1);
+        });
+        const insertManyResp = await collection.insertMany(docList);
+        assert.ok(insertManyResp);
+        assert.strictEqual(insertManyResp.insertedCount, 101);        
+        const cursorWithLimitSet = new FindCursor(collection, {}, { limit: 150 });
+        let countWithLimitSet = 0;        
+        for(let doc = await cursorWithLimitSet.next(); doc != null; doc = await cursorWithLimitSet.next()){          
+          countWithLimitSet++;
+        }
+        assert.strictEqual(countWithLimitSet, 101);        
       });
       it('should execute an all query', async () => {
+        await collection.insertMany(sampleUsers);
         const cursor = new FindCursor(collection, {});
         const res = await cursor.toArray();
         assert.strictEqual(res.length, sampleUsers.length);
       });
       it('should not execute twice', async () => {
+        await collection.insertMany(sampleUsers);
         const cursor = new FindCursor(collection, {});
         assert.strictEqual(cursor.status, 'initialized');
         const cursorRes = await cursor.toArray();
@@ -87,6 +142,7 @@ for (const testClient in testClients) {
         assert.strictEqual(count2, sampleUsers.length);
       });
       it('should iterate over all documents', async () => {
+        await collection.insertMany(sampleUsers);
         const cursor = new FindCursor(collection, {});
         let docCount = 0;
         await cursor.forEach((_doc: any) => {
@@ -95,6 +151,7 @@ for (const testClient in testClients) {
         assert.strictEqual(docCount, sampleUsers.length);
       });
       it('should iterate over all documents with a forEach()', async () => {
+        await collection.insertMany(sampleUsers);
         const cursor = new FindCursor(collection, {});
         let docCount = 0;
         await cursor.forEach(async (_doc: any) => {
@@ -107,13 +164,16 @@ for (const testClient in testClients) {
 
     describe('Cursor noops', () => {
       it('should handle noop: stream', async () => {
+        await collection.insertMany(sampleUsers);
         const cursor = new FindCursor(collection, { username: sampleUsers[0].username });
+        let error:any;
         try {
           const stream = cursor.stream();
           assert.ok(stream);
         } catch (e) {
-          assert.ok(e);
+          error = e;          
         }
+        assert.ok(error);
       });
     });
   });

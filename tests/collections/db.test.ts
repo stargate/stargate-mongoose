@@ -35,12 +35,14 @@ for (const testClient in testClients) {
         assert.ok(db);
       });
       it('should not initialize a Db without a name', () => {
+        let error:any;
         try {
           const db = new Db(astraClient.httpClient);
           assert.ok(db);
         } catch (e) {
-          assert.ok(e);
+          error = e;
         }
+        assert.ok(error);
       });
     });
 
@@ -51,13 +53,15 @@ for (const testClient in testClients) {
         assert.ok(collection);
       });
       it('should not initialize a Collection without a name', () => {
+        let error:any;
         try {
           const db = new Db(astraClient.httpClient, 'test-db');
           const collection = db.collection();
           assert.ok(collection);
         } catch (e) {
-          assert.ok(e);
+          error = e;
         }
+        assert.ok(error);
       });
       it('should create a Collection', async () => {
         const collectionName = TEST_COLLECTION_NAME;

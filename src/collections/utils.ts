@@ -191,8 +191,7 @@ export const executeOperation = async (operation: Function) => {
 };
 
 export type QueryOptions = {
-  pageSize?: number,
-  pageState?: string|null,
+  pagingState?: string|null,
   limit?: number,
   projection?: any
 }
