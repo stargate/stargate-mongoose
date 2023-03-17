@@ -418,6 +418,33 @@ for (const testClient in testClients) {
         assert.strictEqual(deleteOneResp.deletedCount, 0);
         assert.strictEqual(deleteOneResp.acknowledged, true);
       });
+      it('should deleteMany when match is <= 20', async () => {
+        let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+        docList.forEach((doc, index) => {
+          doc.username = doc.username+(index+1);
+        });
+        const res = await collection.insertMany(docList);
+        assert.strictEqual(res.insertedCount, 20);
+        const deleteManyResp = await collection.deleteMany({ "city": "trichy" });
+        assert.strictEqual(deleteManyResp.deletedCount, 20);
+        assert.strictEqual(deleteManyResp.acknowledged, true);
+      });
+      it('should throw an error when deleteMany finds more than 20 records', async () => {
+        let docList = Array.from({ length: 21 }, ()=>({"username": "id", "city" : "trichy"}));
+        docList.forEach((doc, index) => {
+          doc.username = doc.username+(index+1);
+        });
+        const res = await collection.insertMany(docList);
+        assert.strictEqual(res.insertedCount, 21);
+        let exception: any;
+        try{
+          const deleteManyResp = await collection.deleteMany({ "city": "trichy" });
+        } catch(e: any){
+          exception = e;          
+        }
+        assert.ok(exception);
+        assert.strictEqual(exception.message, 'More records found to be deleted even after deleting 20 records');
+      });
     });
   });
 }
