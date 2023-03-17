@@ -54,6 +54,7 @@ We are using [npm-publish](https://github.com/JS-DevTools/npm-publish) to handle
 So to publish a release to NPM, we need to 
 - Change the version in `package.json` as needed.
 - Run `npm install` (this will update `src/version.ts` file).
+- Run `npm run build`
 - Submit a PR and get that merged.
 - Check out 'main' branch & pull the latest
 ```shell
