@@ -43,7 +43,7 @@ Stargate and the JSON API versions are maintained in the file `api-compatibility
 
 API Documentation of this library is generated using [jsdoc-to-markdown](https://github.com/jsdoc2md/jsdoc-to-markdown)
 
-Run below to genreate API documentation. This takes the `APIReference.hbs` and the library code as input and generates APIReference.md file.
+Run below to generate API documentation. This takes the `APIReference.hbs` and the library code as input and generates APIReference.md file.
 ```shell
 npm run build:docs
 ```
