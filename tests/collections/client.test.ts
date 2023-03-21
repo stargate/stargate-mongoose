@@ -34,12 +34,14 @@ describe('StargateMongoose - collections.Client', () => {
       assert.ok(astraClient);
     });
     it('should not a Client connection with an invalid uri', async () => {
+      let error:any;
       try {
         const badClient = await Client.connect('invaliduri');
         assert.ok(badClient);
       } catch (e) {
-        assert.ok(e);
+        error = e;
       }
+      assert.ok(error);
     });
     it('should have unique httpClients for each db', async () => {
       const dbFromUri = astraClient.db();      
@@ -188,12 +190,14 @@ describe('StargateMongoose - collections.Client', () => {
       assert.ok(client);
     });
     it('should not initialize a Client connection with a uri using the constructor with no options', () => {
+      let error:any;
       try {
         const client = new Client(baseUrl, 'keyspace1');
         assert.ok(client);
       } catch (e) {
-        assert.ok(e);
+        error = e;
       }
+      assert.ok(error);
     });
     it('should initialize a Client connection with a uri using the constructor and a keyspace', () => {
       const client = new Client(baseUrl, 'keyspace1', {
@@ -236,15 +240,17 @@ describe('StargateMongoose - collections.Client', () => {
       assert.ok(connectedClient);
     });
     it('should not create client when token is not present & one/more of auth details are missing', async () => {
+      let error:any;
       try {
         const client = new Client(baseUrl, 'keyspace1', {        
           username: "user1"          
         });
         const connectedClient = client.connect();
       } catch (e: any){
-        assert.ok(e);
-        assert.strictEqual(e.message, 'applicationToken/auth info required for initialization');
+        error = e;        
       }
+      assert.ok(error);
+      assert.strictEqual(error.message, 'applicationToken/auth info required for initialization');
     });
     it('should set the auth url based on options when provided', async () => {
       const TEST_AUTH_URL = 'authurl1';
@@ -285,12 +291,14 @@ describe('StargateMongoose - collections.Client', () => {
         createNamespaceOnConnect: false
       });
       await client.connect();
+      let error:any;
       try {
         const db = client.db();
         assert.ok(false);
       } catch (e) {
-        assert.ok(e);
+        error = e;
       }
+      assert.ok(error);
     });
   });
   describe('Client noops', () => {
