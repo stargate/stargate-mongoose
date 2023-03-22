@@ -517,16 +517,21 @@ for (const testClient in testClients) {
         assert.strictEqual(_.keys(res.insertedIds).length, 25);
         
         //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
+        const filter = {"city": "nyc"};
+        const update = {
+          "$set" : { "state" : "ny" }
+        };
+        let error;
         try{
-          const updateManyResp = await collection.updateMany({"city": "nyc"},
-                                                    {
-                                                      "$set" : { "state" : "ny" }
-                                                    });
+          const updateManyResp = await collection.updateMany(filter, update);
         }
         catch(e: any){
-          assert.ok(e);
-          assert.strictEqual(e.message, "More than 20 records found for update by the server")   
+          error = e;          
         }        
+        assert.ok(error);
+        assert.strictEqual(error.message, "Command \"updateMany\" failed with the following error: More than 20 records found for update by the server");
+        assert.ok(_.isEqual(error.command.updateMany.filter, filter));
+        assert.ok(_.isEqual(error.command.updateMany.update, update));
       });
       it('should findOneAndUpdate', async () => {
         const res = await collection.insertOne(createSampleDocWithMultiLevel());
