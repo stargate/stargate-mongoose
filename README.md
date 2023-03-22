@@ -143,7 +143,7 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 | ------------------- | --------------- |
 | countDocuments     | `Model.countDocuments(filter)` returns the count of documents
 | estimatedDocumentCount | Not supported |
-| deleteMany | `Model.deleteMany(filter)` |
+| deleteMany | `Model.deleteMany(filter)`. This API will throw an error when more than 20 records are found to be deleted. |
 | deleteOne | `Model.deleteOne(filter)` |
 | find | `Model.find(filter, projection)`. Projections are yet to be supported. |
 | findOne | `Model.findOne(filter, projection)` |
@@ -152,7 +152,7 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 | findOneAndUpdate | `Model.findOneAndUpdate(filter, update)` |
 | insertMany | `Model.insertMany([{docs}])` |
 | insertOne | `Model.insertOne({doc})` |
-| updateMany | `Model.updateMany(filter, update)` |
+| updateMany | `Model.updateMany(filter, update)`. This API will throw an error when more than 20 records are found to be updated. |
 | updateOne | `Model.updateOne(filter, update)` |
 
 ### Filter Clause
