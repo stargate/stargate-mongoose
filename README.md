@@ -152,8 +152,8 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 | findOneAndUpdate | `Model.findOneAndUpdate(filter, update)` |
 | insertMany | `Model.insertMany([{docs}])` |
 | insertOne | `Model.insertOne({doc})` |
-| updateMany | `Model.updateMany(filter, update)`. This API will throw an error when more than 20 records are found to be updated. |
-| updateOne | `Model.updateOne(filter, update)` |
+| updateMany | `Model.updateMany(filter, update, options)`<br>__options__<br>` upsert:` (default `false`)<br>`true` - if a document is not found for the given filter, a new document will be inserted with the values in the filter (eq condition) and the values in the `$set` operator.<br>`false` - new document will not be inserted when no match is found for the given filter<br>** _This API will throw an error when more than 20 records are found to be updated._ |
+| updateOne | `Model.updateOne(filter, update, options)`<br>__options__<br>` upsert:` (default `false`)<br>`true` - if a document is not found for the given filter, a new document will be inserted with the values in the filter (eq condition) and the values in the `$set` operator.<br>`false` - new document will not be inserted when no match is found for the given filter |
 
 ### Filter Clause
 | Operator |  Description    |

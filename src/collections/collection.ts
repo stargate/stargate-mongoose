@@ -130,6 +130,9 @@ export class Collection {
         }
       };
       const updateManyResp = await this.httpClient.executeCommand(command);
+      if(updateManyResp.status.moreData){
+        throw new StargateMongooseError(`More than ${updateManyResp.status.modifiedCount} records found for update by the server`, command);
+      }
       return {
         modifiedCount: updateManyResp.status.modifiedCount,
         matchedCount: updateManyResp.status.matchedCount,
@@ -265,7 +268,6 @@ async deleteOne(query: any) {
   async dropIndexes(index: any, options: any) {
     throw new Error('Not Implemented');
   }
-
 }
 
 export class StargateMongooseError extends Error {

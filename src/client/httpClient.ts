@@ -152,6 +152,8 @@ export class HTTPClient {
           ]
          }
       }
+      logger.debug('request url %s', requestInfo.url);
+      logger.debug('request command %s', JSON.stringify(requestInfo.data));
       const response = await axiosAgent({
         url: requestInfo.url,
         data: requestInfo.data,
@@ -162,6 +164,7 @@ export class HTTPClient {
           [this.authHeaderName]: this.applicationToken
         }
       });
+      logger.debug('response %s', response?.data ? JSON.stringify(response.data) : `status code : ${response.status}`);
       if (response.status === 401 || (response.data?.errors?.length > 0 && response.data.errors[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
         logger.debug("@stargate-mongoose/rest: reconnecting");
         try{

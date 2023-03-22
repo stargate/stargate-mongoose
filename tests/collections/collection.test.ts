@@ -367,7 +367,53 @@ for (const testClient in testClients) {
         assert.strictEqual(updatedDoc._id, idToCheck);
         assert.strictEqual(updatedDoc.username, "aaronm");
         assert.strictEqual(updatedDoc.address.city, undefined);
-      });      
+      });    
+      it('should updateOne document by col', async () => {
+        //insert a new doc
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        //update doc
+        const updateOneResp = await collection.updateOne({"address.city": "big banana"}, 
+                              {
+                                "$set": { "address.state" : "new state" }                        
+                              });
+        assert.strictEqual(updateOneResp.modifiedCount, 1);
+        assert.strictEqual(updateOneResp.matchedCount, 1);
+        assert.strictEqual(updateOneResp.acknowledged, true);
+        assert.strictEqual(updateOneResp.upsertedId, undefined);
+        assert.strictEqual(updateOneResp.upsertedCount, undefined);
+        const updatedDoc = await collection.findOne({"username":"aaron"});
+        assert.strictEqual(updatedDoc._id, idToCheck);
+        assert.strictEqual(updatedDoc.username, "aaron");
+        assert.strictEqual(updatedDoc.address.city, "big banana");
+        assert.strictEqual(updatedDoc.address.state, "new state");
+      });
+      //TODO skip until https://github.com/stargate/jsonapi/issues/275 is fixed
+      it.skip('should upsert a doc with upsert flag true in updateOne call', async () => {
+        //insert a new doc
+        const doc = createSampleDocWithMultiLevel();
+        const insertDocResp = await collection.insertOne(doc);
+        const idToCheck = insertDocResp.insertedId;
+        //update doc
+        const updateOneResp = await collection.updateOne({"address.city": "nyc"}, 
+                              {
+                                "$set": { "address.state" : "ny" }                        
+                              },
+                              { 
+                                "upsert" : true  
+                              });
+        assert.strictEqual(updateOneResp.modifiedCount, 0);
+        assert.strictEqual(updateOneResp.matchedCount, 0);
+        assert.strictEqual(updateOneResp.acknowledged, true);
+        assert.ok(updateOneResp.upsertedId);
+        assert.strictEqual(updateOneResp.upsertedCount, 1);
+        const updatedDoc = await collection.findOne({"address.city":"nyc"});
+        assert.ok(updatedDoc._id);
+        assert.notStrictEqual(updatedDoc._id, idToCheck);
+        assert.strictEqual(updatedDoc.address.city, "nyc");
+        assert.strictEqual(updatedDoc.address.state, "ny");
+      });  
       it('should updateMany documents with ids', async () => {
         let sampleDocsWithIdList = JSON.parse(JSON.stringify(sampleUsersList));
         sampleDocsWithIdList[0]._id="docml1";
@@ -392,6 +438,100 @@ for (const testClient in testClients) {
         assert.strictEqual(updatedDoc._id, idToUpdateAndCheck);
         assert.strictEqual(updatedDoc.username, "aaronm");
         assert.strictEqual(updatedDoc.address.city, undefined);                                                  
+      });
+      it('should update when updateMany is invoked with updates for records <= 20', async () => {
+        let docList = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
+        docList.forEach((doc, index) => {
+          doc.username = doc.username+(index+1);
+        });
+        const res = await collection.insertMany(docList);    
+        assert.strictEqual(res.insertedCount, docList.length);
+        assert.strictEqual(res.acknowledged, true);
+        assert.strictEqual(_.keys(res.insertedIds).length, 20);
+        
+        //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
+        const updateManyResp = await collection.updateMany({"city": "nyc"},
+                              {
+                                "$set" : { "state" : "ny" }
+                              });        
+        assert.strictEqual(updateManyResp.matchedCount, 20);
+        assert.strictEqual(updateManyResp.modifiedCount, 20);
+        assert.strictEqual(updateManyResp.acknowledged, true);
+        assert.strictEqual(updateManyResp.upsertedCount, undefined);
+        assert.strictEqual(updateManyResp.upsertedId, undefined);
+      });
+      it('should upsert with upsert flag set to false/not set when not found', async () => {
+        let docList = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
+        docList.forEach((doc, index) => {
+          doc.username = doc.username+(index+1);
+        });
+        const res = await collection.insertMany(docList);    
+        assert.strictEqual(res.insertedCount, docList.length);
+        assert.strictEqual(res.acknowledged, true);
+        assert.strictEqual(_.keys(res.insertedIds).length, 20);
+        
+        //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
+        const updateManyResp = await collection.updateMany({"city": "la"},
+                              {
+                                "$set" : { "state" : "ca" }
+                              });     
+        assert.strictEqual(updateManyResp.matchedCount, 0);
+        assert.strictEqual(updateManyResp.modifiedCount, 0);
+        assert.strictEqual(updateManyResp.acknowledged, true);
+        assert.strictEqual(updateManyResp.upsertedCount, undefined);
+        assert.strictEqual(updateManyResp.upsertedId, undefined);
+      });
+      //TODO skipped until https://github.com/stargate/jsonapi/issues/273 is fixed
+      it.skip('should upsert with upsert flag set to true when not found', async () => {
+        let docList = Array.from({ length: 2 }, ()=>({username: "id", city : "nyc"}));
+        docList.forEach((doc, index) => {
+          doc.username = doc.username+(index+1);
+        });
+        const res = await collection.insertMany(docList);    
+        assert.strictEqual(res.insertedCount, docList.length);
+        assert.strictEqual(res.acknowledged, true);
+        assert.strictEqual(_.keys(res.insertedIds).length, 2);
+        
+        //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
+        const updateManyResp = await collection.updateMany({"city": "la"},
+                              {
+                                "$set" : { "state" : "ca" }
+                              },
+                              {
+                                "upsert": true
+                              });     
+        assert.strictEqual(updateManyResp.matchedCount, 0);
+        assert.strictEqual(updateManyResp.modifiedCount, 0);
+        assert.strictEqual(updateManyResp.acknowledged, true);
+        assert.strictEqual(updateManyResp.upsertedCount, 1);
+        assert.ok(updateManyResp.upsertedId);
+      });
+      it('should fail when moreData returned by updateMany as true', async () => {
+        let docList = Array.from({ length: 25 }, ()=>({username: "id", city : "nyc"}));
+        docList.forEach((doc, index) => {
+          doc.username = doc.username+(index+1);
+        });
+        const res = await collection.insertMany(docList);    
+        assert.strictEqual(res.insertedCount, docList.length);
+        assert.strictEqual(res.acknowledged, true);
+        assert.strictEqual(_.keys(res.insertedIds).length, 25);
+        
+        //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
+        const filter = {"city": "nyc"};
+        const update = {
+          "$set" : { "state" : "ny" }
+        };
+        let error;
+        try{
+          const updateManyResp = await collection.updateMany(filter, update);
+        }
+        catch(e: any){
+          error = e;          
+        }        
+        assert.ok(error);
+        assert.strictEqual(error.message, "Command \"updateMany\" failed with the following error: More than 20 records found for update by the server");
+        assert.ok(_.isEqual(error.command.updateMany.filter, filter));
+        assert.ok(_.isEqual(error.command.updateMany.update, update));
       });
       it('should findOneAndUpdate', async () => {
         const res = await collection.insertOne(createSampleDocWithMultiLevel());
