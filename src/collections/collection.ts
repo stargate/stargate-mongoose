@@ -147,12 +147,11 @@ export class Collection {
     throw new Error('Not Implemented');
   }
 
-  async deleteOne(query: any, options?: any) {
+async deleteOne(query: any) {
     return executeOperation(async (): Promise<DeleteResult> => {
       const command = {
         deleteOne: {
           filter: query,
-          options: options
         }
       };
       const deleteOneResp = await this.httpClient.executeCommand(command);
@@ -163,9 +162,22 @@ export class Collection {
     });
   }
 
-  async deleteMany(query: any, options?: any) {
-    //throw new Error('Not Implemented');
-    return;//TODOV3 returning as succeeded for now for testing
+  async deleteMany(query: any) {
+    return executeOperation(async (): Promise<DeleteResult> => {
+      const command = {
+        deleteMany: {
+          filter: query
+        }
+      };
+      const deleteManyResp = await this.httpClient.executeCommand(command);
+      if(deleteManyResp.status.moreData){
+        throw new StargateMongooseError(`More records found to be deleted even after deleting ${deleteManyResp.status.deletedCount} records`, command);
+      }
+      return {
+        acknowledged: true,
+        deletedCount: deleteManyResp.status.deletedCount 
+      };
+    });
   }
 
   find(query: any, options?: any) {
@@ -263,5 +275,14 @@ export class StargateMongooseError extends Error {
   constructor(message: any) {    
     super(`Operation failed with the following error: ${message}`);
     this.message = message;
+  }
+}
+
+export class StargateMongooseError extends Error {
+  command: Record<string, any>;
+  constructor(message: any, command: Record<string, any>) {   
+    const commandName = Object.keys(command)[0] || 'unknown'; 
+    super(`Command "${commandName}" failed with the following error: ${message}`);
+    this.command = command;
   }
 }

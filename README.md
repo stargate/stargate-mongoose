@@ -143,7 +143,7 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 | ------------------- | --------------- |
 | countDocuments     | `Model.countDocuments(filter)` returns the count of documents
 | estimatedDocumentCount | Not supported |
-| deleteMany | `Model.deleteMany(filter)` |
+| deleteMany | `Model.deleteMany(filter)`. This API will throw an error when more than 20 records are found to be deleted. |
 | deleteOne | `Model.deleteOne(filter)` |
 | find | `Model.find(filter, projection)`. Projections are yet to be supported. |
 | findOne | `Model.findOne(filter, projection)` |
@@ -152,7 +152,7 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 | findOneAndUpdate | `Model.findOneAndUpdate(filter, update)` |
 | insertMany | `Model.insertMany([{docs}])` |
 | insertOne | `Model.insertOne({doc})` |
-| updateMany | `Model.updateMany(filter, update, options)`<br>__options__<br>` upsert:` (default `false`)<br>`true` - if a document is not found for the given filter, a new document will be inserted with the values in the filter (eq condition) and the values in the `$set` operator.<br>`false` - new document will not be inserted when no match is found for the given filter |
+| updateMany | `Model.updateMany(filter, update, options)`<br>__options__<br>` upsert:` (default `false`)<br>`true` - if a document is not found for the given filter, a new document will be inserted with the values in the filter (eq condition) and the values in the `$set` operator.<br>`false` - new document will not be inserted when no match is found for the given filter<br>** _This API will throw an error when more than 20 records are found to be updated._ |
 | updateOne | `Model.updateOne(filter, update, options)`<br>__options__<br>` upsert:` (default `false`)<br>`true` - if a document is not found for the given filter, a new document will be inserted with the values in the filter (eq condition) and the values in the `$set` operator.<br>`false` - new document will not be inserted when no match is found for the given filter |
 
 ### Filter Clause
