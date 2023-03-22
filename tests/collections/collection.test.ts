@@ -437,13 +437,15 @@ for (const testClient in testClients) {
         const res = await collection.insertMany(docList);
         assert.strictEqual(res.insertedCount, 21);
         let exception: any;
+        const filter = { "city": "trichy" };
         try{
-          const deleteManyResp = await collection.deleteMany({ "city": "trichy" });
+          const deleteManyResp = await collection.deleteMany(filter);
         } catch(e: any){
           exception = e;          
         }
         assert.ok(exception);
-        assert.strictEqual(exception.message, 'More records found to be deleted even after deleting 20 records');
+        assert.strictEqual(exception.message, 'Command "deleteMany" failed with the following error: More records found to be deleted even after deleting 20 records');
+        assert.ok(_.isEqual(exception.command.deleteMany.filter, filter));
       });
     });
   });

@@ -168,7 +168,7 @@ async deleteOne(query: any) {
       };
       const deleteManyResp = await this.httpClient.executeCommand(command);
       if(deleteManyResp.status.moreData){
-        throw new StargateMongooseError(`More records found to be deleted even after deleting ${deleteManyResp.status.deletedCount} records`);
+        throw new StargateMongooseError(`More records found to be deleted even after deleting ${deleteManyResp.status.deletedCount} records`, command);
       }
       return {
         acknowledged: true,
@@ -269,9 +269,10 @@ async deleteOne(query: any) {
 }
 
 export class StargateMongooseError extends Error {
-  message: string;
-  constructor(message: any) {    
-    super(`Operation failed with the following error: ${message}`);
-    this.message = message;
+  command: Record<string, any>;
+  constructor(message: any, command: Record<string, any>) {   
+    const commandName = Object.keys(command)[0] || 'unknown'; 
+    super(`Command "${commandName}" failed with the following error: ${message}`);
+    this.command = command;
   }
 }
