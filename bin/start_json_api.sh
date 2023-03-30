@@ -6,10 +6,12 @@ LOGLEVEL=INFO
 REQUESTLOG=false
 
 #load the versions from the file
-if [ -f $SCRIPTS_HOME/../api-compatibility.versions ]
+VERSIONS_FILE=$SCRIPTS_HOME/../api-compatibility.versions
+
+if [ -f $VERSIONS_FILE ]
 then
-  echo "Loading versions from $SCRIPTS_HOME/../api-compatibility.versions"
-  . $SCRIPTS_HOME/../api-compatibility.versions
+  echo "Loading versions from $VERSIONS_FILE"
+  . $VERSIONS_FILE
 fi
 
 SGTAG=$stargate_version
