@@ -15,7 +15,6 @@ fi
 SGTAG=$stargate_version
 JSONTAG=$json_api_version
 
-
 while getopts "qr:t:j:" opt; do
   case $opt in
     q)
@@ -60,6 +59,6 @@ export REQUESTLOG
 export SGTAG
 export JSONTAG
 
-echo "Running with Stargate $SGTAG, JSON API $JSONTAG"
+docker-compose -f $SCRIPTS_HOME/docker-compose.yml down -v
 
-docker-compose -f $SCRIPTS_HOME/docker-compose.yml up -d
+echo "Stopped JSON API"
