@@ -2,9 +2,21 @@
 
 # Default to INFO as root log level
 SCRIPTS_HOME=$(dirname $0)
-echo $SCRIPTS_HOME
 LOGLEVEL=INFO
 REQUESTLOG=false
+
+#load the versions from the file
+VERSIONS_FILE=$SCRIPTS_HOME/../api-compatibility.versions
+
+if [ -f $VERSIONS_FILE ]
+then
+  echo "Loading versions from $VERSIONS_FILE"
+  . $VERSIONS_FILE
+fi
+
+SGTAG=$stargate_version
+JSONTAG=$json_api_version
+
 
 while getopts "qr:t:j:" opt; do
   case $opt in
@@ -16,9 +28,11 @@ while getopts "qr:t:j:" opt; do
       ;;
     t)
       SGTAG=$OPTARG
+      echo "Using Stargate version $SGTAG"
       ;;
     j)
       JSONTAG=$OPTARG
+      echo "Using JSON API version $JSONTAG"
       ;;
     \?)
       echo "Valid options:"
@@ -30,10 +44,6 @@ while getopts "qr:t:j:" opt; do
       ;;
   esac
 done
-
-. $SCRIPTS_HOME/../api-compatibility.versions
-SGTAG=$stargate_version
-JSONTAG=$json_api_version
 
 if [ -z "$SGTAG" ]
 then
