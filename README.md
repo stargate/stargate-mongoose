@@ -13,10 +13,10 @@
 
 ## Quickstart
 Prerequisites:
-npm, node, Docker (for testing the sample app locally using docker compose)
+node (>=14.0.0), npm/yarn, Docker (for testing the sample app locally using docker compose)
 - Start `Docker` on your local machine.
 - Clone this repository
-```git
+```shell
 git clone https://github.com/stargate/stargate-mongoose.git
 cd stargate-mongoose
 ```
@@ -34,69 +34,76 @@ bin\start_json_api.cmd
 ```shell
 mkdir sample-app
 cd sample-app
-npm init && npm install express mongoose stargate-mongoose
 ```
+- Initialize and add required dependencies
+```shell
+npm init -y && npm install express mongoose stargate-mongoose --engine-strict
+```
+OR
+```shell
+yarn init -y && yarn add express mongoose stargate-mongoose
+```
+
+
 - Create a file called `index.js` under the 'sample-app' directory and copy below code into the file.
-```javascript
+```typescript
+//imports
 const express = require('express');
 const mongoose = require('mongoose');
 const stargate_mongoose = require('stargate-mongoose');
 const Schema = mongoose.Schema;
 const driver = stargate_mongoose.driver;
 
-// override the default mongodb native driver
+//override the default native driver
 mongoose.setDriver(driver);
 
-//Set up mongoose
-// JSON API URL & inventory is the Name of the Namespace
-const JSON_API_URI="http://localhost:8080/v1/inventory";
-//Stargate Coordinator Authentication URL
-const AUTH_URL="http://localhost:8081/v1/auth";
-// Define Product schema
-const productSchema = new Schema({ name: String, price: Number});
-// Create Product model
-const Product = mongoose.model('Product', productSchema);
-//Connect to server
-mongoose.connect(JSON_API_URI, {
-                    //Default user name
-                    "username":"cassandra",
-                    //Default password
-                    "password":"cassandra",
-                    "authUrl": AUTH_URL                    
-                });
-//Wait for collections to get created
-Object.values(mongoose.connection.models).map(Model => Model.init());
-
-//Start the express server
-const HOST="0.0.0.0";
-const PORT=8097;
-const app = express();
-//Add product API
-app.get('/addproduct', (req, res) => {
-  const newProduct = new Product(
-    { name:"product"+Math.floor(Math.random() * 99 + 1), 
-      price: "" + Math.floor(Math.random() * 900 + 100) });
-  newProduct.save();
-  res.send('Added a product!');
+//Set up mongoose & end points definition
+const Product = mongoose.model('Product', new Schema({ name: String, price: Number }));
+mongoose.connect("http://localhost:8080/v1/inventory", {
+    "username": "cassandra",
+    "password": "cassandra",
+    "authUrl": "http://localhost:8081/v1/auth"
 });
-//Get products API
+Object.values(mongoose.connection.models).map(Model => Model.init());
+const app = express();
+app.get('/addproduct', (req, res) => {
+    const newProduct = new Product(
+        {
+            name: "product" + Math.floor(Math.random() * 99 + 1),
+            price: "" + Math.floor(Math.random() * 900 + 100)
+        });
+    newProduct.save();
+    res.send('Added a product!');
+});
 app.get('/getproducts', (req, res) => {
-  Product.find()
-    .then(products => res.json(products));
+    Product.find()
+        .then(products => res.json(products));
 });
 
 //Start server
+const HOST = "0.0.0.0";
+const PORT = 8097;
 app.listen(PORT, HOST, () => {
-  console.log(`Running on http://${HOST}:${PORT}` 
-              + '\nNavigate to'
-              + '\n\thttp://localhost:'+PORT+'/addproduct'
-              + '\n\thttp://localhost:'+PORT+'/getproducts');
+    console.log(`Running on http://${HOST}:${PORT}`);
+    console.log('http://localhost:' + PORT + '/addproduct');
+    console.log('http://localhost:' + PORT + '/getproducts');
 });
 ```
-- Execute `node index.js`
-- Navigate to below urls
-    - http://localhost:8097/addproduct
-    - http://localhost:8097/getproducts
+- Execute below to run the app & navigate to the urls listed on the console
+```shell
+node index.js
+```
+
+- Stop the JSON API once the test is complete
+
+For macOS/Linux
+```shell
+bin/stop_json_api.sh
+```
+For Windows
+```shell
+bin\stop_json_api.cmd
+```
 
 ## Architecture
 ### High level architecture
