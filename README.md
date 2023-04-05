@@ -59,18 +59,18 @@ mongoose.setDriver(driver);
 
 //Set up mongoose & end points definition
 const Product = mongoose.model('Product', new Schema({ name: String, price: Number }));
-mongoose.connect("http://localhost:8080/v1/inventory", {
-    "username": "cassandra",
-    "password": "cassandra",
-    "authUrl": "http://localhost:8081/v1/auth"
+mongoose.connect('http://localhost:8080/v1/inventory', {
+    username: 'cassandra',
+    password: 'cassandra',
+    authUrl: 'http://localhost:8081/v1/auth'
 });
 Object.values(mongoose.connection.models).map(Model => Model.init());
 const app = express();
 app.get('/addproduct', (req, res) => {
     const newProduct = new Product(
         {
-            name: "product" + Math.floor(Math.random() * 99 + 1),
-            price: "" + Math.floor(Math.random() * 900 + 100)
+            name: 'product' + Math.floor(Math.random() * 99 + 1),
+            price: '' + Math.floor(Math.random() * 900 + 100)
         });
     newProduct.save();
     res.send('Added a product!');
@@ -81,7 +81,7 @@ app.get('/getproducts', (req, res) => {
 });
 
 //Start server
-const HOST = "0.0.0.0";
+const HOST = '0.0.0.0';
 const PORT = 8097;
 app.listen(PORT, HOST, () => {
     console.log(`Running on http://${HOST}:${PORT}`);
