@@ -95,14 +95,8 @@ node index.js
 ```
 
 - Stop the JSON API once the test is complete
-
-For macOS/Linux
 ```shell
-bin/stop_json_api.sh
-```
-For Windows
-```shell
-bin\stop_json_api.cmd
+docker compose down -v 
 ```
 
 ## Architecture
