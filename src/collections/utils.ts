@@ -19,7 +19,7 @@ import { logger } from '@/src/logger';
 import axios from 'axios';
 import { type } from 'os';
 import { Client } from '@/src/collections/client';
-import { handleIfErrorResponse } from '@/src/client/httpClient'
+import { HTTPClient, handleIfErrorResponse } from '@/src/client/httpClient'
 
 interface ParsedUri {
   baseUrl: string;
@@ -208,4 +208,21 @@ export async function createNamespace(client:Client, name: string) {
     data
   });
   handleIfErrorResponse(response, data);
+  return response;
+}
+
+export async function dropNamespace(httpClient: HTTPClient, name: string) {
+  const data = {
+    dropNamespace: {
+      name
+    }
+  };
+  const parsedUri = parseUri(httpClient.baseUrl);
+  const response = await httpClient._request({
+    url: `${parsedUri.baseUrl}/${parsedUri.baseApiPath}`,
+    method: 'POST',
+    data
+  });
+  handleIfErrorResponse(response, data);
+  return response;
 }

@@ -14,7 +14,7 @@
 
 import { HTTPClient } from '@/src/client';
 import { Collection } from './collection';
-import { executeOperation } from './utils';
+import { executeOperation, dropNamespace } from './utils';
 import _ from 'lodash';
 
 export class Db {
@@ -80,12 +80,11 @@ export class Db {
     return await this.httpClient.executeCommand(command);
   }
 
-  // NOOPS and unimplemented
   /**
    *
    * @returns Promise
    */
-  dropDatabase() {
-    throw new Error('dropDatabase not implemented');
+  async dropDatabase() {
+    return await dropNamespace(this.httpClient, this.name);
   }
 }
