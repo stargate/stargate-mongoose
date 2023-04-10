@@ -196,14 +196,15 @@ export type QueryOptions = {
   projection?: any
 }
 
-export async function createNamespace(client:Client, name: string) {  
+export async function createNamespace(httpClient: HTTPClient, name: string) {  
   const data = {
     createNamespace: {
       name
     }
   };
-  const response = await client.httpClient._request({
-    url: client.httpClient.baseUrl,
+  const parsedUri = parseUri(httpClient.baseUrl);
+  const response = await httpClient._request({
+    url: httpClient.baseUrl,
     method: 'POST',
     data
   });
@@ -217,9 +218,8 @@ export async function dropNamespace(httpClient: HTTPClient, name: string) {
       name
     }
   };
-  const parsedUri = parseUri(httpClient.baseUrl);
   const response = await httpClient._request({
-    url: `${parsedUri.baseUrl}/${parsedUri.baseApiPath}`,
+    url: httpClient.baseUrl,
     method: 'POST',
     data
   });
