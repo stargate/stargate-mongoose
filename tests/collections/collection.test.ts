@@ -103,9 +103,8 @@ for (const testClient in testClients) {
         assert.strictEqual(res.acknowledged, true);
         assert.strictEqual(_.keys(res.insertedIds).length, 3);
       });
-      //TODO skipping for now (not failing for > 100). check and update max limit for insertMany
-      it.skip('should not insert more than 100 documents in insertMany', async () => {
-        let docList = Array.from({ length: 101 }, ()=>({"username": "id"}));
+      it('should not insert more than allowed number of documents in one insertMany call', async () => {
+        let docList = Array.from({ length: 21 }, ()=>({"username": "id"}));
         docList.forEach((doc, index) => {
           doc.username = doc.username+(index+1);
         });
@@ -116,7 +115,7 @@ for (const testClient in testClients) {
           error = e;          
         }
         assert.ok(error);
-        assert.strictEqual(error.errors[0].message, "insertMany can not take more than 100 docs");
+        assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: amount of documents to insert is over the max limit.");
       });
       it('should error out when docs list is empty in insertMany', async () => {        
         let error:any;
