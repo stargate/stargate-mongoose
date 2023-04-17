@@ -507,14 +507,24 @@ for (const testClient in testClients) {
         assert.ok(updateManyResp.upsertedId);
       });
       it('should fail when moreData returned by updateMany as true', async () => {
-        let docList = Array.from({ length: 25 }, ()=>({username: "id", city : "nyc"}));
+        let docList = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
         docList.forEach((doc, index) => {
           doc.username = doc.username+(index+1);
         });
         const res = await collection.insertMany(docList);    
         assert.strictEqual(res.insertedCount, docList.length);
         assert.strictEqual(res.acknowledged, true);
-        assert.strictEqual(_.keys(res.insertedIds).length, 25);
+        assert.strictEqual(_.keys(res.insertedIds).length, docList.length);
+        //insert next 20
+        let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
+        docListNextSet.forEach((doc, index) => {
+          doc.username = doc.username+(index+21);
+        });
+        const resNextSet = await collection.insertMany(docListNextSet);    
+        assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
+        assert.strictEqual(resNextSet.acknowledged, true);
+        assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
+
         
         //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
         const filter = {"city": "nyc"};
@@ -580,12 +590,22 @@ for (const testClient in testClients) {
         assert.strictEqual(deleteManyResp.acknowledged, true);
       });
       it('should throw an error when deleteMany finds more than 20 records', async () => {
-        let docList = Array.from({ length: 21 }, ()=>({"username": "id", "city" : "trichy"}));
+        let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
         docList.forEach((doc, index) => {
           doc.username = doc.username+(index+1);
         });
         const res = await collection.insertMany(docList);
-        assert.strictEqual(res.insertedCount, 21);
+        assert.strictEqual(res.insertedCount, 20);
+        //insert next 20
+        let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "trichy"}));
+        docListNextSet.forEach((doc, index) => {
+          doc.username = doc.username+(index+21);
+        });
+        const resNextSet = await collection.insertMany(docListNextSet);    
+        assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
+        assert.strictEqual(resNextSet.acknowledged, true);
+        assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
+        //test for deleteMany errors
         let exception: any;
         const filter = { "city": "trichy" };
         try{
