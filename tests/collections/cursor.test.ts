@@ -77,13 +77,13 @@ for (const testClient in testClients) {
         assert.equal(cursor.page.length, 3);
       });
       it('should execute a limited query with limit set less than default page size', async () => {
-        let docList = Array.from({ length: 101 }, ()=>({"username": "id"}));
+        let docList = Array.from({ length: 20 }, ()=>({"username": "id"}));
         docList.forEach((doc, index) => {
           doc.username = doc.username+(index+1);
         });
         const insertManyResp = await collection.insertMany(docList);
         assert.ok(insertManyResp);
-        assert.strictEqual(insertManyResp.insertedCount, 101);        
+        assert.strictEqual(insertManyResp.insertedCount, 20);        
         const cursorWithLimitSet = new FindCursor(collection, {}, { limit: 5 });
         let countWithLimitSet = 0;        
         for(let doc = await cursorWithLimitSet.next(); doc != null; doc = await cursorWithLimitSet.next()){          
@@ -92,13 +92,22 @@ for (const testClient in testClients) {
         assert.strictEqual(countWithLimitSet, 5);        
       });
       it('should execute a limited query with limit set equal to default page size', async () => {
-        let docList = Array.from({ length: 101 }, ()=>({"username": "id"}));
+        let docList = Array.from({ length: 20 }, ()=>({"username": "id"}));
         docList.forEach((doc, index) => {
           doc.username = doc.username+(index+1);
         });
         const insertManyResp = await collection.insertMany(docList);
         assert.ok(insertManyResp);
-        assert.strictEqual(insertManyResp.insertedCount, 101);        
+        assert.strictEqual(insertManyResp.insertedCount, 20);        
+        //insert next 20
+        let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
+        docListNextSet.forEach((doc, index) => {
+          doc.username = doc.username+(index+21);
+        });
+        const resNextSet = await collection.insertMany(docListNextSet);    
+        assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
+        assert.strictEqual(resNextSet.acknowledged, true);
+        //test limit and page size
         const cursorWithLimitSet = new FindCursor(collection, {}, { limit: 20 });
         let countWithLimitSet = 0;        
         for(let doc = await cursorWithLimitSet.next(); doc != null; doc = await cursorWithLimitSet.next()){          
@@ -107,19 +116,19 @@ for (const testClient in testClients) {
         assert.strictEqual(countWithLimitSet, 20);        
       });
       it('should execute a limited query with limit set greater than available', async () => {
-        let docList = Array.from({ length: 101 }, ()=>({"username": "id"}));
+        let docList = Array.from({ length: 20 }, ()=>({"username": "id"}));
         docList.forEach((doc, index) => {
           doc.username = doc.username+(index+1);
         });
         const insertManyResp = await collection.insertMany(docList);
         assert.ok(insertManyResp);
-        assert.strictEqual(insertManyResp.insertedCount, 101);        
+        assert.strictEqual(insertManyResp.insertedCount, 20);        
         const cursorWithLimitSet = new FindCursor(collection, {}, { limit: 150 });
         let countWithLimitSet = 0;        
         for(let doc = await cursorWithLimitSet.next(); doc != null; doc = await cursorWithLimitSet.next()){          
           countWithLimitSet++;
         }
-        assert.strictEqual(countWithLimitSet, 101);        
+        assert.strictEqual(countWithLimitSet, 20);        
       });
       it('should execute an all query', async () => {
         await collection.insertMany(sampleUsers);
