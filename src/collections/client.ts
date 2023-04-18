@@ -69,14 +69,14 @@ export class Client {
     const parsedUri = parseUri(uri);
     const client = new Client(parsedUri.baseUrl, parsedUri.keyspaceName, {
       applicationToken: options?.applicationToken ? options?.applicationToken : parsedUri.applicationToken,
-        baseApiPath: options?.baseApiPath ? options?.baseApiPath : parsedUri.baseApiPath,
-        logLevel: options?.logLevel,
-        authHeaderName: options?.authHeaderName,
-        createNamespaceOnConnect: options?.createNamespaceOnConnect ?? true,
-        username: options?.username,
-        password: options?.password,
-        authUrl: options?.authUrl
-      });
+      baseApiPath: options?.baseApiPath ? options?.baseApiPath : parsedUri.baseApiPath,
+      logLevel: options?.logLevel,
+      authHeaderName: options?.authHeaderName,
+      createNamespaceOnConnect: options?.createNamespaceOnConnect ?? true,
+      username: options?.username,
+      password: options?.password,
+      authUrl: options?.authUrl
+    });
     await client.connect();
     return client;
   }
@@ -88,7 +88,7 @@ export class Client {
   async connect(): Promise<Client> {
     if (this.createNamespaceOnConnect && this.keyspaceName) {
       logger.debug('Creating Namespace ' + this.keyspaceName);
-      await createNamespace(this, this.keyspaceName);
+      await createNamespace(this.httpClient, this.keyspaceName);
     } else {
       logger.debug('Not creating Namespace on connection!');
     }

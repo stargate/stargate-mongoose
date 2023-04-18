@@ -38,7 +38,7 @@ const Cart = mongoose.model('Cart', cartSchema);
 const Product = mongoose.model('Product', productSchema);
 
 describe('StargateMongoose - index', () => {
-  it('should leverage astradb', async function () {    
+  it('should leverage astradb', async function () {  
     await mongoose.connect(astraUri, {
       username: "cassandra",
       password: "cassandra",
