@@ -15,7 +15,7 @@
 import assert from 'assert';
 import { Db } from '@/src/collections/db';
 import { Client } from '@/src/collections/client';
-import { parseUri } from '@/src/collections/utils';
+import { parseUri, createNamespace, dropNamespace } from '@/src/collections/utils';
 import { testClients, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 import { randAlphaNumeric } from '@ngneat/falso';
 
@@ -81,6 +81,71 @@ for (const testClient in testClients) {
         const res = await db.dropCollection(`test_db_collection_${suffix}`);
         assert.strictEqual(res.status?.ok, 1);
         assert.strictEqual(res.errors, undefined);
+      });
+    });
+
+    describe('dropDatabase', () => {
+      after(async () => {
+        const keyspaceName = parseUri(process.env.JSON_API_URI).keyspaceName;
+        await createNamespace(astraClient.httpClient, keyspaceName);
+      });
+
+      it('should drop the underlying database (AKA namespace)', async () => {
+        const keyspaceName = parseUri(process.env.JSON_API_URI).keyspaceName;
+        const db = new Db(astraClient.httpClient, keyspaceName);
+        const suffix = randAlphaNumeric({ length: 4 }).join('');
+        await db.createCollection(`test_db_collection_${suffix}`);
+        const res = await db.dropDatabase();
+        assert.strictEqual(res.status?.ok, 1);
+  
+        try {
+          await db.createCollection(`test_db_collection_${suffix}`);
+          assert.ok(false);
+        } catch (err) {
+          assert.equal(err.errors.length, 1);
+          assert.equal(
+            err.errors[0].message,
+            'INVALID_ARGUMENT: Keyspace \'' + keyspaceName + '\' doesn\'t exist'
+          );
+        }
+        
+      });
+    });
+
+    describe('createDatabase', () => {
+      after(async () => {
+        const keyspaceName = parseUri(process.env.JSON_API_URI).keyspaceName;
+        await createNamespace(astraClient.httpClient, keyspaceName);
+      });
+
+      it('should create the underlying database (AKA namespace)', async () => {
+        const keyspaceName = parseUri(process.env.JSON_API_URI).keyspaceName;
+        const db = new Db(astraClient.httpClient, keyspaceName);
+        const suffix = randAlphaNumeric({ length: 4 }).join('');
+
+        await db.dropDatabase().catch(err => {
+          if (err.errors[0].exceptionClass === 'NotFoundException') {
+            return;
+          }
+
+          throw err;
+        });
+
+        try {
+          await db.createCollection(`test_db_collection_${suffix}`);
+          assert.ok(false);
+        } catch (err) {
+          assert.equal(err.errors.length, 1);
+          assert.equal(
+            err.errors[0].message,
+            'INVALID_ARGUMENT: Keyspace \'' + keyspaceName + '\' doesn\'t exist'
+          );
+        }
+        
+        const res = await db.createDatabase();
+        assert.strictEqual(res.status?.ok, 1);
+
+        await db.createCollection(`test_db_collection_${suffix}`);
       });
     });
   });

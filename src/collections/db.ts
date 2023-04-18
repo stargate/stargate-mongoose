@@ -14,10 +14,11 @@
 
 import { HTTPClient } from '@/src/client';
 import { Collection } from './collection';
-import { executeOperation } from './utils';
+import { executeOperation, createNamespace, dropNamespace } from './utils';
 import _ from 'lodash';
 
 export class Db {
+  rootHttpClient: HTTPClient;
   httpClient: HTTPClient;
   name: string;
 
@@ -30,6 +31,7 @@ export class Db {
     if (!name) {
       throw new Error('Db: name is required');
     }
+    this.rootHttpClient = httpClient;
     // use a clone of the underlying http client to support multiple db's from a single connection
     this.httpClient = _.cloneDeep(httpClient);
     this.httpClient.baseUrl = `${this.httpClient.baseUrl}/${name}`;
@@ -80,12 +82,19 @@ export class Db {
     return await this.httpClient.executeCommand(command);
   }
 
-  // NOOPS and unimplemented
   /**
    *
    * @returns Promise
    */
-  dropDatabase() {
-    throw new Error('dropDatabase not implemented');
+  async dropDatabase() {
+    return await dropNamespace(this.rootHttpClient, this.name);
+  }
+
+  /**
+   *
+   * @returns Promise
+   */
+   async createDatabase() {
+    return await createNamespace(this.rootHttpClient, this.name);
   }
 }
