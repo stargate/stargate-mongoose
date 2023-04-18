@@ -105,7 +105,7 @@ for (const testClient in testClients) {
           assert.equal(err.errors.length, 1);
           assert.equal(
             err.errors[0].message,
-            'INVALID_ARGUMENT: Keyspace \'cycling\' doesn\'t exist'
+            'INVALID_ARGUMENT: Keyspace \'' + keyspaceName + '\' doesn\'t exist'
           );
         }
         
@@ -138,7 +138,7 @@ for (const testClient in testClients) {
           assert.equal(err.errors.length, 1);
           assert.equal(
             err.errors[0].message,
-            'INVALID_ARGUMENT: Keyspace \'cycling\' doesn\'t exist'
+            'INVALID_ARGUMENT: Keyspace \'' + keyspaceName + '\' doesn\'t exist'
           );
         }
         
