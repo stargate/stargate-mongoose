@@ -103,9 +103,8 @@ for (const testClient in testClients) {
         assert.strictEqual(res.acknowledged, true);
         assert.strictEqual(_.keys(res.insertedIds).length, 3);
       });
-      //TODO skipping for now (not failing for > 100). check and update max limit for insertMany
-      it.skip('should not insert more than 100 documents in insertMany', async () => {
-        let docList = Array.from({ length: 101 }, ()=>({"username": "id"}));
+      it('should not insert more than allowed number of documents in one insertMany call', async () => {
+        let docList = Array.from({ length: 21 }, ()=>({"username": "id"}));
         docList.forEach((doc, index) => {
           doc.username = doc.username+(index+1);
         });
@@ -116,7 +115,7 @@ for (const testClient in testClients) {
           error = e;          
         }
         assert.ok(error);
-        assert.strictEqual(error.errors[0].message, "insertMany can not take more than 100 docs");
+        assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: amount of documents to insert is over the max limit.");
       });
       it('should error out when docs list is empty in insertMany', async () => {        
         let error:any;
@@ -507,14 +506,24 @@ for (const testClient in testClients) {
         assert.ok(updateManyResp.upsertedId);
       });
       it('should fail when moreData returned by updateMany as true', async () => {
-        let docList = Array.from({ length: 25 }, ()=>({username: "id", city : "nyc"}));
+        let docList = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
         docList.forEach((doc, index) => {
           doc.username = doc.username+(index+1);
         });
         const res = await collection.insertMany(docList);    
         assert.strictEqual(res.insertedCount, docList.length);
         assert.strictEqual(res.acknowledged, true);
-        assert.strictEqual(_.keys(res.insertedIds).length, 25);
+        assert.strictEqual(_.keys(res.insertedIds).length, docList.length);
+        //insert next 20
+        let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
+        docListNextSet.forEach((doc, index) => {
+          doc.username = doc.username+(index+21);
+        });
+        const resNextSet = await collection.insertMany(docListNextSet);    
+        assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
+        assert.strictEqual(resNextSet.acknowledged, true);
+        assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
+
         
         //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
         const filter = {"city": "nyc"};
@@ -580,12 +589,22 @@ for (const testClient in testClients) {
         assert.strictEqual(deleteManyResp.acknowledged, true);
       });
       it('should throw an error when deleteMany finds more than 20 records', async () => {
-        let docList = Array.from({ length: 21 }, ()=>({"username": "id", "city" : "trichy"}));
+        let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
         docList.forEach((doc, index) => {
           doc.username = doc.username+(index+1);
         });
         const res = await collection.insertMany(docList);
-        assert.strictEqual(res.insertedCount, 21);
+        assert.strictEqual(res.insertedCount, 20);
+        //insert next 20
+        let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "trichy"}));
+        docListNextSet.forEach((doc, index) => {
+          doc.username = doc.username+(index+21);
+        });
+        const resNextSet = await collection.insertMany(docListNextSet);    
+        assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
+        assert.strictEqual(resNextSet.acknowledged, true);
+        assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
+        //test for deleteMany errors
         let exception: any;
         const filter = { "city": "trichy" };
         try{
