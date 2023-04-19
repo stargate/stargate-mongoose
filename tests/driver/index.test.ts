@@ -45,10 +45,10 @@ for (const testClient in testClients) {
         name: String,
         price: Number
       });
-      let Cart;
-      let Product;
+      let Cart, Product;
+      let astraMongoose, jsonAPIMongoose;
       if(isAstra){
-        const astraMongoose = new mongoose.Mongoose();
+        astraMongoose = new mongoose.Mongoose();
         astraMongoose.setDriver(StargateMongooseDriver);
         astraMongoose.set('autoCreate', true);
         astraMongoose.set('autoIndex', false);
@@ -59,7 +59,7 @@ for (const testClient in testClients) {
         await Promise.all(Object.values(astraMongoose.connection.models).map(Model => Model.init()));
       } else{
         // @ts-ignore
-        const jsonAPIMongoose = new mongoose.Mongoose();
+        jsonAPIMongoose = new mongoose.Mongoose();
         jsonAPIMongoose.setDriver(StargateMongooseDriver);
         jsonAPIMongoose.set('autoCreate', true);
         jsonAPIMongoose.set('autoIndex', false);
@@ -85,9 +85,13 @@ for (const testClient in testClients) {
         products: [product1._id, product2._id]
       });
       await cart.save();
-
-      mongoose.connection.dropCollection('carts');
-      mongoose.connection.dropCollection('products');
+      if(isAstra){
+        astraMongoose?.connection.dropCollection('carts');
+        astraMongoose?.connection.dropCollection('products');
+      } else{
+        jsonAPIMongoose?.connection.dropCollection('carts');
+        jsonAPIMongoose?.connection.dropCollection('products');
+      }
     });  
   });
 })};
