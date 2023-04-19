@@ -27,10 +27,11 @@ for (const testClient in testClients) {
     let collection: Collection;
     const sampleDoc = createSampleDoc();
     before(async function() {
-      astraClient = await testClients[testClient]();
-      if (!astraClient) {
+      const astraClientInfo = testClients[testClient];
+      astraClient = await astraClientInfo?.client;
+      if (astraClient == null) {
         return this.skip();
-      }
+      }    
 
       db = astraClient.db();
       await db.dropCollection(TEST_COLLECTION_NAME);

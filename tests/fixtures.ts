@@ -18,15 +18,8 @@ import { randFirstName, randLastName } from '@ngneat/falso';
 
 export const TEST_COLLECTION_NAME = 'collection1';
 
-export const astraUri = process.env.JSON_API_URI || createAstraUri(
-  process.env.ASTRA_DB_ID ?? '',
-  process.env.ASTRA_DB_REGION ?? '',
-  process.env.ASTRA_DB_KEYSPACE ?? '',
-  process.env.ASTRA_DB_APPLICATION_TOKEN ?? ''
-);
-
-export const getAstraClient = async () => {
-  if (!process.env.JSON_API_URI && (!process.env.ASTRA_DB_ID || !process.env.ASTRA_DB_APPLICATION_TOKEN)) {
+export const getJSONAPIClient = async () => {
+  if (!process.env.JSON_API_URI) {
     return null;
   }
   let options:ClientOptions = {authHeaderName: process.env.AUTH_HEADER_NAME};
@@ -36,21 +29,22 @@ export const getAstraClient = async () => {
     options.password = process.env.STARGATE_PASSWORD;
   }
   //options.logLevel = 'debug';
-  return await Client.connect(astraUri, options);
+  return await Client.connect(process.env.JSON_API_URI, options);
 };
 
-export const getStargateUri = async () =>
-  await createStargateUri(
-    process.env.STARGATE_BASE_URL ?? '',
-    process.env.STARGATE_AUTH_URL ?? '',
-    process.env.ASTRA_DB_KEYSPACE ?? '',
-    process.env.STARGATE_USERNAME ?? '',
-    process.env.STARGATE_PASSWORD ?? ''
-  );
-
-export const getStargateClient = async () => {
-  const stargateUri = await getStargateUri();
-  return await Client.connect(stargateUri);
+export const getAstraClient = async () => {
+  if (!process.env.ASTRA_URI) {
+    return null;
+  }
+  let options:ClientOptions = {authHeaderName: process.env.AUTH_HEADER_NAME};
+  if(process.env.STARGATE_AUTH_URL && process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD){
+    options.authUrl = process.env.STARGATE_AUTH_URL;
+    options.username = process.env.STARGATE_USERNAME;
+    options.password = process.env.STARGATE_PASSWORD;
+  }
+  //options.logLevel = 'debug';
+  options.createNamespaceOnConnect = false;
+  return await Client.connect(process.env.ASTRA_URI, options);
 };
 
 export const createSampleDoc = () => ({
@@ -133,8 +127,19 @@ export const getSampleDocs = (numUsers: number) =>
 
 export const sleep = async (ms = 100) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const testClients = {
-  'Astra DB': async () => {
-    return await getAstraClient();
-  }
+export const testClients = {  
+  'JSON API' : process.env.JSON_API_URI ? 
+    {
+      client: getJSONAPIClient(),
+      isAstra: false,
+      uri : process.env.JSON_API_URI
+    } : null,
+  'Astra DB' : process.env.ASTRA_URI ? 
+    {
+      client: getAstraClient(),
+      isAstra: true,
+      uri : process.env.ASTRA_URI
+    } : null
 };
+
+

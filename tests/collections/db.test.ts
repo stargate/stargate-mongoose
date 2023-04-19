@@ -22,11 +22,16 @@ import { randAlphaNumeric } from '@ngneat/falso';
 for (const testClient in testClients) {
   describe('StargateMongoose - collections.Db', async () => {
     let astraClient: Client;
+    let dbUri : string;
+    let isAstra: boolean;
     before(async function() {
-      astraClient = await testClients[testClient]();
+      const astraClientInfo = testClients[testClient];
+      astraClient = await astraClientInfo?.client;      
       if (astraClient == null) {
         return this.skip();
-      }
+      }      
+      dbUri = astraClientInfo.uri;
+      isAstra = astraClientInfo.isAstra;
     });
 
     describe('Db initialization', () => {
@@ -65,7 +70,7 @@ for (const testClient in testClients) {
       });
       it('should create a Collection', async () => {
         const collectionName = TEST_COLLECTION_NAME;
-        const db = new Db(astraClient.httpClient, parseUri(process.env.JSON_API_URI).keyspaceName);        
+        const db = new Db(astraClient.httpClient, parseUri(dbUri).keyspaceName);        
         const res = await db.createCollection(collectionName);
         assert.ok(res);
         assert.strictEqual(res.status.ok, 1);
@@ -75,7 +80,7 @@ for (const testClient in testClients) {
       });
 
       it('should drop a Collection', async () => {
-        const db = new Db(astraClient.httpClient, parseUri(process.env.JSON_API_URI).keyspaceName);
+        const db = new Db(astraClient.httpClient, parseUri(dbUri).keyspaceName);
         const suffix = randAlphaNumeric({ length: 4 }).join('');
         await db.createCollection(`test_db_collection_${suffix}`);
         const res = await db.dropCollection(`test_db_collection_${suffix}`);
@@ -84,14 +89,20 @@ for (const testClient in testClients) {
       });
     });
 
-    describe('dropDatabase', () => {
+    describe('dropDatabase', function(this: Mocha.Suite) {
+      const suite = this;
       after(async () => {
-        const keyspaceName = parseUri(process.env.JSON_API_URI).keyspaceName;
+        if(isAstra){
+          return;     
+        }
+        const keyspaceName = parseUri(dbUri).keyspaceName;
         await createNamespace(astraClient.httpClient, keyspaceName);
       });
-
       it('should drop the underlying database (AKA namespace)', async () => {
-        const keyspaceName = parseUri(process.env.JSON_API_URI).keyspaceName;
+        if(isAstra){
+          suite.ctx.skip();
+        }
+        const keyspaceName = parseUri(dbUri).keyspaceName;
         const db = new Db(astraClient.httpClient, keyspaceName);
         const suffix = randAlphaNumeric({ length: 4 }).join('');
         await db.createCollection(`test_db_collection_${suffix}`);
@@ -112,14 +123,21 @@ for (const testClient in testClients) {
       });
     });
 
-    describe('createDatabase', () => {
+    describe('createDatabase', function(this: Mocha.Suite) {
+      const suite = this;
       after(async () => {
-        const keyspaceName = parseUri(process.env.JSON_API_URI).keyspaceName;
+        if(isAstra){
+          return;     
+        }
+        const keyspaceName = parseUri(dbUri).keyspaceName;
         await createNamespace(astraClient.httpClient, keyspaceName);
       });
 
       it('should create the underlying database (AKA namespace)', async () => {
-        const keyspaceName = parseUri(process.env.JSON_API_URI).keyspaceName;
+        if(isAstra){
+          suite.ctx.skip();
+        }
+        const keyspaceName = parseUri(dbUri).keyspaceName;
         const db = new Db(astraClient.httpClient, keyspaceName);
         const suffix = randAlphaNumeric({ length: 4 }).join('');
 

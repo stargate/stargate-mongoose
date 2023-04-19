@@ -39,8 +39,6 @@ interface APIClientOptions {
   applicationToken?: string;
   baseApiPath?: string;
   baseUrl?: string;
-  databaseId?: string;
-  databaseRegion?: string;
   authHeaderName?: string;
   logLevel?: string;
   username?: string;
@@ -97,11 +95,8 @@ export class HTTPClient {
       throw new Error('not for use in a web browser');
     }
     // set the baseURL to Astra, if the user provides a JSON API URL, use that instead.
-    // databaseId and databaseRegion are required if no other URL is provided.
     if (options.baseUrl) {
       this.baseUrl = options.baseUrl;
-    } else if (options.databaseId && options.databaseRegion) {
-      this.baseUrl = `https://${options.databaseId}-${options.databaseRegion}.apps.astra.datastax.com`;
     } else {
       throw new Error('baseUrl required for initialization');
     }

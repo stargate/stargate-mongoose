@@ -244,6 +244,7 @@ return a promise.</p></dd>
     * [.createCollection(collectionName, options)](#Db+createCollection) ⇒
     * [.dropCollection(collectionName)](#Db+dropCollection) ⇒
     * [.dropDatabase()](#Db+dropDatabase) ⇒
+    * [.createDatabase()](#Db+createDatabase) ⇒
 
 <a name="new_Db_new"></a>
 
@@ -288,6 +289,11 @@ return a promise.</p></dd>
 <a name="Db+dropDatabase"></a>
 
 ### db.dropDatabase() ⇒
+**Kind**: instance method of [<code>Db</code>](#Db)  
+**Returns**: <p>Promise</p>  
+<a name="Db+createDatabase"></a>
+
+### db.createDatabase() ⇒
 **Kind**: instance method of [<code>Db</code>](#Db)  
 **Returns**: <p>Promise</p>  
 <a name="createAstraUri"></a>

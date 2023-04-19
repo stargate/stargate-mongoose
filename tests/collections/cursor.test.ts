@@ -26,10 +26,11 @@ for (const testClient in testClients) {
     let collection: Collection;
     const sampleUsers = sampleUsersList;
     before(async function() {
-      astraClient = await testClients[testClient]();
+      const astraClientInfo = testClients[testClient];
+      astraClient = await astraClientInfo?.client;
       if (astraClient == null) {
         return this.skip();
-      }
+      }      
       db = astraClient.db();
       const collectionName:string = TEST_COLLECTION_NAME;
       await db.createCollection(collectionName);

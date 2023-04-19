@@ -36,10 +36,7 @@ describe('StargateMongoose - client.HTTPClient', () => {
       let error:any;
       try {
         // @ts-ignore
-        const client = new HTTPClient({
-          databaseId: process.env.ASTRA_DB_ID,
-          databaseRegion: process.env.ASTRA_DB_REGION
-        });
+        const client = new HTTPClient({});
         assert.ok(client);
       } catch (e) {
         error = e;
@@ -50,9 +47,7 @@ describe('StargateMongoose - client.HTTPClient', () => {
       let error:any;
       try {
         // @ts-ignore
-        const client = new HTTPClient({
-          databaseId: process.env.ASTRA_DB_ID
-        });
+        const client = new HTTPClient({});
         assert.ok(client);
       } catch (e) {
         error = e;
