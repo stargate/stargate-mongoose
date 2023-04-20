@@ -217,8 +217,16 @@ async deleteOne(query: any) {
     throw new Error('Not Implemented');
   }
 
-  async countDocuments(query: any, options?: any) {
-    throw new Error('Not Implemented');
+  async countDocuments(filter: any) {
+    return executeOperation(async (): Promise<number> => {
+      const command = {
+        countDocuments: {
+          filter
+        }
+      };
+      const resp = await this.httpClient.executeCommand(command);
+      return resp.status.count;
+    });
   }
 
   async findOneAndDelete(query: any, options: any) {

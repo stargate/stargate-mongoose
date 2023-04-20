@@ -29,6 +29,10 @@ export class Collection extends MongooseCollection {
     return this.conn.db.collection(this.name);
   }
 
+  countDocuments(filter: any) {
+    return this.collection.countDocuments(filter);
+  }
+
   find(query: any, options?: any) {
     return this.collection.find(query, options);
   }
