@@ -65,6 +65,14 @@ export class Connection extends MongooseConnection {
     });
   }
 
+  async dropDatabase() {
+    return executeOperation(async () => {
+      await this._waitForClient();
+      const db = this.client.db();
+      return db.dropDatabase();
+    });
+  }
+
   async openUri(uri: string, options: any) {
     let resolveInitialConnection: Function;
     let rejectInitialConnection: Function;
