@@ -53,6 +53,9 @@ export class Connection extends MongooseConnection {
     return executeOperation(async () => {
       await this._waitForClient();
       const db = this.client.db();
+
+      await db.createDatabase();
+
       return db.createCollection(name, options);
     });
   }
