@@ -16,155 +16,160 @@ import assert from 'assert';
 import { Db } from '@/src/collections/db';
 import { Client } from '@/src/collections/client';
 import { parseUri, createNamespace, dropNamespace } from '@/src/collections/utils';
-import { testClients, TEST_COLLECTION_NAME } from '@/tests/fixtures';
+import { testClient, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 import { randAlphaNumeric } from '@ngneat/falso';
 
-for (const testClient in testClients) {
-  describe('StargateMongoose - collections.Db', async () => {
-    let astraClient: Client;
-    let dbUri : string;
-    let isAstra: boolean;
-    before(async function() {
-      const astraClientInfo = testClients[testClient];
-      astraClient = await astraClientInfo?.client;      
-      if (astraClient == null) {
-        return this.skip();
-      }      
-      dbUri = astraClientInfo.uri;
-      isAstra = astraClientInfo.isAstra;
-    });
+describe('StargateMongoose - collections.Db', async () => {
+  let astraClient: Client;
+  let dbUri : string;
+  let isAstra: boolean;
+  before(async function() {
+    if(testClient == null) {
+      return this.skip();
+    }
+    astraClient = await testClient.client;      
+    if (astraClient == null) {
+      return this.skip();
+    }      
+    dbUri = testClient.uri;
+    isAstra = testClient.isAstra;
+  });
+  afterEach( async () => {
+    const db = astraClient.db();
+    // run drop collection async to save time
+    await db?.dropCollection(TEST_COLLECTION_NAME);
+  });
 
-    describe('Db initialization', () => {
-      it('should initialize a Db', () => {
-        const db = new Db(astraClient.httpClient, 'test-db');
+  describe('Db initialization', () => {
+    it('should initialize a Db', () => {
+      const db = new Db(astraClient.httpClient, 'test-db');
+      assert.ok(db);
+    });
+    it('should not initialize a Db without a name', () => {
+      let error:any;
+      try {
+        const db = new Db(astraClient.httpClient);
         assert.ok(db);
-      });
-      it('should not initialize a Db without a name', () => {
-        let error:any;
-        try {
-          const db = new Db(astraClient.httpClient);
-          assert.ok(db);
-        } catch (e) {
-          error = e;
-        }
-        assert.ok(error);
-      });
-    });
-
-    describe('Db collection operations', () => {
-      it('should initialize a Collection', () => {
-        const db = new Db(astraClient.httpClient, 'test-db');
-        const collection = db.collection('test-collection');
-        assert.ok(collection);
-      });
-      it('should not initialize a Collection without a name', () => {
-        let error:any;
-        try {
-          const db = new Db(astraClient.httpClient, 'test-db');
-          const collection = db.collection();
-          assert.ok(collection);
-        } catch (e) {
-          error = e;
-        }
-        assert.ok(error);
-      });
-      it('should create a Collection', async () => {
-        const collectionName = TEST_COLLECTION_NAME;
-        const db = new Db(astraClient.httpClient, parseUri(dbUri).keyspaceName);        
-        const res = await db.createCollection(collectionName);
-        assert.ok(res);
-        assert.strictEqual(res.status.ok, 1);
-        const res2 = await db.createCollection(collectionName);
-        assert.ok(res2);
-        assert.strictEqual(res2.status.ok, 1);
-      });
-
-      it('should drop a Collection', async () => {
-        const db = new Db(astraClient.httpClient, parseUri(dbUri).keyspaceName);
-        const suffix = randAlphaNumeric({ length: 4 }).join('');
-        await db.createCollection(`test_db_collection_${suffix}`);
-        const res = await db.dropCollection(`test_db_collection_${suffix}`);
-        assert.strictEqual(res.status?.ok, 1);
-        assert.strictEqual(res.errors, undefined);
-      });
-    });
-
-    describe('dropDatabase', function(this: Mocha.Suite) {
-      const suite = this;
-      after(async () => {
-        if(isAstra){
-          return;     
-        }
-        const keyspaceName = parseUri(dbUri).keyspaceName;
-        await createNamespace(astraClient.httpClient, keyspaceName);
-      });
-      it('should drop the underlying database (AKA namespace)', async () => {
-        if(isAstra){
-          suite.ctx.skip();
-        }
-        const keyspaceName = parseUri(dbUri).keyspaceName;
-        const db = new Db(astraClient.httpClient, keyspaceName);
-        const suffix = randAlphaNumeric({ length: 4 }).join('');
-        await db.createCollection(`test_db_collection_${suffix}`);
-        const res = await db.dropDatabase();
-        assert.strictEqual(res.status?.ok, 1);
-  
-        try {
-          await db.createCollection(`test_db_collection_${suffix}`);
-          assert.ok(false);
-        } catch (err) {
-          assert.equal(err.errors.length, 1);
-          assert.equal(
-            err.errors[0].message,
-            'INVALID_ARGUMENT: Keyspace \'' + keyspaceName + '\' doesn\'t exist'
-          );
-        }
-        
-      });
-    });
-
-    describe('createDatabase', function(this: Mocha.Suite) {
-      const suite = this;
-      after(async () => {
-        if(isAstra){
-          return;     
-        }
-        const keyspaceName = parseUri(dbUri).keyspaceName;
-        await createNamespace(astraClient.httpClient, keyspaceName);
-      });
-
-      it('should create the underlying database (AKA namespace)', async () => {
-        if(isAstra){
-          suite.ctx.skip();
-        }
-        const keyspaceName = parseUri(dbUri).keyspaceName;
-        const db = new Db(astraClient.httpClient, keyspaceName);
-        const suffix = randAlphaNumeric({ length: 4 }).join('');
-
-        await db.dropDatabase().catch(err => {
-          if (err.errors[0].exceptionClass === 'NotFoundException') {
-            return;
-          }
-
-          throw err;
-        });
-
-        try {
-          await db.createCollection(`test_db_collection_${suffix}`);
-          assert.ok(false);
-        } catch (err) {
-          assert.equal(err.errors.length, 1);
-          assert.equal(
-            err.errors[0].message,
-            'INVALID_ARGUMENT: Keyspace \'' + keyspaceName + '\' doesn\'t exist'
-          );
-        }
-        
-        const res = await db.createDatabase();
-        assert.strictEqual(res.status?.ok, 1);
-
-        await db.createCollection(`test_db_collection_${suffix}`);
-      });
+      } catch (e) {
+        error = e;
+      }
+      assert.ok(error);
     });
   });
-}
+
+  describe('Db collection operations', () => {
+    it('should initialize a Collection', () => {
+      const db = new Db(astraClient.httpClient, 'test-db');
+      const collection = db.collection('test-collection');
+      assert.ok(collection);
+    });
+    it('should not initialize a Collection without a name', () => {
+      let error:any;
+      try {
+        const db = new Db(astraClient.httpClient, 'test-db');
+        const collection = db.collection();
+        assert.ok(collection);
+      } catch (e) {
+        error = e;
+      }
+      assert.ok(error);
+    });
+    it('should create a Collection', async () => {
+      const collectionName = TEST_COLLECTION_NAME;
+      const db = new Db(astraClient.httpClient, parseUri(dbUri).keyspaceName);        
+      const res = await db.createCollection(collectionName);
+      assert.ok(res);
+      assert.strictEqual(res.status.ok, 1);
+      const res2 = await db.createCollection(collectionName);
+      assert.ok(res2);
+      assert.strictEqual(res2.status.ok, 1);
+    });
+
+    it('should drop a Collection', async () => {
+      const db = new Db(astraClient.httpClient, parseUri(dbUri).keyspaceName);
+      const suffix = randAlphaNumeric({ length: 4 }).join('');
+      await db.createCollection(`test_db_collection_${suffix}`);
+      const res = await db.dropCollection(`test_db_collection_${suffix}`);
+      assert.strictEqual(res.status?.ok, 1);
+      assert.strictEqual(res.errors, undefined);
+    });
+  });
+
+  describe('dropDatabase', function(this: Mocha.Suite) {
+    const suite = this;
+    after(async () => {
+      if(isAstra){
+        return;     
+      }
+      const keyspaceName = parseUri(dbUri).keyspaceName;
+      await createNamespace(astraClient.httpClient, keyspaceName);
+    });
+    it('should drop the underlying database (AKA namespace)', async () => {
+      if(isAstra){
+        suite.ctx.skip();
+      }
+      const keyspaceName = parseUri(dbUri).keyspaceName;
+      const db = new Db(astraClient.httpClient, keyspaceName);
+      const suffix = randAlphaNumeric({ length: 4 }).join('');
+      await db.createCollection(`test_db_collection_${suffix}`);
+      const res = await db.dropDatabase();
+      assert.strictEqual(res.status?.ok, 1);
+
+      try {
+        await db.createCollection(`test_db_collection_${suffix}`);
+        assert.ok(false);
+      } catch (err) {
+        assert.equal(err.errors.length, 1);
+        assert.equal(
+          err.errors[0].message,
+          'INVALID_ARGUMENT: Keyspace \'' + keyspaceName + '\' doesn\'t exist'
+        );
+      }
+      
+    });
+  });
+
+  describe('createDatabase', function(this: Mocha.Suite) {
+    const suite = this;
+    after(async () => {
+      if(isAstra){
+        return;     
+      }
+      const keyspaceName = parseUri(dbUri).keyspaceName;
+      await createNamespace(astraClient.httpClient, keyspaceName);
+    });
+
+    it('should create the underlying database (AKA namespace)', async () => {
+      if(isAstra){
+        suite.ctx.skip();
+      }
+      const keyspaceName = parseUri(dbUri).keyspaceName;
+      const db = new Db(astraClient.httpClient, keyspaceName);
+      const suffix = randAlphaNumeric({ length: 4 }).join('');
+
+      await db.dropDatabase().catch(err => {
+        if (err.errors[0].exceptionClass === 'NotFoundException') {
+          return;
+        }
+
+        throw err;
+      });
+
+      try {
+        await db.createCollection(`test_db_collection_${suffix}`);
+        assert.ok(false);
+      } catch (err) {
+        assert.equal(err.errors.length, 1);
+        assert.equal(
+          err.errors[0].message,
+          'INVALID_ARGUMENT: Keyspace \'' + keyspaceName + '\' doesn\'t exist'
+        );
+      }
+      
+      const res = await db.createDatabase();
+      assert.strictEqual(res.status?.ok, 1);
+
+      await db.createCollection(`test_db_collection_${suffix}`);
+    });
+  });
+});

@@ -14,23 +14,24 @@
 
 import assert from 'assert';
 import { Client } from '@/src/collections/client';
-import { testClients } from '@/tests/fixtures';
+import { testClient } from '@/tests/fixtures';
 import { parseUri } from '@/src/collections/utils';
 import { AUTH_API_PATH } from '@/src/client/httpClient';
 import _ from 'lodash';
 
-for (const testClient in testClients) {
 describe('StargateMongoose clients test', () => {
   const baseUrl = `https://db_id-region-1.apps.astra.datastax.com`;
   let appClient: Client | null;
   let clientURI: string;
   before(async function () {
-    const astraClientInfo = testClients[testClient];
-    appClient = await astraClientInfo?.client;
+    if(testClient == null) {
+      return this.skip();
+    }
+    appClient = await testClient.client;
     if (appClient == null) {
       return this.skip();
     }    
-    clientURI = astraClientInfo?.uri;    
+    clientURI = testClient.uri;    
   });
 
   describe('Client Connections', () => {
@@ -315,5 +316,4 @@ describe('StargateMongoose clients test', () => {
       assert.ok(closedClient);
     });
   });
-})
-};
+});

@@ -16,24 +16,25 @@ import assert from 'assert';
 import mongoose from 'mongoose';
 import * as StargateMongooseDriver from '@/src/driver';
 import { delay } from 'lodash';
-import { testClients } from '@/tests/fixtures';
+import { testClient } from '@/tests/fixtures';
 import { logger } from '@/src/logger';
 
-for (const testClient in testClients) {
-  describe(`Driver based tests`, async () => {  
-  let dbUri : string;
+describe(`Driver based tests`, async () => {
+  let dbUri: string;
   let isAstra: boolean;
-  before(async function() {
-    const astraClientInfo = testClients[testClient];
-    const astraClient = await astraClientInfo?.client;      
+  before(async function () {
+    if (testClient == null) {
+      return this.skip();
+    }
+    const astraClient = await testClient.client;
     if (astraClient == null) {
       logger.info('Skipping tests for client: %s', testClient);
       return this.skip();
-    }      
-    dbUri = astraClientInfo.uri;
-    isAstra = astraClientInfo.isAstra;
+    }
+    dbUri = testClient.uri;
+    isAstra = testClient.isAstra;
   });
-  describe('StargateMongoose - index', () => {    
+  describe('StargateMongoose - index', () => {
     it('should leverage astradb', async function () {
       const cartSchema = new mongoose.Schema({
         name: String,
@@ -47,7 +48,7 @@ for (const testClient in testClients) {
       });
       let Cart, Product;
       let astraMongoose, jsonAPIMongoose;
-      if(isAstra){
+      if (isAstra) {
         astraMongoose = new mongoose.Mongoose();
         astraMongoose.setDriver(StargateMongooseDriver);
         astraMongoose.set('autoCreate', true);
@@ -55,9 +56,9 @@ for (const testClient in testClients) {
         Cart = astraMongoose.model('Cart', cartSchema);
         Product = astraMongoose.model('Product', productSchema);
 
-        await astraMongoose.connect(dbUri, {createNamespaceOnConnect: false});
+        await astraMongoose.connect(dbUri, { createNamespaceOnConnect: false });
         await Promise.all(Object.values(astraMongoose.connection.models).map(Model => Model.init()));
-      } else{
+      } else {
         // @ts-ignore
         jsonAPIMongoose = new mongoose.Mongoose();
         jsonAPIMongoose.setDriver(StargateMongooseDriver);
@@ -65,7 +66,7 @@ for (const testClient in testClients) {
         jsonAPIMongoose.set('autoIndex', false);
         Cart = jsonAPIMongoose.model('Cart', cartSchema);
         Product = jsonAPIMongoose.model('Product', productSchema);
-  
+
         await jsonAPIMongoose.connect(dbUri, {
           username: process.env.STARGATE_USERNAME,
           password: process.env.STARGATE_PASSWORD,
@@ -85,13 +86,13 @@ for (const testClient in testClients) {
         products: [product1._id, product2._id]
       });
       await cart.save();
-      if(isAstra){
+      if (isAstra) {
         astraMongoose?.connection.dropCollection('carts');
         astraMongoose?.connection.dropCollection('products');
-      } else{
+      } else {
         jsonAPIMongoose?.connection.dropCollection('carts');
         jsonAPIMongoose?.connection.dropCollection('products');
       }
-    });  
+    });
   });
-})};
+});
