@@ -81,6 +81,16 @@ export class Connection extends MongooseConnection {
       rejectInitialConnection = reject;
     });
 
+    // Set Mongoose-specific config options. Need to set
+    // this in order to allow connection-level overrides for
+    // these options.
+    this.config = {
+      autoCreate: options?.autoCreate,
+      autoIndex: options?.autoIndex,
+      sanitizeFilter: options?.sanitizeFilter,
+      bufferCommands: options?.bufferCommands
+    };
+
     try {
       this._connectionString = uri;
       this.readyState = STATES.connecting;
