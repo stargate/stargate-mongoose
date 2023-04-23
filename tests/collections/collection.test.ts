@@ -616,6 +616,111 @@ for (const testClient in testClients) {
         assert.strictEqual(exception.message, 'Command "deleteMany" failed with the following error: More records found to be deleted even after deleting 20 records');
         assert.ok(_.isEqual(exception.command.deleteMany.filter, filter));
       });
+      it('should find with sort', async () => {
+        await collection.deleteMany({});
+        await collection.insertMany([
+          { username: 'a' },
+          { username: 'c' },
+          { username: 'b' }
+        ]);
+
+        let docs = await collection.find({}, { sort: { username: 1 } }).toArray();
+        assert.deepStrictEqual(docs.map(doc => doc.username), ['a', 'b', 'c']);
+
+        docs = await collection.find({}, { sort: { username: -1 } }).toArray();
+        assert.deepStrictEqual(docs.map(doc => doc.username), ['c', 'b', 'a']);
+      });
+      it('should findOne with sort', async () => {
+        await collection.deleteMany({});
+        await collection.insertMany([
+          { username: 'a' },
+          { username: 'c' },
+          { username: 'b' }
+        ]);
+
+        let doc = await collection.findOne({}, { sort: { username: 1 } });
+        assert.strictEqual(doc.username, 'a');
+
+        doc = await collection.findOne({}, { sort: { username: -1 } });
+        assert.deepStrictEqual(doc.username, 'c');
+      });
+      it('should findOneAndUpdate with sort', async () => {
+        await collection.deleteMany({});
+        await collection.insertMany([
+          { username: 'a' },
+          { username: 'c' },
+          { username: 'b' }
+        ]);
+
+        let res = await collection.findOneAndUpdate(
+          {},
+          { $set: { username: 'aaa' } },
+          { sort: { username: 1 }, returnDocument: 'before' }
+        );
+        assert.strictEqual(res.value.username, 'a');
+
+        res = await collection.findOneAndUpdate(
+          {},
+          { $set: { username: 'ccc' } },
+          { sort: { username: -1 }, returnDocument: 'before' }
+        );
+        assert.deepStrictEqual(res.value.username, 'c');
+      });
+      it('should findOneAndReplace with sort', async () => {
+        await collection.deleteMany({});
+        await collection.insertMany([
+          { username: 'a', answer: 42 },
+          { username: 'c', answer: 42 },
+          { username: 'b', answer: 42 }
+        ]);
+
+        let res = await collection.findOneAndReplace(
+          {},
+          { username: 'aaa' },
+          { sort: { username: 1 }, returnDocument: 'before' }
+        );
+        assert.strictEqual(res.value.username, 'a');
+
+        res = await collection.findOneAndReplace(
+          {},
+          { username: 'ccc' },
+          { sort: { username: -1 }, returnDocument: 'before' }
+        );
+        assert.deepStrictEqual(res.value.username, 'c');
+
+        const docs = await collection.find({}, { sort: { username: 1 } }).toArray();
+        assert.deepStrictEqual(docs.map(doc => doc.answer), [undefined, 42, undefined]);
+      });
+      it('should findOneAndUpdate without any updates to apply', async () => {
+        await collection.deleteMany({});
+        await collection.insertMany([
+          { username: 'a' }
+        ]);
+
+        let res = await collection.findOneAndUpdate(
+          {},
+          { $set: { username: 'a' } },
+          { sort: { username: 1 }, returnDocument: 'before' }
+        );
+        assert.strictEqual(res.value.username, 'a');
+      });
+      it.skip('should deleteOne with sort', async () => {
+        // deleteOne() with sort currently not supported by jsonapi
+        await collection.deleteMany({});
+        await collection.insertMany([
+          { username: 'a' },
+          { username: 'c' },
+          { username: 'b' }
+        ]);
+
+        await collection.deleteOne(
+          {},
+          { sort: { username: 1 } }
+        );
+
+        const docs = await collection.find({}, { sort: { username: 1 } }).toArray();
+        assert.deepStrictEqual(docs.map(doc => doc.username), ['b', 'c']);
+      });
     });
   });
 }
