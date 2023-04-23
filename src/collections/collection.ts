@@ -216,7 +216,7 @@ export class Collection {
         }
       };
 
-      if (options.sort) {
+      if (options?.sort) {
         command.findOne.sort = options.sort;
       }
 
