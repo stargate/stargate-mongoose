@@ -64,7 +64,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
     });
   });
 
-  describe('Collection operations', () => {
+  describe('insertOne tests', () => {
     it('should insertOne document', async () => {
       const res = await collection.insertOne(createSampleDocWithMultiLevel());
       assert.ok(res);        
@@ -86,6 +86,8 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
         assert.strictEqual(e.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: document size is over the max limit.");
       });
     });
+  });
+  describe('insertMany tests', () => {
     it('should insertMany documents', async () => {
       const res = await collection.insertMany(sampleUsersList);
       assert.strictEqual(res.insertedCount, sampleUsersList.length);
@@ -146,6 +148,8 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       //TODO: fix this test
       //assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: must not be empty.");
     });
+  });
+  describe('findOne tests', () => {
     it('should findOne document', async () => {
       const insertDocResp = await collection.insertOne(createSampleDocWithMultiLevel());
       const idToCheck = insertDocResp.insertedId;
@@ -338,6 +342,8 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(resDoc.address.city, doc.address?.city);
       assert.strictEqual(resDoc.address.number, undefined);        
     });
+  });
+  describe('find tests', () => {
     it.skip('should find doc - return only selected fields', async () => {
       //insert a new doc
       const doc = createSampleDocWithMultiLevel();
@@ -366,6 +372,8 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(resDoc.address.city, doc.address?.city);
       assert.strictEqual(resDoc.address.number, undefined); 
     });
+  });
+  describe('updateOne tests', () => {
     it('should updateOne document by id', async () => {
       //insert a new doc
       const doc = createSampleDocWithMultiLevel();
@@ -433,6 +441,8 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(updatedDoc.address.city, "nyc");
       assert.strictEqual(updatedDoc.address.state, "ny");
     });  
+  });
+  describe('updateMany tests', () => {
     it('should updateMany documents with ids', async () => {
       let sampleDocsWithIdList = JSON.parse(JSON.stringify(sampleUsersList));
       sampleDocsWithIdList[0]._id="docml1";
@@ -562,6 +572,8 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.ok(_.isEqual(error.command.updateMany.filter, filter));
       assert.ok(_.isEqual(error.command.updateMany.update, update));
     });
+  });
+  describe('findOneAndUpdate tests', () => {
     it('should findOneAndUpdate', async () => {
       const res = await collection.insertOne(createSampleDocWithMultiLevel());
       const docId = res.insertedId;
@@ -583,6 +595,8 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.equal(findOneAndUpdateResp.value.username, "aaronm");
       assert.equal(findOneAndUpdateResp.value.address.city, undefined);
     });      
+  });
+  describe('deleteOne tests', () => {
     it('should deleteOne document', async () => {
       const res = await collection.insertOne(createSampleDocWithMultiLevel());
       const docId = res.insertedId;
@@ -597,6 +611,8 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(deleteOneResp.deletedCount, 0);
       assert.strictEqual(deleteOneResp.acknowledged, true);
     });
+  });
+  describe('deleteMany tests', () => {
     it('should deleteMany when match is <= 20', async () => {
       let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
       docList.forEach((doc, index) => {
@@ -636,6 +652,8 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(exception.message, 'Command "deleteMany" failed with the following error: More records found to be deleted even after deleting 20 records');
       assert.ok(_.isEqual(exception.command.deleteMany.filter, filter));
     });
+  });
+  describe('countDocuments tests', () => {
     it('should return count of documents with non id filter', async () => {  
       let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
       docList.forEach((doc, index) => {
