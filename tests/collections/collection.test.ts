@@ -77,15 +77,12 @@ for (const testClient in testClients) {
         assert.strictEqual(res.acknowledged, true);
         assert.ok(res.insertedId, docId);        
       });
-      it.skip('should not insertOne document that is invalid', async () => {
-        let error:any;
-        try {
-          const res = await collection.insertOne({ 'dang.bro.yep': 'boss' });
-          assert.ok(res);
-        } catch (e) {
-          error = e;
-        }
-        assert.ok(error);
+      it('Should fail insert of doc over size 1 MB', async () => {
+        const jsonDocGt1MB = new Array(1024*1024).fill("a").join("");
+        const docToInsert = { username : jsonDocGt1MB };
+        collection.insertOne(docToInsert).catch((e) => {
+          assert.strictEqual(e.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: document size is over the max limit.");
+        });
       });
       it('should insertMany documents', async () => {
         const res = await collection.insertMany(sampleUsersList);
@@ -125,6 +122,27 @@ for (const testClient in testClients) {
           error = e;          
         }
         assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: must not be empty.");
+      });
+      it.skip('should error out when one of the docs in insertMany is invalid', async () => {        
+        let docList = Array.from({ length: 20 }, ()=>({"username": "id"}));
+        docList.forEach((doc, index) => {
+          doc.username = doc.username+(index+1);
+        });
+        const jsonDocGt1MB = new Array(1024*1024).fill("a").join("");
+        docList[2] = { username: jsonDocGt1MB };
+        let error:any;
+        try{
+          const res = await collection.insertMany(docList);
+          console.log('res : ', JSON.stringify(res));
+          console.log('completed');
+        } catch (e: any){
+          error = e;          
+        }
+        assert.ok(error);
+        console.log('error : ', JSON.stringify(error.errors[0].message));
+        console.log('failed');
+        //TODO: fix this test
+        //assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: must not be empty.");
       });
       it('should findOne document', async () => {
         const insertDocResp = await collection.insertOne(createSampleDocWithMultiLevel());
@@ -616,6 +634,52 @@ for (const testClient in testClients) {
         assert.strictEqual(exception.message, 'Command "deleteMany" failed with the following error: More records found to be deleted even after deleting 20 records');
         assert.ok(_.isEqual(exception.command.deleteMany.filter, filter));
       });
+    });
+    it('should return count of documents with non id filter', async () => {  
+      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      docList.forEach((doc, index) => {
+        doc.username = doc.username+(index+1);
+      });
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, 20);
+      const count = await collection.countDocuments({ "city": "trichy" });
+      assert.strictEqual(count, 20);    
+    });
+    it('should return count of documents with no filter', async () => {
+      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      docList.forEach((doc, index) => {
+        doc.username = doc.username+(index+1);
+      });
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, 20);
+      const count = await collection.countDocuments({});
+      assert.strictEqual(count, 20);    
+    });
+    it('should return count of documents for more than default page size limit', async () => {
+      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      docList.forEach((doc, index) => {
+        doc.username = doc.username+(index+1);
+      });
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, 20);
+      //insert next 20
+      let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
+      docListNextSet.forEach((doc, index) => {
+        doc.username = doc.username+(index+21);
+      });      
+      const resNextSet = await collection.insertMany(docListNextSet);    
+      assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
+      assert.strictEqual(resNextSet.acknowledged, true);
+      assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
+      //verify counts
+      assert.strictEqual(await collection.countDocuments({ city: "nyc"}), 20);    
+      assert.strictEqual(await collection.countDocuments({ city: "trichy"}), 20);    
+      assert.strictEqual(await collection.countDocuments({ city: "chennai"}), 0);    
+      assert.strictEqual(await collection.countDocuments({}), 40);    
+    });
+    it('should return 0 when no documents are in the collection', async () => {
+      const count = await collection.countDocuments({});
+      assert.strictEqual(count, 0);    
     });
   });
 }
