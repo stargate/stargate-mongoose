@@ -68,6 +68,14 @@ export class Connection extends MongooseConnection {
     });
   }
 
+  async dropDatabase() {
+    return executeOperation(async () => {
+      await this._waitForClient();
+      const db = this.client.db();
+      return db.dropDatabase();
+    });
+  }
+
   async openUri(uri: string, options: any) {
     let resolveInitialConnection: Function;
     let rejectInitialConnection: Function;
@@ -75,6 +83,16 @@ export class Connection extends MongooseConnection {
       resolveInitialConnection = resolve;
       rejectInitialConnection = reject;
     });
+
+    // Set Mongoose-specific config options. Need to set
+    // this in order to allow connection-level overrides for
+    // these options.
+    this.config = {
+      autoCreate: options?.autoCreate,
+      autoIndex: options?.autoIndex,
+      sanitizeFilter: options?.sanitizeFilter,
+      bufferCommands: options?.bufferCommands
+    };
 
     try {
       this._connectionString = uri;
