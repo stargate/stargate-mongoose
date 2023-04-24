@@ -79,15 +79,12 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(res.acknowledged, true);
       assert.ok(res.insertedId, docId);        
     });
-    it.skip('should not insertOne document that is invalid', async () => {
-      let error:any;
-      try {
-        const res = await collection.insertOne({ 'dang.bro.yep': 'boss' });
-        assert.ok(res);
-      } catch (e) {
-        error = e;
-      }
-      assert.ok(error);
+    it('Should fail insert of doc over size 1 MB', async () => {
+      const jsonDocGt1MB = new Array(1024*1024).fill("a").join("");
+      const docToInsert = { username : jsonDocGt1MB };
+      collection.insertOne(docToInsert).catch((e) => {
+        assert.strictEqual(e.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: document size is over the max limit.");
+      });
     });
     it('should insertMany documents', async () => {
       const res = await collection.insertMany(sampleUsersList);
