@@ -636,5 +636,51 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(exception.message, 'Command "deleteMany" failed with the following error: More records found to be deleted even after deleting 20 records');
       assert.ok(_.isEqual(exception.command.deleteMany.filter, filter));
     });
+    it('should return count of documents with non id filter', async () => {  
+      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      docList.forEach((doc, index) => {
+        doc.username = doc.username+(index+1);
+      });
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, 20);
+      const count = await collection.countDocuments({ "city": "trichy" });
+      assert.strictEqual(count, 20);    
+    });
+    it('should return count of documents with no filter', async () => {
+      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      docList.forEach((doc, index) => {
+        doc.username = doc.username+(index+1);
+      });
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, 20);
+      const count = await collection.countDocuments({});
+      assert.strictEqual(count, 20);    
+    });
+    it('should return count of documents for more than default page size limit', async () => {
+      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      docList.forEach((doc, index) => {
+        doc.username = doc.username+(index+1);
+      });
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, 20);
+      //insert next 20
+      let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
+      docListNextSet.forEach((doc, index) => {
+        doc.username = doc.username+(index+21);
+      });      
+      const resNextSet = await collection.insertMany(docListNextSet);    
+      assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
+      assert.strictEqual(resNextSet.acknowledged, true);
+      assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
+      //verify counts
+      assert.strictEqual(await collection.countDocuments({ city: "nyc"}), 20);    
+      assert.strictEqual(await collection.countDocuments({ city: "trichy"}), 20);    
+      assert.strictEqual(await collection.countDocuments({ city: "chennai"}), 0);    
+      assert.strictEqual(await collection.countDocuments({}), 40);    
+    });
+    it('should return 0 when no documents are in the collection', async () => {
+      const count = await collection.countDocuments({});
+      assert.strictEqual(count, 0);    
+    });
   });
 });
