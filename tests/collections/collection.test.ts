@@ -125,6 +125,27 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       }
       assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: must not be empty.");
     });
+    it.skip('should error out when one of the docs in insertMany is invalid', async () => {        
+      let docList = Array.from({ length: 20 }, ()=>({"username": "id"}));
+      docList.forEach((doc, index) => {
+        doc.username = doc.username+(index+1);
+      });
+      const jsonDocGt1MB = new Array(1024*1024).fill("a").join("");
+      docList[2] = { username: jsonDocGt1MB };
+      let error:any;
+      try{
+        const res = await collection.insertMany(docList);
+        console.log('res : ', JSON.stringify(res));
+        console.log('completed');
+      } catch (e: any){
+        error = e;          
+      }
+      assert.ok(error);
+      console.log('error : ', JSON.stringify(error.errors[0].message));
+      console.log('failed');
+      //TODO: fix this test
+      //assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: must not be empty.");
+    });
     it('should findOne document', async () => {
       const insertDocResp = await collection.insertOne(createSampleDocWithMultiLevel());
       const idToCheck = insertDocResp.insertedId;
