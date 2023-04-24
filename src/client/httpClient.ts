@@ -44,6 +44,7 @@ interface APIClientOptions {
   username?: string;
   password?: string;
   authUrl?: string;
+  isAstra?: boolean;
 }
 
 export interface APIResponse{
@@ -88,6 +89,7 @@ export class HTTPClient {
   username: string;
   password: string;
   authUrl: string;
+  isAstra: boolean;
 
   constructor(options: APIClientOptions) {
     // do not support usage in browsers
@@ -119,6 +121,7 @@ export class HTTPClient {
       this.baseUrl = this.baseUrl + "/" + options.baseApiPath;
     }
     this.authHeaderName = options.authHeaderName || DEFAULT_AUTH_HEADER;
+    this.isAstra = options.isAstra || false;
   }
 
   async _request(requestInfo: AxiosRequestConfig): Promise<APIResponse> {

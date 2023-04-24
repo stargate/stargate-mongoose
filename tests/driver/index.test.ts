@@ -18,6 +18,7 @@ import * as StargateMongooseDriver from '@/src/driver';
 import { delay } from 'lodash';
 import { testClient } from '@/tests/fixtures';
 import { logger } from '@/src/logger';
+import { parseUri } from '@/src/collections/utils';
 
 describe(`Driver based tests`, async () => {
   let dbUri: string;
@@ -56,7 +57,7 @@ describe(`Driver based tests`, async () => {
         Cart = astraMongoose.model('Cart', cartSchema);
         Product = astraMongoose.model('Product', productSchema);
 
-        await astraMongoose.connect(dbUri, { createNamespaceOnConnect: false });
+        await astraMongoose.connect(dbUri, { isAstra: true });
         await Promise.all(Object.values(astraMongoose.connection.models).map(Model => Model.init()));
       } else {
         // @ts-ignore
@@ -92,6 +93,48 @@ describe(`Driver based tests`, async () => {
       } else {
         jsonAPIMongoose?.connection.dropCollection('carts');
         jsonAPIMongoose?.connection.dropCollection('products');
+      }
+    });
+  });
+  describe('namespace management tests', () => {
+    it('should fail when dropDatabase is called for AstraDB', async () => {
+      const mongooseInstance = new mongoose.Mongoose();
+      mongooseInstance.setDriver(StargateMongooseDriver);
+      mongooseInstance.set('autoCreate', true);
+      mongooseInstance.set('autoIndex', false);
+      let options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };
+      await mongooseInstance.connect(dbUri, options);
+      if (isAstra) {
+        await mongooseInstance.connection.dropDatabase().catch(err => {
+          assert.strictEqual(err.message, 'Cannot drop database in Astra. Please use the Astra UI to drop the database.');
+        });
+      } else {
+        const resp = await mongooseInstance.connection.dropDatabase();
+        assert.strictEqual(resp.status?.ok, 1);
+      }
+    });
+    it('should createDatabase if not exists in createCollection call for non-AstraDB', async () => {
+      const mongooseInstance = new mongoose.Mongoose();
+      mongooseInstance.setDriver(StargateMongooseDriver);
+      mongooseInstance.set('autoCreate', true);
+      mongooseInstance.set('autoIndex', false);
+      let options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };
+      //split dbUri by / and replace last element with newKeyspaceName
+      const dbUriSplit = dbUri.split('/');
+      const token = parseUri(dbUri).applicationToken;
+      const newKeyspaceName = 'new_keyspace';
+      dbUriSplit[dbUriSplit.length - 1] = newKeyspaceName;
+      let newDbUri = dbUriSplit.join('/');
+      //if token is not null, append it to the new dbUri
+      newDbUri = token ? newDbUri + '?applicationToken=' + token : newDbUri;
+      await mongooseInstance.connect(newDbUri, options);
+      if (isAstra) {
+        mongooseInstance.connection.createCollection('new_collection').catch(err => {
+          assert.strictEqual(err.message, 'INVALID_ARGUMENT: Unknown keyspace ' + newKeyspaceName);
+        });
+      } else {
+        const resp = await mongooseInstance.connection.createCollection('new_collection');
+        assert.strictEqual(resp.status?.ok, 1);
       }
     });
   });

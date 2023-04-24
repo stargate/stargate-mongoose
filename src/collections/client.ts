@@ -27,6 +27,7 @@ export interface ClientOptions {
   username?: string;
   password?: string;
   authUrl?: string;
+  isAstra?: boolean;
 }
 
 interface ClientCallback {
@@ -37,7 +38,6 @@ export class Client {
   httpClient: HTTPClient;
   keyspaceName?: string;
   createNamespaceOnConnect?: boolean;
-
   /**
    * Set up a MongoClient that works with the Stargate JSON API
    * @param baseUrl A JSON API Connection URI (Eg. http://localhost:8080/v1)
@@ -47,7 +47,10 @@ export class Client {
   constructor(baseUrl: string, keyspaceName: string, options: ClientOptions) {
     this.keyspaceName = keyspaceName;
     this.createNamespaceOnConnect = options?.createNamespaceOnConnect ?? true;
-
+    //If the client is connecting to Astra, we don't want to create the namespace
+    if(options?.isAstra){
+      this.createNamespaceOnConnect = false;
+    }
     this.httpClient = new HTTPClient({
       baseApiPath : options.baseApiPath,
       baseUrl: baseUrl,
@@ -56,7 +59,8 @@ export class Client {
       authHeaderName: options.authHeaderName,
       username: options.username,
       password: options.password,
-      authUrl: options.authUrl
+      authUrl: options.authUrl,
+      isAstra: options.isAstra
   });
 }
 
@@ -72,10 +76,11 @@ export class Client {
       baseApiPath: options?.baseApiPath ? options?.baseApiPath : parsedUri.baseApiPath,
       logLevel: options?.logLevel,
       authHeaderName: options?.authHeaderName,
-      createNamespaceOnConnect: options?.createNamespaceOnConnect ?? true,
+      createNamespaceOnConnect: options?.createNamespaceOnConnect,
       username: options?.username,
       password: options?.password,
-      authUrl: options?.authUrl
+      authUrl: options?.authUrl,
+      isAstra: options?.isAstra
     });
     await client.connect();
     return client;
