@@ -13,13 +13,22 @@
 // limitations under the License.
 
 import { default as MongooseCollection } from 'mongoose/lib/collection';
+import {
+  FindOneAndDeleteOptions,
+  FindOneAndReplaceOptions,
+  FindOneAndUpdateOptions,
+  FindOneOptions,
+  FindOptions,
+  InsertManyOptions,
+  UpdateManyOptions,
+  UpdateOneOptions
+} from '@/src/collections/collection';
 
 export class Collection extends MongooseCollection {
   debugType = 'StargateMongooseCollection';
 
   constructor(name: string, conn: any, options: any) {
     super(name, conn, options);
-    this.Promise = options.Promise || Promise;
     this.modelName = options.modelName;
     delete options.modelName;
     this._closed = false;
@@ -29,52 +38,52 @@ export class Collection extends MongooseCollection {
     return this.conn.db.collection(this.name);
   }
 
-  countDocuments(filter: any) {
+  countDocuments(filter: Record<string, any>) {
     return this.collection.countDocuments(filter);
   }
 
-  find(query: any, options?: any) {
-    return this.collection.find(query, options);
+  find(filter: Record<string, any>, options?: FindOptions) {
+    return this.collection.find(filter, options);
   }
 
-  findOne(query: any, options?: any) {
-    return this.collection.findOne(query, options);
+  findOne(filter: Record<string, any>, options?: FindOneOptions) {
+    return this.collection.findOne(filter, options);
   }
 
-  insertOne(doc: any, options?: any) {
-    return this.collection.insertOne(doc, options);
+  insertOne(doc: Record<string, any>) {
+    return this.collection.insertOne(doc);
   }
 
-  insertMany(docs: any, options?: any) {
-    return this.collection.insertMany(docs, options);
+  insertMany(documents: Record<string, any>[], options?: InsertManyOptions) {
+    return this.collection.insertMany(documents, options);
   }
 
-  findOneAndUpdate(query: any, update: any, options?: any) {
-    return this.collection.findOneAndUpdate(query, update, options);
+  findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions) {
+    return this.collection.findOneAndUpdate(filter, update, options);
   }
 
-  findOneAndDelete(query: any, options?: any) {
-    return this.collection.findOneAndDelete(query, options);
+  findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions) {
+    return this.collection.findOneAndDelete(filter, options);
   }
 
-  findOneAndReplace(query: any, newDoc: any, options?: any) {
-    return this.collection.findOneAndReplace(query, newDoc, options);
+  findOneAndReplace(filter: Record<string, any>, newDoc: Record<string, any>, options?: FindOneAndReplaceOptions) {
+    return this.collection.findOneAndReplace(filter, newDoc, options);
   }
 
-  deleteMany(query: any, options?: any) {
-    return this.collection.deleteMany(query, options);
+  deleteMany(filter: Record<string, any>) {
+    return this.collection.deleteMany(filter);
   }
 
-  deleteOne(query: any, options?: any) {
-    return this.collection.deleteOne(query, options);
+  deleteOne(filter: Record<string, any>) {
+    return this.collection.deleteOne(filter);
   }
 
-  updateOne(query: any, update: any, options?: any) {
-    return this.collection.updateOne(query, update, options);
+  updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
+    return this.collection.updateOne(filter, update, options);
   }
 
-  updateMany(query: any, update: any, options?: any) {
-    return this.collection.updateMany(query, update, options);
+  updateMany(filter: Record<string, any>, update: Record<string, any>, options?: UpdateManyOptions) {
+    return this.collection.updateMany(filter, update, options);
   }
 
   dropIndexes() {

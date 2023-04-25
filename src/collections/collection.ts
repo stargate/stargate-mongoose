@@ -15,14 +15,12 @@
 import _ from 'lodash';
 import {
   DeleteResult,
-  FindOneAndUpdateOptions,
   InsertOneResult,
   ModifyResult,
   ObjectId,
-  UpdateOptions,
   UpdateResult
 } from 'mongodb';
-import { FindCursor } from './cursor';
+import { FindCursor, FindOptions } from './cursor';
 import { HTTPClient } from '@/src/client';
 import { executeOperation } from './utils';
 import { inspect } from 'util';
@@ -33,8 +31,38 @@ import { logger } from '@/src/logger';
 // https://github.com/mongodb/node-mongodb-native/pull/3323
 type JSONAPIUpdateResult = Omit<UpdateResult, 'upsertedId' | 'upsertedCount'> & { upsertedId: ObjectId | null, upsertedCount: number | null };
 
-interface DocumentCallback {
-  (err: Error | undefined, res: any): void;
+export interface FindOneOptions {
+  sort?: Record<string, 1 | -1>;
+}
+
+export interface FindOneAndDeleteOptions {
+  sort?: Record<string, 1 | -1>;
+}
+
+export interface FindOneAndReplaceOptions {
+  upsert?: boolean;
+  returnDocument?: 'before' | 'after';
+  sort?: Record<string, 1 | -1>;
+}
+
+export interface FindOneAndUpdateOptions {
+  upsert?: boolean;
+  returnDocument?: 'before' | 'after';
+  sort?: Record<string, 1 | -1>;
+}
+
+export { FindOptions } from './cursor';
+
+export interface InsertManyOptions {
+  ordered?: boolean;
+}
+
+export interface UpdateOneOptions {
+  upsert?: boolean;
+}
+
+export interface UpdateManyOptions {
+  upsert?: boolean;
 }
 
 export class Collection {
@@ -79,12 +107,12 @@ export class Collection {
     });
   }
 
-  async insertMany(docs: any, options?: any) {
+  async insertMany(documents: Record<string, any>[], options?: InsertManyOptions) {
     return executeOperation(async (): Promise<InsertManyResult<any>> => {
       const command = {
         insertMany : {
-            documents : docs,
-            options: options
+          documents,
+          options
         }
       };
       const resp = await this.httpClient.executeCommand(command);
@@ -96,17 +124,13 @@ export class Collection {
     });
   }
 
-  async updateOne(query: any, update: any, options?: UpdateOptions) {
+  async updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
     return executeOperation(async (): Promise<JSONAPIUpdateResult> => {
-      if (options != null && 'session' in options) {
-        options = { ...options };
-        delete options.session;
-      }
       const command = {
         updateOne: {
-          filter: query,
-          update: update,
-          options: options
+          filter,
+          update,
+          options
         }
       };
       const updateOneResp = await this.httpClient.executeCommand(command);
@@ -123,13 +147,13 @@ export class Collection {
     });
   }
 
-  async updateMany(query: any, update: any, options?: UpdateOptions) {
+  async updateMany(filter: Record<string, any>, update: Record<string, any>, options?: UpdateManyOptions) {
     return executeOperation(async (): Promise<JSONAPIUpdateResult> => {
       const command = {
         updateMany: {
-          filter: query,
-          update: update,
-          options: options
+          filter,
+          update,
+          options
         }
       };
       const updateManyResp = await this.httpClient.executeCommand(command);
@@ -153,7 +177,7 @@ export class Collection {
     throw new Error('Not Implemented');
   }
 
-  async deleteOne(query: any) {
+  async deleteOne(filter: Record<string, any>) {
     return executeOperation(async (): Promise<DeleteResult> => {
       type DeleteOneCommand = {
         deleteOne: {
@@ -162,7 +186,7 @@ export class Collection {
       };
       const command: DeleteOneCommand = {
         deleteOne: {
-          filter: query,
+          filter
         }
       };
       const deleteOneResp = await this.httpClient.executeCommand(command);
@@ -173,11 +197,11 @@ export class Collection {
     });
   }
 
-  async deleteMany(query: any) {
+  async deleteMany(filter: Record<string, any>) {
     return executeOperation(async (): Promise<DeleteResult> => {
       const command = {
         deleteMany: {
-          filter: query
+          filter
         }
       };
       const deleteManyResp = await this.httpClient.executeCommand(command);
@@ -191,34 +215,24 @@ export class Collection {
     });
   }
 
-  find(query: any, options?: any) {
-    const cursor = new FindCursor(this, query, options);
+  find(filter: Record<string, any>, options?: FindOptions) {
+    const cursor = new FindCursor(this, filter, options);
     return cursor;
   }
 
-  async findOne(query: any, options?: any) {
+  async findOne(filter: Record<string, any>, options?: FindOneOptions) {
     return executeOperation(async (): Promise<any | null> => {
-      // Workaround for Automattic/mongoose#13052
-      if (options && options.session == null) {
-        delete options.session;
-      }
-      // Workaround because Mongoose `save()` uses `findOne({ _id }, { projection: { _id: 1 } })`
-      // if there's no updates, which causes Stargate server to return an error
-      if (options && 'projection' in options) {
-        delete options.projection;
-      }
-
       type FindOneCommand = {
         findOne: {
-          filter?: Object,
-          options?: Object,
-          sort?: Object
+          filter?: Record<string, any>,
+          options?: Record<string, any>,
+          sort?: Record<string, any>
         }
       };
       const command: FindOneCommand = {
         findOne : {
-          filter : query,
-          options: options
+          filter,
+          options
         }
       };
 
@@ -231,7 +245,7 @@ export class Collection {
     });
   }
 
-  async findOneAndReplace(filter: any, replacement: any, options?: any){
+  async findOneAndReplace(filter: Record<string, any>, replacement: Record<string, any>, options?: FindOneAndReplaceOptions) {
     return executeOperation(async (): Promise<ModifyResult> => {
       type FindOneAndReplaceCommand = {
         findOneAndReplace: {
@@ -264,7 +278,7 @@ export class Collection {
     throw new Error('Not Implemented');
   }
 
-  async countDocuments(filter?: any) {
+  async countDocuments(filter?: Record<string, any>) {
     return executeOperation(async (): Promise<number> => {
       const command = {
         countDocuments: {
@@ -276,7 +290,7 @@ export class Collection {
     });
   }
 
-  async findOneAndDelete(query: any, options?: any) {
+  async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions) {
     type FindOneAndDeleteCommand = {
       findOneAndDelete: {
         filter?: Object,
@@ -285,15 +299,13 @@ export class Collection {
     };
     const command: FindOneAndDeleteCommand = {
       findOneAndDelete : {
-        filter : query
+        filter
       }
     };
     if (options?.sort) {
       command.findOneAndDelete.sort = options.sort;
     }
-    if (options != null && typeof options === 'object' && Object.keys(options).find(key => key !== 'sort')) {
-      throw new TypeError('findOneAndDelete() doesn\'t support options other than sort()');
-    }
+
     const resp = await this.httpClient.executeCommand(command);
     return {
       value : resp.data?.docs[0],
@@ -304,11 +316,11 @@ export class Collection {
  /** 
   * @deprecated
   */
-  async count(filter?: any) {
+  async count(filter?: Record<string, any>) {
     return this.countDocuments(filter);
   }
 
-  async findOneAndUpdate(query: any, update: any, options?: FindOneAndUpdateOptions) {
+  async findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions) {
     return executeOperation(async (): Promise<ModifyResult> => {
       type FindOneAndUpdateCommand = {
         findOneAndUpdate: {
@@ -320,9 +332,9 @@ export class Collection {
       };
       const command: FindOneAndUpdateCommand = {
         findOneAndUpdate : {
-          filter : query,
-          update : update,
-          options: options
+          filter,
+          update,
+          options
         }
       };
       if (options?.sort) {

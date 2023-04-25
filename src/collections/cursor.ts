@@ -17,14 +17,16 @@ import { Collection } from './collection';
 import { logger } from '@/src/logger';
 import { executeOperation, QueryOptions } from './utils';
 
-interface ResultCallback {
-  (err: Error | undefined, res: Array<any>): void;
+export interface FindOptions {
+  limit?: number;
+  skip?: number;
+  sort?: Record<string, 1 | -1>;
 }
 
 export class FindCursor {
   collection: Collection;
-  filter: any;
-  options: any;
+  filter: Record<string, any>;
+  options: FindOptions;
   documents: Record<string, any>[] = [];
   status: string = 'uninitialized';
   nextPageState?: string;
@@ -40,10 +42,10 @@ export class FindCursor {
    * @param filter
    * @param options
    */
-  constructor(collection: Collection, filter: any, options?: any) {
+  constructor(collection: Collection, filter: Record<string, any>, options?: FindOptions) {
     this.collection = collection;
     this.filter = filter;
-    this.options = options;
+    this.options = options ?? {};
     this.limit = options?.limit || Infinity;
     this.status = 'initialized';
     this.exhausted = false;
@@ -109,20 +111,15 @@ export class FindCursor {
   async _getMore() {
     const command: {
       find: {
-        filter?: string | undefined | null,
-        projection?: string | undefined | null,
-        options?: QueryOptions | undefined | null,
-        sort?: Object | null
+        filter?: Record<string, any>,
+        options?: Record<string, any>,
+        sort?: Record<string, any>
       }
     } = {
       find: {
         filter: this.filter
       }
     };
-    // Workaround for Automattic/mongoose#13050
-    if (this.options && this.options.projection && Object.keys(this.options.projection).length > 0) {
-      command.find.projection = this.options.projection;
-    }
     if (this.options && this.options.sort) {
       command.find.sort = this.options.sort;
     }
