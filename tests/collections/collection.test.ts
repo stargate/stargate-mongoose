@@ -354,35 +354,9 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
-    it.skip('should findOne doc - return only selected fields', async () => {
-      //insert a new doc
-      const doc = createSampleDocWithMultiLevel();
-      const insertDocResp = await collection.insertOne(doc);
-      //read that back with project
-      const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"_id": idToCheck}, {projection: {username:1, "address.city" : true}});
-      assert.ok(resDoc);
-      assert.strictEqual(resDoc._id, idToCheck);
-      assert.strictEqual(resDoc.username, doc.username);
-      assert.strictEqual(resDoc.address.city, doc.address?.city);
-      assert.strictEqual(resDoc.address.number, undefined);        
-    });
-    it.skip('should findOne doc - return only selected fields (with exclusion)', async () => {
-      //insert a new doc
-      const doc = createSampleDocWithMultiLevel();
-      const insertDocResp = await collection.insertOne(doc);
-      //read that back with project
-      const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"_id": idToCheck}, {projection: {username:1, "address.city" : true, _id: 0}});
-      assert.ok(resDoc);
-      assert.strictEqual(resDoc._id, undefined);
-      assert.strictEqual(resDoc.username, doc.username);
-      assert.strictEqual(resDoc.address.city, doc.address?.city);
-      assert.strictEqual(resDoc.address.number, undefined);        
-    });
   });
   describe('find tests', () => {
-    it.skip('should find doc - return only selected fields', async () => {
+    it('should find doc - return only selected fields', async () => {
       //insert a new doc
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
@@ -396,7 +370,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(resDoc.address.city, doc.address?.city);
       assert.strictEqual(resDoc.address.number, undefined);        
     });
-    it.skip('should find doc - return only selected fields (with exclusion)', async () => {
+    it('should find doc - return only selected fields (with exclusion)', async () => {
       //insert a new doc
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
