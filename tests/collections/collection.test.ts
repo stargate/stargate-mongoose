@@ -116,7 +116,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
         error = e;          
       }
       assert.ok(error);
-      assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: amount of documents to insert is over the max limit.");
+      assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: amount of documents to insert is over the max limit (21 vs 20).");
     });
     it('should error out when docs list is empty in insertMany', async () => {        
       let error:any;
@@ -737,8 +737,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const docs = await collection.find({}, { sort: { username: 1 } }).toArray();
       assert.deepStrictEqual(docs.map(doc => doc.answer), [undefined, 42, undefined]);
     });
-    it.skip('should findOneAndUpdate without any updates to apply', async () => {
-      // TODO: remove .skip() once https://github.com/stargate/jsonapi/pull/392 is released
+    it('should findOneAndUpdate without any updates to apply', async () => {
       await collection.deleteMany({});
       await collection.insertMany([
         { username: 'a' }
@@ -800,7 +799,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(res.value.username, 'c');
     });
     it.skip('should deleteOne with sort', async () => {
-      // deleteOne() with sort currently not supported by jsonapi
+      // TODO: follow up later. deleteOne() with sort currently not supported by jsonapi
       await collection.deleteMany({});
       await collection.insertMany([
         { username: 'a' },
