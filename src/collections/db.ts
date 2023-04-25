@@ -87,6 +87,9 @@ export class Db {
    * @returns Promise
    */
   async dropDatabase() {
+    if(this.rootHttpClient.isAstra){
+      throw new StargateAstraError('Cannot drop database in Astra. Please use the Astra UI to drop the database.');
+    }
     return await dropNamespace(this.rootHttpClient, this.name);
   }
 
@@ -96,5 +99,13 @@ export class Db {
    */
    async createDatabase() {
     return await createNamespace(this.rootHttpClient, this.name);
+  }
+}
+
+export class StargateAstraError extends Error  {
+  message: string
+  constructor(message: string) {
+    super(message);
+    this.message = message;
   }
 }
