@@ -143,7 +143,7 @@ export class Collection {
     });
   }
 
-  async replaceOne(query: any, newDoc: any, options?: any) {
+  async replaceOne(filter: any, replacement: any, options?: any) {
     throw new Error('Not Implemented');
   }
 
@@ -258,7 +258,7 @@ export class Collection {
     throw new Error('Not Implemented');
   }
 
-  async countDocuments(filter: any) {
+  async countDocuments(filter?: any) {
     return executeOperation(async (): Promise<number> => {
       const command = {
         countDocuments: {
@@ -270,15 +270,36 @@ export class Collection {
     });
   }
 
-  async findOneAndDelete(query: any, options: any) {
-    throw new Error('Not Implemented');
+  async findOneAndDelete(query: any, options?: any) {
+    type FindOneAndDeleteCommand = {
+      findOneAndDelete: {
+        filter?: Object,
+        sort?: Object
+      }
+    };
+    const command: FindOneAndDeleteCommand = {
+      findOneAndDelete : {
+        filter : query
+      }
+    };
+    if (options?.sort) {
+      command.findOneAndDelete.sort = options.sort;
+    }
+    if (options != null && typeof options === 'object' && Object.keys(options).find(key => key !== 'sort')) {
+      throw new TypeError('findOneAndDelete() doesn\'t support options other than sort()');
+    }
+    const resp = await this.httpClient.executeCommand(command);
+    return {
+      value : resp.data?.docs[0],
+      ok : 1
+    };
   }
 
  /** 
   * @deprecated
   */
-  async count(query: any, options: any) {
-    throw new Error('Not Implemented');
+  async count(filter?: any) {
+    return this.countDocuments(filter);
   }
 
   async findOneAndUpdate(query: any, update: any, options?: FindOneAndUpdateOptions) {

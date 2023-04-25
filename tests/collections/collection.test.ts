@@ -704,6 +704,54 @@ for (const testClient in testClients) {
         );
         assert.strictEqual(res.value.username, 'a');
       });
+      it('should countDocuments()', async () => {
+        await collection.deleteMany({});
+        await collection.insertMany([
+          { username: 'a' },
+          { username: 'aa', answer: 42 },
+          { username: 'aaa', answer: 42 }
+        ]);
+
+        let count = await collection.countDocuments();
+        assert.strictEqual(count, 3);
+
+        count = await collection.countDocuments({ username: 'a' });
+        assert.strictEqual(count, 1);
+
+        count = await collection.countDocuments({ answer: 42 });
+        assert.strictEqual(count, 2);
+      });
+      it('supports count() as alias for countDocuments()', async () => {
+        await collection.deleteMany({});
+        await collection.insertMany([
+          { username: 'a' },
+          { username: 'aa', answer: 42 },
+          { username: 'aaa', answer: 42 }
+        ]);
+
+        let count = await collection.count();
+        assert.strictEqual(count, 3);
+
+        count = await collection.count({ username: 'a' });
+        assert.strictEqual(count, 1);
+
+        count = await collection.count({ answer: 42 });
+        assert.strictEqual(count, 2);
+      });
+      it('supports findOneAndDelete()', async () => {
+        await collection.deleteMany({});
+        await collection.insertMany([
+          { username: 'a' },
+          { username: 'b' },
+          { username: 'c' }
+        ]);
+
+        let res = await collection.findOneAndDelete({ username: 'a' });
+        assert.strictEqual(res.value.username, 'a');
+
+        res = await collection.findOneAndDelete({}, { sort: { username: -1 } });
+        assert.strictEqual(res.value.username, 'c');
+      });
       it.skip('should deleteOne with sort', async () => {
         // deleteOne() with sort currently not supported by jsonapi
         await collection.deleteMany({});
