@@ -149,13 +149,18 @@ export class Collection {
     });
   }
 
-  async replaceOne(query: any, newDoc: any, options?: any) {
+  async replaceOne(filter: any, replacement: any, options?: any) {
     throw new Error('Not Implemented');
   }
 
-async deleteOne(query: any) {
+  async deleteOne(query: any) {
     return executeOperation(async (): Promise<DeleteResult> => {
-      const command = {
+      type DeleteOneCommand = {
+        deleteOne: {
+          filter?: Object
+        }
+      };
+      const command: DeleteOneCommand = {
         deleteOne: {
           filter: query,
         }
@@ -203,27 +208,63 @@ async deleteOne(query: any) {
         delete options.projection;
       }
 
-      const command = {
+      type FindOneCommand = {
+        findOne: {
+          filter?: Object,
+          options?: Object,
+          sort?: Object
+        }
+      };
+      const command: FindOneCommand = {
         findOne : {
           filter : query,
           options: options
         }
       };
 
+      if (options?.sort) {
+        command.findOne.sort = options.sort;
+      }
+
       const resp = await this.httpClient.executeCommand(command);
       return resp.data.docs[0];
     });
   }
 
-  async findOneAndReplace(query: any, newDoc: any, options?: any){
-    throw new Error('Not Implemented');
+  async findOneAndReplace(filter: any, replacement: any, options?: any){
+    return executeOperation(async (): Promise<ModifyResult> => {
+      type FindOneAndReplaceCommand = {
+        findOneAndReplace: {
+          filter?: Object,
+          replacement?: Object,
+          options?: Object,
+          sort?: Object
+        }
+      };
+      const command: FindOneAndReplaceCommand = {
+        findOneAndReplace: {
+          filter,
+          replacement,
+          options
+        }
+      };
+      if (options?.sort) {
+        command.findOneAndReplace.sort = options.sort;
+        delete options.sort;
+      }
+      const resp = await this.httpClient.executeCommand(command);
+      return {
+        value : resp.data?.docs[0],
+        ok : 1
+      };
+    });
   }
 
   async distinct(key: any, filter: any, options?: any) {
     throw new Error('Not Implemented');
   }
 
-  async countDocuments(filter: any) {
+  async countDocuments(filter?: any) {
     return executeOperation(async (): Promise<number> => {
       const command = {
         countDocuments: {
@@ -235,26 +276,59 @@ async deleteOne(query: any) {
     });
   }
 
-  async findOneAndDelete(query: any, options: any) {
-    throw new Error('Not Implemented');
+  async findOneAndDelete(query: any, options?: any) {
+    type FindOneAndDeleteCommand = {
+      findOneAndDelete: {
+        filter?: Object,
+        sort?: Object
+      }
+    };
+    const command: FindOneAndDeleteCommand = {
+      findOneAndDelete : {
+        filter : query
+      }
+    };
+    if (options?.sort) {
+      command.findOneAndDelete.sort = options.sort;
+    }
+    if (options != null && typeof options === 'object' && Object.keys(options).find(key => key !== 'sort')) {
+      throw new TypeError('findOneAndDelete() doesn\'t support options other than sort()');
+    }
+    const resp = await this.httpClient.executeCommand(command);
+    return {
+      value : resp.data?.docs[0],
+      ok : 1
+    };
   }
 
  /** 
   * @deprecated
   */
-  async count(query: any, options: any) {
-    throw new Error('Not Implemented');
+  async count(filter?: any) {
+    return this.countDocuments(filter);
   }
 
   async findOneAndUpdate(query: any, update: any, options?: FindOneAndUpdateOptions) {
     return executeOperation(async (): Promise<ModifyResult> => {
-      const command = {
-        findOneAndUpdate : {
-            filter : query,
-            update : update,
-            options: options
+      type FindOneAndUpdateCommand = {
+        findOneAndUpdate: {
+          filter?: Object,
+          update?: Object,
+          options?: Object,
+          sort?: Object
         }
       };
+      const command: FindOneAndUpdateCommand = {
+        findOneAndUpdate : {
+          filter : query,
+          update : update,
+          options: options
+        }
+      };
+      if (options?.sort) {
+        command.findOneAndUpdate.sort = options.sort;
+        delete options.sort;
+      }
       const resp = await this.httpClient.executeCommand(command);
       return {
         value : resp.data?.docs[0],

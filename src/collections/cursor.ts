@@ -111,7 +111,8 @@ export class FindCursor {
       find: {
         filter?: string | undefined | null,
         projection?: string | undefined | null,
-        options?: QueryOptions | undefined | null
+        options?: QueryOptions | undefined | null,
+        sort?: Object | null
       }
     } = {
       find: {
@@ -121,6 +122,9 @@ export class FindCursor {
     // Workaround for Automattic/mongoose#13050
     if (this.options && this.options.projection && Object.keys(this.options.projection).length > 0) {
       command.find.projection = this.options.projection;
+    }
+    if (this.options && this.options.sort) {
+      command.find.sort = this.options.sort;
     }
     const options = {} as QueryOptions;
     if (this.limit != Infinity) { 
