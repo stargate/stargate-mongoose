@@ -25,25 +25,25 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
   let db: Db;
   let collection: Collection;
   const sampleDoc = createSampleDoc();
-  before(async function() {
-    if(testClient == null) {
+  before(async function () {
+    if (testClient == null) {
       return this.skip();
     }
     astraClient = await testClient?.client;
     if (astraClient == null) {
       return this.skip();
-    }    
+    }
 
     db = astraClient.db();
     await db.dropCollection(TEST_COLLECTION_NAME);
   });
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     await db.createCollection(TEST_COLLECTION_NAME);
     collection = db.collection(TEST_COLLECTION_NAME);
   });
 
-  afterEach(async function() {
+  afterEach(async function () {
     await db.dropCollection(TEST_COLLECTION_NAME);
   });
 
@@ -53,7 +53,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.ok(collection);
     });
     it('should not initialize a Collection without a name', () => {
-      let error:any;
+      let error: any;
       try {
         const collection = new Collection(db.httpClient);
         assert.ok(collection);
@@ -67,21 +67,21 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
   describe('insertOne tests', () => {
     it('should insertOne document', async () => {
       const res = await collection.insertOne(createSampleDocWithMultiLevel());
-      assert.ok(res);        
+      assert.ok(res);
       assert.strictEqual(res.acknowledged, true);
-      assert.ok(res.insertedId);        
+      assert.ok(res.insertedId);
     });
     it('should insertOne document with id', async () => {
       const docId = "docml1";
       const docToInsert = createSampleDocWithMultiLevelWithId(docId);
       const res = await collection.insertOne(docToInsert);
-      assert.ok(res);        
+      assert.ok(res);
       assert.strictEqual(res.acknowledged, true);
-      assert.ok(res.insertedId, docId);        
+      assert.ok(res.insertedId, docId);
     });
     it('Should fail insert of doc over size 1 MB', async () => {
-      const jsonDocGt1MB = new Array(1024*1024).fill("a").join("");
-      const docToInsert = { username : jsonDocGt1MB };
+      const jsonDocGt1MB = new Array(1024 * 1024).fill("a").join("");
+      const docToInsert = { username: jsonDocGt1MB };
       collection.insertOne(docToInsert).catch((e) => {
         assert.strictEqual(e.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: document size is over the max limit.");
       });
@@ -96,94 +96,94 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
     });
     it('should insertMany documents with ids', async () => {
       let sampleDocsWithIdList = JSON.parse(JSON.stringify(sampleUsersList));
-      sampleDocsWithIdList[0]._id="docml1";
-      sampleDocsWithIdList[1]._id="docml2";
-      sampleDocsWithIdList[2]._id="docml3";
+      sampleDocsWithIdList[0]._id = "docml1";
+      sampleDocsWithIdList[1]._id = "docml2";
+      sampleDocsWithIdList[2]._id = "docml3";
       const res = await collection.insertMany(sampleDocsWithIdList);
       assert.strictEqual(res.insertedCount, sampleDocsWithIdList.length);
       assert.strictEqual(res.acknowledged, true);
       assert.strictEqual(_.keys(res.insertedIds).length, 3);
     });
     it('should not insert more than allowed number of documents in one insertMany call', async () => {
-      let docList = Array.from({ length: 21 }, ()=>({"username": "id"}));
+      let docList = Array.from({ length: 21 }, () => ({ "username": "id" }));
       docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
+        doc.username = doc.username + (index + 1);
       });
-      let error:any;
-      try{
+      let error: any;
+      try {
         const res = await collection.insertMany(docList);
-      } catch (e: any){
-        error = e;          
+      } catch (e: any) {
+        error = e;
       }
       assert.ok(error);
       assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: amount of documents to insert is over the max limit (21 vs 20).");
     });
-    it('should error out when docs list is empty in insertMany', async () => {        
-      let error:any;
-      try{
+    it('should error out when docs list is empty in insertMany', async () => {
+      let error: any;
+      try {
         const res = await collection.insertMany([]);
-      } catch (e: any){
-        error = e;          
+      } catch (e: any) {
+        error = e;
       }
       assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: must not be empty.");
     });
     it('should insertMany documents ordered', async () => {
-      let docList = Array.from({ length: 20 }, ()=>({"username": "id"}));
+      let docList = Array.from({ length: 20 }, () => ({ "username": "id" }));
       docList.forEach((doc, index) => {
-        doc._id = "docml"+(index+1);
-        doc.username = doc.username+(index+1);
+        doc._id = "docml" + (index + 1);
+        doc.username = doc.username + (index + 1);
       });
-      const res = await collection.insertMany(docList, {ordered: true});
+      const res = await collection.insertMany(docList, { ordered: true });
       assert.strictEqual(res.insertedCount, docList.length);
       //check if response insertedIds are in the order of the docs list
       docList.forEach((doc, index) => {
         assert.strictEqual(res.insertedIds[index], doc._id);
-      });        
+      });
     });
-    it('should error out when one of the docs in insertMany is invalid with ordered true', async () => {        
-      let docList = Array.from({ length: 20 }, ()=>({"username": "id"}));
+    it('should error out when one of the docs in insertMany is invalid with ordered true', async () => {
+      let docList = Array.from({ length: 20 }, () => ({ "username": "id" }));
       docList.forEach((doc, index) => {
-        doc._id = "docml"+(index+1);
-        doc.username = doc.username+(index+1);
-      });        
+        doc._id = "docml" + (index + 1);
+        doc.username = doc.username + (index + 1);
+      });
       docList[10] = docList[9];
-      let error:any;
-      let res:any;
-      try{
-        res = await collection.insertMany(docList, {ordered: true});        
-      } catch (e: any){
-        error = e;          
+      let error: any;
+      let res: any;
+      try {
+        res = await collection.insertMany(docList, { ordered: true });
+      } catch (e: any) {
+        error = e;
       }
-      assert.ok(error);      
+      assert.ok(error);
       assert.strictEqual(error.errors[0].message, "Failed to insert document with _id 'docml10': Document already exists with the given _id");
       assert.strictEqual(error.errors[0].errorCode, "DOCUMENT_ALREADY_EXISTS");
       assert.strictEqual(error.status.insertedIds.length, 10);
-      docList.slice(0,10).forEach((doc, index) => {
+      docList.slice(0, 10).forEach((doc, index) => {
         assert.strictEqual(error.status.insertedIds[index], doc._id);
       });
     });
-    it('should error out when one of the docs in insertMany is invalid with ordered false', async () => {        
-      let docList = Array.from({ length: 20 }, ()=>({"username": "id"}));
+    it('should error out when one of the docs in insertMany is invalid with ordered false', async () => {
+      let docList = Array.from({ length: 20 }, () => ({ "username": "id" }));
       docList.forEach((doc, index) => {
-        doc._id = "docml"+(index+1);
-        doc.username = doc.username+(index+1);
-      });        
+        doc._id = "docml" + (index + 1);
+        doc.username = doc.username + (index + 1);
+      });
       docList[10] = docList[9];
-      let error:any;
-      let res:any;
-      try{
-        res = await collection.insertMany(docList, {ordered: false});        
-      } catch (e: any){
-        error = e;          
+      let error: any;
+      let res: any;
+      try {
+        res = await collection.insertMany(docList, { ordered: false });
+      } catch (e: any) {
+        error = e;
       }
-      assert.ok(error);      
+      assert.ok(error);
       assert.strictEqual(error.errors[0].message, "Failed to insert document with _id 'docml10': Document already exists with the given _id");
       assert.strictEqual(error.errors[0].errorCode, "DOCUMENT_ALREADY_EXISTS");
       assert.strictEqual(error.status.insertedIds.length, 19);
       //check if response insertedIds contains all the docs except the one that failed
-      docList.slice(0,9).concat(docList.slice(10)).forEach((doc, index) => {
+      docList.slice(0, 9).concat(docList.slice(10)).forEach((doc, index) => {
         //check if error.status.insertedIds contains doc._id
-        assert.ok(error.status.insertedIds.includes(doc._id));        
+        assert.ok(error.status.insertedIds.includes(doc._id));
       });
     });
   });
@@ -191,14 +191,14 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
     it('should findOne document', async () => {
       const insertDocResp = await collection.insertOne(createSampleDocWithMultiLevel());
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"_id": idToCheck});
+      const resDoc = await collection.findOne({ "_id": idToCheck });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
     it('should findOne eq document', async () => {
       const insertDocResp = await collection.insertOne(createSampleDocWithMultiLevel());
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"_id": {"$eq":idToCheck}});
+      const resDoc = await collection.findOne({ "_id": { "$eq": idToCheck } });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -206,7 +206,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"username": doc.username});
+      const resDoc = await collection.findOne({ "username": doc.username });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -214,7 +214,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"username": {"$eq":doc.username}});
+      const resDoc = await collection.findOne({ "username": { "$eq": doc.username } });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -222,7 +222,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"age": doc.age});
+      const resDoc = await collection.findOne({ "age": doc.age });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -230,7 +230,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"age": {"$eq":doc.age}});
+      const resDoc = await collection.findOne({ "age": { "$eq": doc.age } });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -238,7 +238,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"human": doc.human});
+      const resDoc = await collection.findOne({ "human": doc.human });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -246,7 +246,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"human": {"$eq":doc.human}});
+      const resDoc = await collection.findOne({ "human": { "$eq": doc.human } });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -254,7 +254,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"password": doc.password});
+      const resDoc = await collection.findOne({ "password": doc.password });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -262,7 +262,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"password": {"$eq":doc.password}});
+      const resDoc = await collection.findOne({ "password": { "$eq": doc.password } });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -270,7 +270,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"address.street": doc.address?.street});
+      const resDoc = await collection.findOne({ "address.street": doc.address?.street });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -278,7 +278,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"address.street": {"$eq" : doc.address?.street}});
+      const resDoc = await collection.findOne({ "address.street": { "$eq": doc.address?.street } });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -286,7 +286,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"address.number": doc.address?.number});
+      const resDoc = await collection.findOne({ "address.number": doc.address?.number });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -294,7 +294,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"address.number": {"$eq" : doc.address?.number}});
+      const resDoc = await collection.findOne({ "address.number": { "$eq": doc.address?.number } });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -302,7 +302,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"address.is_office": doc.address?.is_office});
+      const resDoc = await collection.findOne({ "address.is_office": doc.address?.is_office });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -310,7 +310,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"address.is_office": {"$eq" : doc.address?.is_office}});
+      const resDoc = await collection.findOne({ "address.is_office": { "$eq": doc.address?.is_office } });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -318,7 +318,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"address.suburb": doc.address?.suburb});
+      const resDoc = await collection.findOne({ "address.suburb": doc.address?.suburb });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -326,7 +326,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"address.suburb": {"$eq" : doc.address?.suburb}});
+      const resDoc = await collection.findOne({ "address.suburb": { "$eq": doc.address?.suburb } });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -334,7 +334,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"age": doc.age, "human": doc.human, "password": doc.password});
+      const resDoc = await collection.findOne({ "age": doc.age, "human": doc.human, "password": doc.password });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -342,7 +342,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"address.number": doc.address?.number, "address.street": doc.address?.street, "address.is_office": doc.address?.is_office});
+      const resDoc = await collection.findOne({ "address.number": doc.address?.number, "address.street": doc.address?.street, "address.is_office": doc.address?.is_office });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -350,7 +350,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
-      const resDoc = await collection.findOne({"age": doc.age, "address.street": doc.address?.street, "address.is_office": doc.address?.is_office});
+      const resDoc = await collection.findOne({ "age": doc.age, "address.street": doc.address?.street, "address.is_office": doc.address?.is_office });
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
     });
@@ -362,13 +362,13 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const insertDocResp = await collection.insertOne(doc);
       //read that back with projection
       const idToCheck = insertDocResp.insertedId;
-      const findCursor = await collection.find({"_id": idToCheck}, {projection: {username:1, "address.city" : true}});
+      const findCursor = await collection.find({ "_id": idToCheck }, { projection: { username: 1, "address.city": true } });
       const resDoc = await findCursor.next();
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, idToCheck);
       assert.strictEqual(resDoc.username, doc.username);
       assert.strictEqual(resDoc.address.city, doc.address?.city);
-      assert.strictEqual(resDoc.address.number, undefined);        
+      assert.strictEqual(resDoc.address.number, undefined);
     });
     it('should find doc - return only selected fields (with exclusion)', async () => {
       //insert a new doc
@@ -376,13 +376,13 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const insertDocResp = await collection.insertOne(doc);
       //read that back with projection
       const idToCheck = insertDocResp.insertedId;
-      const findCursor = await collection.find({"_id": idToCheck}, {projection: {username:1, "address.city" : true, _id: 0}});
+      const findCursor = await collection.find({ "_id": idToCheck }, { projection: { username: 1, "address.city": true, _id: 0 } });
       const resDoc = await findCursor.next();
       assert.ok(resDoc);
       assert.strictEqual(resDoc._id, undefined);
       assert.strictEqual(resDoc.username, doc.username);
       assert.strictEqual(resDoc.address.city, doc.address?.city);
-      assert.strictEqual(resDoc.address.number, undefined); 
+      assert.strictEqual(resDoc.address.number, undefined);
     });
   });
   describe('updateOne tests', () => {
@@ -392,37 +392,37 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
       //update doc
-      const updateOneResp = await collection.updateOne({"_id": idToCheck}, 
-                            {
-                              "$set": { "username" : "aaronm" },
-                              "$unset" : { "address.city" : ""}                                
-                            });
+      const updateOneResp = await collection.updateOne({ "_id": idToCheck },
+        {
+          "$set": { "username": "aaronm" },
+          "$unset": { "address.city": "" }
+        });
       assert.strictEqual(updateOneResp.modifiedCount, 1);
       assert.strictEqual(updateOneResp.matchedCount, 1);
       assert.strictEqual(updateOneResp.acknowledged, true);
       assert.strictEqual(updateOneResp.upsertedId, undefined);
       assert.strictEqual(updateOneResp.upsertedCount, undefined);
-      const updatedDoc = await collection.findOne({"username":"aaronm"});
+      const updatedDoc = await collection.findOne({ "username": "aaronm" });
       assert.strictEqual(updatedDoc._id, idToCheck);
       assert.strictEqual(updatedDoc.username, "aaronm");
       assert.strictEqual(updatedDoc.address.city, undefined);
-    });    
+    });
     it('should updateOne document by col', async () => {
       //insert a new doc
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
       //update doc
-      const updateOneResp = await collection.updateOne({"address.city": "big banana"}, 
-                            {
-                              "$set": { "address.state" : "new state" }                        
-                            });
+      const updateOneResp = await collection.updateOne({ "address.city": "big banana" },
+        {
+          "$set": { "address.state": "new state" }
+        });
       assert.strictEqual(updateOneResp.modifiedCount, 1);
       assert.strictEqual(updateOneResp.matchedCount, 1);
       assert.strictEqual(updateOneResp.acknowledged, true);
       assert.strictEqual(updateOneResp.upsertedId, undefined);
       assert.strictEqual(updateOneResp.upsertedCount, undefined);
-      const updatedDoc = await collection.findOne({"username":"aaron"});
+      const updatedDoc = await collection.findOne({ "username": "aaron" });
       assert.strictEqual(updatedDoc._id, idToCheck);
       assert.strictEqual(updatedDoc.username, "aaron");
       assert.strictEqual(updatedDoc.address.city, "big banana");
@@ -434,66 +434,66 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const insertDocResp = await collection.insertOne(doc);
       const idToCheck = insertDocResp.insertedId;
       //update doc
-      const updateOneResp = await collection.updateOne({"address.city": "nyc"}, 
-                            {
-                              "$set": { "address.state" : "ny" }                        
-                            },
-                            { 
-                              "upsert" : true  
-                            });      
+      const updateOneResp = await collection.updateOne({ "address.city": "nyc" },
+        {
+          "$set": { "address.state": "ny" }
+        },
+        {
+          "upsert": true
+        });
       assert.strictEqual(updateOneResp.modifiedCount, 0);
       assert.strictEqual(updateOneResp.matchedCount, 0);
       assert.strictEqual(updateOneResp.acknowledged, true);
       assert.ok(updateOneResp.upsertedId);
       assert.strictEqual(updateOneResp.upsertedCount, 1);
-      const updatedDoc = await collection.findOne({"address.city":"nyc"});
+      const updatedDoc = await collection.findOne({ "address.city": "nyc" });
       assert.ok(updatedDoc._id);
       assert.notStrictEqual(updatedDoc._id, idToCheck);
       assert.strictEqual(updatedDoc.address.city, "nyc");
       assert.strictEqual(updatedDoc.address.state, "ny");
-    });  
+    });
   });
   describe('updateMany tests', () => {
     it('should updateMany documents with ids', async () => {
       let sampleDocsWithIdList = JSON.parse(JSON.stringify(sampleUsersList));
-      sampleDocsWithIdList[0]._id="docml1";
-      sampleDocsWithIdList[1]._id="docml2";
-      sampleDocsWithIdList[2]._id="docml3";
+      sampleDocsWithIdList[0]._id = "docml1";
+      sampleDocsWithIdList[1]._id = "docml2";
+      sampleDocsWithIdList[2]._id = "docml3";
       const res = await collection.insertMany(sampleDocsWithIdList);
       assert.strictEqual(res.insertedCount, sampleDocsWithIdList.length);
       assert.strictEqual(res.acknowledged, true);
       assert.strictEqual(_.keys(res.insertedIds).length, 3);
       const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
-      const updateManyResp = await collection.updateMany({"_id": idToUpdateAndCheck},
-                                                {
-                                                  "$set" : { "username" : "aaronm" },
-                                                  "$unset" : { "address.city" : ""}
-                                                });
+      const updateManyResp = await collection.updateMany({ "_id": idToUpdateAndCheck },
+        {
+          "$set": { "username": "aaronm" },
+          "$unset": { "address.city": "" }
+        });
       assert.strictEqual(updateManyResp.matchedCount, 1);
       assert.strictEqual(updateManyResp.modifiedCount, 1);
       assert.strictEqual(updateManyResp.acknowledged, true);
       assert.strictEqual(updateManyResp.upsertedCount, undefined);
       assert.strictEqual(updateManyResp.upsertedId, undefined);
-      const updatedDoc = await collection.findOne({"username":"aaronm"});
+      const updatedDoc = await collection.findOne({ "username": "aaronm" });
       assert.strictEqual(updatedDoc._id, idToUpdateAndCheck);
       assert.strictEqual(updatedDoc.username, "aaronm");
-      assert.strictEqual(updatedDoc.address.city, undefined);                                                  
+      assert.strictEqual(updatedDoc.address.city, undefined);
     });
     it('should update when updateMany is invoked with updates for records <= 20', async () => {
-      let docList = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
+      let docList = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
+        doc.username = doc.username + (index + 1);
       });
-      const res = await collection.insertMany(docList);    
+      const res = await collection.insertMany(docList);
       assert.strictEqual(res.insertedCount, docList.length);
       assert.strictEqual(res.acknowledged, true);
       assert.strictEqual(_.keys(res.insertedIds).length, 20);
-      
+
       //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
-      const updateManyResp = await collection.updateMany({"city": "nyc"},
-                            {
-                              "$set" : { "state" : "ny" }
-                            });        
+      const updateManyResp = await collection.updateMany({ "city": "nyc" },
+        {
+          "$set": { "state": "ny" }
+        });
       assert.strictEqual(updateManyResp.matchedCount, 20);
       assert.strictEqual(updateManyResp.modifiedCount, 20);
       assert.strictEqual(updateManyResp.acknowledged, true);
@@ -501,20 +501,20 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(updateManyResp.upsertedId, undefined);
     });
     it('should upsert with upsert flag set to false/not set when not found', async () => {
-      let docList = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
+      let docList = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
+        doc.username = doc.username + (index + 1);
       });
-      const res = await collection.insertMany(docList);    
+      const res = await collection.insertMany(docList);
       assert.strictEqual(res.insertedCount, docList.length);
       assert.strictEqual(res.acknowledged, true);
       assert.strictEqual(_.keys(res.insertedIds).length, 20);
-      
+
       //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
-      const updateManyResp = await collection.updateMany({"city": "la"},
-                            {
-                              "$set" : { "state" : "ca" }
-                            });     
+      const updateManyResp = await collection.updateMany({ "city": "la" },
+        {
+          "$set": { "state": "ca" }
+        });
       assert.strictEqual(updateManyResp.matchedCount, 0);
       assert.strictEqual(updateManyResp.modifiedCount, 0);
       assert.strictEqual(updateManyResp.acknowledged, true);
@@ -522,23 +522,23 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(updateManyResp.upsertedId, undefined);
     });
     it('should upsert with upsert flag set to true when not found', async () => {
-      let docList = Array.from({ length: 2 }, ()=>({username: "id", city : "nyc"}));
+      let docList = Array.from({ length: 2 }, () => ({ username: "id", city: "nyc" }));
       docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
+        doc.username = doc.username + (index + 1);
       });
-      const res = await collection.insertMany(docList);    
+      const res = await collection.insertMany(docList);
       assert.strictEqual(res.insertedCount, docList.length);
       assert.strictEqual(res.acknowledged, true);
       assert.strictEqual(_.keys(res.insertedIds).length, 2);
-      
+
       //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
-      const updateManyResp = await collection.updateMany({"city": "la"},
-                            {
-                              "$set" : { "state" : "ca" }
-                            },
-                            {
-                              "upsert": true
-                            });     
+      const updateManyResp = await collection.updateMany({ "city": "la" },
+        {
+          "$set": { "state": "ca" }
+        },
+        {
+          "upsert": true
+        });
       assert.strictEqual(updateManyResp.matchedCount, 0);
       assert.strictEqual(updateManyResp.modifiedCount, 0);
       assert.strictEqual(updateManyResp.acknowledged, true);
@@ -546,37 +546,37 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.ok(updateManyResp.upsertedId);
     });
     it('should fail when moreData returned by updateMany as true', async () => {
-      let docList = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
+      let docList = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
+        doc.username = doc.username + (index + 1);
       });
-      const res = await collection.insertMany(docList);    
+      const res = await collection.insertMany(docList);
       assert.strictEqual(res.insertedCount, docList.length);
       assert.strictEqual(res.acknowledged, true);
       assert.strictEqual(_.keys(res.insertedIds).length, docList.length);
       //insert next 20
-      let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
+      let docListNextSet = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docListNextSet.forEach((doc, index) => {
-        doc.username = doc.username+(index+21);
+        doc.username = doc.username + (index + 21);
       });
-      const resNextSet = await collection.insertMany(docListNextSet);    
+      const resNextSet = await collection.insertMany(docListNextSet);
       assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
       assert.strictEqual(resNextSet.acknowledged, true);
       assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
 
-      
+
       //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
-      const filter = {"city": "nyc"};
+      const filter = { "city": "nyc" };
       const update = {
-        "$set" : { "state" : "ny" }
+        "$set": { "state": "ny" }
       };
       let error;
-      try{
+      try {
         const updateManyResp = await collection.updateMany(filter, update);
       }
-      catch(e: any){
-        error = e;          
-      }        
+      catch (e: any) {
+        error = e;
+      }
       assert.ok(error);
       assert.strictEqual(error.message, "Command \"updateMany\" failed with the following error: More than 20 records found for update by the server");
       assert.ok(_.isEqual(error.command.updateMany.filter, filter));
@@ -587,24 +587,24 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
     it('should findOneAndUpdate', async () => {
       const res = await collection.insertOne(createSampleDocWithMultiLevel());
       const docId = res.insertedId;
-      const findOneAndUpdateResp = await collection.findOneAndUpdate({"_id":docId}, 
+      const findOneAndUpdateResp = await collection.findOneAndUpdate({ "_id": docId },
         {
           "$set": {
             "username": "aaronm"
           },
           "$unset": {
             "address.city": ""
-          }            
+          }
         },
         {
           "returnDocument": "after"
-        }          
-      );        
+        }
+      );
       assert.equal(findOneAndUpdateResp.ok, 1);
       assert.equal(findOneAndUpdateResp.value._id, docId);
       assert.equal(findOneAndUpdateResp.value.username, "aaronm");
       assert.equal(findOneAndUpdateResp.value.address.city, undefined);
-    });      
+    });
   });
   describe('deleteOne tests', () => {
     it('should deleteOne document', async () => {
@@ -624,9 +624,9 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
   });
   describe('deleteMany tests', () => {
     it('should deleteMany when match is <= 20', async () => {
-      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      let docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
       docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
+        doc.username = doc.username + (index + 1);
       });
       const res = await collection.insertMany(docList);
       assert.strictEqual(res.insertedCount, 20);
@@ -635,28 +635,28 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(deleteManyResp.acknowledged, true);
     });
     it('should throw an error when deleteMany finds more than 20 records', async () => {
-      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      let docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
       docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
+        doc.username = doc.username + (index + 1);
       });
       const res = await collection.insertMany(docList);
       assert.strictEqual(res.insertedCount, 20);
       //insert next 20
-      let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "trichy"}));
+      let docListNextSet = Array.from({ length: 20 }, () => ({ username: "id", city: "trichy" }));
       docListNextSet.forEach((doc, index) => {
-        doc.username = doc.username+(index+21);
+        doc.username = doc.username + (index + 21);
       });
-      const resNextSet = await collection.insertMany(docListNextSet);    
+      const resNextSet = await collection.insertMany(docListNextSet);
       assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
       assert.strictEqual(resNextSet.acknowledged, true);
       assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
       //test for deleteMany errors
       let exception: any;
       const filter = { "city": "trichy" };
-      try{
+      try {
         const deleteManyResp = await collection.deleteMany(filter);
-      } catch(e: any){
-        exception = e;          
+      } catch (e: any) {
+        exception = e;
       }
       assert.ok(exception);
       assert.strictEqual(exception.message, 'Command "deleteMany" failed with the following error: More records found to be deleted even after deleting 20 records');
@@ -830,9 +830,9 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(deleteOneResp.acknowledged, true);
     });
     it('should deleteMany when match is <= 20', async () => {
-      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      let docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
       docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
+        doc.username = doc.username + (index + 1);
       });
       const res = await collection.insertMany(docList);
       assert.strictEqual(res.insertedCount, 20);
@@ -841,28 +841,28 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(deleteManyResp.acknowledged, true);
     });
     it('should throw an error when deleteMany finds more than 20 records', async () => {
-      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      let docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
       docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
+        doc.username = doc.username + (index + 1);
       });
       const res = await collection.insertMany(docList);
       assert.strictEqual(res.insertedCount, 20);
       //insert next 20
-      let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "trichy"}));
+      let docListNextSet = Array.from({ length: 20 }, () => ({ username: "id", city: "trichy" }));
       docListNextSet.forEach((doc, index) => {
-        doc.username = doc.username+(index+21);
+        doc.username = doc.username + (index + 21);
       });
-      const resNextSet = await collection.insertMany(docListNextSet);    
+      const resNextSet = await collection.insertMany(docListNextSet);
       assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
       assert.strictEqual(resNextSet.acknowledged, true);
       assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
       //test for deleteMany errors
       let exception: any;
       const filter = { "city": "trichy" };
-      try{
+      try {
         const deleteManyResp = await collection.deleteMany(filter);
-      } catch(e: any){
-        exception = e;          
+      } catch (e: any) {
+        exception = e;
       }
       assert.ok(exception);
       assert.strictEqual(exception.message, 'Command "deleteMany" failed with the following error: More records found to be deleted even after deleting 20 records');
@@ -870,51 +870,51 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
     });
   });
   describe('countDocuments tests', () => {
-    it('should return count of documents with non id filter', async () => {  
-      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+    it('should return count of documents with non id filter', async () => {
+      let docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
       docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
+        doc.username = doc.username + (index + 1);
       });
       const res = await collection.insertMany(docList);
       assert.strictEqual(res.insertedCount, 20);
       const count = await collection.countDocuments({ "city": "trichy" });
-      assert.strictEqual(count, 20);    
+      assert.strictEqual(count, 20);
     });
     it('should return count of documents with no filter', async () => {
-      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      let docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
       docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
+        doc.username = doc.username + (index + 1);
       });
       const res = await collection.insertMany(docList);
       assert.strictEqual(res.insertedCount, 20);
       const count = await collection.countDocuments({});
-      assert.strictEqual(count, 20);    
+      assert.strictEqual(count, 20);
     });
     it('should return count of documents for more than default page size limit', async () => {
-      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      let docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
       docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
+        doc.username = doc.username + (index + 1);
       });
       const res = await collection.insertMany(docList);
       assert.strictEqual(res.insertedCount, 20);
       //insert next 20
-      let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
+      let docListNextSet = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docListNextSet.forEach((doc, index) => {
-        doc.username = doc.username+(index+21);
-      });      
-      const resNextSet = await collection.insertMany(docListNextSet);    
+        doc.username = doc.username + (index + 21);
+      });
+      const resNextSet = await collection.insertMany(docListNextSet);
       assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
       assert.strictEqual(resNextSet.acknowledged, true);
       assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
       //verify counts
-      assert.strictEqual(await collection.countDocuments({ city: "nyc"}), 20);    
-      assert.strictEqual(await collection.countDocuments({ city: "trichy"}), 20);    
-      assert.strictEqual(await collection.countDocuments({ city: "chennai"}), 0);    
-      assert.strictEqual(await collection.countDocuments({}), 40);    
+      assert.strictEqual(await collection.countDocuments({ city: "nyc" }), 20);
+      assert.strictEqual(await collection.countDocuments({ city: "trichy" }), 20);
+      assert.strictEqual(await collection.countDocuments({ city: "chennai" }), 0);
+      assert.strictEqual(await collection.countDocuments({}), 40);
     });
     it('should return 0 when no documents are in the collection', async () => {
       const count = await collection.countDocuments({});
-      assert.strictEqual(count, 0);    
+      assert.strictEqual(count, 0);
     });
   });
 });
