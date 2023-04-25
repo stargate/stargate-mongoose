@@ -14,24 +14,29 @@
 
 import assert from 'assert';
 import { Client } from '@/src/collections/client';
-import { getAstraClient, astraUri } from '@/tests/fixtures';
+import { testClient } from '@/tests/fixtures';
 import { parseUri } from '@/src/collections/utils';
 import { AUTH_API_PATH } from '@/src/client/httpClient';
+import _ from 'lodash';
 
-
-describe('StargateMongoose - collections.Client', () => {
+describe('StargateMongoose clients test', () => {
   const baseUrl = `https://db_id-region-1.apps.astra.datastax.com`;
-  let astraClient: Client;
+  let appClient: Client | null;
+  let clientURI: string;
   before(async function () {
-    astraClient = await getAstraClient();
-    if (!astraClient) {
+    if(testClient == null) {
       return this.skip();
     }
+    appClient = await testClient.client;
+    if (appClient == null) {
+      return this.skip();
+    }    
+    clientURI = testClient.uri;    
   });
 
   describe('Client Connections', () => {
     it('should initialize a Client connection with a uri using connect', async () => {
-      assert.ok(astraClient);
+      assert.ok(appClient);
     });
     it('should not a Client connection with an invalid uri', async () => {
       let error:any;
@@ -44,11 +49,11 @@ describe('StargateMongoose - collections.Client', () => {
       assert.ok(error);
     });
     it('should have unique httpClients for each db', async () => {
-      const dbFromUri = astraClient.db();      
-      const parsedUri = parseUri(astraUri);
-      assert.strictEqual(dbFromUri.name, parsedUri.keyspaceName);
-      const newDb = astraClient.db('test-db');
-      assert.strictEqual(newDb.name, 'test-db');
+      const dbFromUri = appClient?.db();      
+      const parsedUri = parseUri(clientURI);
+      assert.strictEqual(dbFromUri?.name, parsedUri.keyspaceName);
+      const newDb = appClient?.db('test-db');
+      assert.strictEqual(newDb?.name, 'test-db');
     });
 
     it('should initialize a Client connection with a uri using connect with overrides', async () => {
@@ -56,7 +61,7 @@ describe('StargateMongoose - collections.Client', () => {
       const BASE_API_PATH_TO_CHECK = "baseAPIPath1";
       const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
-      const client = await Client.connect(astraUri, {
+      const client = await Client.connect(clientURI, {
           applicationToken: AUTH_TOKEN_TO_CHECK,
           baseApiPath: BASE_API_PATH_TO_CHECK,
           logLevel: LOG_LEVEL_TO_CHECK,
@@ -66,8 +71,8 @@ describe('StargateMongoose - collections.Client', () => {
         assert.ok(client);
         assert.ok(client.httpClient);
         assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
-        assert.strictEqual(client.keyspaceName, parseUri(astraUri).keyspaceName);
-        assert.strictEqual(client.httpClient.baseUrl, parseUri(astraUri).baseUrl + "/" + BASE_API_PATH_TO_CHECK);          
+        assert.strictEqual(client.keyspaceName, parseUri(clientURI).keyspaceName);
+        assert.strictEqual(client.httpClient.baseUrl, parseUri(clientURI).baseUrl + "/" + BASE_API_PATH_TO_CHECK);          
         assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
         const db = client.db();
         assert.ok(db);
@@ -78,7 +83,7 @@ describe('StargateMongoose - collections.Client', () => {
       const BASE_API_PATH_TO_CHECK = "baseAPIPath1";
       const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
-      const client = await Client.connect(parseUri(astraUri).baseUrl + "/" + BASE_API_PATH_TO_CHECK + "/" + KEYSPACE_TO_CHECK, {
+      const client = await Client.connect(parseUri(clientURI).baseUrl + "/" + BASE_API_PATH_TO_CHECK + "/" + KEYSPACE_TO_CHECK, {
           applicationToken: AUTH_TOKEN_TO_CHECK,
           logLevel: LOG_LEVEL_TO_CHECK,
           authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
@@ -88,7 +93,7 @@ describe('StargateMongoose - collections.Client', () => {
         assert.ok(client.httpClient);
         assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
         assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
-        assert.strictEqual(client.httpClient.baseUrl, parseUri(astraUri).baseUrl + "/" + BASE_API_PATH_TO_CHECK);          
+        assert.strictEqual(client.httpClient.baseUrl, parseUri(clientURI).baseUrl + "/" + BASE_API_PATH_TO_CHECK);          
         assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
         const db = client.db();
         assert.ok(db);
@@ -99,7 +104,7 @@ describe('StargateMongoose - collections.Client', () => {
       const BASE_API_PATH_TO_CHECK = "apis/baseAPIPath1";
       const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
-      const client = await Client.connect(parseUri(astraUri).baseUrl + "/" + BASE_API_PATH_TO_CHECK + "/" + KEYSPACE_TO_CHECK, {
+      const client = await Client.connect(parseUri(clientURI).baseUrl + "/" + BASE_API_PATH_TO_CHECK + "/" + KEYSPACE_TO_CHECK, {
           applicationToken: AUTH_TOKEN_TO_CHECK,
           logLevel: LOG_LEVEL_TO_CHECK,
           authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
@@ -109,7 +114,7 @@ describe('StargateMongoose - collections.Client', () => {
         assert.ok(client.httpClient);
         assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
         assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
-        assert.strictEqual(client.httpClient.baseUrl, parseUri(astraUri).baseUrl + "/" + BASE_API_PATH_TO_CHECK);          
+        assert.strictEqual(client.httpClient.baseUrl, parseUri(clientURI).baseUrl + "/" + BASE_API_PATH_TO_CHECK);          
         assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
         const db = client.db();
         assert.ok(db);
@@ -303,11 +308,11 @@ describe('StargateMongoose - collections.Client', () => {
   });
   describe('Client noops', () => {
     it('should handle noop: setMaxListeners', async () => {
-      const maxListeners = astraClient.setMaxListeners(1);
+      const maxListeners = appClient?.setMaxListeners(1);
       assert.strictEqual(maxListeners, 1);
     });
     it('should handle noop: close', async () => {
-      const closedClient = astraClient.close();
+      const closedClient = appClient?.close();
       assert.ok(closedClient);
     });
   });

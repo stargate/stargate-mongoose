@@ -5,11 +5,12 @@
 1. [Quickstart](#quickstart)
 2. [Architecture](#architecture)
 3. [Version compatibility](#version-compatibility)
-4. [Sample Applications](#sample-applications)
-5. [Features](#features)
-6. [NodeJS MongoDB Driver Overriding (experimental)](#nodejs-mongodb-driver-overriding-experimental)
-7. [API Reference](APIReference.md)
-8. [Developer Guide](DEVGUIDE.md)
+4. [Connecting to AstraDB](#connecting-to-astradb)
+5. [Sample Applications](#sample-applications)
+6. [Features](#features)
+7. [NodeJS MongoDB Driver Overriding (experimental)](#nodejs-mongodb-driver-overriding-experimental)
+8. [API Reference](APIReference.md)
+9. [Developer Guide](DEVGUIDE.md)
 
 ## Quickstart
 Prerequisites:
@@ -118,6 +119,9 @@ The current implementation of the JSON API uses DataStax Enterprise (DSE) as the
 |    DataStax Enterprise  | 6.8.x |
 
 CI tests are run using the Stargate and JSON API versions specified in the [api-compatibility.versions](api-compatibility.versions) file.
+
+## Connecting to AstraDB
+Integration with [AstraDB](https://astra.datastax.com/) is experimental and is not usable/ fully ready at this time.
 
 ## Sample Applications
 
