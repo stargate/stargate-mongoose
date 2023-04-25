@@ -15,12 +15,20 @@
 import _ from 'lodash';
 import { Collection } from './collection';
 import { logger } from '@/src/logger';
-import { executeOperation, QueryOptions } from './utils';
+import { executeOperation } from './utils';
 
 export interface FindOptions {
   limit?: number;
   skip?: number;
   sort?: Record<string, 1 | -1>;
+  projection?: Record<string, 1 | -1>;
+}
+
+//this is internal options, sent to the JSON API and not exposed to the user
+type QueryOptions = {
+  limit?: number;
+  skip?: number;
+  pagingState?: string;
 }
 
 export class FindCursor {
@@ -113,7 +121,8 @@ export class FindCursor {
       find: {
         filter?: Record<string, any>,
         options?: Record<string, any>,
-        sort?: Record<string, any>
+        sort?: Record<string, any>,
+        projection?: Record<string, any>
       }
     } = {
       find: {
@@ -129,6 +138,12 @@ export class FindCursor {
     }
     if (this.nextPageState) {
       options.pagingState = this.nextPageState;
+    }
+    if(this.options?.skip){
+      options.skip = this.options.skip;
+    }
+    if(this.options?.projection && Object.keys(this.options.projection).length > 0){
+      command.find.projection = this.options.projection;
     }
     if(Object.keys(options).length > 0){
       command.find.options = options;

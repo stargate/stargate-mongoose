@@ -190,12 +190,6 @@ export const executeOperation = async (operation: Function) => {
   return res;
 };
 
-export type QueryOptions = {
-  pagingState?: string|null,
-  limit?: number,
-  projection?: any
-}
-
 export async function createNamespace(httpClient: HTTPClient, name: string) {  
   const data = {
     createNamespace: {
