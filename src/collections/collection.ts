@@ -31,7 +31,7 @@ import { InsertManyResult } from 'mongoose';
 import { logger } from '@/src/logger';
 
 // https://github.com/mongodb/node-mongodb-native/pull/3323
-type JSONAPIUpdateResult = Omit<UpdateResult, 'upsertedId'> & { upsertedId: ObjectId | null };
+type JSONAPIUpdateResult = Omit<UpdateResult, 'upsertedId' | 'upsertedCount'> & { upsertedId: ObjectId | null, upsertedCount: number | null };
 
 interface DocumentCallback {
   (err: Error | undefined, res: any): void;
@@ -113,10 +113,10 @@ export class Collection {
       let resp = {
         modifiedCount: updateOneResp.status.modifiedCount,
         matchedCount: updateOneResp.status.matchedCount,
-        acknowledged: true,        
-        upsertedId: updateOneResp.status.upsertedId
+        acknowledged: true
       } as JSONAPIUpdateResult;
       if(updateOneResp.status.upsertedId){
+        resp.upsertedId = updateOneResp.status.upsertedId;
         resp.upsertedCount = 1;
       }
       return resp;
@@ -140,9 +140,9 @@ export class Collection {
         modifiedCount: updateManyResp.status.modifiedCount,
         matchedCount: updateManyResp.status.matchedCount,
         acknowledged: true,        
-        upsertedId: updateManyResp.status.upsertedId
       } as JSONAPIUpdateResult;
       if(updateManyResp.status.upsertedId){
+        resp.upsertedId = updateManyResp.status.upsertedId;
         resp.upsertedCount = 1;
       }
       return resp;
