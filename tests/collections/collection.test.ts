@@ -64,7 +64,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
     });
   });
 
-  describe('Collection operations', () => {
+  describe('insertOne tests', () => {
     it('should insertOne document', async () => {
       const res = await collection.insertOne(createSampleDocWithMultiLevel());
       assert.ok(res);        
@@ -79,16 +79,15 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(res.acknowledged, true);
       assert.ok(res.insertedId, docId);        
     });
-    it.skip('should not insertOne document that is invalid', async () => {
-      let error:any;
-      try {
-        const res = await collection.insertOne({ 'dang.bro.yep': 'boss' });
-        assert.ok(res);
-      } catch (e) {
-        error = e;
-      }
-      assert.ok(error);
+    it('Should fail insert of doc over size 1 MB', async () => {
+      const jsonDocGt1MB = new Array(1024*1024).fill("a").join("");
+      const docToInsert = { username : jsonDocGt1MB };
+      collection.insertOne(docToInsert).catch((e) => {
+        assert.strictEqual(e.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: document size is over the max limit.");
+      });
     });
+  });
+  describe('insertMany tests', () => {
     it('should insertMany documents', async () => {
       const res = await collection.insertMany(sampleUsersList);
       assert.strictEqual(res.insertedCount, sampleUsersList.length);
@@ -128,6 +127,67 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       }
       assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: must not be empty.");
     });
+    it('should insertMany documents ordered', async () => {
+      let docList = Array.from({ length: 20 }, ()=>({"username": "id"}));
+      docList.forEach((doc, index) => {
+        doc._id = "docml"+(index+1);
+        doc.username = doc.username+(index+1);
+      });
+      const res = await collection.insertMany(docList, {ordered: true});
+      assert.strictEqual(res.insertedCount, docList.length);
+      //check if response insertedIds are in the order of the docs list
+      docList.forEach((doc, index) => {
+        assert.strictEqual(res.insertedIds[index], doc._id);
+      });        
+    });
+    it('should error out when one of the docs in insertMany is invalid with ordered true', async () => {        
+      let docList = Array.from({ length: 20 }, ()=>({"username": "id"}));
+      docList.forEach((doc, index) => {
+        doc._id = "docml"+(index+1);
+        doc.username = doc.username+(index+1);
+      });        
+      docList[10] = docList[9];
+      let error:any;
+      let res:any;
+      try{
+        res = await collection.insertMany(docList, {ordered: true});        
+      } catch (e: any){
+        error = e;          
+      }
+      assert.ok(error);      
+      assert.strictEqual(error.errors[0].message, "Failed to insert document with _id 'docml10': Document already exists with the given _id");
+      assert.strictEqual(error.errors[0].errorCode, "DOCUMENT_ALREADY_EXISTS");
+      assert.strictEqual(error.status.insertedIds.length, 10);
+      docList.slice(0,10).forEach((doc, index) => {
+        assert.strictEqual(error.status.insertedIds[index], doc._id);
+      });
+    });
+    it('should error out when one of the docs in insertMany is invalid with ordered false', async () => {        
+      let docList = Array.from({ length: 20 }, ()=>({"username": "id"}));
+      docList.forEach((doc, index) => {
+        doc._id = "docml"+(index+1);
+        doc.username = doc.username+(index+1);
+      });        
+      docList[10] = docList[9];
+      let error:any;
+      let res:any;
+      try{
+        res = await collection.insertMany(docList, {ordered: false});        
+      } catch (e: any){
+        error = e;          
+      }
+      assert.ok(error);      
+      assert.strictEqual(error.errors[0].message, "Failed to insert document with _id 'docml10': Document already exists with the given _id");
+      assert.strictEqual(error.errors[0].errorCode, "DOCUMENT_ALREADY_EXISTS");
+      assert.strictEqual(error.status.insertedIds.length, 19);
+      //check if response insertedIds contains all the docs except the one that failed
+      docList.slice(0,9).concat(docList.slice(10)).forEach((doc, index) => {
+        //check if error.status.insertedIds contains doc._id
+        assert.ok(error.status.insertedIds.includes(doc._id));        
+      });
+    });
+  });
+  describe('findOne tests', () => {
     it('should findOne document', async () => {
       const insertDocResp = await collection.insertOne(createSampleDocWithMultiLevel());
       const idToCheck = insertDocResp.insertedId;
@@ -320,6 +380,8 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(resDoc.address.city, doc.address?.city);
       assert.strictEqual(resDoc.address.number, undefined);        
     });
+  });
+  describe('find tests', () => {
     it.skip('should find doc - return only selected fields', async () => {
       //insert a new doc
       const doc = createSampleDocWithMultiLevel();
@@ -348,6 +410,8 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(resDoc.address.city, doc.address?.city);
       assert.strictEqual(resDoc.address.number, undefined); 
     });
+  });
+  describe('updateOne tests', () => {
     it('should updateOne document by id', async () => {
       //insert a new doc
       const doc = createSampleDocWithMultiLevel();
@@ -415,6 +479,8 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(updatedDoc.address.city, "nyc");
       assert.strictEqual(updatedDoc.address.state, "ny");
     });  
+  });
+  describe('updateMany tests', () => {
     it('should updateMany documents with ids', async () => {
       let sampleDocsWithIdList = JSON.parse(JSON.stringify(sampleUsersList));
       sampleDocsWithIdList[0]._id="docml1";
@@ -544,6 +610,8 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.ok(_.isEqual(error.command.updateMany.filter, filter));
       assert.ok(_.isEqual(error.command.updateMany.update, update));
     });
+  });
+  describe('findOneAndUpdate tests', () => {
     it('should findOneAndUpdate', async () => {
       const res = await collection.insertOne(createSampleDocWithMultiLevel());
       const docId = res.insertedId;
@@ -565,6 +633,8 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.equal(findOneAndUpdateResp.value.username, "aaronm");
       assert.equal(findOneAndUpdateResp.value.address.city, undefined);
     });      
+  });
+  describe('deleteOne tests', () => {
     it('should deleteOne document', async () => {
       const res = await collection.insertOne(createSampleDocWithMultiLevel());
       const docId = res.insertedId;
@@ -579,6 +649,8 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(deleteOneResp.deletedCount, 0);
       assert.strictEqual(deleteOneResp.acknowledged, true);
     });
+  });
+  describe('deleteMany tests', () => {
     it('should deleteMany when match is <= 20', async () => {
       let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
       docList.forEach((doc, index) => {
@@ -617,6 +689,54 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.ok(exception);
       assert.strictEqual(exception.message, 'Command "deleteMany" failed with the following error: More records found to be deleted even after deleting 20 records');
       assert.ok(_.isEqual(exception.command.deleteMany.filter, filter));
+    });
+  });
+  describe('countDocuments tests', () => {
+    it('should return count of documents with non id filter', async () => {  
+      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      docList.forEach((doc, index) => {
+        doc.username = doc.username+(index+1);
+      });
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, 20);
+      const count = await collection.countDocuments({ "city": "trichy" });
+      assert.strictEqual(count, 20);    
+    });
+    it('should return count of documents with no filter', async () => {
+      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      docList.forEach((doc, index) => {
+        doc.username = doc.username+(index+1);
+      });
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, 20);
+      const count = await collection.countDocuments({});
+      assert.strictEqual(count, 20);    
+    });
+    it('should return count of documents for more than default page size limit', async () => {
+      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      docList.forEach((doc, index) => {
+        doc.username = doc.username+(index+1);
+      });
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, 20);
+      //insert next 20
+      let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
+      docListNextSet.forEach((doc, index) => {
+        doc.username = doc.username+(index+21);
+      });      
+      const resNextSet = await collection.insertMany(docListNextSet);    
+      assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
+      assert.strictEqual(resNextSet.acknowledged, true);
+      assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
+      //verify counts
+      assert.strictEqual(await collection.countDocuments({ city: "nyc"}), 20);    
+      assert.strictEqual(await collection.countDocuments({ city: "trichy"}), 20);    
+      assert.strictEqual(await collection.countDocuments({ city: "chennai"}), 0);    
+      assert.strictEqual(await collection.countDocuments({}), 40);    
+    });
+    it('should return 0 when no documents are in the collection', async () => {
+      const count = await collection.countDocuments({});
+      assert.strictEqual(count, 0);    
     });
   });
 });

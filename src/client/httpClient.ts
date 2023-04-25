@@ -225,11 +225,14 @@ export class HTTPClient {
 export class StargateServerError extends Error {
   errors: any[];
   command: Record<string, any>;
+  status: any;
   constructor(response: any, command: Record<string, any>) {
     const commandName = Object.keys(command)[0] || 'unknown';
-    super(`Command "${commandName}" failed with the following errors: ${JSON.stringify(response.errors)}`);
+    const status = response.status ? `, Status : ${JSON.stringify(response.status)}` : '';
+    super(`Command "${commandName}" failed with the following errors: ${JSON.stringify(response.errors)}${status}`);
     this.errors = response.errors;
     this.command = command;
+    this.status = response.status;
   }
 }
 
