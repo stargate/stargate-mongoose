@@ -618,5 +618,212 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(exception.message, 'Command "deleteMany" failed with the following error: More records found to be deleted even after deleting 20 records');
       assert.ok(_.isEqual(exception.command.deleteMany.filter, filter));
     });
+    it('should find with sort', async () => {
+      await collection.deleteMany({});
+      await collection.insertMany([
+        { username: 'a' },
+        { username: 'c' },
+        { username: 'b' }
+      ]);
+
+      let docs = await collection.find({}, { sort: { username: 1 } }).toArray();
+      assert.deepStrictEqual(docs.map(doc => doc.username), ['a', 'b', 'c']);
+
+      docs = await collection.find({}, { sort: { username: -1 } }).toArray();
+      assert.deepStrictEqual(docs.map(doc => doc.username), ['c', 'b', 'a']);
+    });
+    it('should findOne with sort', async () => {
+      await collection.deleteMany({});
+      await collection.insertMany([
+        { username: 'a' },
+        { username: 'c' },
+        { username: 'b' }
+      ]);
+
+      let doc = await collection.findOne({}, { sort: { username: 1 } });
+      assert.strictEqual(doc.username, 'a');
+
+      doc = await collection.findOne({}, { sort: { username: -1 } });
+      assert.deepStrictEqual(doc.username, 'c');
+    });
+    it('should findOneAndUpdate with sort', async () => {
+      await collection.deleteMany({});
+      await collection.insertMany([
+        { username: 'a' },
+        { username: 'c' },
+        { username: 'b' }
+      ]);
+
+      let res = await collection.findOneAndUpdate(
+        {},
+        { $set: { username: 'aaa' } },
+        { sort: { username: 1 }, returnDocument: 'before' }
+      );
+      assert.strictEqual(res.value.username, 'a');
+
+      res = await collection.findOneAndUpdate(
+        {},
+        { $set: { username: 'ccc' } },
+        { sort: { username: -1 }, returnDocument: 'before' }
+      );
+      assert.deepStrictEqual(res.value.username, 'c');
+    });
+    it('should findOneAndReplace with sort', async () => {
+      await collection.deleteMany({});
+      await collection.insertMany([
+        { username: 'a', answer: 42 },
+        { username: 'c', answer: 42 },
+        { username: 'b', answer: 42 }
+      ]);
+
+      let res = await collection.findOneAndReplace(
+        {},
+        { username: 'aaa' },
+        { sort: { username: 1 }, returnDocument: 'before' }
+      );
+      assert.strictEqual(res.value.username, 'a');
+
+      res = await collection.findOneAndReplace(
+        {},
+        { username: 'ccc' },
+        { sort: { username: -1 }, returnDocument: 'before' }
+      );
+      assert.deepStrictEqual(res.value.username, 'c');
+
+      const docs = await collection.find({}, { sort: { username: 1 } }).toArray();
+      assert.deepStrictEqual(docs.map(doc => doc.answer), [undefined, 42, undefined]);
+    });
+    it.skip('should findOneAndUpdate without any updates to apply', async () => {
+      // TODO: remove .skip() once https://github.com/stargate/jsonapi/pull/392 is released
+      await collection.deleteMany({});
+      await collection.insertMany([
+        { username: 'a' }
+      ]);
+
+      let res = await collection.findOneAndUpdate(
+        {},
+        { $set: { username: 'a' } },
+        { sort: { username: 1 }, returnDocument: 'before' }
+      );
+      assert.strictEqual(res.value.username, 'a');
+    });
+    it('should countDocuments()', async () => {
+      await collection.deleteMany({});
+      await collection.insertMany([
+        { username: 'a' },
+        { username: 'aa', answer: 42 },
+        { username: 'aaa', answer: 42 }
+      ]);
+
+      let count = await collection.countDocuments();
+      assert.strictEqual(count, 3);
+
+      count = await collection.countDocuments({ username: 'a' });
+      assert.strictEqual(count, 1);
+
+      count = await collection.countDocuments({ answer: 42 });
+      assert.strictEqual(count, 2);
+    });
+    it('supports count() as alias for countDocuments()', async () => {
+      await collection.deleteMany({});
+      await collection.insertMany([
+        { username: 'a' },
+        { username: 'aa', answer: 42 },
+        { username: 'aaa', answer: 42 }
+      ]);
+
+      let count = await collection.count();
+      assert.strictEqual(count, 3);
+
+      count = await collection.count({ username: 'a' });
+      assert.strictEqual(count, 1);
+
+      count = await collection.count({ answer: 42 });
+      assert.strictEqual(count, 2);
+    });
+    it('supports findOneAndDelete()', async () => {
+      await collection.deleteMany({});
+      await collection.insertMany([
+        { username: 'a' },
+        { username: 'b' },
+        { username: 'c' }
+      ]);
+
+      let res = await collection.findOneAndDelete({ username: 'a' });
+      assert.strictEqual(res.value.username, 'a');
+
+      res = await collection.findOneAndDelete({}, { sort: { username: -1 } });
+      assert.strictEqual(res.value.username, 'c');
+    });
+    it.skip('should deleteOne with sort', async () => {
+      // deleteOne() with sort currently not supported by jsonapi
+      await collection.deleteMany({});
+      await collection.insertMany([
+        { username: 'a' },
+        { username: 'c' },
+        { username: 'b' }
+      ]);
+
+      await collection.deleteOne(
+        {},
+        { sort: { username: 1 } }
+      );
+
+      const docs = await collection.find({}, { sort: { username: 1 } }).toArray();
+      assert.deepStrictEqual(docs.map(doc => doc.username), ['b', 'c']);
+    });
+    it('should deleteOne document', async () => {
+      const res = await collection.insertOne(createSampleDocWithMultiLevel());
+      const docId = res.insertedId;
+      const deleteOneResp = await collection.deleteOne({ _id: docId });
+      assert.strictEqual(deleteOneResp.deletedCount, 1);
+      assert.strictEqual(deleteOneResp.acknowledged, true);
+    });
+    it('should not delete any when no match in deleteOne', async () => {
+      const res = await collection.insertOne(createSampleDocWithMultiLevel());
+      const docId = res.insertedId;
+      const deleteOneResp = await collection.deleteOne({ "username": "samlxyz" });
+      assert.strictEqual(deleteOneResp.deletedCount, 0);
+      assert.strictEqual(deleteOneResp.acknowledged, true);
+    });
+    it('should deleteMany when match is <= 20', async () => {
+      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      docList.forEach((doc, index) => {
+        doc.username = doc.username+(index+1);
+      });
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, 20);
+      const deleteManyResp = await collection.deleteMany({ "city": "trichy" });
+      assert.strictEqual(deleteManyResp.deletedCount, 20);
+      assert.strictEqual(deleteManyResp.acknowledged, true);
+    });
+    it('should throw an error when deleteMany finds more than 20 records', async () => {
+      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
+      docList.forEach((doc, index) => {
+        doc.username = doc.username+(index+1);
+      });
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, 20);
+      //insert next 20
+      let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "trichy"}));
+      docListNextSet.forEach((doc, index) => {
+        doc.username = doc.username+(index+21);
+      });
+      const resNextSet = await collection.insertMany(docListNextSet);    
+      assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
+      assert.strictEqual(resNextSet.acknowledged, true);
+      assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
+      //test for deleteMany errors
+      let exception: any;
+      const filter = { "city": "trichy" };
+      try{
+        const deleteManyResp = await collection.deleteMany(filter);
+      } catch(e: any){
+        exception = e;          
+      }
+      assert.ok(exception);
+      assert.strictEqual(exception.message, 'Command "deleteMany" failed with the following error: More records found to be deleted even after deleting 20 records');
+      assert.ok(_.isEqual(exception.command.deleteMany.filter, filter));
+    });
   });
 });
