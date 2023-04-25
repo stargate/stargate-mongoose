@@ -110,13 +110,16 @@ export class Collection {
         }
       };
       const updateOneResp = await this.httpClient.executeCommand(command);
-      return {
+      let resp = {
         modifiedCount: updateOneResp.status.modifiedCount,
         matchedCount: updateOneResp.status.matchedCount,
-        acknowledged: true,
-        upsertedCount: updateOneResp.status.upsertedCount,
+        acknowledged: true,        
         upsertedId: updateOneResp.status.upsertedId
-      };
+      } as JSONAPIUpdateResult;
+      if(updateOneResp.status.upsertedId){
+        resp.upsertedCount = 1;
+      }
+      return resp;
     });
   }
 
@@ -133,13 +136,16 @@ export class Collection {
       if(updateManyResp.status.moreData){
         throw new StargateMongooseError(`More than ${updateManyResp.status.modifiedCount} records found for update by the server`, command);
       }
-      return {
+      let resp = {
         modifiedCount: updateManyResp.status.modifiedCount,
         matchedCount: updateManyResp.status.matchedCount,
-        acknowledged: true,
-        upsertedCount: updateManyResp.status.upsertedCount,
+        acknowledged: true,        
         upsertedId: updateManyResp.status.upsertedId
-      };
+      } as JSONAPIUpdateResult;
+      if(updateManyResp.status.upsertedId){
+        resp.upsertedCount = 1;
+      }
+      return resp;
     });
   }
 

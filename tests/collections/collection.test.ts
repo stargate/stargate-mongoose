@@ -454,8 +454,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(updatedDoc.address.city, "big banana");
       assert.strictEqual(updatedDoc.address.state, "new state");
     });
-    //TODO skip until https://github.com/stargate/jsonapi/issues/275 is fixed
-    it.skip('should upsert a doc with upsert flag true in updateOne call', async () => {
+    it('should upsert a doc with upsert flag true in updateOne call', async () => {
       //insert a new doc
       const doc = createSampleDocWithMultiLevel();
       const insertDocResp = await collection.insertOne(doc);
@@ -467,7 +466,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
                             },
                             { 
                               "upsert" : true  
-                            });
+                            });      
       assert.strictEqual(updateOneResp.modifiedCount, 0);
       assert.strictEqual(updateOneResp.matchedCount, 0);
       assert.strictEqual(updateOneResp.acknowledged, true);
@@ -548,8 +547,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(updateManyResp.upsertedCount, undefined);
       assert.strictEqual(updateManyResp.upsertedId, undefined);
     });
-    //TODO skipped until https://github.com/stargate/jsonapi/issues/273 is fixed
-    it.skip('should upsert with upsert flag set to true when not found', async () => {
+    it('should upsert with upsert flag set to true when not found', async () => {
       let docList = Array.from({ length: 2 }, ()=>({username: "id", city : "nyc"}));
       docList.forEach((doc, index) => {
         doc.username = doc.username+(index+1);
