@@ -171,7 +171,7 @@ export class Collection {
     throw new Error('Not Implemented');
   }
 
-  async deleteOne(filter: Record<string, any>) {
+  async deleteOne(filter: Record<string, any>): Promise<DeleteResult> {
     return executeOperation(async (): Promise<DeleteResult> => {
       type DeleteOneCommand = {
         deleteOne: {
@@ -191,7 +191,7 @@ export class Collection {
     });
   }
 
-  async deleteMany(filter: Record<string, any>) {
+  async deleteMany(filter: Record<string, any>): Promise<DeleteResult> {
     return executeOperation(async (): Promise<DeleteResult> => {
       const command = {
         deleteMany: {
@@ -209,13 +209,13 @@ export class Collection {
     });
   }
 
-  find(filter: Record<string, any>, options?: FindOptions) {
+  find(filter: Record<string, any>, options?: FindOptions): FindCursor {
     const cursor = new FindCursor(this, filter, options);
     return cursor;
   }
 
-  async findOne(filter: Record<string, any>, options?: FindOneOptions) {
-    return executeOperation(async (): Promise<any | null> => {
+  async findOne(filter: Record<string, any>, options?: FindOneOptions): Promise<Record<string, any> | null> {
+    return executeOperation(async (): Promise<Record<string, any> | null> => {
       type FindOneCommand = {
         findOne: {
           filter?: Record<string, any>,
@@ -239,7 +239,7 @@ export class Collection {
     });
   }
 
-  async findOneAndReplace(filter: Record<string, any>, replacement: Record<string, any>, options?: FindOneAndReplaceOptions) {
+  async findOneAndReplace(filter: Record<string, any>, replacement: Record<string, any>, options?: FindOneAndReplaceOptions): Promise<ModifyResult> {
     return executeOperation(async (): Promise<ModifyResult> => {
       type FindOneAndReplaceCommand = {
         findOneAndReplace: {
@@ -272,7 +272,7 @@ export class Collection {
     throw new Error('Not Implemented');
   }
 
-  async countDocuments(filter?: Record<string, any>) {
+  async countDocuments(filter?: Record<string, any>): Promise<number> {
     return executeOperation(async (): Promise<number> => {
       const command = {
         countDocuments: {
@@ -284,7 +284,7 @@ export class Collection {
     });
   }
 
-  async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions) {
+  async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions): Promise<ModifyResult> {
     type FindOneAndDeleteCommand = {
       findOneAndDelete: {
         filter?: Object,
@@ -314,7 +314,7 @@ export class Collection {
     return this.countDocuments(filter);
   }
 
-  async findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions) {
+  async findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions): Promise<ModifyResult> {
     return executeOperation(async (): Promise<ModifyResult> => {
       type FindOneAndUpdateCommand = {
         findOneAndUpdate: {

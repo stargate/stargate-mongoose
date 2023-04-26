@@ -365,9 +365,9 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(updateOneResp.upsertedId, undefined);
       assert.strictEqual(updateOneResp.upsertedCount, undefined);
       const updatedDoc = await collection.findOne({"username":"aaronm"});
-      assert.strictEqual(updatedDoc._id, idToCheck);
-      assert.strictEqual(updatedDoc.username, "aaronm");
-      assert.strictEqual(updatedDoc.address.city, undefined);
+      assert.strictEqual(updatedDoc!._id, idToCheck);
+      assert.strictEqual(updatedDoc!.username, "aaronm");
+      assert.strictEqual(updatedDoc!.address.city, undefined);
     });    
     it('should updateOne document by col', async () => {
       //insert a new doc
@@ -385,10 +385,10 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(updateOneResp.upsertedId, undefined);
       assert.strictEqual(updateOneResp.upsertedCount, undefined);
       const updatedDoc = await collection.findOne({"username":"aaron"});
-      assert.strictEqual(updatedDoc._id, idToCheck);
-      assert.strictEqual(updatedDoc.username, "aaron");
-      assert.strictEqual(updatedDoc.address.city, "big banana");
-      assert.strictEqual(updatedDoc.address.state, "new state");
+      assert.strictEqual(updatedDoc!._id, idToCheck);
+      assert.strictEqual(updatedDoc!.username, "aaron");
+      assert.strictEqual(updatedDoc!.address.city, "big banana");
+      assert.strictEqual(updatedDoc!.address.state, "new state");
     });
     //TODO skip until https://github.com/stargate/jsonapi/issues/275 is fixed
     it.skip('should upsert a doc with upsert flag true in updateOne call', async () => {
@@ -410,10 +410,10 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.ok(updateOneResp.upsertedId);
       assert.strictEqual(updateOneResp.upsertedCount, 1);
       const updatedDoc = await collection.findOne({"address.city":"nyc"});
-      assert.ok(updatedDoc._id);
-      assert.notStrictEqual(updatedDoc._id, idToCheck);
-      assert.strictEqual(updatedDoc.address.city, "nyc");
-      assert.strictEqual(updatedDoc.address.state, "ny");
+      assert.ok(updatedDoc!._id);
+      assert.notStrictEqual(updatedDoc!._id, idToCheck);
+      assert.strictEqual(updatedDoc!.address.city, "nyc");
+      assert.strictEqual(updatedDoc!.address.state, "ny");
     });  
     it('should updateMany documents with ids', async () => {
       let sampleDocsWithIdList = JSON.parse(JSON.stringify(sampleUsersList));
@@ -436,9 +436,9 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       assert.strictEqual(updateManyResp.upsertedCount, undefined);
       assert.strictEqual(updateManyResp.upsertedId, undefined);
       const updatedDoc = await collection.findOne({"username":"aaronm"});
-      assert.strictEqual(updatedDoc._id, idToUpdateAndCheck);
-      assert.strictEqual(updatedDoc.username, "aaronm");
-      assert.strictEqual(updatedDoc.address.city, undefined);                                                  
+      assert.strictEqual(updatedDoc!._id, idToUpdateAndCheck);
+      assert.strictEqual(updatedDoc!.username, "aaronm");
+      assert.strictEqual(updatedDoc!.address.city, undefined);                                                  
     });
     it('should update when updateMany is invoked with updates for records <= 20', async () => {
       let docList = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
@@ -559,11 +559,11 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
         {
           "returnDocument": "after"
         }          
-      );        
+      );
       assert.equal(findOneAndUpdateResp.ok, 1);
-      assert.equal(findOneAndUpdateResp.value._id, docId);
-      assert.equal(findOneAndUpdateResp.value.username, "aaronm");
-      assert.equal(findOneAndUpdateResp.value.address.city, undefined);
+      assert.equal(findOneAndUpdateResp.value!._id, docId);
+      assert.equal(findOneAndUpdateResp.value!.username, "aaronm");
+      assert.equal(findOneAndUpdateResp.value!.address.city, undefined);
     });      
     it('should deleteOne document', async () => {
       const res = await collection.insertOne(createSampleDocWithMultiLevel());
@@ -632,6 +632,15 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       docs = await collection.find({}, { sort: { username: -1 } }).toArray();
       assert.deepStrictEqual(docs.map(doc => doc.username), ['c', 'b', 'a']);
     });
+    it('throws if using cursor with sort', async () => {
+      await collection.deleteMany({});
+      for (let i = 0; i < 20; ++i) {
+        await collection.insertMany(Array(20).fill(0).map((_, i) => ({ num: i })));
+      }
+
+      const cursor = await collection.find({}, { sort: { num: -1 } });
+      await cursor.toArray();
+    });
     it('should findOne with sort', async () => {
       await collection.deleteMany({});
       await collection.insertMany([
@@ -641,10 +650,10 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       ]);
 
       let doc = await collection.findOne({}, { sort: { username: 1 } });
-      assert.strictEqual(doc.username, 'a');
+      assert.strictEqual(doc!.username, 'a');
 
       doc = await collection.findOne({}, { sort: { username: -1 } });
-      assert.deepStrictEqual(doc.username, 'c');
+      assert.deepStrictEqual(doc!.username, 'c');
     });
     it('should findOneAndUpdate with sort', async () => {
       await collection.deleteMany({});
@@ -659,14 +668,14 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
         { $set: { username: 'aaa' } },
         { sort: { username: 1 }, returnDocument: 'before' }
       );
-      assert.strictEqual(res.value.username, 'a');
+      assert.strictEqual(res.value!.username, 'a');
 
       res = await collection.findOneAndUpdate(
         {},
         { $set: { username: 'ccc' } },
         { sort: { username: -1 }, returnDocument: 'before' }
       );
-      assert.deepStrictEqual(res.value.username, 'c');
+      assert.deepStrictEqual(res.value!.username, 'c');
     });
     it('should findOneAndReplace with sort', async () => {
       await collection.deleteMany({});
@@ -681,14 +690,14 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
         { username: 'aaa' },
         { sort: { username: 1 }, returnDocument: 'before' }
       );
-      assert.strictEqual(res.value.username, 'a');
+      assert.strictEqual(res.value!.username, 'a');
 
       res = await collection.findOneAndReplace(
         {},
         { username: 'ccc' },
         { sort: { username: -1 }, returnDocument: 'before' }
       );
-      assert.deepStrictEqual(res.value.username, 'c');
+      assert.deepStrictEqual(res.value!.username, 'c');
 
       const docs = await collection.find({}, { sort: { username: 1 } }).toArray();
       assert.deepStrictEqual(docs.map(doc => doc.answer), [undefined, 42, undefined]);
@@ -705,7 +714,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
         { $set: { username: 'a' } },
         { sort: { username: 1 }, returnDocument: 'before' }
       );
-      assert.strictEqual(res.value.username, 'a');
+      assert.strictEqual(res.value!.username, 'a');
     });
     it('should countDocuments()', async () => {
       await collection.deleteMany({});
@@ -750,10 +759,10 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       ]);
 
       let res = await collection.findOneAndDelete({ username: 'a' });
-      assert.strictEqual(res.value.username, 'a');
+      assert.strictEqual(res.value!.username, 'a');
 
       res = await collection.findOneAndDelete({}, { sort: { username: -1 } });
-      assert.strictEqual(res.value.username, 'c');
+      assert.strictEqual(res.value!.username, 'c');
     });
     it.skip('should deleteOne with sort', async () => {
       // deleteOne() with sort currently not supported by jsonapi
@@ -771,59 +780,6 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
 
       const docs = await collection.find({}, { sort: { username: 1 } }).toArray();
       assert.deepStrictEqual(docs.map(doc => doc.username), ['b', 'c']);
-    });
-    it('should deleteOne document', async () => {
-      const res = await collection.insertOne(createSampleDocWithMultiLevel());
-      const docId = res.insertedId;
-      const deleteOneResp = await collection.deleteOne({ _id: docId });
-      assert.strictEqual(deleteOneResp.deletedCount, 1);
-      assert.strictEqual(deleteOneResp.acknowledged, true);
-    });
-    it('should not delete any when no match in deleteOne', async () => {
-      const res = await collection.insertOne(createSampleDocWithMultiLevel());
-      const docId = res.insertedId;
-      const deleteOneResp = await collection.deleteOne({ "username": "samlxyz" });
-      assert.strictEqual(deleteOneResp.deletedCount, 0);
-      assert.strictEqual(deleteOneResp.acknowledged, true);
-    });
-    it('should deleteMany when match is <= 20', async () => {
-      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
-      docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
-      });
-      const res = await collection.insertMany(docList);
-      assert.strictEqual(res.insertedCount, 20);
-      const deleteManyResp = await collection.deleteMany({ "city": "trichy" });
-      assert.strictEqual(deleteManyResp.deletedCount, 20);
-      assert.strictEqual(deleteManyResp.acknowledged, true);
-    });
-    it('should throw an error when deleteMany finds more than 20 records', async () => {
-      let docList = Array.from({ length: 20 }, ()=>({"username": "id", "city" : "trichy"}));
-      docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
-      });
-      const res = await collection.insertMany(docList);
-      assert.strictEqual(res.insertedCount, 20);
-      //insert next 20
-      let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "trichy"}));
-      docListNextSet.forEach((doc, index) => {
-        doc.username = doc.username+(index+21);
-      });
-      const resNextSet = await collection.insertMany(docListNextSet);    
-      assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
-      assert.strictEqual(resNextSet.acknowledged, true);
-      assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
-      //test for deleteMany errors
-      let exception: any;
-      const filter = { "city": "trichy" };
-      try{
-        const deleteManyResp = await collection.deleteMany(filter);
-      } catch(e: any){
-        exception = e;          
-      }
-      assert.ok(exception);
-      assert.strictEqual(exception.message, 'Command "deleteMany" failed with the following error: More records found to be deleted even after deleting 20 records');
-      assert.ok(_.isEqual(exception.command.deleteMany.filter, filter));
     });
   });
 });
