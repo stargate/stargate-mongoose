@@ -755,6 +755,16 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       res = await collection.findOneAndDelete({}, { sort: { username: -1 } });
       assert.strictEqual(res.value.username, 'c');
     });
+    it('stores BigInts as numbers', async () => {
+      await collection.deleteMany({});
+      await collection.insertOne({
+        _id: 'bigint-test',
+        answer: 42n
+      });
+
+      const res = await collection.findOne({ _id: 'bigint-test' });
+      assert.strictEqual(res.answer, 42);
+    });
     it.skip('should deleteOne with sort', async () => {
       // deleteOne() with sort currently not supported by jsonapi
       await collection.deleteMany({});
