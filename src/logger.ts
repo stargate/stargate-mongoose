@@ -25,3 +25,6 @@ export const logger = winston.createLogger({
 export const setLevel = (level: string) => {
   consoleTransport.level = level;
 };
+export const getLevel = () => {
+  return consoleTransport.level;
+};
