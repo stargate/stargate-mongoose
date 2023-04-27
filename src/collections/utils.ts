@@ -180,7 +180,7 @@ export class StargateAuthError extends Error  {
  * @returns Promise
  */
 export const executeOperation = async (operation: Function) => {
-  let res = {};
+  let res: any = {};
   try {
     res = await operation();
   } catch (e: any) {
