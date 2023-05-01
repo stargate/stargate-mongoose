@@ -14,6 +14,7 @@
 
 import { default as MongooseCollection } from 'mongoose/lib/collection';
 import {
+  DeleteOneOptions,
   FindOneAndDeleteOptions,
   FindOneAndReplaceOptions,
   FindOneAndUpdateOptions,
@@ -74,7 +75,7 @@ export class Collection extends MongooseCollection {
     return this.collection.deleteMany(filter);
   }
 
-  deleteOne(filter: Record<string, any>) {
+  deleteOne(filter: Record<string, any>, options?: DeleteOneOptions) {
     return this.collection.deleteOne(filter);
   }
 

@@ -31,6 +31,10 @@ import { logger } from '@/src/logger';
 // https://github.com/mongodb/node-mongodb-native/pull/3323
 type JSONAPIUpdateResult = Omit<UpdateResult, 'upsertedId'> & { upsertedId: ObjectId | null };
 
+export interface DeleteOneOptions {
+  sort?: Record<string, 1 | -1>;
+}
+
 export interface FindOneOptions {
   sort?: Record<string, 1 | -1>;
 }
@@ -171,11 +175,12 @@ export class Collection {
     throw new Error('Not Implemented');
   }
 
-  async deleteOne(filter: Record<string, any>): Promise<DeleteResult> {
+  async deleteOne(filter: Record<string, any>, options?: DeleteOneOptions): Promise<DeleteResult> {
     return executeOperation(async (): Promise<DeleteResult> => {
       type DeleteOneCommand = {
         deleteOne: {
-          filter?: Object
+          filter?: Object,
+          sort?: Record<string, 1 | -1>
         }
       };
       const command: DeleteOneCommand = {
@@ -183,6 +188,9 @@ export class Collection {
           filter
         }
       };
+      if (options?.sort) {
+        command.deleteOne.sort = options.sort;
+      }
       const deleteOneResp = await this.httpClient.executeCommand(command);
       return {
         acknowledged: true,
@@ -235,7 +243,7 @@ export class Collection {
       }
 
       const resp = await this.httpClient.executeCommand(command);
-      return resp.data.docs[0];
+      return resp.data.document;
     });
   }
 
@@ -262,7 +270,7 @@ export class Collection {
       }
       const resp = await this.httpClient.executeCommand(command);
       return {
-        value : resp.data?.docs[0],
+        value : resp.data?.document,
         ok : 1
       };
     });
@@ -302,7 +310,7 @@ export class Collection {
 
     const resp = await this.httpClient.executeCommand(command);
     return {
-      value : resp.data?.docs[0],
+      value : resp.data?.document,
       ok : 1
     };
   }
@@ -337,7 +345,7 @@ export class Collection {
       }
       const resp = await this.httpClient.executeCommand(command);
       return {
-        value : resp.data?.docs[0],
+        value : resp.data?.document,
         ok : 1
       };
     });

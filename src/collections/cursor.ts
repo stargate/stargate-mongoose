@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import _ from 'lodash';
 import { Collection } from './collection';
 import { logger } from '@/src/logger';
 import { executeOperation, QueryOptions } from './utils';
@@ -138,7 +137,7 @@ export class FindCursor {
     if (this.nextPageState == null) {
       this.exhausted = true;
     }
-    this.page = _.keys(resp.data.docs).map(i => resp.data.docs[i]);
+    this.page = Object.keys(resp.data.documents).map(i => resp.data.documents[i]);
     this.pageIndex = 0;    
   }
 
