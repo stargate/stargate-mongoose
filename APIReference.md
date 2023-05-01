@@ -56,7 +56,7 @@ return a promise.</p></dd>
 
 | Param | Description |
 | --- | --- |
-| baseUrl | <p>A JSON API Connection URI (Eg. http://localhost:8080/v1)</p> |
+| baseUrl | <p>A JSON API Connection URI (Eg. http://localhost:8181/v1)</p> |
 | keyspaceName | <p>Name of the Namespace (or Keyspace in Apache Cassandra terminology)</p> |
 | options | <p>ClientOptions</p> |
 
@@ -104,7 +104,7 @@ return a promise.</p></dd>
 
 | Param | Description |
 | --- | --- |
-| uri | <p>an Stargate JSON API uri (Eg. http://localhost:8080/v1/testks1) where testks1 is the name of the keyspace/Namespace which should always be the last part of the URL</p> |
+| uri | <p>an Stargate JSON API uri (Eg. http://localhost:8181/v1/testks1) where testks1 is the name of the keyspace/Namespace which should always be the last part of the URL</p> |
 
 <a name="Collection"></a>
 
