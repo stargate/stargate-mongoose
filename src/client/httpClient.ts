@@ -70,6 +70,8 @@ const axiosAgent = axios.create({
 const requestInterceptor = (config: AxiosRequestConfig) => {
   const { method, url } = config;
   logger.http(`--- ${method?.toUpperCase()} ${url}`);
+  logger.http(serializeCommand(config.data, true));
+  config.data = serializeCommand(config.data);
   return config;
 };
 
@@ -152,7 +154,7 @@ export class HTTPClient {
       }
       logger.debug('request url %s', requestInfo.url);
       if(logger.isDebugEnabled()) {
-        logger.debug('request command %s', JSON.stringify(requestInfo.data));
+        logger.debug('request command %s', serializeCommand(requestInfo.data));
       }
       const response = await axiosAgent({
         url: requestInfo.url,
@@ -244,5 +246,22 @@ export const handleIfErrorResponse = (response: any, data: Record<string, any>) 
   if (response.errors && response.errors.length > 0) {
     throw new StargateServerError(response, data);
   }
+}
+
+function serializeCommand(data: Record<string, any>, pretty?: boolean): string {
+  if (pretty) {
+    return JSON.stringify(data, function(key, value) {
+      if (typeof value === 'bigint') {
+        return Number(value);
+      }
+      return value;
+    }, '  ');
+  }
+  return JSON.stringify(data, function(key, value) {
+    if (typeof value === 'bigint') {
+      return Number(value);
+    }
+    return value;
+  });
 }
 

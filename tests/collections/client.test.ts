@@ -59,12 +59,10 @@ describe('StargateMongoose clients test', () => {
     it('should initialize a Client connection with a uri using connect with overrides', async () => {
       const AUTH_TOKEN_TO_CHECK = "123";
       const BASE_API_PATH_TO_CHECK = "baseAPIPath1";
-      const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
       const client = await Client.connect(clientURI, {
         applicationToken: AUTH_TOKEN_TO_CHECK,
         baseApiPath: BASE_API_PATH_TO_CHECK,
-        logLevel: LOG_LEVEL_TO_CHECK,
         authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
         createNamespaceOnConnect: false
       });
@@ -81,11 +79,9 @@ describe('StargateMongoose clients test', () => {
       const AUTH_TOKEN_TO_CHECK = "123";
       const KEYSPACE_TO_CHECK = "testks1";
       const BASE_API_PATH_TO_CHECK = "baseAPIPath1";
-      const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
       const client = await Client.connect(parseUri(clientURI).baseUrl + "/" + BASE_API_PATH_TO_CHECK + "/" + KEYSPACE_TO_CHECK, {
         applicationToken: AUTH_TOKEN_TO_CHECK,
-        logLevel: LOG_LEVEL_TO_CHECK,
         authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
         createNamespaceOnConnect: false
       });
@@ -102,11 +98,9 @@ describe('StargateMongoose clients test', () => {
       const AUTH_TOKEN_TO_CHECK = "123";
       const KEYSPACE_TO_CHECK = "testks1";
       const BASE_API_PATH_TO_CHECK = "apis/baseAPIPath1";
-      const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
       const client = await Client.connect(parseUri(clientURI).baseUrl + "/" + BASE_API_PATH_TO_CHECK + "/" + KEYSPACE_TO_CHECK, {
         applicationToken: AUTH_TOKEN_TO_CHECK,
-        logLevel: LOG_LEVEL_TO_CHECK,
         authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
         createNamespaceOnConnect: false
       });
@@ -125,12 +119,10 @@ describe('StargateMongoose clients test', () => {
       const AUTH_TOKEN_TO_CHECK = "123";
       const KEYSPACE_TO_CHECK = "testks1";
       const BASE_API_PATH_TO_CHECK = "baseAPIPath1";
-      const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
       const baseUrl = 'http://localhost:8080';
       const client = await Client.connect(baseUrl + "/testks1/" + BASE_API_PATH_TO_CHECK + "/" + KEYSPACE_TO_CHECK, {
         applicationToken: AUTH_TOKEN_TO_CHECK,
-        logLevel: LOG_LEVEL_TO_CHECK,
         authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
         createNamespaceOnConnect: false
       });
@@ -147,13 +139,11 @@ describe('StargateMongoose clients test', () => {
       const AUTH_TOKEN_TO_CHECK = "123";
       const KEYSPACE_TO_CHECK = "testks1";
       const BASE_API_PATH_TO_CHECK = "baseAPIPath1";
-      const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
       const baseUrl = 'http://localhost:8080';
       const client = await Client.connect(baseUrl + "/" + BASE_API_PATH_TO_CHECK + "/" + KEYSPACE_TO_CHECK, {
         applicationToken: AUTH_TOKEN_TO_CHECK,
         baseApiPath: "baseAPIPath2",
-        logLevel: LOG_LEVEL_TO_CHECK,
         authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
         createNamespaceOnConnect: false
       });
@@ -170,12 +160,10 @@ describe('StargateMongoose clients test', () => {
       const AUTH_TOKEN_TO_CHECK = "123";
       const KEYSPACE_TO_CHECK = "testks1";
       const BASE_API_PATH_TO_CHECK = "baseAPIPath1";
-      const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
       const baseUrl = 'http://localhost:8080';
       const client = await Client.connect(baseUrl + "/" + KEYSPACE_TO_CHECK, {
         applicationToken: AUTH_TOKEN_TO_CHECK,
-        logLevel: LOG_LEVEL_TO_CHECK,
         authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
         createNamespaceOnConnect: false
       });
