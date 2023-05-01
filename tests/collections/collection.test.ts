@@ -817,6 +817,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       const res = await collection.findOne({ _id: 'bigint-test' });
       assert.strictEqual(res.answer, 42);
     });
+    it('should deleteOne with sort', async () => {
       await collection.deleteMany({});
       await collection.insertMany([
         { username: 'a' },
