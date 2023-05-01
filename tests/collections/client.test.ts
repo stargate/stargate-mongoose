@@ -19,6 +19,8 @@ import { parseUri } from '@/src/collections/utils';
 import { AUTH_API_PATH } from '@/src/client/httpClient';
 import _ from 'lodash';
 
+const localBaseUrl = 'http://localhost:8181';
+
 describe('StargateMongoose clients test', () => {
   const baseUrl = `https://db_id-region-1.apps.astra.datastax.com`;
   let appClient: Client | null;
@@ -127,7 +129,7 @@ describe('StargateMongoose clients test', () => {
       const BASE_API_PATH_TO_CHECK = "baseAPIPath1";
       const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
-      const baseUrl = 'http://localhost:8080';
+      const baseUrl = localBaseUrl;
       const client = await Client.connect(baseUrl + "/testks1/" + BASE_API_PATH_TO_CHECK + "/" + KEYSPACE_TO_CHECK, {
           applicationToken: AUTH_TOKEN_TO_CHECK,
           logLevel: LOG_LEVEL_TO_CHECK,
@@ -149,7 +151,7 @@ describe('StargateMongoose clients test', () => {
       const BASE_API_PATH_TO_CHECK = "baseAPIPath1";
       const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
-      const baseUrl = 'http://localhost:8080';
+      const baseUrl = localBaseUrl;
       const client = await Client.connect(baseUrl + "/" + BASE_API_PATH_TO_CHECK + "/" + KEYSPACE_TO_CHECK, {
           applicationToken: AUTH_TOKEN_TO_CHECK,
           baseApiPath: "baseAPIPath2",
@@ -172,7 +174,7 @@ describe('StargateMongoose clients test', () => {
       const BASE_API_PATH_TO_CHECK = "baseAPIPath1";
       const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
-      const baseUrl = 'http://localhost:8080';
+      
       const client = await Client.connect(baseUrl + "/" + KEYSPACE_TO_CHECK, {
           applicationToken: AUTH_TOKEN_TO_CHECK,
           logLevel: LOG_LEVEL_TO_CHECK,

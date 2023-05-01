@@ -16,11 +16,11 @@ import assert from 'assert';
 import { Db } from '@/src/collections/db';
 import { Collection } from '@/src/collections/collection';
 import { Client } from '@/src/collections/client';
-import { testClient, createSampleDoc, sampleUsersList, createSampleDocWithMultiLevel, createSampleDocWithMultiLevelWithId, getSampleDocs, sleep, TEST_COLLECTION_NAME } from '@/tests/fixtures';
+import { testClient, testClientName, createSampleDoc, sampleUsersList, createSampleDocWithMultiLevel, createSampleDocWithMultiLevelWithId, getSampleDocs, sleep, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 import _ from 'lodash';
 
 
-describe(`StargateMongoose - ${testClient} Connection - collections.collection`, async () => {
+describe(`StargateMongoose - ${testClientName} Connection - collections.collection`, async () => {
   let astraClient: Client;
   let db: Db;
   let collection: Collection;
@@ -93,7 +93,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const res = await collection.insertMany(sampleUsersList);
       assert.strictEqual(res.insertedCount, sampleUsersList.length);
       assert.strictEqual(res.acknowledged, true);
-      assert.strictEqual(_.keys(res.insertedIds).length, 3);
+      assert.strictEqual(Object.keys(res.insertedIds).length, 3);
     });
     it('should insertMany documents with ids', async () => {
       let sampleDocsWithIdList = JSON.parse(JSON.stringify(sampleUsersList));
@@ -103,7 +103,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const res = await collection.insertMany(sampleDocsWithIdList);
       assert.strictEqual(res.insertedCount, sampleDocsWithIdList.length);
       assert.strictEqual(res.acknowledged, true);
-      assert.strictEqual(_.keys(res.insertedIds).length, 3);
+      assert.strictEqual(Object.keys(res.insertedIds).length, 3);
     });
     it('should not insert more than allowed number of documents in one insertMany call', async () => {
       let docList = Array.from({ length: 21 }, ()=>({"username": "id"}));
@@ -117,7 +117,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
         error = e;          
       }
       assert.ok(error);
-      assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: amount of documents to insert is over the max limit.");
+      assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: amount of documents to insert is over the max limit (21 vs 20).");
     });
     it('should error out when docs list is empty in insertMany', async () => {        
       let error:any;
@@ -423,7 +423,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const res = await collection.insertMany(sampleDocsWithIdList);
       assert.strictEqual(res.insertedCount, sampleDocsWithIdList.length);
       assert.strictEqual(res.acknowledged, true);
-      assert.strictEqual(_.keys(res.insertedIds).length, 3);
+      assert.strictEqual(Object.keys(res.insertedIds).length, 3);
       const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
       const updateManyResp = await collection.updateMany({"_id": idToUpdateAndCheck},
                                                 {
@@ -448,7 +448,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const res = await collection.insertMany(docList);    
       assert.strictEqual(res.insertedCount, docList.length);
       assert.strictEqual(res.acknowledged, true);
-      assert.strictEqual(_.keys(res.insertedIds).length, 20);
+      assert.strictEqual(Object.keys(res.insertedIds).length, 20);
       
       //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
       const updateManyResp = await collection.updateMany({"city": "nyc"},
@@ -469,7 +469,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const res = await collection.insertMany(docList);    
       assert.strictEqual(res.insertedCount, docList.length);
       assert.strictEqual(res.acknowledged, true);
-      assert.strictEqual(_.keys(res.insertedIds).length, 20);
+      assert.strictEqual(Object.keys(res.insertedIds).length, 20);
       
       //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
       const updateManyResp = await collection.updateMany({"city": "la"},
@@ -491,7 +491,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const res = await collection.insertMany(docList);    
       assert.strictEqual(res.insertedCount, docList.length);
       assert.strictEqual(res.acknowledged, true);
-      assert.strictEqual(_.keys(res.insertedIds).length, 2);
+      assert.strictEqual(Object.keys(res.insertedIds).length, 2);
       
       //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
       const updateManyResp = await collection.updateMany({"city": "la"},
@@ -515,7 +515,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const res = await collection.insertMany(docList);    
       assert.strictEqual(res.insertedCount, docList.length);
       assert.strictEqual(res.acknowledged, true);
-      assert.strictEqual(_.keys(res.insertedIds).length, docList.length);
+      assert.strictEqual(Object.keys(res.insertedIds).length, docList.length);
       //insert next 20
       let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
       docListNextSet.forEach((doc, index) => {
@@ -524,7 +524,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const resNextSet = await collection.insertMany(docListNextSet);    
       assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
       assert.strictEqual(resNextSet.acknowledged, true);
-      assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
+      assert.strictEqual(Object.keys(resNextSet.insertedIds).length, docListNextSet.length);
 
       
       //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
@@ -605,7 +605,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       const resNextSet = await collection.insertMany(docListNextSet);    
       assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
       assert.strictEqual(resNextSet.acknowledged, true);
-      assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
+      assert.strictEqual(Object.keys(resNextSet.insertedIds).length, docListNextSet.length);
       //test for deleteMany errors
       let exception: any;
       const filter = { "city": "trichy" };
@@ -764,8 +764,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
       res = await collection.findOneAndDelete({}, { sort: { username: -1 } });
       assert.strictEqual(res.value!.username, 'c');
     });
-    it.skip('should deleteOne with sort', async () => {
-      // deleteOne() with sort currently not supported by jsonapi
+    it('should deleteOne with sort', async () => {
       await collection.deleteMany({});
       await collection.insertMany([
         { username: 'a' },
@@ -780,6 +779,24 @@ describe(`StargateMongoose - ${testClient} Connection - collections.collection`,
 
       const docs = await collection.find({}, { sort: { username: 1 } }).toArray();
       assert.deepStrictEqual(docs.map(doc => doc.username), ['b', 'c']);
+    });
+    it.skip('should updateOne with sort', async () => {
+      // jsonapi currently doesn't support updateOne with sort
+      await collection.deleteMany({});
+      await collection.insertMany([
+        { username: 'a' },
+        { username: 'c' },
+        { username: 'b' }
+      ]);
+
+      await collection.updateOne(
+        {},
+        { $set: { username: 'aa' } },
+        { sort: { username: 1 } }
+      );
+
+      const docs = await collection.find({}, { sort: { username: 1 } }).toArray();
+      assert.deepStrictEqual(docs.map(doc => doc.username), ['aa', 'b', 'c']);
     });
   });
 });
