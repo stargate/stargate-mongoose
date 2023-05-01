@@ -48,11 +48,11 @@ export class Client {
     this.keyspaceName = keyspaceName;
     this.createNamespaceOnConnect = options?.createNamespaceOnConnect ?? true;
     //If the client is connecting to Astra, we don't want to create the namespace
-    if(options?.isAstra){
+    if (options?.isAstra) {
       this.createNamespaceOnConnect = false;
     }
     this.httpClient = new HTTPClient({
-      baseApiPath : options.baseApiPath,
+      baseApiPath: options.baseApiPath,
       baseUrl: baseUrl,
       applicationToken: options.applicationToken,
       logLevel: options.logLevel,
@@ -61,8 +61,8 @@ export class Client {
       password: options.password,
       authUrl: options.authUrl,
       isAstra: options.isAstra
-  });
-}
+    });
+  }
 
   /**
    * Setup a connection to the Astra/Stargate JSON API

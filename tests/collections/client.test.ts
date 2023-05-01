@@ -24,14 +24,14 @@ describe('StargateMongoose clients test', () => {
   let appClient: Client | null;
   let clientURI: string;
   before(async function () {
-    if(testClient == null) {
+    if (testClient == null) {
       return this.skip();
     }
     appClient = await testClient.client;
     if (appClient == null) {
       return this.skip();
-    }    
-    clientURI = testClient.uri;    
+    }
+    clientURI = testClient.uri;
   });
 
   describe('Client Connections', () => {
@@ -39,7 +39,7 @@ describe('StargateMongoose clients test', () => {
       assert.ok(appClient);
     });
     it('should not a Client connection with an invalid uri', async () => {
-      let error:any;
+      let error: any;
       try {
         const badClient = await Client.connect('invaliduri');
         assert.ok(badClient);
@@ -49,7 +49,7 @@ describe('StargateMongoose clients test', () => {
       assert.ok(error);
     });
     it('should have unique httpClients for each db', async () => {
-      const dbFromUri = appClient?.db();      
+      const dbFromUri = appClient?.db();
       const parsedUri = parseUri(clientURI);
       assert.strictEqual(dbFromUri?.name, parsedUri.keyspaceName);
       const newDb = appClient?.db('test-db');
@@ -62,20 +62,20 @@ describe('StargateMongoose clients test', () => {
       const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
       const client = await Client.connect(clientURI, {
-          applicationToken: AUTH_TOKEN_TO_CHECK,
-          baseApiPath: BASE_API_PATH_TO_CHECK,
-          logLevel: LOG_LEVEL_TO_CHECK,
-          authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
-          createNamespaceOnConnect: false
-        });        
-        assert.ok(client);
-        assert.ok(client.httpClient);
-        assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
-        assert.strictEqual(client.keyspaceName, parseUri(clientURI).keyspaceName);
-        assert.strictEqual(client.httpClient.baseUrl, parseUri(clientURI).baseUrl + "/" + BASE_API_PATH_TO_CHECK);          
-        assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
-        const db = client.db();
-        assert.ok(db);
+        applicationToken: AUTH_TOKEN_TO_CHECK,
+        baseApiPath: BASE_API_PATH_TO_CHECK,
+        logLevel: LOG_LEVEL_TO_CHECK,
+        authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
+        createNamespaceOnConnect: false
+      });
+      assert.ok(client);
+      assert.ok(client.httpClient);
+      assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
+      assert.strictEqual(client.keyspaceName, parseUri(clientURI).keyspaceName);
+      assert.strictEqual(client.httpClient.baseUrl, parseUri(clientURI).baseUrl + "/" + BASE_API_PATH_TO_CHECK);
+      assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
+      const db = client.db();
+      assert.ok(db);
     });
     it('should parse baseApiPath from URL when possible', async () => {
       const AUTH_TOKEN_TO_CHECK = "123";
@@ -84,19 +84,19 @@ describe('StargateMongoose clients test', () => {
       const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
       const client = await Client.connect(parseUri(clientURI).baseUrl + "/" + BASE_API_PATH_TO_CHECK + "/" + KEYSPACE_TO_CHECK, {
-          applicationToken: AUTH_TOKEN_TO_CHECK,
-          logLevel: LOG_LEVEL_TO_CHECK,
-          authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
-          createNamespaceOnConnect: false
-        });        
-        assert.ok(client);
-        assert.ok(client.httpClient);
-        assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
-        assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
-        assert.strictEqual(client.httpClient.baseUrl, parseUri(clientURI).baseUrl + "/" + BASE_API_PATH_TO_CHECK);          
-        assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
-        const db = client.db();
-        assert.ok(db);
+        applicationToken: AUTH_TOKEN_TO_CHECK,
+        logLevel: LOG_LEVEL_TO_CHECK,
+        authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
+        createNamespaceOnConnect: false
+      });
+      assert.ok(client);
+      assert.ok(client.httpClient);
+      assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
+      assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
+      assert.strictEqual(client.httpClient.baseUrl, parseUri(clientURI).baseUrl + "/" + BASE_API_PATH_TO_CHECK);
+      assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
+      const db = client.db();
+      assert.ok(db);
     });
     it('should parse baseApiPath from URL when possible (multiple path elements)', async () => {
       const AUTH_TOKEN_TO_CHECK = "123";
@@ -105,19 +105,19 @@ describe('StargateMongoose clients test', () => {
       const LOG_LEVEL_TO_CHECK = "info";
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
       const client = await Client.connect(parseUri(clientURI).baseUrl + "/" + BASE_API_PATH_TO_CHECK + "/" + KEYSPACE_TO_CHECK, {
-          applicationToken: AUTH_TOKEN_TO_CHECK,
-          logLevel: LOG_LEVEL_TO_CHECK,
-          authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
-          createNamespaceOnConnect: false
-        });        
-        assert.ok(client);
-        assert.ok(client.httpClient);
-        assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
-        assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
-        assert.strictEqual(client.httpClient.baseUrl, parseUri(clientURI).baseUrl + "/" + BASE_API_PATH_TO_CHECK);          
-        assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
-        const db = client.db();
-        assert.ok(db);
+        applicationToken: AUTH_TOKEN_TO_CHECK,
+        logLevel: LOG_LEVEL_TO_CHECK,
+        authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
+        createNamespaceOnConnect: false
+      });
+      assert.ok(client);
+      assert.ok(client.httpClient);
+      assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
+      assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
+      assert.strictEqual(client.httpClient.baseUrl, parseUri(clientURI).baseUrl + "/" + BASE_API_PATH_TO_CHECK);
+      assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
+      const db = client.db();
+      assert.ok(db);
     });
     it('should handle when the keyspace name is present in the baseApiPath also', async () => {
       //only the last occurrence of the keyspace name in the url path must be treated as keyspace
@@ -129,19 +129,19 @@ describe('StargateMongoose clients test', () => {
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
       const baseUrl = 'http://localhost:8080';
       const client = await Client.connect(baseUrl + "/testks1/" + BASE_API_PATH_TO_CHECK + "/" + KEYSPACE_TO_CHECK, {
-          applicationToken: AUTH_TOKEN_TO_CHECK,
-          logLevel: LOG_LEVEL_TO_CHECK,
-          authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
-          createNamespaceOnConnect: false
-        });        
-        assert.ok(client);
-        assert.ok(client.httpClient);
-        assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
-        assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
-        assert.strictEqual(client.httpClient.baseUrl, baseUrl + "/testks1/"+BASE_API_PATH_TO_CHECK);
-        assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
-        const db = client.db();
-        assert.ok(db);
+        applicationToken: AUTH_TOKEN_TO_CHECK,
+        logLevel: LOG_LEVEL_TO_CHECK,
+        authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
+        createNamespaceOnConnect: false
+      });
+      assert.ok(client);
+      assert.ok(client.httpClient);
+      assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
+      assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
+      assert.strictEqual(client.httpClient.baseUrl, baseUrl + "/testks1/" + BASE_API_PATH_TO_CHECK);
+      assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
+      const db = client.db();
+      assert.ok(db);
     });
     it('should honor the baseApiPath from options when provided', async () => {
       const AUTH_TOKEN_TO_CHECK = "123";
@@ -151,20 +151,20 @@ describe('StargateMongoose clients test', () => {
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
       const baseUrl = 'http://localhost:8080';
       const client = await Client.connect(baseUrl + "/" + BASE_API_PATH_TO_CHECK + "/" + KEYSPACE_TO_CHECK, {
-          applicationToken: AUTH_TOKEN_TO_CHECK,
-          baseApiPath: "baseAPIPath2",
-          logLevel: LOG_LEVEL_TO_CHECK,
-          authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
-          createNamespaceOnConnect: false
-        });        
-        assert.ok(client);
-        assert.ok(client.httpClient);
-        assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
-        assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
-        assert.strictEqual(client.httpClient.baseUrl, baseUrl + "/baseAPIPath2");
-        assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
-        const db = client.db();
-        assert.ok(db);
+        applicationToken: AUTH_TOKEN_TO_CHECK,
+        baseApiPath: "baseAPIPath2",
+        logLevel: LOG_LEVEL_TO_CHECK,
+        authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
+        createNamespaceOnConnect: false
+      });
+      assert.ok(client);
+      assert.ok(client.httpClient);
+      assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
+      assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
+      assert.strictEqual(client.httpClient.baseUrl, baseUrl + "/baseAPIPath2");
+      assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
+      const db = client.db();
+      assert.ok(db);
     });
     it('should handle empty baseApiPath', async () => {
       const AUTH_TOKEN_TO_CHECK = "123";
@@ -174,28 +174,28 @@ describe('StargateMongoose clients test', () => {
       const AUTH_HEADER_NAME_TO_CHECK = "x-token";
       const baseUrl = 'http://localhost:8080';
       const client = await Client.connect(baseUrl + "/" + KEYSPACE_TO_CHECK, {
-          applicationToken: AUTH_TOKEN_TO_CHECK,
-          logLevel: LOG_LEVEL_TO_CHECK,
-          authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
-          createNamespaceOnConnect: false
-        });        
-        assert.ok(client);
-        assert.ok(client.httpClient);
-        assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
-        assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
-        assert.strictEqual(client.httpClient.baseUrl, baseUrl);
-        assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
-        const db = client.db();
-        assert.ok(db);
+        applicationToken: AUTH_TOKEN_TO_CHECK,
+        logLevel: LOG_LEVEL_TO_CHECK,
+        authHeaderName: AUTH_HEADER_NAME_TO_CHECK,
+        createNamespaceOnConnect: false
+      });
+      assert.ok(client);
+      assert.ok(client.httpClient);
+      assert.strictEqual(client.httpClient.applicationToken, AUTH_TOKEN_TO_CHECK);
+      assert.strictEqual(client.keyspaceName, KEYSPACE_TO_CHECK);
+      assert.strictEqual(client.httpClient.baseUrl, baseUrl);
+      assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
+      const db = client.db();
+      assert.ok(db);
     });
     it('should initialize a Client connection with a uri using the constructor', () => {
-      const client = new Client(baseUrl, 'keyspace1'  , {      
+      const client = new Client(baseUrl, 'keyspace1', {
         applicationToken: "123"
       });
       assert.ok(client);
     });
     it('should not initialize a Client connection with a uri using the constructor with no options', () => {
-      let error:any;
+      let error: any;
       try {
         const client = new Client(baseUrl, 'keyspace1');
         assert.ok(client);
@@ -234,10 +234,10 @@ describe('StargateMongoose clients test', () => {
       });
       const connectedClient = await client.connect();
       assert.ok(connectedClient);
-      assert.strictEqual(connectedClient.httpClient.authHeaderName, TEST_HEADER_NAME);      
+      assert.strictEqual(connectedClient.httpClient.authHeaderName, TEST_HEADER_NAME);
     });
     it('should create client when token is not present, but auth details are present', async () => {
-      const client = new Client(baseUrl, 'keyspace1', {        
+      const client = new Client(baseUrl, 'keyspace1', {
         username: "user1",
         password: "pass1",
       });
@@ -245,21 +245,21 @@ describe('StargateMongoose clients test', () => {
       assert.ok(connectedClient);
     });
     it('should not create client when token is not present & one/more of auth details are missing', async () => {
-      let error:any;
+      let error: any;
       try {
-        const client = new Client(baseUrl, 'keyspace1', {        
-          username: "user1"          
+        const client = new Client(baseUrl, 'keyspace1', {
+          username: "user1"
         });
         const connectedClient = client.connect();
-      } catch (e: any){
-        error = e;        
+      } catch (e: any) {
+        error = e;
       }
       assert.ok(error);
       assert.strictEqual(error.message, 'applicationToken/auth info required for initialization');
     });
     it('should set the auth url based on options when provided', async () => {
       const TEST_AUTH_URL = 'authurl1';
-      const client = new Client(baseUrl, 'keyspace1', {        
+      const client = new Client(baseUrl, 'keyspace1', {
         username: "user1",
         password: "pass1",
         authUrl: TEST_AUTH_URL,
@@ -270,14 +270,14 @@ describe('StargateMongoose clients test', () => {
       assert.strictEqual((await connectedClient).httpClient.authUrl, TEST_AUTH_URL);
     });
     it('should construct the auth url with baseUrl when not provided', async () => {
-      const client = new Client(baseUrl, 'keyspace1', {        
+      const client = new Client(baseUrl, 'keyspace1', {
         username: "user1",
         password: "pass1",
         createNamespaceOnConnect: false
       });
       const connectedClient = client.connect();
       assert.ok(connectedClient);
-      assert.strictEqual((await connectedClient).httpClient.authUrl, baseUrl + AUTH_API_PATH );
+      assert.strictEqual((await connectedClient).httpClient.authUrl, baseUrl + AUTH_API_PATH);
     });
   });
   describe('Client Db operations', () => {
@@ -296,7 +296,7 @@ describe('StargateMongoose clients test', () => {
         createNamespaceOnConnect: false
       });
       await client.connect();
-      let error:any;
+      let error: any;
       try {
         const db = client.db();
         assert.ok(false);

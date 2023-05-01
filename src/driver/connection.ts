@@ -53,7 +53,7 @@ export class Connection extends MongooseConnection {
     return executeOperation(async () => {
       await this._waitForClient();
       const db = this.client.db();
-      if(!this.client.httpClient.isAstra){
+      if (!this.client.httpClient.isAstra) {
         db.createDatabase();
       }
       return db.createCollection(name, options);
@@ -101,7 +101,7 @@ export class Connection extends MongooseConnection {
 
       for (const model of Object.values(this.models)) {
         // @ts-ignore
-        model.init().catch(() => {});
+        model.init().catch(() => { });
       }
 
       const client = await Client.connect(uri, options);

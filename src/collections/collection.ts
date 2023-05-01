@@ -29,7 +29,7 @@ import { InsertManyResult } from 'mongoose';
 import { logger } from '@/src/logger';
 
 // https://github.com/mongodb/node-mongodb-native/pull/3323
-type JSONAPIUpdateResult = Omit<UpdateResult, 'upsertedId'> & { upsertedId: ObjectId | null };
+type JSONAPIUpdateResult = Omit<UpdateResult, 'upsertedId' | 'upsertedCount'> & { upsertedId: ObjectId | null, upsertedCount: number | null };
 
 export interface FindOneOptions {
   sort?: Record<string, 1 | -1>;
@@ -95,8 +95,8 @@ export class Collection {
   async insertOne(document: Record<string, any>) {
     return executeOperation(async (): Promise<InsertOneResult> => {
       let command = {
-        insertOne : {
-            document
+        insertOne: {
+          document
         }
       };
       const resp = await this.httpClient.executeCommand(command);
@@ -110,7 +110,7 @@ export class Collection {
   async insertMany(documents: Record<string, any>[], options?: InsertManyOptions) {
     return executeOperation(async (): Promise<InsertManyResult<any>> => {
       const command = {
-        insertMany : {
+        insertMany: {
           documents,
           options
         }
@@ -120,7 +120,7 @@ export class Collection {
         acknowledged: true,
         insertedCount: resp.status.insertedIds?.length || 0,
         insertedIds: resp.status.insertedIds
-      };      
+      };
     });
   }
 
@@ -134,13 +134,16 @@ export class Collection {
         }
       };
       const updateOneResp = await this.httpClient.executeCommand(command);
-      return {
+      let resp = {
         modifiedCount: updateOneResp.status.modifiedCount,
         matchedCount: updateOneResp.status.matchedCount,
-        acknowledged: true,
-        upsertedCount: updateOneResp.status.upsertedCount,
-        upsertedId: updateOneResp.status.upsertedId
-      };
+        acknowledged: true
+      } as JSONAPIUpdateResult;
+      if (updateOneResp.status.upsertedId) {
+        resp.upsertedId = updateOneResp.status.upsertedId;
+        resp.upsertedCount = 1;
+      }
+      return resp;
     });
   }
 
@@ -154,16 +157,19 @@ export class Collection {
         }
       };
       const updateManyResp = await this.httpClient.executeCommand(command);
-      if(updateManyResp.status.moreData){
+      if (updateManyResp.status.moreData) {
         throw new StargateMongooseError(`More than ${updateManyResp.status.modifiedCount} records found for update by the server`, command);
       }
-      return {
+      let resp = {
         modifiedCount: updateManyResp.status.modifiedCount,
         matchedCount: updateManyResp.status.matchedCount,
         acknowledged: true,
-        upsertedCount: updateManyResp.status.upsertedCount,
-        upsertedId: updateManyResp.status.upsertedId
-      };
+      } as JSONAPIUpdateResult;
+      if (updateManyResp.status.upsertedId) {
+        resp.upsertedId = updateManyResp.status.upsertedId;
+        resp.upsertedCount = 1;
+      }
+      return resp;
     });
   }
 
@@ -186,7 +192,7 @@ export class Collection {
       const deleteOneResp = await this.httpClient.executeCommand(command);
       return {
         acknowledged: true,
-        deletedCount: deleteOneResp.status.deletedCount 
+        deletedCount: deleteOneResp.status.deletedCount
       };
     });
   }
@@ -199,12 +205,12 @@ export class Collection {
         }
       };
       const deleteManyResp = await this.httpClient.executeCommand(command);
-      if(deleteManyResp.status.moreData){
+      if (deleteManyResp.status.moreData) {
         throw new StargateMongooseError(`More records found to be deleted even after deleting ${deleteManyResp.status.deletedCount} records`, command);
       }
       return {
         acknowledged: true,
-        deletedCount: deleteManyResp.status.deletedCount 
+        deletedCount: deleteManyResp.status.deletedCount
       };
     });
   }
@@ -224,7 +230,7 @@ export class Collection {
         }
       };
       const command: FindOneCommand = {
-        findOne : {
+        findOne: {
           filter,
           options
         }
@@ -262,8 +268,8 @@ export class Collection {
       }
       const resp = await this.httpClient.executeCommand(command);
       return {
-        value : resp.data?.docs[0],
-        ok : 1
+        value: resp.data?.docs[0],
+        ok: 1
       };
     });
   }
@@ -292,7 +298,7 @@ export class Collection {
       }
     };
     const command: FindOneAndDeleteCommand = {
-      findOneAndDelete : {
+      findOneAndDelete: {
         filter
       }
     };
@@ -302,14 +308,14 @@ export class Collection {
 
     const resp = await this.httpClient.executeCommand(command);
     return {
-      value : resp.data?.docs[0],
-      ok : 1
+      value: resp.data?.docs[0],
+      ok: 1
     };
   }
 
- /** 
-  * @deprecated
-  */
+  /** 
+   * @deprecated
+   */
   async count(filter?: Record<string, any>) {
     return this.countDocuments(filter);
   }
@@ -325,7 +331,7 @@ export class Collection {
         }
       };
       const command: FindOneAndUpdateCommand = {
-        findOneAndUpdate : {
+        findOneAndUpdate: {
           filter,
           update,
           options
@@ -337,8 +343,8 @@ export class Collection {
       }
       const resp = await this.httpClient.executeCommand(command);
       return {
-        value : resp.data?.docs[0],
-        ok : 1
+        value: resp.data?.docs[0],
+        ok: 1
       };
     });
   }
@@ -366,8 +372,8 @@ export class Collection {
 
 export class StargateMongooseError extends Error {
   command: Record<string, any>;
-  constructor(message: any, command: Record<string, any>) {   
-    const commandName = Object.keys(command)[0] || 'unknown'; 
+  constructor(message: any, command: Record<string, any>) {
+    const commandName = Object.keys(command)[0] || 'unknown';
     super(`Command "${commandName}" failed with the following error: ${message}`);
     this.command = command;
   }
