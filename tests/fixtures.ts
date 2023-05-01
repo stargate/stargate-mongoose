@@ -22,8 +22,8 @@ export const getJSONAPIClient = async () => {
   if (!process.env.JSON_API_URI) {
     return null;
   }
-  let options:ClientOptions = {authHeaderName: process.env.AUTH_HEADER_NAME};
-  if(process.env.STARGATE_AUTH_URL && process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD){
+  let options: ClientOptions = { authHeaderName: process.env.AUTH_HEADER_NAME };
+  if (process.env.STARGATE_AUTH_URL && process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD) {
     options.authUrl = process.env.STARGATE_AUTH_URL;
     options.username = process.env.STARGATE_USERNAME;
     options.password = process.env.STARGATE_PASSWORD;
@@ -36,8 +36,8 @@ export const getAstraClient = async () => {
   if (!process.env.ASTRA_URI) {
     return null;
   }
-  let options:ClientOptions = {authHeaderName: process.env.AUTH_HEADER_NAME};
-  if(process.env.STARGATE_AUTH_URL && process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD){
+  let options: ClientOptions = { authHeaderName: process.env.AUTH_HEADER_NAME };
+  if (process.env.STARGATE_AUTH_URL && process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD) {
     options.authUrl = process.env.STARGATE_AUTH_URL;
     options.username = process.env.STARGATE_USERNAME;
     options.password = process.env.STARGATE_PASSWORD;
@@ -49,7 +49,7 @@ export const getAstraClient = async () => {
 
 export const createSampleDoc = () => ({
   _id: "doc1",
-  username : "aaron"
+  username: "aaron"
 });
 
 export type Employee = {
@@ -58,7 +58,7 @@ export type Employee = {
   human?: boolean;
   age?: number;
   password?: string | null;
-  address?:{
+  address?: {
     number?: number;
     street?: string | null;
     suburb?: string | null;
@@ -68,9 +68,9 @@ export type Employee = {
   }
 }
 
-const sampleMultiLevelDoc:Employee = {
-  username : "aaron",
-  human : true,
+const sampleMultiLevelDoc: Employee = {
+  username: "aaron",
+  human: true,
   age: 47,
   password: null,
   address: {
@@ -80,9 +80,9 @@ const sampleMultiLevelDoc:Employee = {
     city: "big banana",
     is_office: false
   }
-} ;
+};
 
-export const createSampleDocWithMultiLevelWithId = (docId:string) => {  
+export const createSampleDocWithMultiLevelWithId = (docId: string) => {
   let sampleMultiLevelDocWithId = JSON.parse(JSON.stringify(sampleMultiLevelDoc)) as Employee; //parse and stringigy is to clone and modify only the new object
   sampleMultiLevelDocWithId._id = docId;
   return sampleMultiLevelDocWithId;
@@ -91,10 +91,10 @@ export const createSampleDocWithMultiLevelWithId = (docId:string) => {
 export const createSampleDocWithMultiLevel = () => (sampleMultiLevelDoc as Employee);
 
 export const createSampleDoc2WithMultiLevel = () => ({
-  username : "jimr",
-  human : true,
+  username: "jimr",
+  human: true,
   age: 52,
-  password : "gasxaq==",
+  password: "gasxaq==",
   address: {
     number: 45,
     street: "main street",
@@ -106,10 +106,10 @@ export const createSampleDoc2WithMultiLevel = () => ({
 } as Employee);
 
 export const createSampleDoc3WithMultiLevel = () => ({
-  username : "saml",
-  human : false,
+  username: "saml",
+  human: false,
   age: 25,
-  password : "jhkasfka==",
+  password: "jhkasfka==",
   address: {
     number: 123,
     street: "church street",

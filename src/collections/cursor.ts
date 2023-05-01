@@ -15,12 +15,20 @@
 import _ from 'lodash';
 import { Collection } from './collection';
 import { logger } from '@/src/logger';
-import { executeOperation, QueryOptions } from './utils';
+import { executeOperation } from './utils';
 
 export interface FindOptions {
   limit?: number;
   skip?: number;
   sort?: Record<string, 1 | -1>;
+  projection?: Record<string, 1 | -1>;
+}
+
+//this is internal options, sent to the JSON API and not exposed to the user
+type QueryOptions = {
+  limit?: number;
+  skip?: number;
+  pagingState?: string;
 }
 
 export class FindCursor {
@@ -86,24 +94,24 @@ export class FindCursor {
     return executeOperation(async () => {
       if (this.pageIndex < this.page.length) {
         const doc = this.page[this.pageIndex++];
-  
+
         return doc;
       }
-  
+
       if (this.exhausted) {
         this.status = 'executed';
       }
-  
-      if (this.status === 'executed') {  
+
+      if (this.status === 'executed') {
         return null;
       }
-  
+
       this.status = 'executing';
-  
+
       await this._getMore();
-  
+
       const doc = this.page[this.pageIndex++] || null;
-  
+
       return doc;
     });
   }
@@ -113,7 +121,8 @@ export class FindCursor {
       find: {
         filter?: Record<string, any>,
         options?: Record<string, any>,
-        sort?: Record<string, any>
+        sort?: Record<string, any>,
+        projection?: Record<string, any>
       }
     } = {
       find: {
@@ -124,13 +133,19 @@ export class FindCursor {
       command.find.sort = this.options.sort;
     }
     const options = {} as QueryOptions;
-    if (this.limit != Infinity) { 
+    if (this.limit != Infinity) {
       options.limit = this.limit;
     }
     if (this.nextPageState) {
       options.pagingState = this.nextPageState;
     }
-    if(Object.keys(options).length > 0){
+    if (this.options?.skip) {
+      options.skip = this.options.skip;
+    }
+    if (this.options?.projection && Object.keys(this.options.projection).length > 0) {
+      command.find.projection = this.options.projection;
+    }
+    if (Object.keys(options).length > 0) {
       command.find.options = options;
     }
     const resp = await this.collection.httpClient.executeCommand(command);
@@ -139,7 +154,7 @@ export class FindCursor {
       this.exhausted = true;
     }
     this.page = _.keys(resp.data.docs).map(i => resp.data.docs[i]);
-    this.pageIndex = 0;    
+    this.pageIndex = 0;
   }
 
   /**

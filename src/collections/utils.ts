@@ -61,8 +61,8 @@ export const parseUri = (uri: string): ParsedUri => {
  * /apis/v1/testks1 => apis/v1
  * /testks1 => '' (empty string)
 */
-function getBaseAPIPath(pathFromUrl?: string | null){
-  if(!pathFromUrl){
+function getBaseAPIPath(pathFromUrl?: string | null) {
+  if (!pathFromUrl) {
     return '';
   }
   const pathElements = pathFromUrl.split("/");
@@ -99,7 +99,7 @@ export const createAstraUri = (
   if (logLevel) {
     uri.searchParams.append('logLevel', logLevel);
   }
-  if(authHeaderName){
+  if (authHeaderName) {
     uri.searchParams.append('authHeaderName', authHeaderName);
   }
   return uri.toString();
@@ -165,7 +165,7 @@ export async function getStargateAccessToken(
   }
 };
 
-export class StargateAuthError extends Error  {
+export class StargateAuthError extends Error {
   message: string
   constructor(message: string) {
     super(message);
@@ -180,7 +180,7 @@ export class StargateAuthError extends Error  {
  * @returns Promise
  */
 export const executeOperation = async (operation: Function) => {
-  let res = {};
+  let res: any = {};
   try {
     res = await operation();
   } catch (e: any) {
@@ -190,13 +190,7 @@ export const executeOperation = async (operation: Function) => {
   return res;
 };
 
-export type QueryOptions = {
-  pagingState?: string|null,
-  limit?: number,
-  projection?: any
-}
-
-export async function createNamespace(httpClient: HTTPClient, name: string) {  
+export async function createNamespace(httpClient: HTTPClient, name: string) {
   const data = {
     createNamespace: {
       name
