@@ -24,27 +24,27 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
   let db: Db;
   let collection: Collection;
   const sampleUsers = sampleUsersList;
-  before(async function() {
-    if(testClient == null) {
+  before(async function () {
+    if (testClient == null) {
       return this.skip();
     }
     astraClient = await testClient.client;
     if (astraClient == null) {
       return this.skip();
-    }      
+    }
     db = astraClient.db();
-    const collectionName:string = TEST_COLLECTION_NAME;
+    const collectionName: string = TEST_COLLECTION_NAME;
     await db.createCollection(collectionName);
     collection = db.collection(collectionName);
-    await collection?.deleteMany({});      
+    await collection?.deleteMany({});
   });
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     await db.createCollection(TEST_COLLECTION_NAME);
     collection = db.collection(TEST_COLLECTION_NAME);
   });
-  
-  afterEach( async () => {
+
+  afterEach(async () => {
     // run drop collection async to save time
     await db?.dropCollection(TEST_COLLECTION_NAME);
   });
@@ -79,58 +79,58 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
       assert.equal(cursor.page.length, 3);
     });
     it('should execute a limited query with limit set less than default page size', async () => {
-      let docList = Array.from({ length: 20 }, ()=>({"username": "id"}));
+      let docList = Array.from({ length: 20 }, () => ({ "username": "id" }));
       docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
+        doc.username = doc.username + (index + 1);
       });
       const insertManyResp = await collection.insertMany(docList);
       assert.ok(insertManyResp);
-      assert.strictEqual(insertManyResp.insertedCount, 20);        
+      assert.strictEqual(insertManyResp.insertedCount, 20);
       const cursorWithLimitSet = new FindCursor(collection, {}, { limit: 5 });
-      let countWithLimitSet = 0;        
-      for(let doc = await cursorWithLimitSet.next(); doc != null; doc = await cursorWithLimitSet.next()){          
+      let countWithLimitSet = 0;
+      for (let doc = await cursorWithLimitSet.next(); doc != null; doc = await cursorWithLimitSet.next()) {
         countWithLimitSet++;
       }
-      assert.strictEqual(countWithLimitSet, 5);        
+      assert.strictEqual(countWithLimitSet, 5);
     });
     it('should execute a limited query with limit set equal to default page size', async () => {
-      let docList = Array.from({ length: 20 }, ()=>({"username": "id"}));
+      let docList = Array.from({ length: 20 }, () => ({ "username": "id" }));
       docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
+        doc.username = doc.username + (index + 1);
       });
       const insertManyResp = await collection.insertMany(docList);
       assert.ok(insertManyResp);
-      assert.strictEqual(insertManyResp.insertedCount, 20);        
+      assert.strictEqual(insertManyResp.insertedCount, 20);
       //insert next 20
-      let docListNextSet = Array.from({ length: 20 }, ()=>({username: "id", city : "nyc"}));
+      let docListNextSet = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docListNextSet.forEach((doc, index) => {
-        doc.username = doc.username+(index+21);
+        doc.username = doc.username + (index + 21);
       });
-      const resNextSet = await collection.insertMany(docListNextSet);    
+      const resNextSet = await collection.insertMany(docListNextSet);
       assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
       assert.strictEqual(resNextSet.acknowledged, true);
       //test limit and page size
       const cursorWithLimitSet = new FindCursor(collection, {}, { limit: 20 });
-      let countWithLimitSet = 0;        
-      for(let doc = await cursorWithLimitSet.next(); doc != null; doc = await cursorWithLimitSet.next()){          
+      let countWithLimitSet = 0;
+      for (let doc = await cursorWithLimitSet.next(); doc != null; doc = await cursorWithLimitSet.next()) {
         countWithLimitSet++;
       }
-      assert.strictEqual(countWithLimitSet, 20);        
+      assert.strictEqual(countWithLimitSet, 20);
     });
     it('should execute a limited query with limit set greater than available', async () => {
-      let docList = Array.from({ length: 20 }, ()=>({"username": "id"}));
+      let docList = Array.from({ length: 20 }, () => ({ "username": "id" }));
       docList.forEach((doc, index) => {
-        doc.username = doc.username+(index+1);
+        doc.username = doc.username + (index + 1);
       });
       const insertManyResp = await collection.insertMany(docList);
       assert.ok(insertManyResp);
-      assert.strictEqual(insertManyResp.insertedCount, 20);        
+      assert.strictEqual(insertManyResp.insertedCount, 20);
       const cursorWithLimitSet = new FindCursor(collection, {}, { limit: 150 });
-      let countWithLimitSet = 0;        
-      for(let doc = await cursorWithLimitSet.next(); doc != null; doc = await cursorWithLimitSet.next()){          
+      let countWithLimitSet = 0;
+      for (let doc = await cursorWithLimitSet.next(); doc != null; doc = await cursorWithLimitSet.next()) {
         countWithLimitSet++;
       }
-      assert.strictEqual(countWithLimitSet, 20);        
+      assert.strictEqual(countWithLimitSet, 20);
     });
     it('should execute an all query', async () => {
       await collection.insertMany(sampleUsers);
@@ -147,7 +147,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
       const count = await cursor.count();
       assert.strictEqual(count, sampleUsers.length);
       //run again
-      const cursorRes2 = await cursor.toArray();   
+      const cursorRes2 = await cursor.toArray();
       assert.strictEqual(cursor.status, 'executed');
       const count2 = await cursor.count();
       assert.strictEqual(count2, sampleUsers.length);
@@ -177,12 +177,12 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
     it('should handle noop: stream', async () => {
       await collection.insertMany(sampleUsers);
       const cursor = new FindCursor(collection, { username: sampleUsers[0].username });
-      let error:any;
+      let error: any;
       try {
         const stream = cursor.stream();
         assert.ok(stream);
       } catch (e) {
-        error = e;          
+        error = e;
       }
       assert.ok(error);
     });

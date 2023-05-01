@@ -47,7 +47,7 @@ interface APIClientOptions {
   isAstra?: boolean;
 }
 
-export interface APIResponse{
+export interface APIResponse {
   status?: any
   data?: any
   errors?: any
@@ -70,6 +70,8 @@ const axiosAgent = axios.create({
 const requestInterceptor = (config: AxiosRequestConfig) => {
   const { method, url } = config;
   logger.http(`--- ${method?.toUpperCase()} ${url}`);
+  logger.http(serializeCommand(config.data, true));
+  config.data = serializeCommand(config.data);
   return config;
 };
 
@@ -107,8 +109,8 @@ export class HTTPClient {
     this.authUrl = options.authUrl || this.baseUrl + AUTH_API_PATH;
     if (options.applicationToken) {
       this.applicationToken = options.applicationToken;
-    }else{      
-      if(this.username === '' || this.password === ''){
+    } else {
+      if (this.username === '' || this.password === '') {
         throw new Error('applicationToken/auth info required for initialization');
       }
       this.applicationToken = '';//We will set this by accessing the auth url when the first request is received
@@ -117,7 +119,7 @@ export class HTTPClient {
     if (options.logLevel) {
       setLevel(options.logLevel);
     }
-    if(options.baseApiPath){
+    if (options.baseApiPath) {
       this.baseUrl = this.baseUrl + "/" + options.baseApiPath;
     }
     this.authHeaderName = options.authHeaderName || DEFAULT_AUTH_HEADER;
@@ -126,32 +128,34 @@ export class HTTPClient {
 
   async _request(requestInfo: AxiosRequestConfig): Promise<APIResponse> {
     try {
-      if(this.applicationToken === ''){
+      if (this.applicationToken === '') {
         logger.debug("@stargate-mongoose/rest: getting token");
-        try{
+        try {
           this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
-        } catch (authError: any){
+        } catch (authError: any) {
           return {
             errors: [
               {
-                message: authError.message? authError.message : "Authentication failed, please retry!"
+                message: authError.message ? authError.message : "Authentication failed, please retry!"
               }
             ]
-           }
-        }        
+          }
+        }
       }
-      logger.debug("_request with URL %s", requestInfo.url);      
-      if(!this.applicationToken){
+      logger.debug("_request with URL %s", requestInfo.url);
+      if (!this.applicationToken) {
         return {
           errors: [
             {
               message: "Unable to get token for the credentials provided"
             }
           ]
-         }
+        }
       }
       logger.debug('request url %s', requestInfo.url);
-      logger.debug('request command %s', JSON.stringify(requestInfo.data));
+      if(logger.isDebugEnabled()) {
+        logger.debug('request command %s', serializeCommand(requestInfo.data));
+      }
       const response = await axiosAgent({
         url: requestInfo.url,
         data: requestInfo.data,
@@ -162,23 +166,25 @@ export class HTTPClient {
           [this.authHeaderName]: this.applicationToken
         }
       });
-      logger.debug('response %s', response?.data ? JSON.stringify(response.data) : `status code : ${response.status}`);
+      if(logger.isDebugEnabled()) { 
+        logger.debug('response %s', response?.data ? JSON.stringify(response.data) : `status code : ${response.status}`);
+      }
       if (response.status === 401 || (response.data?.errors?.length > 0 && response.data.errors[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
         logger.debug("@stargate-mongoose/rest: reconnecting");
-        try{
+        try {
           this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
-        } catch (authError: any){
+        } catch (authError: any) {
           return {
             errors: [
               {
-                message: authError.message? authError.message : "Authentication failed, please retry!"
+                message: authError.message ? authError.message : "Authentication failed, please retry!"
               }
             ]
-           }
+          }
         }
         return this._request(requestInfo);
       }
-      if(response.status === 200){
+      if (response.status === 200) {
         return {
           status: response.data.status,
           data: response.data.data,
@@ -193,21 +199,21 @@ export class HTTPClient {
               message: "Server response received : " + response.status + "!"
             }
           ]
-         }
+        }
       }
     } catch (e: any) {
-       logger.error(requestInfo.url + ': ' + e.message);
-       logger.error('Data: ' + inspect(requestInfo.data));
-       if (e?.response?.data) {
-         logger.error('Response Data: ' + inspect(e.response.data));
-       }
-       return {
+      logger.error(requestInfo.url + ': ' + e.message);
+      logger.error('Data: ' + inspect(requestInfo.data));
+      if (e?.response?.data) {
+        logger.error('Response Data: ' + inspect(e.response.data));
+      }
+      return {
         errors: [
           {
-            message: e.message? e.message : "Server call failed, please retry!"
+            message: e.message ? e.message : "Server call failed, please retry!"
           }
         ]
-       }
+      }
     }
   }
 
@@ -225,17 +231,37 @@ export class HTTPClient {
 export class StargateServerError extends Error {
   errors: any[];
   command: Record<string, any>;
+  status: any;
   constructor(response: any, command: Record<string, any>) {
     const commandName = Object.keys(command)[0] || 'unknown';
-    super(`Command "${commandName}" failed with the following errors: ${JSON.stringify(response.errors)}`);
+    const status = response.status ? `, Status : ${JSON.stringify(response.status)}` : '';
+    super(`Command "${commandName}" failed with the following errors: ${JSON.stringify(response.errors)}${status}`);
     this.errors = response.errors;
     this.command = command;
+    this.status = response.status;
   }
 }
 
 export const handleIfErrorResponse = (response: any, data: Record<string, any>) => {
-  if(response.errors && response.errors.length > 0){
+  if (response.errors && response.errors.length > 0) {
     throw new StargateServerError(response, data);
   }
+}
+
+function serializeCommand(data: Record<string, any>, pretty?: boolean): string {
+  if (pretty) {
+    return JSON.stringify(data, function(key, value) {
+      if (typeof value === 'bigint') {
+        return Number(value);
+      }
+      return value;
+    }, '  ');
+  }
+  return JSON.stringify(data, function(key, value) {
+    if (typeof value === 'bigint') {
+      return Number(value);
+    }
+    return value;
+  });
 }
 
