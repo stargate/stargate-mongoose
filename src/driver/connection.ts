@@ -16,7 +16,6 @@ import { Client } from '@/src/collections/client';
 import { Collection } from './collection';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import STATES from 'mongoose/lib/connectionstate';
-import _ from 'lodash';
 import { executeOperation } from '../collections/utils';
 
 export class Connection extends MongooseConnection {

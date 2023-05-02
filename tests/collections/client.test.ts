@@ -17,7 +17,6 @@ import { Client } from '@/src/collections/client';
 import { testClient } from '@/tests/fixtures';
 import { parseUri } from '@/src/collections/utils';
 import { AUTH_API_PATH } from '@/src/client/httpClient';
-import _ from 'lodash';
 
 const localBaseUrl = 'http://localhost:8181';
 

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import _ from 'lodash';
 import {
   DeleteResult,
   InsertOneResult,
@@ -84,8 +83,15 @@ export class Collection {
       throw new Error('Collection name is required');
     }
     // use a clone of the underlying http client to support multiple collections from a single db
-    this.httpClient = _.cloneDeep(httpClient);
-    this.httpClient.baseUrl += `/${name}`;
+    this.httpClient = new HTTPClient({
+      baseUrl: httpClient.baseUrl + `/${name}`,
+      username: httpClient.username,
+      password: httpClient.password,
+      authUrl: httpClient.authUrl,
+      applicationToken: httpClient.applicationToken,
+      authHeaderName: httpClient.authHeaderName,
+      isAstra: httpClient.isAstra
+    });
     this.name = name;
     this.collectionName = name;
   }

@@ -12,13 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import _ from 'lodash';
 import url from 'url';
-import { ObjectId } from 'mongodb';
 import { logger } from '@/src/logger';
 import axios from 'axios';
-import { type } from 'os';
-import { Client } from '@/src/collections/client';
 import { HTTPClient, handleIfErrorResponse } from '@/src/client/httpClient'
 
 interface ParsedUri {

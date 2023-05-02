@@ -15,7 +15,6 @@
 import { HTTPClient } from '@/src/client';
 import { Collection } from './collection';
 import { executeOperation, createNamespace, dropNamespace } from './utils';
-import _ from 'lodash';
 
 export class Db {
   rootHttpClient: HTTPClient;
@@ -33,8 +32,15 @@ export class Db {
     }
     this.rootHttpClient = httpClient;
     // use a clone of the underlying http client to support multiple db's from a single connection
-    this.httpClient = _.cloneDeep(httpClient);
-    this.httpClient.baseUrl = `${this.httpClient.baseUrl}/${name}`;
+    this.httpClient = new HTTPClient({
+      baseUrl: httpClient.baseUrl + `/${name}`,
+      username: httpClient.username,
+      password: httpClient.password,
+      authUrl: httpClient.authUrl,
+      applicationToken: httpClient.applicationToken,
+      authHeaderName: httpClient.authHeaderName,
+      isAstra: httpClient.isAstra
+    });
     this.name = name;
   }
 
