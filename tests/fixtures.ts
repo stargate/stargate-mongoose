@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import assert from 'assert';
 import { createAstraUri, createStargateUri } from '@/src/collections/utils';
 import { Client, ClientOptions } from '@/src/collections/client';
 import { randFirstName, randLastName } from '@ngneat/falso';
@@ -126,6 +127,9 @@ export const getSampleDocs = (numUsers: number) =>
   Array.from({ length: numUsers }, createSampleDoc);
 
 export const sleep = async (ms = 100) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const testClientName = process.env.TEST_DOC_DB;
+assert.ok(testClientName === 'astra' || testClientName === 'jsonapi');
 
 export const testClient = process.env.TEST_DOC_DB === 'astra' ?
   (process.env.ASTRA_URI ?

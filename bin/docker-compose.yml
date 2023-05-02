@@ -35,6 +35,7 @@ services:
       - stargate
     ports:
       - "8080:8080"
+      - "8181:8181"
     mem_limit: 2G
     environment:
       - QUARKUS_GRPC_CLIENTS_BRIDGE_HOST=coordinator
@@ -42,7 +43,7 @@ services:
       - QUARKUS_HTTP_ACCESS_LOG_ENABLED=${REQUESTLOG}
       - QUARKUS_LOG_LEVEL=${LOGLEVEL}
     healthcheck:
-      test: curl -f http://localhost:8080/stargate/health || exit 1
+      test: curl -f http://localhost:8181/stargate/health || exit 1
       interval: 5s
       timeout: 10s
       retries: 10

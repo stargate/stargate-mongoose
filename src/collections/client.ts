@@ -40,7 +40,7 @@ export class Client {
   createNamespaceOnConnect?: boolean;
   /**
    * Set up a MongoClient that works with the Stargate JSON API
-   * @param baseUrl A JSON API Connection URI (Eg. http://localhost:8080/v1)
+   * @param baseUrl A JSON API Connection URI (Eg. http://localhost:8181/v1)
    * @param keyspaceName Name of the Namespace (or Keyspace in Apache Cassandra terminology)
    * @param options ClientOptions
    */
@@ -66,7 +66,7 @@ export class Client {
 
   /**
    * Setup a connection to the Astra/Stargate JSON API
-   * @param uri an Stargate JSON API uri (Eg. http://localhost:8080/v1/testks1) where testks1 is the name of the keyspace/Namespace which should always be the last part of the URL
+   * @param uri an Stargate JSON API uri (Eg. http://localhost:8181/v1/testks1) where testks1 is the name of the keyspace/Namespace which should always be the last part of the URL
    * @returns MongoClient
    */
   static async connect(uri: string, options?: ClientOptions | null): Promise<Client> {

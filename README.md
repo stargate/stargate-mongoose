@@ -60,7 +60,7 @@ mongoose.setDriver(driver);
 
 //Set up mongoose & end points definition
 const Product = mongoose.model('Product', new Schema({ name: String, price: Number }));
-mongoose.connect('http://localhost:8080/v1/inventory', {
+mongoose.connect('http://localhost:8181/v1/inventory', {
     username: 'cassandra',
     password: 'cassandra',
     authUrl: 'http://localhost:8081/v1/auth'

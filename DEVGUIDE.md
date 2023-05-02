@@ -25,7 +25,7 @@ bin/start_json_api.sh
 - Copy the `.env.example` file and create a new `.env` file that should have all of the connection details as shown below.
 
 ```env
-JSON_API_URI=http://localhost:8080/v1/testks1
+JSON_API_URI=http://localhost:8181/v1/testks1
 STARGATE_AUTH_URL=http://localhost:8081/v1/auth
 STARGATE_USERNAME=cassandra
 STARGATE_PASSWORD=cassandra
