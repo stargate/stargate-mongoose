@@ -69,7 +69,6 @@
     "@babel/preset-typescript": "^7.17.12",
     "@ngneat/falso": "^5.4.0",
     "@types/expect": "^24.3.0",
-    "@types/lodash": "^4.14.182",
     "@types/mocha": "^9.1.1",
     "@types/node": "^17.0.36",
     "dotenv": "^16.0.1",
@@ -86,7 +85,6 @@
   },
   "dependencies": {
     "axios": "^0.27.2",
-    "lodash": "^4.17.21",
     "winston": "^3.7.2"
   },
   "peerDependencies": {

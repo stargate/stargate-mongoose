@@ -15,7 +15,6 @@
 import assert from 'assert';
 import mongoose from 'mongoose';
 import * as StargateMongooseDriver from '@/src/driver';
-import { delay } from 'lodash';
 import { testClient } from '@/tests/fixtures';
 import { logger } from '@/src/logger';
 import { parseUri } from '@/src/collections/utils';

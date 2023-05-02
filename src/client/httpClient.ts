@@ -15,7 +15,6 @@
 import http from 'http';
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { logger, setLevel } from '@/src/logger';
-import _ from 'lodash';
 import { inspect } from 'util';
 import { LIB_NAME, LIB_VERSION } from '../version';
 import { getStargateAccessToken, StargateAuthError } from '../collections/utils';

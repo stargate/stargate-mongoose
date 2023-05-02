@@ -17,8 +17,6 @@ import { Db } from '@/src/collections/db';
 import { Collection } from '@/src/collections/collection';
 import { Client } from '@/src/collections/client';
 import { testClient, testClientName, createSampleDoc, sampleUsersList, createSampleDocWithMultiLevel, createSampleDocWithMultiLevelWithId, getSampleDocs, sleep, TEST_COLLECTION_NAME } from '@/tests/fixtures';
-import _ from 'lodash';
-
 
 describe(`StargateMongoose - ${testClientName} Connection - collections.collection`, async () => {
   let astraClient: Client;
@@ -579,8 +577,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       }
       assert.ok(error);
       assert.strictEqual(error.message, "Command \"updateMany\" failed with the following error: More than 20 records found for update by the server");
-      assert.ok(_.isEqual(error.command.updateMany.filter, filter));
-      assert.ok(_.isEqual(error.command.updateMany.update, update));
+      assert.deepStrictEqual(error.command.updateMany.filter, filter);
+      assert.deepStrictEqual(error.command.updateMany.update, update);
     });
   });
   describe('findOneAndUpdate tests', () => {
@@ -660,7 +658,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       }
       assert.ok(exception);
       assert.strictEqual(exception.message, 'Command "deleteMany" failed with the following error: More records found to be deleted even after deleting 20 records');
-      assert.ok(_.isEqual(exception.command.deleteMany.filter, filter));
+      assert.deepStrictEqual(exception.command.deleteMany.filter, filter);
     });
     it('should find with sort', async () => {
       await collection.deleteMany({});
@@ -888,7 +886,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       const resNextSet = await collection.insertMany(docListNextSet);
       assert.strictEqual(resNextSet.insertedCount, docListNextSet.length);
       assert.strictEqual(resNextSet.acknowledged, true);
-      assert.strictEqual(_.keys(resNextSet.insertedIds).length, docListNextSet.length);
+      assert.strictEqual(Object.keys(resNextSet.insertedIds).length, docListNextSet.length);
       //verify counts
       assert.strictEqual(await collection.countDocuments({ city: "nyc" }), 20);
       assert.strictEqual(await collection.countDocuments({ city: "trichy" }), 20);

@@ -15,7 +15,6 @@
 import { Db } from './db';
 import { createNamespace, executeOperation, parseUri } from './utils';
 import { HTTPClient } from '@/src/client';
-import _ from 'lodash';
 import { logger } from '@/src/logger';
 
 export interface ClientOptions {
