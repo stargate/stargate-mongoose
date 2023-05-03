@@ -17,8 +17,8 @@ import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { logger, setLevel } from '@/src/logger';
 import { inspect } from 'util';
 import { LIB_NAME, LIB_VERSION } from '../version';
-import { getStargateAccessToken, StargateAuthError } from '../collections/utils';
-
+import { getStargateAccessToken } from '../collections/utils';
+import { EJSON } from 'bson';
 
 const REQUESTED_WITH = LIB_NAME + '/' + LIB_VERSION;
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
@@ -152,7 +152,7 @@ export class HTTPClient {
         }
       }
       logger.debug('request url %s', requestInfo.url);
-      if(logger.isDebugEnabled()) {
+      if (logger.isDebugEnabled()) {
         logger.debug('request command %s', serializeCommand(requestInfo.data));
       }
       const response = await axiosAgent({
@@ -165,7 +165,7 @@ export class HTTPClient {
           [this.authHeaderName]: this.applicationToken
         }
       });
-      if(logger.isDebugEnabled()) { 
+      if (logger.isDebugEnabled()) {
         logger.debug('response %s', response?.data ? JSON.stringify(response.data) : `status code : ${response.status}`);
       }
       if (response.status === 401 || (response.data?.errors?.length > 0 && response.data.errors[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
@@ -186,7 +186,7 @@ export class HTTPClient {
       if (response.status === 200) {
         return {
           status: response.data.status,
-          data: response.data.data,
+          data: deserialize(response.data.data),
           errors: response.data.errors
         };
       } else {
@@ -249,18 +249,39 @@ export const handleIfErrorResponse = (response: any, data: Record<string, any>) 
 
 function serializeCommand(data: Record<string, any>, pretty?: boolean): string {
   if (pretty) {
-    return JSON.stringify(data, function(key, value) {
-      if (typeof value === 'bigint') {
+    return EJSON.stringify(data, function (key, value) {
+      if (value != null && typeof value === 'bigint') {
         return Number(value);
+      } else if (value != null && typeof value === 'object') {
+        // ObjectId to strings
+        if (value.$oid) return value.$oid;
+        else if (value.$date) {
+          // Use numbers instead of strings for dates
+          value.$date = new Date(value.$date).valueOf();
+        }
       }
       return value;
     }, '  ');
   }
-  return JSON.stringify(data, function(key, value) {
-    if (typeof value === 'bigint') {
+  return EJSON.stringify(data, function (key, value) {
+    if (value != null && typeof value === 'bigint') {
       return Number(value);
+    } else if (value != null && typeof value === 'object') {
+      // ObjectId to strings
+      if (value.$oid) return value.$oid;
+      else if (value.$date) {
+        // Use numbers instead of strings for dates
+        value.$date = new Date(value.$date).valueOf();
+      }
     }
     return value;
   });
+}
+
+function deserialize(data: Record<string, any>): Record<string, any> {
+  if (data != null && data != undefined) {
+    return EJSON.deserialize(data);
+  }
+  return data;
 }
 
