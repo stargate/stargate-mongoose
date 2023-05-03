@@ -80,9 +80,74 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
     it('Should fail insert of doc over size 1 MB', async () => {
       const jsonDocGt1MB = new Array(1024 * 1024).fill("a").join("");
       const docToInsert = { username: jsonDocGt1MB };
-      collection.insertOne(docToInsert).catch((e) => {
-        assert.strictEqual(e.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: document size is over the max limit.");
-      });
+      let error: any;
+      try {
+        await collection.insertOne(docToInsert);
+      } catch(e: any) {
+        error = e;        
+      };
+      assert.ok(error);
+      assert.strictEqual(error.errors[0].message, "Request failed with status code 413");
+    });
+    it('Should fail if the number of levels in the doc is > 8', async () => {
+      const docToInsert = { l1 : { l2 : { l3 : { l4 : { l5 : { l6 : { l7 : { l8 : { l9 : "l9value" } } } } } } } } };      
+      let error: any;
+      try {
+        await collection.insertOne(docToInsert);
+      } catch(e: any) {
+        error = e;
+      };
+      assert.ok(error);
+      assert.strictEqual(error.errors[0].message, "Document size limitation violated: document depth exceeds maximum allowed (8)");
+    });
+    it('Should fail if the field length is > 48', async () => {
+      const fieldName = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvw';
+      const docToInsert = { [fieldName] : "value" };
+      let error: any;
+      try {
+        const resp = await collection.insertOne(docToInsert);
+      } catch (e: any) {
+        error = e;
+      };
+      assert.ok(error);
+      assert.strictEqual(error.errors[0].message, "Document size limitation violated: Property name length (49) exceeds maximum allowed (48)");
+    });
+    it('Should fail if the string field value is > 16000', async () => {
+      const _string16klength = new Array(16001).fill("a").join("");
+      const docToInsert = { username : _string16klength };
+      let error: any;
+      try {
+        const resp = await collection.insertOne(docToInsert);
+      } catch (e: any) {
+        error = e;
+      };
+      assert.ok(error);
+      assert.strictEqual(error.errors[0].message, "Document size limitation violated: String value length (16001) exceeds maximum allowed (16000)");
+    });
+    it('Should fail if an array field size is > 100', async () => {
+      const docToInsert = { tags : new Array(101).fill("tag") };
+      let error: any;
+      try {
+        const resp = await collection.insertOne(docToInsert);
+      } catch (e: any) {
+        error = e;
+      };
+      assert.ok(error);
+      assert.strictEqual(error.errors[0].message, "Document size limitation violated: number of elements an Array has (101) exceeds maximum allowed (100)");
+    });
+    it('Should fail if a doc contains more than 64 properties', async () => {      
+      let docToInsert:any = { _id : "123" };
+      for(let i = 1; i <= 64; i++) {
+        docToInsert[`prop${i}`] = `prop${i}value`;
+      }      
+      let error: any;
+      try {
+        const resp = await collection.insertOne(docToInsert);
+      } catch (e: any) {
+        error = e;
+      };
+      assert.ok(error);
+      assert.strictEqual(error.errors[0].message, "Document size limitation violated: number of properties an Object has (65) exceeds maximum allowed (64)");
     });
   });
   describe('insertMany tests', () => {

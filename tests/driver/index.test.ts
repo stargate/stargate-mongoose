@@ -104,9 +104,13 @@ describe(`Driver based tests`, async () => {
       let options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };
       await mongooseInstance.connect(dbUri, options);
       if (isAstra) {
-        await mongooseInstance.connection.dropDatabase().catch(err => {
-          assert.strictEqual(err.message, 'Cannot drop database in Astra. Please use the Astra UI to drop the database.');
-        });
+        let error: any;
+        try{
+          await mongooseInstance.connection.dropDatabase();
+        } catch(e:any){
+          error = e;          
+        }
+        assert.strictEqual(error.message, 'Cannot drop database in Astra. Please use the Astra UI to drop the database.');
       } else {
         const resp = await mongooseInstance.connection.dropDatabase();
         assert.strictEqual(resp.status?.ok, 1);
@@ -128,9 +132,13 @@ describe(`Driver based tests`, async () => {
       newDbUri = token ? newDbUri + '?applicationToken=' + token : newDbUri;
       await mongooseInstance.connect(newDbUri, options);
       if (isAstra) {
-        mongooseInstance.connection.createCollection('new_collection').catch(err => {
-          assert.strictEqual(err.message, 'INVALID_ARGUMENT: Unknown keyspace ' + newKeyspaceName);
-        });
+        let error: any;
+        try{
+          await mongooseInstance.connection.createCollection('new_collection');
+        } catch(e:any){
+          error = e;
+        }         
+        assert.strictEqual(error.errors[0].message, 'INVALID_ARGUMENT: Unknown keyspace ' + newKeyspaceName);
       } else {
         const resp = await mongooseInstance.connection.createCollection('new_collection');
         assert.strictEqual(resp.status?.ok, 1);
