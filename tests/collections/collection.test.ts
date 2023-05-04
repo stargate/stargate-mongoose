@@ -101,7 +101,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.strictEqual(error.errors[0].message, "Document size limitation violated: document depth exceeds maximum allowed (8)");
     });
     it('Should fail if the field length is > 48', async () => {
-      const fieldName = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvw';
+      const fieldName = 'a'.repeat(49);
       const docToInsert = { [fieldName]: "value" };
       let error: any;
       try {
