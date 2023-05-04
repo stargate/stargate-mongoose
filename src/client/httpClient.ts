@@ -243,37 +243,24 @@ export const handleIfErrorResponse = (response: any, data: Record<string, any>) 
 }
 
 function serializeCommand(data: Record<string, any>, pretty?: boolean): string {
-  if (pretty) {
-    return EJSON.stringify(data, function (key, value) {
-      if (value != null && typeof value === 'bigint') {
-        return Number(value);
-      } else if (value != null && typeof value === 'object') {
-        // ObjectId to strings
-        if (value.$oid) return value.$oid;
-        else if (value.$date) {
-          // Use numbers instead of strings for dates
-          value.$date = new Date(value.$date).valueOf();
-        }
-      }
-      return value;
-    }, '  ');
-  }
-  return EJSON.stringify(data, function (key, value) {
-    if (value != null && typeof value === 'bigint') {
-      return Number(value);
-    } else if (value != null && typeof value === 'object') {
-      // ObjectId to strings
-      if (value.$oid) return value.$oid;
-      else if (value.$date) {
-        // Use numbers instead of strings for dates
-        value.$date = new Date(value.$date).valueOf();
-      }
-    }
-    return value;
-  });
+  return EJSON.stringify(data, (key, value) => handleValues(key, value), pretty ? '  ' : '');
 }
 
 function deserialize(data: Record<string, any>): Record<string, any> {
   return data != null ? EJSON.deserialize(data) : data;
+}
+
+function handleValues(key: any, value: any): any {
+  if (value != null && typeof value === 'bigint') {
+    return Number(value);
+  } else if (value != null && typeof value === 'object') {
+    // ObjectId to strings
+    if (value.$oid) return value.$oid;
+    else if (value.$date) {
+      // Use numbers instead of strings for dates
+      value.$date = new Date(value.$date).valueOf();
+    }
+  }
+  return value;
 }
 
