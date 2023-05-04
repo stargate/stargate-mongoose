@@ -42,7 +42,7 @@ export interface FindOneAndDeleteOptions {
   sort?: Record<string, 1 | -1>;
 }
 
-export type FindOneAndReplaceOptions = {
+export interface FindOneAndReplaceOptions {
   upsert?: boolean;
   returnDocument?: 'before' | 'after';
   sort?: Record<string, 1 | -1>;
