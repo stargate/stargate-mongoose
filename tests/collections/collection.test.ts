@@ -1033,6 +1033,72 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.equal(findOneAndUpdateResp.value!.username, "aaronm");
       assert.equal(findOneAndUpdateResp.value!.address.city, undefined);
     });
+    it('should findOneAndUpdate with returnDocument before', async () => {
+      const docToInsert = createSampleDocWithMultiLevel();
+      const res = await collection.insertOne(docToInsert);
+      const docId = res.insertedId;
+      const cityBefore = docToInsert.address?.city;
+      const usernameBefore = docToInsert.username;
+      const findOneAndUpdateResp = await collection.findOneAndUpdate({ "_id": docId },
+        {
+          "$set": {
+            "username": "aaronm"
+          },
+          "$unset": {
+            "address.city": ""
+          }
+        },
+        {
+          "returnDocument": "before"
+        }
+      );
+      assert.equal(findOneAndUpdateResp.ok, 1);
+      assert.equal(findOneAndUpdateResp.value!._id, docId);
+      assert.equal(findOneAndUpdateResp.value!.username, usernameBefore);
+      assert.equal(findOneAndUpdateResp.value!.address.city, cityBefore);
+    });
+    it('should findOneAndUpdate with upsert true', async () => {
+      const res = await collection.insertOne(createSampleDocWithMultiLevel());
+      const newDocId = "123";
+      const findOneAndUpdateResp = await collection.findOneAndUpdate({ "_id": newDocId },
+        {
+          "$set": {
+            "username": "aaronm"
+          },
+          "$unset": {
+            "address.city": ""
+          }
+        },
+        {
+          "returnDocument": "after",
+          "upsert": true
+        }
+      );
+      assert.equal(findOneAndUpdateResp.ok, 1);
+      assert.equal(findOneAndUpdateResp.value!._id, newDocId);
+      assert.equal(findOneAndUpdateResp.value!.username, "aaronm");
+      assert.equal(findOneAndUpdateResp.value!.address, undefined);
+    });
+    it('should findOneAndUpdate with upsert true and returnDocument before', async () => {
+      const res = await collection.insertOne(createSampleDocWithMultiLevel());
+      const newDocId = "123";
+      const findOneAndUpdateResp = await collection.findOneAndUpdate({ "_id": newDocId },
+        {
+          "$set": {
+            "username": "aaronm"
+          },
+          "$unset": {
+            "address.city": ""
+          }
+        },
+        {
+          "returnDocument": "before",
+          "upsert": true
+        }
+      );
+      assert.equal(findOneAndUpdateResp.ok, 1);
+      assert.equal(findOneAndUpdateResp.value, undefined);
+    });
   });
   describe('deleteOne tests', () => {
     it('should deleteOne document', async () => {

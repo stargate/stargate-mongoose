@@ -68,15 +68,18 @@ const axiosAgent = axios.create({
 
 const requestInterceptor = (config: AxiosRequestConfig) => {
   const { method, url } = config;
-  logger.http(`--- ${method?.toUpperCase()} ${url}`);
-  logger.http(serializeCommand(config.data, true));
+  if (logger.isLevelEnabled('http')) {
+    logger.http(`--- request ${method?.toUpperCase()} ${url} ${serializeCommand(config.data, true)}`);
+  }
   config.data = serializeCommand(config.data);
   return config;
 };
 
 const responseInterceptor = (response: AxiosResponse) => {
-  const { config, status } = response;
-  logger.http(`${status} ${config.method?.toUpperCase()} ${config.url}`);
+  const { config, status } = response;  
+  if (logger.isLevelEnabled('http')) {
+    logger.http(`--- response ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url} ${JSON.stringify(response.data, null, 2)}`);
+  }
   return response;
 };
 
@@ -141,7 +144,6 @@ export class HTTPClient {
           }
         }
       }
-      logger.debug("_request with URL %s", requestInfo.url);
       if (!this.applicationToken) {
         return {
           errors: [
@@ -150,10 +152,6 @@ export class HTTPClient {
             }
           ]
         }
-      }
-      logger.debug('request url %s', requestInfo.url);
-      if (logger.isDebugEnabled()) {
-        logger.debug('request command %s', serializeCommand(requestInfo.data));
       }
       const response = await axiosAgent({
         url: requestInfo.url,
@@ -164,10 +162,7 @@ export class HTTPClient {
         headers: {
           [this.authHeaderName]: this.applicationToken
         }
-      });
-      if (logger.isDebugEnabled()) {
-        logger.debug('response %s', response?.data ? JSON.stringify(response.data) : `status code : ${response.status}`);
-      }
+      });           
       if (response.status === 401 || (response.data?.errors?.length > 0 && response.data.errors[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
         logger.debug("@stargate-mongoose/rest: reconnecting");
         try {
