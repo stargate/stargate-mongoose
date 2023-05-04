@@ -1010,6 +1010,86 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.deepStrictEqual(error.command.updateMany.filter, filter);
       assert.deepStrictEqual(error.command.updateMany.update, update);
     });
+    it('should increment number when $inc is used', async () => {
+      let docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", city: "trichy", count: 0 }));
+      docList.forEach((doc, index) => {
+        doc._id += index;
+        doc.username = doc.username + index;        
+        doc.count = index === 5 ? 5 : (index === 8 ? 8 : index);
+      });
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, docList.length);
+      assert.strictEqual(res.acknowledged, true);
+      assert.strictEqual(Object.keys(res.insertedIds).length, docList.length);
+      //update count of 5th doc by $inc using updateOne API
+      const updateOneResp = await collection.updateOne({ "_id": "id5" }, { "$inc": { "count": 1 } });
+      assert.strictEqual(updateOneResp.matchedCount, 1);
+      assert.strictEqual(updateOneResp.modifiedCount, 1);
+      assert.strictEqual(updateOneResp.acknowledged, true);
+      assert.strictEqual(updateOneResp.upsertedCount, undefined);
+      assert.strictEqual(updateOneResp.upsertedId, undefined);
+      const updatedDoc = await collection.findOne({ "_id": "id5" });
+      assert.strictEqual(updatedDoc!.count, 6);
+      //update count of 5th doc by $inc using updateMany API
+      const updateManyResp = await collection.updateMany({}, { "$inc": { "count": 1 } });
+      assert.strictEqual(updateManyResp.matchedCount, 20);
+      assert.strictEqual(updateManyResp.modifiedCount,  20);
+      assert.strictEqual(updateManyResp.acknowledged, true);
+      assert.strictEqual(updateManyResp.upsertedCount, undefined);
+      assert.strictEqual(updateManyResp.upsertedId, undefined);
+      const allDocs = await collection.find({}).toArray();
+      assert.strictEqual(allDocs.length, 20);
+      allDocs.forEach((doc, index) => {
+        const docIdNum = parseInt(doc._id.substring(2));
+        if (docIdNum === 5) {
+          assert.strictEqual(doc.count, 7);
+        } else if (docIdNum === 8) {
+          assert.strictEqual(doc.count, 9);
+        } else {
+          assert.strictEqual(doc.count, parseInt(doc._id.substring(2)) + 1);
+        }
+      });
+    });
+    it('should increment decimal when $inc is used', async () => {
+      let docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", city: "trichy", count: 0.0 }));
+      docList.forEach((doc, index) => {
+        doc._id += index;
+        doc.username = doc.username + index;        
+        doc.count = index === 5 ? 5.5 : (index === 8 ? 8.5 : index + 0.5);
+      });
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, docList.length);
+      assert.strictEqual(res.acknowledged, true);
+      assert.strictEqual(Object.keys(res.insertedIds).length, docList.length);
+      //update count of 5th doc by $inc using updateOne API
+      const updateOneResp = await collection.updateOne({ "_id": "id5" }, { "$inc": { "count": 1 } });
+      assert.strictEqual(updateOneResp.matchedCount, 1);
+      assert.strictEqual(updateOneResp.modifiedCount, 1);
+      assert.strictEqual(updateOneResp.acknowledged, true);
+      assert.strictEqual(updateOneResp.upsertedCount, undefined);
+      assert.strictEqual(updateOneResp.upsertedId, undefined);
+      const updatedDoc = await collection.findOne({ "_id": "id5" });
+      assert.strictEqual(updatedDoc!.count, 6.5);
+      //update count of 5th doc by $inc using updateMany API
+      const updateManyResp = await collection.updateMany({}, { "$inc": { "count": 1 } });
+      assert.strictEqual(updateManyResp.matchedCount, 20);
+      assert.strictEqual(updateManyResp.modifiedCount,  20);
+      assert.strictEqual(updateManyResp.acknowledged, true);
+      assert.strictEqual(updateManyResp.upsertedCount, undefined);
+      assert.strictEqual(updateManyResp.upsertedId, undefined);
+      const allDocs = await collection.find({}).toArray();
+      assert.strictEqual(allDocs.length, 20);
+      allDocs.forEach((doc, index) => {
+        const docIdNum = parseInt(doc._id.substring(2));
+        if (docIdNum === 5) {
+          assert.strictEqual(doc.count, 7.5);
+        } else if (docIdNum === 8) {
+          assert.strictEqual(doc.count, 9.5);
+        } else {
+          assert.strictEqual(doc.count, parseInt(doc._id.substring(2)) + 0.5 + 1);
+        }
+      });
+    });
   });
   describe('findOneAndUpdate tests', () => {
     it('should findOneAndUpdate', async () => {
