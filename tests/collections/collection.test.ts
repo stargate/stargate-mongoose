@@ -1763,10 +1763,10 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
           "returnDocument": "after"
         }
       );
-      assert.equal(findOneAndUpdateResp.ok, 1);
-      assert.equal(findOneAndUpdateResp.value!._id, docId);
-      assert.equal(findOneAndUpdateResp.value!.username, "aaronm");
-      assert.equal(findOneAndUpdateResp.value!.address.city, undefined);
+      assert.strictEqual(findOneAndUpdateResp.ok, 1);
+      assert.strictEqual(findOneAndUpdateResp.value!._id, docId);
+      assert.strictEqual(findOneAndUpdateResp.value!.username, "aaronm");
+      assert.strictEqual(findOneAndUpdateResp.value!.address.city, undefined);
     });
     it('should findOneAndUpdate with returnDocument before', async () => {
       const docToInsert = createSampleDocWithMultiLevel();
@@ -1787,10 +1787,10 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
           "returnDocument": "before"
         }
       );
-      assert.equal(findOneAndUpdateResp.ok, 1);
-      assert.equal(findOneAndUpdateResp.value!._id, docId);
-      assert.equal(findOneAndUpdateResp.value!.username, usernameBefore);
-      assert.equal(findOneAndUpdateResp.value!.address.city, cityBefore);
+      assert.strictEqual(findOneAndUpdateResp.ok, 1);
+      assert.strictEqual(findOneAndUpdateResp.value!._id, docId);
+      assert.strictEqual(findOneAndUpdateResp.value!.username, usernameBefore);
+      assert.strictEqual(findOneAndUpdateResp.value!.address.city, cityBefore);
     });
     it('should findOneAndUpdate with upsert true', async () => {
       const res = await collection.insertOne(createSampleDocWithMultiLevel());
@@ -1809,10 +1809,10 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
           "upsert": true
         }
       );
-      assert.equal(findOneAndUpdateResp.ok, 1);
-      assert.equal(findOneAndUpdateResp.value!._id, newDocId);
-      assert.equal(findOneAndUpdateResp.value!.username, "aaronm");
-      assert.equal(findOneAndUpdateResp.value!.address, undefined);
+      assert.strictEqual(findOneAndUpdateResp.ok, 1);
+      assert.strictEqual(findOneAndUpdateResp.value!._id, newDocId);
+      assert.strictEqual(findOneAndUpdateResp.value!.username, "aaronm");
+      assert.strictEqual(findOneAndUpdateResp.value!.address, undefined);
     });
     it('should findOneAndUpdate with upsert true and returnDocument before', async () => {
       const res = await collection.insertOne(createSampleDocWithMultiLevel());
@@ -1831,8 +1831,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
           "upsert": true
         }
       );
-      assert.equal(findOneAndUpdateResp.ok, 1);
-      assert.equal(findOneAndUpdateResp.value, undefined);
+      assert.strictEqual(findOneAndUpdateResp.ok, 1);
+      assert.strictEqual(findOneAndUpdateResp.value, null);
     });
   });
   describe('deleteOne tests', () => {
