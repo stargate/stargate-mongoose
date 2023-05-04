@@ -39,7 +39,8 @@ export class Db {
       authUrl: httpClient.authUrl,
       applicationToken: httpClient.applicationToken,
       authHeaderName: httpClient.authHeaderName,
-      isAstra: httpClient.isAstra
+      isAstra: httpClient.isAstra,
+      logSkippedOptions: httpClient.logSkippedOptions,
     });
     this.name = name;
   }

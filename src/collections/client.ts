@@ -81,7 +81,8 @@ export class Client {
       username: options?.username,
       password: options?.password,
       authUrl: options?.authUrl,
-      isAstra: options?.isAstra
+      isAstra: options?.isAstra,
+      logSkippedOptions: options?.logSkippedOptions
     });
     await client.connect();
     return client;

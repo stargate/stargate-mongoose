@@ -70,7 +70,8 @@ describe(`Driver based tests`, async () => {
         await jsonAPIMongoose.connect(dbUri, {
           username: process.env.STARGATE_USERNAME,
           password: process.env.STARGATE_PASSWORD,
-          authUrl: process.env.STARGATE_AUTH_URL
+          authUrl: process.env.STARGATE_AUTH_URL,
+          logSkippedOptions: true
         });
         await Promise.all(Object.values(jsonAPIMongoose.connection.models).map(Model => Model.init()));
       }

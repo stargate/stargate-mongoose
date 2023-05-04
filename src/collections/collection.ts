@@ -42,17 +42,17 @@ export interface FindOneAndDeleteOptions {
   sort?: Record<string, 1 | -1>;
 }
 
-export const FindOneAndReplaceOptionsList = {
-  upsert: false,
-  returnDocument: 'before',
-  sort: {}
-} as {
+export type FindOneAndReplaceOptions = {
   upsert?: boolean;
   returnDocument?: 'before' | 'after';
   sort?: Record<string, 1 | -1>;
 }
-export type FindOneAndReplaceOptions = typeof FindOneAndReplaceOptionsList;
-export const FindOneAndReplaceOptionKeys: Set<string> = new Set(Object.keys(FindOneAndReplaceOptionsList));
+
+export const FindOneAndReplaceOptionKeys: Set<string> = new Set(Object.keys({
+  upsert: false,
+  returnDocument: 'before',
+  sort: {}
+} as FindOneAndReplaceOptions));
 
 
 export interface FindOneAndUpdateOptions {
@@ -97,7 +97,8 @@ export class Collection {
       authUrl: httpClient.authUrl,
       applicationToken: httpClient.applicationToken,
       authHeaderName: httpClient.authHeaderName,
-      isAstra: httpClient.isAstra
+      isAstra: httpClient.isAstra,
+      logSkippedOptions: httpClient.logSkippedOptions
     });
     this.name = name;
     this.collectionName = name;
