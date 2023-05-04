@@ -42,11 +42,18 @@ export interface FindOneAndDeleteOptions {
   sort?: Record<string, 1 | -1>;
 }
 
-export interface FindOneAndReplaceOptions {
+export const FindOneAndReplaceOptionsList = {
+  upsert: false,
+  returnDocument: 'before',
+  sort: {}
+} as {
   upsert?: boolean;
   returnDocument?: 'before' | 'after';
   sort?: Record<string, 1 | -1>;
 }
+export type FindOneAndReplaceOptions = typeof FindOneAndReplaceOptionsList;
+export const FindOneAndReplaceOptionKeys: Set<string> = new Set(Object.keys(FindOneAndReplaceOptionsList));
+
 
 export interface FindOneAndUpdateOptions {
   upsert?: boolean;
@@ -278,7 +285,19 @@ export class Collection {
       };
       if (options?.sort) {
         command.findOneAndReplace.sort = options.sort;
-        delete options.sort;
+        if (options.sort != null) {
+          delete options.sort;
+        }
+      }
+      if (options) {
+        Object.keys(options!).forEach((key) => {
+          if (!FindOneAndReplaceOptionKeys.has(key)) {
+            if(this.httpClient.logSkippedOptions){
+              logger.warn(`findOneAndReplace does not support ${key} option`);
+            }
+            delete options[key as keyof FindOneAndReplaceOptions];
+          }
+        });
       }
       const resp = await this.httpClient.executeCommand(command);
       return {

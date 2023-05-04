@@ -44,6 +44,7 @@ interface APIClientOptions {
   password?: string;
   authUrl?: string;
   isAstra?: boolean;
+  logSkippedOptions?: boolean;
 }
 
 export interface APIResponse {
@@ -91,6 +92,7 @@ export class HTTPClient {
   password: string;
   authUrl: string;
   isAstra: boolean;
+  logSkippedOptions: boolean;
 
   constructor(options: APIClientOptions) {
     // do not support usage in browsers
@@ -123,6 +125,7 @@ export class HTTPClient {
     }
     this.authHeaderName = options.authHeaderName || DEFAULT_AUTH_HEADER;
     this.isAstra = options.isAstra || false;
+    this.logSkippedOptions = options.logSkippedOptions || false;
   }
 
   async _request(requestInfo: AxiosRequestConfig): Promise<APIResponse> {

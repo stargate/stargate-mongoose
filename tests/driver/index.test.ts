@@ -86,6 +86,11 @@ describe(`Driver based tests`, async () => {
         products: [product1._id, product2._id]
       });
       await cart.save();
+
+      const findOneAndReplaceResp = await Cart.findOneAndReplace({ cartName: 'wewson' }, { name: 'My Cart 2', cartName: 'wewson1' }, { returnDocument: 'after'}).exec();
+      assert.strictEqual(findOneAndReplaceResp!.name, 'My Cart 2');
+      assert.strictEqual(findOneAndReplaceResp!.cartName, 'wewson1');
+
       if (isAstra) {
         astraMongoose?.connection.dropCollection('carts');
         astraMongoose?.connection.dropCollection('products');
