@@ -274,9 +274,6 @@ function serializeCommand(data: Record<string, any>, pretty?: boolean): string {
 }
 
 function deserialize(data: Record<string, any>): Record<string, any> {
-  if (data != null && data != undefined) {
-    return EJSON.deserialize(data);
-  }
-  return data;
+  return data != null ? EJSON.deserialize(data) : data;
 }
 
