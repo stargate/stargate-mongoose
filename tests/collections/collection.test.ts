@@ -1259,6 +1259,174 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.strictEqual(updatedDoc1!.pincode, 620020);      
       assert.strictEqual(updatedDoc1!.country, "India");
     });
+    it('should set a field value to new value when the new vaue is < existing value with $min in updateOne and updateMany', async () => {
+      let docList = Array.from({ length: 20 }, () => ({ _id : "id", departmentName: "dept", minScore: 50, maxScore: 800 }));
+      docList.forEach((doc, index) => {
+        doc._id += index;
+        doc.departmentName = doc.departmentName + index;        
+        if(index == 4){
+          doc.minScore = 10;
+        }
+      });
+      //insert all docs
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, docList.length);
+      assert.strictEqual(res.acknowledged, true);
+      assert.strictEqual(Object.keys(res.insertedIds).length, docList.length);
+      //update the 4th doc using updateOne API with $min operator to set the minScore to 5
+      const updateOneResp = await collection.updateOne({ "_id": "id4" }, { "$min": { "minScore": 5 } });
+      assert.strictEqual(updateOneResp.matchedCount, 1);
+      assert.strictEqual(updateOneResp.modifiedCount, 1);
+      assert.strictEqual(updateOneResp.acknowledged, true);
+      assert.strictEqual(updateOneResp.upsertedCount, undefined);
+      assert.strictEqual(updateOneResp.upsertedId, undefined);
+      const updatedDoc = await collection.findOne({ "_id": "id4" });
+      //assert that the minScore field is set to 5 in the 4th doc because the $min operator sets the field value to new value when the new vaue is less than existing value
+      assert.strictEqual(updatedDoc!.minScore, 5);
+      //update the 4th doc using updateOne API with $min operator to set the minScore to 15
+      const updateOneResp1 = await collection.updateOne({ "_id": "id4" }, { "$min": { "minScore": 15 } });
+      assert.strictEqual(updateOneResp1.matchedCount, 1);
+      assert.strictEqual(updateOneResp1.modifiedCount, 0);
+      assert.strictEqual(updateOneResp1.acknowledged, true);
+      assert.strictEqual(updateOneResp1.upsertedCount, undefined);
+      assert.strictEqual(updateOneResp1.upsertedId, undefined);
+      const updatedDoc1 = await collection.findOne({ "_id": "id4" });
+      //assert that the minScore field is not set to 15 in the 5th doc because the $min operator does not set the field value to new value when the new vaue is greater than existing value
+      assert.strictEqual(updatedDoc1!.minScore, 5);    
+      //update all docs using updateMany API with $min operator to set the minScore to 15
+      const updateManyResp = await collection.updateMany({ }, { "$min": { "minScore": 15 } });
+      assert.strictEqual(updateManyResp.matchedCount, 20);
+      assert.strictEqual(updateManyResp.modifiedCount, 19);
+      assert.strictEqual(updateManyResp.acknowledged, true);
+      assert.strictEqual(updateManyResp.upsertedCount, undefined);
+      assert.strictEqual(updateManyResp.upsertedId, undefined);
+      const allDocs = await collection.find({ }).toArray();
+      //assert that the minScore field is set to 15 in all docs because the $min operator sets the field value to new value when the new vaue is less than existing value
+      allDocs.forEach(doc => {
+        if(doc._id === "id4"){
+          assert.strictEqual(doc.minScore, 5);
+        } else{
+          assert.strictEqual(doc.minScore, 15);
+        }
+      });
+      //update all docs using updateMany API with $min operator to set the minScore to 50
+      const updateManyResp1 = await collection.updateMany({ }, { "$min": { "minScore": 50 } });
+      assert.strictEqual(updateManyResp1.matchedCount, 20);
+      assert.strictEqual(updateManyResp1.modifiedCount, 0);
+      assert.strictEqual(updateManyResp1.acknowledged, true);
+      assert.strictEqual(updateManyResp1.upsertedCount, undefined);
+      assert.strictEqual(updateManyResp1.upsertedId, undefined);
+      const allDocs1 = await collection.find({ }).toArray();
+      //assert that the minScore field is not set to 50 in all docs because the $min operator does not set the field value to new value when the new vaue is greater than existing value
+      allDocs1.forEach(doc => {
+        if(doc._id === "id4"){
+          assert.strictEqual(doc.minScore, 5);
+        } else{
+          assert.strictEqual(doc.minScore, 15);
+        }
+      });
+    });
+    it('should set a field value to new value when the new vaue is > existing value with $max in updateOne and updateMany', async () => {
+      let docList = Array.from({ length: 20 }, () => ({ _id : "id", departmentName: "dept", minScore: 50, maxScore: 800 }));
+      docList.forEach((doc, index) => {
+        doc._id += index;
+        doc.departmentName = doc.departmentName + index;        
+        if(index == 4){
+          doc.maxScore = 900;
+        }
+      });
+      //insert all docs
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, docList.length);
+      assert.strictEqual(res.acknowledged, true);
+      assert.strictEqual(Object.keys(res.insertedIds).length, docList.length);
+      //update the 4th doc using updateOne API with $max operator to set the maxScore to 5
+      const updateOneResp = await collection.updateOne({ "_id": "id4" }, { "$max": { "maxScore": 950 } });
+      assert.strictEqual(updateOneResp.matchedCount, 1);
+      assert.strictEqual(updateOneResp.modifiedCount, 1);
+      assert.strictEqual(updateOneResp.acknowledged, true);
+      assert.strictEqual(updateOneResp.upsertedCount, undefined);
+      assert.strictEqual(updateOneResp.upsertedId, undefined);
+      const updatedDoc = await collection.findOne({ "_id": "id4" });
+      //assert that the maxScore field is set to 950 in the 4th doc because the $max operator sets the field value to new value when the new vaue is greater than existing value
+      assert.strictEqual(updatedDoc!.maxScore, 950);
+      //update the 4th doc using updateOne API with $max operator to set the maxScore to 15
+      const updateOneResp1 = await collection.updateOne({ "_id": "id4" }, { "$max": { "maxScore": 15 } });
+      assert.strictEqual(updateOneResp1.matchedCount, 1);
+      assert.strictEqual(updateOneResp1.modifiedCount, 0);
+      assert.strictEqual(updateOneResp1.acknowledged, true);
+      assert.strictEqual(updateOneResp1.upsertedCount, undefined);
+      assert.strictEqual(updateOneResp1.upsertedId, undefined);
+      const updatedDoc1 = await collection.findOne({ "_id": "id4" });
+      //assert that the maxScore field is not set to 15 in the 5th doc because the $max operator does not set the field value to new value when the new vaue is lesser than existing value
+      assert.strictEqual(updatedDoc1!.maxScore, 950);    
+      //update all docs using updateMany API with $max operator to set the maxScore to 15
+      const updateManyResp = await collection.updateMany({ }, { "$max": { "maxScore": 900 } });
+      assert.strictEqual(updateManyResp.matchedCount, 20);
+      assert.strictEqual(updateManyResp.modifiedCount, 19);
+      assert.strictEqual(updateManyResp.acknowledged, true);
+      assert.strictEqual(updateManyResp.upsertedCount, undefined);
+      assert.strictEqual(updateManyResp.upsertedId, undefined);
+      const allDocs = await collection.find({ }).toArray();
+      //assert that the maxScore field is set to 900 in all docs because the $max operator sets the field value to new value when the new vaue is greater than existing value
+      allDocs.forEach(doc => {
+        if(doc._id === "id4"){
+          assert.strictEqual(doc.maxScore, 950);
+        } else{
+          assert.strictEqual(doc.maxScore, 900);
+        }
+      });
+      //update all docs using updateMany API with $max operator to set the maxScore to 50
+      const updateManyResp1 = await collection.updateMany({ }, { "$max": { "maxScore": 50 } });
+      assert.strictEqual(updateManyResp1.matchedCount, 20);
+      assert.strictEqual(updateManyResp1.modifiedCount, 0);
+      assert.strictEqual(updateManyResp1.acknowledged, true);
+      assert.strictEqual(updateManyResp1.upsertedCount, undefined);
+      assert.strictEqual(updateManyResp1.upsertedId, undefined);
+      const allDocs1 = await collection.find({ }).toArray();
+      //assert that the maxScore field is not set to 50 in all docs because the $max operator does not set the field value to new value when the new vaue is less than existing value
+      allDocs1.forEach(doc => {
+        if(doc._id === "id4"){
+          assert.strictEqual(doc.maxScore, 950);
+        } else{
+          assert.strictEqual(doc.maxScore, 900);
+        }
+      });
+    });
+    it('should multiply a value by number provided for each field in the $mul in updateOne and updateMany', async () => {
+      let docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", price: 50, njStatePrice: 50 }));
+      docList.forEach((doc, index) => {
+        doc._id += index;
+        doc.productName = doc.productName + index;                
+      });
+      //insert all docs
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, docList.length);
+      assert.strictEqual(res.acknowledged, true);
+      assert.strictEqual(Object.keys(res.insertedIds).length, docList.length);
+      //update the 4th doc using updateOne API with $mul operator to multiply the njStatePrice by 1.07
+      const updateOneResp = await collection.updateOne({ "_id": "id4" }, { "$mul": { "njStatePrice": 1.07 } });
+      assert.strictEqual(updateOneResp.matchedCount, 1);
+      assert.strictEqual(updateOneResp.modifiedCount, 1);
+      assert.strictEqual(updateOneResp.acknowledged, true);
+      assert.strictEqual(updateOneResp.upsertedCount, undefined);
+      assert.strictEqual(updateOneResp.upsertedId, undefined);
+      const updatedDoc = await collection.findOne({ "_id": "id4" });
+      //assert that the njStatePrice field is multiplied by 1.07 in the 4th doc because the $mul operator multiplies the field value by new value
+      assert.strictEqual(updatedDoc!.njStatePrice, 53.5);
+      //update docs using updateMany API with $mul operator to multiply the njStatePrice by 1.07
+      const updateManyResp = await collection.updateMany({ "_id" : { "$in" : ["id0", "id1", "id2", "id3"] } }, { "$mul": { "njStatePrice": 1.07 } });
+      assert.strictEqual(updateManyResp.matchedCount, 4);
+      assert.strictEqual(updateManyResp.modifiedCount, 4);
+      assert.strictEqual(updateManyResp.acknowledged, true);
+      assert.strictEqual(updateManyResp.upsertedCount, undefined);
+      assert.strictEqual(updateManyResp.upsertedId, undefined);
+      const allDocs = await collection.find({ }).toArray();
+      //assert that the njStatePrice field is multiplied by 1.07 in all docs because the $mul operator multiplies the field value by new value
+      allDocs.forEach(doc => {
+        assert.strictEqual(doc.njStatePrice, 53.5);
+      }); 
+    });
   });
   describe('findOneAndUpdate tests', () => {
     it('should findOneAndUpdate', async () => {
