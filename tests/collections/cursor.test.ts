@@ -76,7 +76,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
       const cursor = new FindCursor(collection, {}, { limit: 3 });
       const res = await cursor.toArray();
       assert.strictEqual(res.length, 3);
-      assert.equal(cursor.page.length, 3);
+      assert.strictEqual(cursor.page.length, 3);
     });
     it('should execute a limited query with limit set less than default page size', async () => {
       let docList = Array.from({ length: 20 }, () => ({ "username": "id" }));
