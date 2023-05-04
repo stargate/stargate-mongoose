@@ -1191,6 +1191,74 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         assert.ok(doc.createdAt);
       });
     });
+    it('should set fields under $setOnInsert when upsert is true in updateOne', async () => {
+      let docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", city: "trichy" }));
+      docList.forEach((doc, index) => {
+        doc._id += index;
+        doc.username = doc.username + index;        
+      });
+      //insert all docs
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, docList.length);
+      assert.strictEqual(res.acknowledged, true);
+      assert.strictEqual(Object.keys(res.insertedIds).length, docList.length);
+      //update the 5th doc using updateOne API with upsert true and $setOnInsert field with a new field and value
+      const updateOneResp = await collection.updateOne({ "_id": "id5" }, { "$set": { "country": "India" }, "$setOnInsert": { "pincode": 620020 } }, { "upsert": true });
+      assert.strictEqual(updateOneResp.matchedCount, 1);
+      assert.strictEqual(updateOneResp.modifiedCount, 1);
+      assert.strictEqual(updateOneResp.acknowledged, true);
+      assert.strictEqual(updateOneResp.upsertedCount, undefined);
+      assert.strictEqual(updateOneResp.upsertedId, undefined);
+      const updatedDoc = await collection.findOne({ "_id": "id5" });
+      //assert that the pincode field is not set in the 5th doc because the fields under $setOnInsert are set only when the doc is inserted
+      assert.strictEqual(updatedDoc!.pincode, undefined);
+      assert.strictEqual(updatedDoc!.country, "India");
+      //update doc with invalid id using updateOne API with upsert true and $setOnInsert field with a new field and value
+      const updateOneResp1 = await collection.updateOne({ "_id": "id21" }, { "$set": { "country": "India" }, "$setOnInsert": { "pincode": 620020 } }, { "upsert": true });
+      assert.strictEqual(updateOneResp1.matchedCount, 0);
+      assert.strictEqual(updateOneResp1.modifiedCount, 0);
+      assert.strictEqual(updateOneResp1.acknowledged, true);
+      assert.strictEqual(updateOneResp1.upsertedCount, 1);
+      assert.strictEqual(updateOneResp1.upsertedId, "id21");
+      const updatedDoc1 = await collection.findOne({ "_id": "id21" });
+      //assert that the pincode field is set in the 21st doc because the fields under $setOnInsert are set only when the doc is inserted
+      assert.strictEqual(updatedDoc1!.pincode, 620020);
+      assert.strictEqual(updatedDoc1!.country, "India");
+    });
+    it('should set fields under $setOnInsert when upsert is true in updateMany', async () => {
+      let docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", city: "trichy" }));
+      docList.forEach((doc, index) => {
+        doc._id += index;
+        doc.username = doc.username + index;        
+      });
+      //insert all docs
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, docList.length);
+      assert.strictEqual(res.acknowledged, true);
+      assert.strictEqual(Object.keys(res.insertedIds).length, docList.length);
+      //update the 5th doc using updateMany API with upsert true and $setOnInsert field with a new field and value
+      const updateManyResp = await collection.updateMany({ "_id": "id5" }, { "$set": { "country": "India" }, "$setOnInsert": { "pincode": 620020 } }, { "upsert": true });
+      assert.strictEqual(updateManyResp.matchedCount, 1);
+      assert.strictEqual(updateManyResp.modifiedCount, 1);
+      assert.strictEqual(updateManyResp.acknowledged, true);
+      assert.strictEqual(updateManyResp.upsertedCount, undefined);
+      assert.strictEqual(updateManyResp.upsertedId, undefined);
+      const updatedDoc = await collection.findOne({ "_id": "id5" });
+      //assert that the pincode field is not set in the 5th doc because the fields under $setOnInsert are set only when the doc is inserted
+      assert.strictEqual(updatedDoc!.pincode, undefined);
+      assert.strictEqual(updatedDoc!.country, "India");
+      //update doc with invalid id using updateMany API with upsert true and $setOnInsert field with a new field and value
+      const updateManyResp1 = await collection.updateMany({ "_id": "id21" }, { "$set": { "country": "India" }, "$setOnInsert": { "pincode": 620020 } }, { "upsert": true });
+      assert.strictEqual(updateManyResp1.matchedCount, 0);
+      assert.strictEqual(updateManyResp1.modifiedCount, 0);
+      assert.strictEqual(updateManyResp1.acknowledged, true);
+      assert.strictEqual(updateManyResp1.upsertedCount, 1);
+      assert.strictEqual(updateManyResp1.upsertedId, "id21");
+      const updatedDoc1 = await collection.findOne({ "_id": "id21" });
+      //assert that the pincode field is set in the 21st doc because the fields under $setOnInsert are set only when the doc is inserted
+      assert.strictEqual(updatedDoc1!.pincode, 620020);      
+      assert.strictEqual(updatedDoc1!.country, "India");
+    });
   });
   describe('findOneAndUpdate tests', () => {
     it('should findOneAndUpdate', async () => {
