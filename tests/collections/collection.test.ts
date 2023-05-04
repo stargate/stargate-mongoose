@@ -1158,6 +1158,39 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         assert.strictEqual(doc.address.zip, undefined);
       });
     });
+    //TODO: enable this test once $currentDate is supported in update and updateMany APIs
+    it.skip('should set date to current date in the fields inside $currentDate in update and updateMany', async () => {
+      let docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username" }));
+      docList.forEach((doc, index) => {
+        doc._id += index;
+        doc.username = doc.username + index;        
+      });
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, docList.length);
+      assert.strictEqual(res.acknowledged, true);
+      assert.strictEqual(Object.keys(res.insertedIds).length, docList.length);
+      //update the doc by setting the date field to current date in the 5th doc using updateOne API
+      const updateOneResp = await collection.updateOne({ "_id": "id5" }, { "$currentDate": { "createdAt": true } });
+      assert.strictEqual(updateOneResp.matchedCount, 1);
+      assert.strictEqual(updateOneResp.modifiedCount, 1);
+      assert.strictEqual(updateOneResp.acknowledged, true);
+      assert.strictEqual(updateOneResp.upsertedCount, undefined);
+      assert.strictEqual(updateOneResp.upsertedId, undefined);
+      const updatedDoc = await collection.findOne({ "_id": "id5" });
+      assert.ok(updatedDoc!.createdAt);
+      //update the doc by setting the date field to current date in all docs using updateMany API
+      const updateManyResp = await collection.updateMany({}, { "$currentDate": { "createdAt": true } });
+      assert.strictEqual(updateManyResp.matchedCount, 20);
+      assert.strictEqual(updateManyResp.modifiedCount, 20);
+      assert.strictEqual(updateManyResp.acknowledged, true);
+      assert.strictEqual(updateManyResp.upsertedCount, undefined);
+      assert.strictEqual(updateManyResp.upsertedId, undefined);
+      const allDocs = await collection.find({}).toArray();
+      assert.strictEqual(allDocs.length, 20);
+      allDocs.forEach((doc, index) => {
+        assert.ok(doc.createdAt);
+      });
+    });
   });
   describe('findOneAndUpdate tests', () => {
     it('should findOneAndUpdate', async () => {
