@@ -1579,6 +1579,72 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         assert.strictEqual(doc.tags[2], "tag3");
       });
     });
+    it('should push an element to an array skipping duplicates when an item is added using $addToSet with $each', async () => {
+      let docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", tags: ["tag1", "tag2"] }));
+      docList.forEach((doc, index) => {
+        doc._id += index;
+        doc.productName = doc.productName + index; 
+      });
+      //insert all docs
+      const res = await collection.insertMany(docList);
+      assert.strictEqual(res.insertedCount, docList.length);
+      assert.strictEqual(res.acknowledged, true);
+      assert.strictEqual(Object.keys(res.insertedIds).length, docList.length);
+      //update the 4th doc using updateOne API with $addToSet operator to add the tag3 and tag4 to the tags array
+      const updateOneResp = await collection.updateOne({ "_id": "id4" }, { "$addToSet": { "tags": { "$each" : ["tag3", "tag4"] } } });
+      assert.strictEqual(updateOneResp.matchedCount, 1);
+      assert.strictEqual(updateOneResp.modifiedCount, 1);
+      assert.strictEqual(updateOneResp.acknowledged, true);
+      assert.strictEqual(updateOneResp.upsertedCount, undefined);
+      assert.strictEqual(updateOneResp.upsertedId, undefined);
+      const updatedDoc = await collection.findOne({ "_id": "id4" });
+      //assert that the tag3 and tag4 added to the tags array in the 4th doc because the $addToSet operator adds the item to the array
+      assert.strictEqual(updatedDoc!.tags.length, 4);
+      assert.strictEqual(updatedDoc!.tags[2], "tag3");
+      assert.strictEqual(updatedDoc!.tags[3], "tag4");
+      //update 4th doc using updateOne API with $addToSet operator to add the tag3 and tab4 to the tags array again and this should be a no-op
+      const updateOneResp2 = await collection.updateOne({ "_id": "id4" }, { "$addToSet": { "tags": { "$each" : ["tag3", "tag4"] } } });
+      assert.strictEqual(updateOneResp2.matchedCount, 1);
+      assert.strictEqual(updateOneResp2.modifiedCount, 0);
+      assert.strictEqual(updateOneResp2.acknowledged, true);
+      assert.strictEqual(updateOneResp2.upsertedCount, undefined);
+      assert.strictEqual(updateOneResp2.upsertedId, undefined);
+      const updatedDoc2 = await collection.findOne({ "_id": "id4" });
+      //assert that the tag3 and tag4 are not added to the tags array in the 4th doc because the $addToSet operator does not add the item to the array if it already exists
+      assert.strictEqual(updatedDoc!.tags.length, 4);
+      assert.strictEqual(updatedDoc!.tags[2], "tag3");
+      assert.strictEqual(updatedDoc!.tags[3], "tag4");
+      //update docs using updateMany API with $addToSet operator to add the tag3 and tag4 to the tags array
+      const updateManyResp = await collection.updateMany({}, { "$addToSet": { "tags": { "$each" : ["tag3", "tag4"] } } });
+      assert.strictEqual(updateManyResp.matchedCount, 5);
+      assert.strictEqual(updateManyResp.modifiedCount, 4);
+      assert.strictEqual(updateManyResp.acknowledged, true);
+      assert.strictEqual(updateManyResp.upsertedCount, undefined);
+      assert.strictEqual(updateManyResp.upsertedId, undefined);
+      const allDocs = await collection.find({ }).toArray();
+      assert.strictEqual(allDocs.length, 5);
+      //assert that the tag3 and tag4 are added to the tags array in all docs because the $addToSet operator adds the item to the array
+      allDocs.forEach(doc => {
+        assert.strictEqual(doc.tags.length, 4);
+        assert.strictEqual(doc.tags[2], "tag3");
+        assert.strictEqual(doc.tags[3], "tag4");
+      });
+      //update docs using updateMany API with $addToSet operator to add the tag3 and tag4 to the tags array again and this should be a no-op
+      const updateManyResp2 = await collection.updateMany({}, { "$addToSet": { "tags": { "$each" : ["tag3", "tag4"] } } });
+      assert.strictEqual(updateManyResp2.matchedCount, 5);
+      assert.strictEqual(updateManyResp2.modifiedCount, 0);
+      assert.strictEqual(updateManyResp2.acknowledged, true);
+      assert.strictEqual(updateManyResp2.upsertedCount, undefined);
+      assert.strictEqual(updateManyResp2.upsertedId, undefined);
+      const allDocs2 = await collection.find({ }).toArray();
+      assert.strictEqual(allDocs2.length, 5);
+      //assert that the tag3 & tag4 are not added to the tags array in all docs because the $addToSet operator does not add the item to the array if it already exists
+      allDocs2.forEach(doc => {
+        assert.strictEqual(doc.tags.length, 4);
+        assert.strictEqual(doc.tags[2], "tag3");
+        assert.strictEqual(doc.tags[3], "tag4");
+      });
+    });
     it('should remove last 1 item from array when $pop is passed with 1 in updateOne and updateMany', async () => {
       let docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", tags: ["tag1", "tag2", "tag3", "tag4", "tag5"] }));
       docList.forEach((doc, index) => {
