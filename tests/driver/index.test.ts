@@ -44,7 +44,9 @@ describe(`Driver based tests`, async () => {
 
       const productSchema = new mongoose.Schema({
         name: String,
-        price: Number
+        price: Number,
+        expiryDate: Date,
+        isCertified: Boolean
       });
       let Cart, Product;
       let astraMongoose, jsonAPIMongoose;
@@ -75,10 +77,10 @@ describe(`Driver based tests`, async () => {
         });
         await Promise.all(Object.values(jsonAPIMongoose.connection.models).map(Model => Model.init()));
       }
-      const product1 = new Product({ name: 'Product 1', price: 10 });
+      const product1 = new Product({ name: 'Product 1', price: 10, expiryDate: new Date('2024-04-20T00:00:00.000Z'), isCertified: true });
       await product1.save();
 
-      const product2 = new Product({ name: 'Product 2', price: 10 });
+      const product2 = new Product({ name: 'Product 2', price: 10, expiryDate: new Date('2024-11-20T00:00:00.000Z'), isCertified: false });
       await product2.save();
 
       const cart = new Cart({
@@ -87,6 +89,9 @@ describe(`Driver based tests`, async () => {
         products: [product1._id, product2._id]
       });
       await cart.save();
+      assert.strictEqual(await Cart.findOne({ cartName: 'wewson' }).select('name').exec().then((doc: any) => doc.name), cart.name);
+      //compare if product expiryDate is same as saved
+      assert.strictEqual(await Product.findOne({ name: 'Product 1' }).select('expiryDate').exec().then((doc: any) => doc.expiryDate.toISOString()), product1.expiryDate!.toISOString());
 
       const findOneAndReplaceResp = await Cart.findOneAndReplace({ cartName: 'wewson' }, { name: 'My Cart 2', cartName: 'wewson1' }, { returnDocument: 'after'}).exec();
       assert.strictEqual(findOneAndReplaceResp!.name, 'My Cart 2');
@@ -110,9 +115,13 @@ describe(`Driver based tests`, async () => {
       let options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };
       await mongooseInstance.connect(dbUri, options);
       if (isAstra) {
-        await mongooseInstance.connection.dropDatabase().catch(err => {
-          assert.strictEqual(err.message, 'Cannot drop database in Astra. Please use the Astra UI to drop the database.');
-        });
+        let error: any;
+        try {
+          await mongooseInstance.connection.dropDatabase();
+        } catch (e: any) {
+          error = e;
+        }
+        assert.strictEqual(error.message, 'Cannot drop database in Astra. Please use the Astra UI to drop the database.');
       } else {
         const resp = await mongooseInstance.connection.dropDatabase();
         assert.strictEqual(resp.status?.ok, 1);
@@ -134,9 +143,13 @@ describe(`Driver based tests`, async () => {
       newDbUri = token ? newDbUri + '?applicationToken=' + token : newDbUri;
       await mongooseInstance.connect(newDbUri, options);
       if (isAstra) {
-        mongooseInstance.connection.createCollection('new_collection').catch(err => {
-          assert.strictEqual(err.message, 'INVALID_ARGUMENT: Unknown keyspace ' + newKeyspaceName);
-        });
+        let error: any;
+        try {
+          await mongooseInstance.connection.createCollection('new_collection');
+        } catch (e: any) {
+          error = e;
+        }
+        assert.strictEqual(error.errors[0].message, 'INVALID_ARGUMENT: Unknown keyspace ' + newKeyspaceName);
       } else {
         const resp = await mongooseInstance.connection.createCollection('new_collection');
         assert.strictEqual(resp.status?.ok, 1);

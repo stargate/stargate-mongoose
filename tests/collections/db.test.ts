@@ -119,8 +119,8 @@ describe('StargateMongoose - collections.Db', async () => {
         await db.createCollection(`test_db_collection_${suffix}`);
         assert.ok(false);
       } catch (err) {
-        assert.equal(err.errors.length, 1);
-        assert.equal(
+        assert.strictEqual(err.errors.length, 1);
+        assert.strictEqual(
           err.errors[0].message,
           'INVALID_ARGUMENT: Keyspace \'' + keyspaceName + '\' doesn\'t exist'
         );
@@ -159,8 +159,8 @@ describe('StargateMongoose - collections.Db', async () => {
         await db.createCollection(`test_db_collection_${suffix}`);
         assert.ok(false);
       } catch (err) {
-        assert.equal(err.errors.length, 1);
-        assert.equal(
+        assert.strictEqual(err.errors.length, 1);
+        assert.strictEqual(
           err.errors[0].message,
           'INVALID_ARGUMENT: Keyspace \'' + keyspaceName + '\' doesn\'t exist'
         );
