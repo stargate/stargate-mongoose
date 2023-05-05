@@ -71,7 +71,7 @@ export class Db {
           options: options
         }
       };
-      return await this.httpClient.executeCommand(command);
+      return await this.httpClient.executeCommand(command, null);
     });
   }
 
@@ -86,7 +86,7 @@ export class Db {
         name: collectionName
       }
     };
-    return await this.httpClient.executeCommand(command);
+    return await this.httpClient.executeCommand(command, null);
   }
 
   /**

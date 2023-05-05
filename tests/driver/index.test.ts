@@ -27,7 +27,7 @@ describe(`Driver based tests`, async () => {
       return this.skip();
     }
     const astraClient = await testClient.client;
-    if (astraClient == null) {
+    if (astraClient === null) {
       logger.info('Skipping tests for client: %s', testClient);
       return this.skip();
     }
@@ -58,6 +58,7 @@ describe(`Driver based tests`, async () => {
         Cart = astraMongoose.model('Cart', cartSchema);
         Product = astraMongoose.model('Product', productSchema);
 
+        // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
         await astraMongoose.connect(dbUri, { isAstra: true });
         await Promise.all(Object.values(astraMongoose.connection.models).map(Model => Model.init()));
       } else {
@@ -69,6 +70,7 @@ describe(`Driver based tests`, async () => {
         Cart = jsonAPIMongoose.model('Cart', cartSchema);
         Product = jsonAPIMongoose.model('Product', productSchema);
 
+        // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
         await jsonAPIMongoose.connect(dbUri, {
           username: process.env.STARGATE_USERNAME,
           password: process.env.STARGATE_PASSWORD,
@@ -113,6 +115,7 @@ describe(`Driver based tests`, async () => {
       mongooseInstance.set('autoCreate', true);
       mongooseInstance.set('autoIndex', false);
       let options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };
+      // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
       await mongooseInstance.connect(dbUri, options);
       if (isAstra) {
         let error: any;
@@ -141,6 +144,7 @@ describe(`Driver based tests`, async () => {
       let newDbUri = dbUriSplit.join('/');
       //if token is not null, append it to the new dbUri
       newDbUri = token ? newDbUri + '?applicationToken=' + token : newDbUri;
+      // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
       await mongooseInstance.connect(newDbUri, options);
       if (isAstra) {
         let error: any;

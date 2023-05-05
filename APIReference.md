@@ -15,6 +15,22 @@
 ## Members
 
 <dl>
+<dt><a href="#deleteOneInternalOptionsKeys">deleteOneInternalOptionsKeys</a></dt>
+<dd><p>findOptions</p></dd>
+<dt><a href="#findInternalOptionsKeys">findInternalOptionsKeys</a></dt>
+<dd><p>findOneOptions</p></dd>
+<dt><a href="#findOneInternalOptionsKeys">findOneInternalOptionsKeys</a></dt>
+<dd><p>findOneAndDeleteOptions</p></dd>
+<dt><a href="#findOneAndDeleteInternalOptionsKeys">findOneAndDeleteInternalOptionsKeys</a></dt>
+<dd><p>findOneAndReplaceOptions</p></dd>
+<dt><a href="#findOneAndReplaceInternalOptionsKeys">findOneAndReplaceInternalOptionsKeys</a></dt>
+<dd><p>findOneAndUpdateOptions</p></dd>
+<dt><a href="#findOneAndUpdateInternalOptionsKeys">findOneAndUpdateInternalOptionsKeys</a></dt>
+<dd><p>insertManyOptions</p></dd>
+<dt><a href="#insertManyInternalOptionsKeys">insertManyInternalOptionsKeys</a></dt>
+<dd><p>updateManyOptions</p></dd>
+<dt><a href="#updateManyInternalOptionsKeys">updateManyInternalOptionsKeys</a></dt>
+<dd><p>updateOneOptions</p></dd>
 <dt><a href="#createAstraUri">createAstraUri</a> ⇒</dt>
 <dd><p>Create a stargate  connection URI</p></dd>
 <dt><a href="#createStargateUri">createStargateUri</a></dt>
@@ -22,6 +38,13 @@
 <dt><a href="#StargateAuthError">StargateAuthError</a> ⇒</dt>
 <dd><p>executeOperation handles running functions
 return a promise.</p></dd>
+</dl>
+
+## Constants
+
+<dl>
+<dt><a href="#deleteOneInternalOptionsKeys">deleteOneInternalOptionsKeys</a></dt>
+<dd><p>deleteOneOptions</p></dd>
 </dl>
 
 ## Functions
@@ -113,7 +136,6 @@ return a promise.</p></dd>
 
 * [Collection](#Collection)
     * [new Collection(httpClient, name)](#new_Collection_new)
-    * [.insertOne(mongooseDoc, options)](#Collection+insertOne) ⇒
     * ~~[.count()](#Collection+count)~~
     * [.createIndex(index, options)](#Collection+createIndex) ⇒
     * [.dropIndexes(index, options)](#Collection+dropIndexes) ⇒
@@ -126,17 +148,6 @@ return a promise.</p></dd>
 | --- |
 | httpClient | 
 | name | 
-
-<a name="Collection+insertOne"></a>
-
-### collection.insertOne(mongooseDoc, options) ⇒
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-**Returns**: <p>Promise</p>  
-
-| Param |
-| --- |
-| mongooseDoc | 
-| options | 
 
 <a name="Collection+count"></a>
 
@@ -296,6 +307,54 @@ return a promise.</p></dd>
 ### db.createDatabase() ⇒
 **Kind**: instance method of [<code>Db</code>](#Db)  
 **Returns**: <p>Promise</p>  
+<a name="deleteOneInternalOptionsKeys"></a>
+
+## deleteOneInternalOptionsKeys
+<p>findOptions</p>
+
+**Kind**: global variable  
+<a name="findInternalOptionsKeys"></a>
+
+## findInternalOptionsKeys
+<p>findOneOptions</p>
+
+**Kind**: global variable  
+<a name="findOneInternalOptionsKeys"></a>
+
+## findOneInternalOptionsKeys
+<p>findOneAndDeleteOptions</p>
+
+**Kind**: global variable  
+<a name="findOneAndDeleteInternalOptionsKeys"></a>
+
+## findOneAndDeleteInternalOptionsKeys
+<p>findOneAndReplaceOptions</p>
+
+**Kind**: global variable  
+<a name="findOneAndReplaceInternalOptionsKeys"></a>
+
+## findOneAndReplaceInternalOptionsKeys
+<p>findOneAndUpdateOptions</p>
+
+**Kind**: global variable  
+<a name="findOneAndUpdateInternalOptionsKeys"></a>
+
+## findOneAndUpdateInternalOptionsKeys
+<p>insertManyOptions</p>
+
+**Kind**: global variable  
+<a name="insertManyInternalOptionsKeys"></a>
+
+## insertManyInternalOptionsKeys
+<p>updateManyOptions</p>
+
+**Kind**: global variable  
+<a name="updateManyInternalOptionsKeys"></a>
+
+## updateManyInternalOptionsKeys
+<p>updateOneOptions</p>
+
+**Kind**: global variable  
 <a name="createAstraUri"></a>
 
 ## createAstraUri ⇒
@@ -337,6 +396,12 @@ return a promise.</p>
 | --- | --- |
 | operation | <p>a function that takes no parameters and returns a response</p> |
 
+<a name="deleteOneInternalOptionsKeys"></a>
+
+## deleteOneInternalOptionsKeys
+<p>deleteOneOptions</p>
+
+**Kind**: global constant  
 <a name="parseUri"></a>
 
 ## parseUri(uri) ⇒

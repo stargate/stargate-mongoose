@@ -19,7 +19,7 @@ import { Client } from '@/src/collections/client';
 import { testClient, testClientName, createSampleDoc, sampleUsersList, createSampleDocWithMultiLevel, createSampleDocWithMultiLevelWithId, getSampleDocs, sleep, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 
 describe(`StargateMongoose - ${testClientName} Connection - collections.collection`, async () => {
-  let astraClient: Client;
+  let astraClient: Client | null;
   let db: Db;
   let collection: Collection;
   const sampleDoc = createSampleDoc();
@@ -28,7 +28,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       return this.skip();
     }
     astraClient = await testClient?.client;
-    if (astraClient == null) {
+    if (astraClient === null) {
       return this.skip();
     }
 
@@ -53,6 +53,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
     it('should not initialize a Collection without a name', () => {
       let error: any;
       try {
+        // @ts-ignore: Testing invalid input
         const collection = new Collection(db.httpClient);
         assert.ok(collection);
       } catch (e) {
@@ -191,7 +192,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: must not be empty.");
     });
     it('should insertMany documents ordered', async () => {
-      let docList = Array.from({ length: 20 }, () => ({ "username": "id" }));
+      let docList:{ _id?: string, username:string }[]  = Array.from({ length: 20 }, () => ({ "username": "id" }));
       docList.forEach((doc, index) => {
         doc._id = "docml" + (index + 1);
         doc.username = doc.username + (index + 1);
@@ -204,7 +205,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       });
     });
     it('should error out when one of the docs in insertMany is invalid with ordered true', async () => {
-      let docList = Array.from({ length: 20 }, () => ({ "username": "id" }));
+      let docList:{ _id?: string, username:string }[] = Array.from({ length: 20 }, () => ({ "username": "id" }));
       docList.forEach((doc, index) => {
         doc._id = "docml" + (index + 1);
         doc.username = doc.username + (index + 1);
@@ -226,7 +227,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       });
     });
     it('should error out when one of the docs in insertMany is invalid with ordered false', async () => {
-      let docList = Array.from({ length: 20 }, () => ({ "username": "id" }));
+      let docList:{ _id?: string, username:string }[] = Array.from({ length: 20 }, () => ({ "username": "id" }));
       docList.forEach((doc, index) => {
         doc._id = "docml" + (index + 1);
         doc.username = doc.username + (index + 1);

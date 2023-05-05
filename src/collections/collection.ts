@@ -19,61 +19,32 @@ import {
   ObjectId,
   UpdateResult
 } from 'mongodb';
-import { FindCursor, FindOptions } from './cursor';
-import { HTTPClient } from '@/src/client';
-import { executeOperation } from './utils';
-import { inspect } from 'util';
-import mpath from 'mpath';
-import { InsertManyResult } from 'mongoose';
-import { logger } from '@/src/logger';
+import {FindCursor} from './cursor';
+import {HTTPClient} from '@/src/client';
+import {executeOperation} from './utils';
+import {InsertManyResult} from 'mongoose';
+import {
+  deleteOneInternalOptionsKeys,
+  DeleteOneOptions,
+  findOneAndDeleteInternalOptionsKeys,
+  FindOneAndDeleteOptions,
+  findOneAndReplaceInternalOptionsKeys,
+  FindOneAndReplaceOptions,
+  findOneAndUpdateInternalOptionsKeys,
+  FindOneAndUpdateOptions,
+  findOneInternalOptionsKeys,
+  FindOneOptions,
+  insertManyInternalOptionsKeys,
+  InsertManyOptions,
+  updateManyInternalOptionsKeys,
+  UpdateManyOptions,
+  updateOneInternalOptionsKeys,
+  UpdateOneOptions,
+  FindOptions,
+} from './options';
 
 // https://github.com/mongodb/node-mongodb-native/pull/3323
 type JSONAPIUpdateResult = Omit<UpdateResult, 'upsertedId' | 'upsertedCount'> & { upsertedId: ObjectId | null, upsertedCount: number | null };
-
-export interface DeleteOneOptions {
-  sort?: Record<string, 1 | -1>;
-}
-
-export interface FindOneOptions {
-  sort?: Record<string, 1 | -1>;
-}
-
-export interface FindOneAndDeleteOptions {
-  sort?: Record<string, 1 | -1>;
-}
-
-export interface FindOneAndReplaceOptions {
-  upsert?: boolean;
-  returnDocument?: 'before' | 'after';
-  sort?: Record<string, 1 | -1>;
-}
-
-export const FindOneAndReplaceOptionKeys: Set<string> = new Set(Object.keys({
-  upsert: false,
-  returnDocument: 'before',
-  sort: {}
-} as FindOneAndReplaceOptions));
-
-
-export interface FindOneAndUpdateOptions {
-  upsert?: boolean;
-  returnDocument?: 'before' | 'after';
-  sort?: Record<string, 1 | -1>;
-}
-
-export { FindOptions } from './cursor';
-
-export interface InsertManyOptions {
-  ordered?: boolean;
-}
-
-export interface UpdateOneOptions {
-  upsert?: boolean;
-}
-
-export interface UpdateManyOptions {
-  upsert?: boolean;
-}
 
 export class Collection {
   httpClient: any;
@@ -104,12 +75,6 @@ export class Collection {
     this.collectionName = name;
   }
 
-  /**
-   *
-   * @param mongooseDoc
-   * @param options
-   * @returns Promise
-   */
   async insertOne(document: Record<string, any>) {
     return executeOperation(async (): Promise<InsertOneResult> => {
       let command = {
@@ -117,7 +82,7 @@ export class Collection {
           document
         }
       };
-      const resp = await this.httpClient.executeCommand(command);
+      const resp = await this.httpClient.executeCommand(command, null);
       return {
         acknowledged: true,
         insertedId: resp.status.insertedIds[0]
@@ -133,7 +98,7 @@ export class Collection {
           options
         }
       };
-      const resp = await this.httpClient.executeCommand(command);
+      const resp = await this.httpClient.executeCommand(command, insertManyInternalOptionsKeys);
       return {
         acknowledged: true,
         insertedCount: resp.status.insertedIds?.length || 0,
@@ -151,7 +116,7 @@ export class Collection {
           options
         }
       };
-      const updateOneResp = await this.httpClient.executeCommand(command);
+      const updateOneResp = await this.httpClient.executeCommand(command, updateOneInternalOptionsKeys);
       let resp = {
         modifiedCount: updateOneResp.status.modifiedCount,
         matchedCount: updateOneResp.status.matchedCount,
@@ -174,7 +139,7 @@ export class Collection {
           options
         }
       };
-      const updateManyResp = await this.httpClient.executeCommand(command);
+      const updateManyResp = await this.httpClient.executeCommand(command, updateManyInternalOptionsKeys);
       if (updateManyResp.status.moreData) {
         throw new StargateMongooseError(`More than ${updateManyResp.status.modifiedCount} records found for update by the server`, command);
       }
@@ -211,7 +176,7 @@ export class Collection {
       if (options?.sort) {
         command.deleteOne.sort = options.sort;
       }
-      const deleteOneResp = await this.httpClient.executeCommand(command);
+      const deleteOneResp = await this.httpClient.executeCommand(command, deleteOneInternalOptionsKeys);
       return {
         acknowledged: true,
         deletedCount: deleteOneResp.status.deletedCount
@@ -226,7 +191,7 @@ export class Collection {
           filter
         }
       };
-      const deleteManyResp = await this.httpClient.executeCommand(command);
+      const deleteManyResp = await this.httpClient.executeCommand(command, null);
       if (deleteManyResp.status.moreData) {
         throw new StargateMongooseError(`More records found to be deleted even after deleting ${deleteManyResp.status.deletedCount} records`, command);
       }
@@ -238,8 +203,7 @@ export class Collection {
   }
 
   find(filter: Record<string, any>, options?: FindOptions): FindCursor {
-    const cursor = new FindCursor(this, filter, options);
-    return cursor;
+    return new FindCursor(this, filter, options);
   }
 
   async findOne(filter: Record<string, any>, options?: FindOneOptions): Promise<Record<string, any> | null> {
@@ -262,7 +226,7 @@ export class Collection {
         command.findOne.sort = options.sort;
       }
 
-      const resp = await this.httpClient.executeCommand(command);
+      const resp = await this.httpClient.executeCommand(command, findOneInternalOptionsKeys);
       return resp.data.document;
     });
   }
@@ -290,17 +254,7 @@ export class Collection {
           delete options.sort;
         }
       }
-      if (options) {
-        Object.keys(options!).forEach((key) => {
-          if (!FindOneAndReplaceOptionKeys.has(key)) {
-            if(this.httpClient.logSkippedOptions){
-              logger.warn(`findOneAndReplace does not support ${key} option`);
-            }
-            delete options[key as keyof FindOneAndReplaceOptions];
-          }
-        });
-      }
-      const resp = await this.httpClient.executeCommand(command);
+      const resp = await this.httpClient.executeCommand(command, findOneAndReplaceInternalOptionsKeys);
       return {
         value : resp.data?.document,
         ok : 1
@@ -319,7 +273,7 @@ export class Collection {
           filter
         }
       };
-      const resp = await this.httpClient.executeCommand(command);
+      const resp = await this.httpClient.executeCommand(command, null);
       return resp.status.count;
     });
   }
@@ -340,7 +294,7 @@ export class Collection {
       command.findOneAndDelete.sort = options.sort;
     }
 
-    const resp = await this.httpClient.executeCommand(command);
+    const resp = await this.httpClient.executeCommand(command, findOneAndDeleteInternalOptionsKeys);
     return {
       value : resp.data?.document,
       ok : 1
@@ -375,7 +329,7 @@ export class Collection {
         command.findOneAndUpdate.sort = options.sort;
         delete options.sort;
       }
-      const resp = await this.httpClient.executeCommand(command);
+      const resp = await this.httpClient.executeCommand(command, findOneAndUpdateInternalOptionsKeys);
       return {
         value : resp.data?.document,
         ok : 1
