@@ -3,7 +3,7 @@
 1. [Build & Run tests locally](#build--test)
 2. [Build API Reference Documentation](#build-api-reference-documentation)
 3. [Contributing](CONTRIBUTING.md)
-4. [Creating a release](#releasing)
+4. [Creating a release](#publishing-to-npm-registry)
 
 ## Build & Test
 
@@ -22,7 +22,7 @@ npm run build
 ```shell
 bin/start_json_api.sh
 ```
-- Copy the `.env.example` file and create a new `.env` file that should have all of the connection details as shown below.
+- Copy the `.env.example` file and create a new `.env` file that should have all the connection details as shown below.
 
 ```env
 JSON_API_URI=http://localhost:8181/v1/testks1
@@ -36,7 +36,7 @@ npm run test
 ```
 ## Update Stargate and JSON API versions
 
-Stargate and the JSON API versions are maintained in the file `api-compatibility.versions`. Update the versions accordingly, submit a PR and make sure that the Github Actions that verify the new versions run fine.
+Stargate and the JSON API versions are maintained in the file `api-compatibility.versions`. Update the versions accordingly, submit a PR and make sure that the GitHub Actions that verify the new versions run fine.
 
 
 ## Build API Reference Documentation

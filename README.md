@@ -113,10 +113,10 @@ docker compose down -v
 The current implementation of the JSON API uses DataStax Enterprise (DSE) as the backend database.
 
 ## Version compatibility
-| Component/Library Name |    Version |
-|------------------------|------------|
-|    Mongoose  | 7.x |
-|    DataStax Enterprise  | 6.8.x |
+| Component/Library Name | Version |
+|------------------------|---------|
+| Mongoose               | 7.x     |
+| DataStax Enterprise    | 6.8.x   |
 
 CI tests are run using the Stargate and JSON API versions specified in the [api-compatibility.versions](api-compatibility.versions) file.
 
@@ -131,90 +131,85 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 
 ## Features
 
-### Service Commands
-| <nobr>Operation Name</nobr> |  Description    |
-| ------------------- | --------------- |
-| Create Namespace    | When flag `createNamespaceOnConnect` is set to `true` the keyspace passed on to the `mongoose.connect` function is created automatically when the function is invoked.
+### Connection APIs
+| <nobr>Operation Name</nobr> | Description                                                                                                                                           |
+|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| createDatabase              | When flag `createNamespaceOnConnect` is set to `true` the keyspace passed on to the `mongoose.connect` function via the URL, is created automatically |
+| dropDatabase                | Drops the database                                                                                                                                    |
+| createCollection            | `mongoose.model('ModelName',modelSchema)` creates a collection as required                                                                            |
+| dropCollection              | `model.dropCollection()` drops the collection                                                                                                         |
 
-### Namespace Commands
-| <nobr>Operation Name</nobr> |  Description    |
-| ------------------- | --------------- |
-| createCollection   | `mongoose.model('ModelName',modelSchema)` creates a collection as required |
-| dropCollection     | `model.dropCollection()` drops the collection |
-| findCollections    | Not supported |
 
-### Collection Commands
-| <nobr>Operation Name</nobr> |  Description    |
-| ------------------- | --------------- |
-| countDocuments     | `Model.countDocuments(filter)` returns the count of documents
-| estimatedDocumentCount | Not supported |
-| deleteMany | `Model.deleteMany(filter)`. This API will throw an error when more than 20 records are found to be deleted. |
-| deleteOne | `Model.deleteOne(filter)` |
-| find | `Model.find(filter, projection)`. Projections are yet to be supported. |
-| findOne | `Model.findOne(filter, projection)` |
-| findOneAndDelete | `Model.findOneAndDelete(filter)` |
-| findOneAndReplace | `Model.findOneAndReplace(filter, replacement)` |
-| findOneAndUpdate | `Model.findOneAndUpdate(filter, update)` |
-| insertMany | `Model.insertMany([{docs}])` |
-| insertOne | `Model.insertOne({doc})` |
-| updateMany | `Model.updateMany(filter, update, options)`<br>__options__<br>` upsert:` (default `false`)<br>`true` - if a document is not found for the given filter, a new document will be inserted with the values in the filter (eq condition) and the values in the `$set` operator.<br>`false` - new document will not be inserted when no match is found for the given filter<br>** _This API will throw an error when more than 20 records are found to be updated._ |
-| updateOne | `Model.updateOne(filter, update, options)`<br>__options__<br>` upsert:` (default `false`)<br>`true` - if a document is not found for the given filter, a new document will be inserted with the values in the filter (eq condition) and the values in the `$set` operator.<br>`false` - new document will not be inserted when no match is found for the given filter |
+### Collection APIs
+| <nobr>Operation Name</nobr> | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| countDocuments              | `Model.countDocuments(filter)` returns the count of documents                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| deleteMany                  | `Model.deleteMany(filter)`. This API will throw an error when more than 20 records are found to be deleted.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| deleteOne                   | `Model.deleteOne(filter, options)` options - `sort`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| find                        | `Model.find(filter, projection, options)`  options - `limit`, `pageState`, `skip`, `sort` (skip works only with sorting)                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| findOne                     | `Model.findOne(filter, options)` options - `sort` Example: `findOne({}, { sort: { username: -1 } })`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| findOneAndDelete            | `Model.findOneAndDelete(filter, options)` options - `sort`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| findOneAndReplace           | `Model.findOneAndReplace(filter, replacement, options)`<br>__options__<br>` upsert:` (default `false`)<br>`true` - if a document is not found for the given filter, a new document will be inserted with the values in the filter (eq condition) and the values in the `$set` and `$setOnInsert`operators.<br>`false` - new document will not be inserted when no match is found for the given filter<br/>--------<br/>`returnDocument`: (default `before`)<br/>`before` - Return the document before the changes were applied<br/>`after` - Return the document after the changes are applied |
+| findOneAndUpdate            | `Model.findOneAndUpdate(filter, update, options)`<br>__options__<br>` upsert:` (default `false`)<br>`true` - if a document is not found for the given filter, a new document will be inserted with the values in the filter (eq condition) and the values in the `$set` and `$setOnInsert`operators.<br>`false` - new document will not be inserted when no match is found for the given filter<br/>--------<br/>`returnDocument`: (default `before`)<br/>`before` - Return the document before the changes were applied<br/>`after` - Return the document after the changes are applied       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| insertMany                  | `Model.insertMany([{docs}], options)` In a single call, only 20 records can be inserted. options - `ordered`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| insertOne                   | `Model.insertOne({doc})`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| updateMany                  | `Model.updateMany(filter, update, options)`<br/>__options__<br>` upsert:` (default `false`)<br>`true` - if a document is not found for the given filter, a new document will be inserted with the values in the filter (eq condition) and the values in the `$set` and `$setOnInsert`operators.<br>`false` - new document will not be inserted when no match is found for the given filter<br><br/>** _This API will throw an error when more than 20 records are found to be updated._                                                                                                        |
+| updateOne                   | `Model.updateOne(filter, update, options)`<br>__options__<br>` upsert:` (default `false`)<br>`true` - if a document is not found for the given filter, a new document will be inserted with the values in the filter (eq condition) and the values in the `$set` and `$setOnInsert`operators.<br>`false` - new document will not be inserted when no match is found for the given filter<br/>--------<br/>`returnDocument`: (default `before`)<br/>`before` - Return the document before the changes were applied<br/>`after` - Return the document after the changes are applied              |
 
 ### Filter Clause
-| Operator |  Description    |
-| ------------------- | --------------- |
-| literal comparison | Equal to. Example: `{ "first_name" : "jim" }` |
-| $eq | Example: `{ "first_name" : { "$eq" : "jim" } }` |
-| $gt | Example (age > 25): `{ "age" : { "$gt" : 25 } }` |
-| $gte | Example (age >= 25): `{ "age" : { "$gte" : 25 } }` |
-| $lt | Example (age < 25): `{ "age" : { "$lt" : 25 } }` |
-| $lte | Example (age <= 25): `{ "age" : { "$lte" : 25 } }` |
-| $ne | Not Equal to. Example: `{ "first_name" : { "$ne" : "jim" } }` |
-| $in | Example: `{ "address.city" : { "$in" : ["nyc", "la"] } }` |
-| $nin | Example: `{ "address.city" : { "$nin" : ["nyc", "la"] } }` |
-| $not | Example: `{ "first_name" : { "$not" : { "$eq" : "jim" }}}` |
-| $exists | Example: `{ "address.city" : { "$exists" : true} }` |
-| $all | Array operation. Matches if all the elements of an array matches the given values. Example: `{ "tags" : { "$all" : [ "home", "school" ] } }` |
-| $elemMatch | Array operation. Matches if the elements of an array in a document matches the given conditions. Example: `{"goals": { "$elemMatch": { "$gte": 2, "$lt": 10 }}}` |
-| $size | Array Operation. Example: `{ "tags" : { "$size" : 1 } }` |
-| $and | Logical expression. Example : ` { "$and" : [ {first_name : “jim”}, {"age" : {"$gt" : 25 } } ] } ` |
-| $or | Not supported |
+| Operator           | Description                                                                                                                                                    |
+|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| literal comparison | Equal to. Example: `{ 'first_name' : 'jim' }`                                                                                                                  |
+| $eq                | Example: `{ 'first_name' : { '$eq' : 'jim' } }`                                                                                                                |
+| $gt                | Not supported. Example (age > 25): `{ 'age' : { '$gt' : 25 } }`                                                                                                |
+| $gte               | Not supported. Example (age >= 25): `{ 'age' : { '$gte' : 25 } }`                                                                                              |
+| $lt                | Not supported. Example (age < 25): `{ 'age' : { '$lt' : 25 } }`                                                                                                |
+| $lte               | Not supported. Example (age <= 25): `{ 'age' : { '$lte' : 25 } }`                                                                                              |
+| $ne                | Not supported. Not Equal to. Example: `{ 'first_name' : { '$ne' : 'jim' } }`                                                                                   |
+| $in                | Example: `{ '_id' : { '$in' : ['nyc', 'la'] } }` $in is not supported in non _id columns at the moment                                                         |
+| $nin               | Not supported. Example: `{ 'address.city' : { '$nin' : ['nyc', 'la'] } }`                                                                                      |
+| $not               | Not supported. Example: `{ 'first_name' : { '$not' : { '$eq' : 'jim' }}}`                                                                                      |
+| $exists            | Example: `{ 'address.city' : { '$exists' : true} }`                                                                                                            |
+| $all               | Array operation. Matches if all the elements of an array matches the given values. Example: `{ 'tags' : { '$all' : [ 'home', 'school' ] } }`                   |
+| $elemMatch         | Not supported. Matches if the elements of an array in a document matches the given conditions. Example: `{'goals': { '$elemMatch': { '$gte': 2, '$lt': 10 }}}` |
+| $size              | Array Operation. Example: `{ 'tags' : { '$size' : 1 } }`                                                                                                       |
+| $and (implicit)    | Logical expression. Example : ` { '$and' : [ {first_name : 'jim'}, {'age' : {'$gt' : 25 } } ] } `                                                              |
+| $and (explicit)    | Not supported. Example : ` { '$and' : [ {first_name : 'jim'}, {'age' : {'$gt' : 25 } } ] } `                                                                   |
+| $or                | Not supported                                                                                                                                                  |
 
 ### Projection Clause
-| Operator |  Description    |
-| ------------------- | --------------- |
-| $elemMatch (projection) | Not supported |
-| $slice | Array related operation. Example: `{ "tags" : { "$slice": 1 }}` returns only the first element from the array field called tags.
-| $ (projection) | Not supported |
+| Operator                | Description                                                                                                                      |
+|-------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| $elemMatch (projection) | Not supported                                                                                                                    |
+| $slice                  | Array related operation. Example: `{ 'tags' : { '$slice': 1 }}` returns only the first element from the array field called tags. |
+| $ (projection)          | Example: Model.find({}, { username : 1, _id : 0}) - This returns username in the response and the _id field                      |
 
 ### Sort Clause
-| Operator  |  Description    |
-| ------------------- | --------------- |
-| Multi Field Sort | Not supported |
+| Operator          | Description   |
+|-------------------|---------------|
+| Single Field Sort | Supported     |
+| Multi Field Sort  | Not supported |
 
 ### Update Clause
-| Operator  |  Description    |
-| ------------------- | --------------- |
-| $inc | Example: `{ $inc: { "points" : 5 } }`
-| $min | Not supported |
-| $max | Not supported |
-| $rename | Not supported |
-| $set | Example: `"$set": {"location": "New York"}`
-| $setOnInsert | Not supported |
-| $unset | Example: `{"$unset" : {"password": ""}}`
-| $ (update) | Not supported |
-| $[] (update) | Not supported |
-| $[<identifier>] | Not supported |
-| $addToSet | Example: `{"$addToSet" : {"points": 10}}`. This will add 10 to an array called `points` in the documents, without duplicates (i.e. ll skip if 10 is already present in the array)
-| $pop | Example: `{"$pop" : {"points": 1 }}`. This removes the last 1 item from an array called `points`. -1 will remove the first 1 item.
-| $pull | Not supported |
-| $push | Example. `"$push": {"tags": "work"}`. This pushes an element called `work` to the array `tags`
-| $pullAll | Not supported |
+| Operator     | Description                                                                                                                                                                       |
+|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| $inc         | Example: `{ '$inc': { 'points' : 5 } }`                                                                                                                                           |
+| $min         | Example: `{ 'col': { '$min' : 5 } }` if the columns value is greater than 5, it will be updated with 5                                                                            |
+| $max         | Example: `{ 'col': { '$max' : 50 } }` if the columns value is lesser than 50, it will be updated with 50                                                                          |
+| $rename      | Example: `{ $rename: { '$max' : 50 } }` if the columns value is lesser than 50, it will be updated with 50                                                                        |
+| $set         | Example: `{'update' : {'$set': {'location': 'New York'} }}`                                                                                                                       |
+| $setOnInsert | Example: `{'update' : {'$set': {'location': 'New York'}, '$setOnInsert': {'country': 'USA'} }}`                                                                                   |
+| $unset       | Example: `{'update' : {'$unset': [address.location] }}`                                                                                                                           |
+| $addToSet    | Example: `{'$addToSet' : {'points': 10}}`. This will add 10 to an array called `points` in the documents, without duplicates (i.e. ll skip if 10 is already present in the array) |
+| $pop         | Example: `{'$pop' : {'points': 1 }}`. This removes the last 1 item from an array called `points`. -1 will remove the first 1 item.                                                |
+| $pull        | Not supported                                                                                                                                                                     |
+| $push        | Example. `'$push': {'tags': 'work'}`. This pushes an element called `work` to the array `tags`                                                                                    |
+| $pullAll     | Not supported                                                                                                                                                                     |
 
 
 ### Index Operations
 
-Index operations are not supported. There is one caveat for `ttl` indexes: When adding a document, you can add a `ttl` option (determined in seconds) that will behave in the similar way to a `ttl` index. For example, with the collections client:
+Index operations are not supported. There is one caveat for `ttl` indexes: When adding a document, you can add a `ttl` option (determined in seconds) that will behave in the similar way to a `ttl` index. For example, with the collection's client:
 
 ```javascript
 import { Client } from 'stargate-mongoose';
@@ -236,14 +231,14 @@ Transaction operations are not supported.
 
 ## NodeJS MongoDB Driver Overriding (experimental)
 
-If you have an application that uses the NodeJS MongoDB driver, or a dependency that uses the NodeJS MongoDB driver, it is possible to override it's use with the collections package of `stargate-mongoose`. This makes your application use JSON API documents instead of MongoDB documents. Doing so requires code changes in your application that address the features section of this README, and a change in how you set up your client connection.
+If you have an application that uses the NodeJS MongoDB driver, or a dependency that uses the NodeJS MongoDB driver, it is possible to override its use with the collections package of `stargate-mongoose`. This makes your application use JSON API documents instead of MongoDB documents. Doing so requires code changes in your application that address the features section of this README, and a change in how you set up your client connection.
 
-If your application uses `mongodb` you can override it's usage like so:
+If your application uses `mongodb` you can override its usage like so:
 
 In your app's `mongodb` `package.json` entry:
 
-```json
-"mongodb": "stargate-mongoose@0.2.0-ALPHA",
+```
+"mongodb": "stargate-mongoose@0.2.0-ALPHA-3",
 ```
 
 Then, re-install your dependencies
@@ -261,17 +256,17 @@ import { MongoClient } from 'stargate-mongoose';
 const client = await MongoClient.connect(process.env.JSON_API_URI);
 ```
 
-If you have an application dependency that uses `mongodb`, you can override it's usage like so (this example uses `mongoose`):
+If you have an application dependency that uses `mongodb`, you can override its usage like so (this example uses `mongoose`):
 
 Add an override to your app's `package.json` (requires NPM 8.3+), also, add `stargate-mongoose as a dependency:
 
-```json
+```
 "dependencies": {
-    "stargate-mongoose": "^0.2.0-ALPHA"
+    "stargate-mongoose": "^0.2.0-ALPHA-3"
 },
 "overrides": {
     "mongoose": {
-        "mongodb":  "stargate-mongoose@0.2.0-ALPHA"
+        "mongodb":  "stargate-mongoose@0.2.0-ALPHA-3"
     }
 },
 ```
@@ -282,7 +277,7 @@ Then, re-install your dependencies
 npm i
 ```
 
-Finally, modify your depdendencies connection so that your driver connects to JSON API
+Finally, modify your dependencies connection so that your driver connects to JSON API
 
 ```javascript
 import mongoose from 'mongoose';
