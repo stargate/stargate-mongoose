@@ -209,7 +209,7 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 
 ### Index Operations
 
-Index operations are not supported. There is one caveat for `ttl` indexes: When adding a document, you can add a `ttl` option (determined in seconds) that will behave in the similar way to a `ttl` index. For example, with the collections client:
+Index operations are not supported. There is one caveat for `ttl` indexes: When adding a document, you can add a `ttl` option (determined in seconds) that will behave in the similar way to a `ttl` index. For example, with the collection's client:
 
 ```javascript
 import { Client } from 'stargate-mongoose';
@@ -231,13 +231,13 @@ Transaction operations are not supported.
 
 ## NodeJS MongoDB Driver Overriding (experimental)
 
-If you have an application that uses the NodeJS MongoDB driver, or a dependency that uses the NodeJS MongoDB driver, it is possible to override it's use with the collections package of `stargate-mongoose`. This makes your application use JSON API documents instead of MongoDB documents. Doing so requires code changes in your application that address the features section of this README, and a change in how you set up your client connection.
+If you have an application that uses the NodeJS MongoDB driver, or a dependency that uses the NodeJS MongoDB driver, it is possible to override its use with the collections package of `stargate-mongoose`. This makes your application use JSON API documents instead of MongoDB documents. Doing so requires code changes in your application that address the features section of this README, and a change in how you set up your client connection.
 
-If your application uses `mongodb` you can override it's usage like so:
+If your application uses `mongodb` you can override its usage like so:
 
 In your app's `mongodb` `package.json` entry:
 
-```json
+```
 "mongodb": "stargate-mongoose@0.2.0-ALPHA-3",
 ```
 
@@ -256,11 +256,11 @@ import { MongoClient } from 'stargate-mongoose';
 const client = await MongoClient.connect(process.env.JSON_API_URI);
 ```
 
-If you have an application dependency that uses `mongodb`, you can override it's usage like so (this example uses `mongoose`):
+If you have an application dependency that uses `mongodb`, you can override its usage like so (this example uses `mongoose`):
 
 Add an override to your app's `package.json` (requires NPM 8.3+), also, add `stargate-mongoose as a dependency:
 
-```json
+```
 "dependencies": {
     "stargate-mongoose": "^0.2.0-ALPHA-3"
 },
@@ -277,7 +277,7 @@ Then, re-install your dependencies
 npm i
 ```
 
-Finally, modify your depdendencies connection so that your driver connects to JSON API
+Finally, modify your dependencies connection so that your driver connects to JSON API
 
 ```javascript
 import mongoose from 'mongoose';

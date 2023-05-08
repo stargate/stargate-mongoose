@@ -15,13 +15,7 @@
 ## Members
 
 <dl>
-<dt><a href="#deleteOneInternalOptionsKeys">deleteOneInternalOptionsKeys</a></dt>
-<dd><p>findOptions</p></dd>
 <dt><a href="#findInternalOptionsKeys">findInternalOptionsKeys</a></dt>
-<dd><p>findOneOptions</p></dd>
-<dt><a href="#findOneInternalOptionsKeys">findOneInternalOptionsKeys</a></dt>
-<dd><p>findOneAndDeleteOptions</p></dd>
-<dt><a href="#findOneAndDeleteInternalOptionsKeys">findOneAndDeleteInternalOptionsKeys</a></dt>
 <dd><p>findOneAndReplaceOptions</p></dd>
 <dt><a href="#findOneAndReplaceInternalOptionsKeys">findOneAndReplaceInternalOptionsKeys</a></dt>
 <dd><p>findOneAndUpdateOptions</p></dd>
@@ -43,8 +37,8 @@ return a promise.</p></dd>
 ## Constants
 
 <dl>
-<dt><a href="#deleteOneInternalOptionsKeys">deleteOneInternalOptionsKeys</a></dt>
-<dd><p>deleteOneOptions</p></dd>
+<dt><a href="#findInternalOptionsKeys">findInternalOptionsKeys</a></dt>
+<dd><p>findOptions</p></dd>
 </dl>
 
 ## Functions
@@ -307,27 +301,9 @@ return a promise.</p></dd>
 ### db.createDatabase() ⇒
 **Kind**: instance method of [<code>Db</code>](#Db)  
 **Returns**: <p>Promise</p>  
-<a name="deleteOneInternalOptionsKeys"></a>
-
-## deleteOneInternalOptionsKeys
-<p>findOptions</p>
-
-**Kind**: global variable  
 <a name="findInternalOptionsKeys"></a>
 
 ## findInternalOptionsKeys
-<p>findOneOptions</p>
-
-**Kind**: global variable  
-<a name="findOneInternalOptionsKeys"></a>
-
-## findOneInternalOptionsKeys
-<p>findOneAndDeleteOptions</p>
-
-**Kind**: global variable  
-<a name="findOneAndDeleteInternalOptionsKeys"></a>
-
-## findOneAndDeleteInternalOptionsKeys
 <p>findOneAndReplaceOptions</p>
 
 **Kind**: global variable  
@@ -396,10 +372,10 @@ return a promise.</p>
 | --- | --- |
 | operation | <p>a function that takes no parameters and returns a response</p> |
 
-<a name="deleteOneInternalOptionsKeys"></a>
+<a name="findInternalOptionsKeys"></a>
 
-## deleteOneInternalOptionsKeys
-<p>deleteOneOptions</p>
+## findInternalOptionsKeys
+<p>findOptions</p>
 
 **Kind**: global constant  
 <a name="parseUri"></a>
