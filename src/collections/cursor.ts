@@ -13,22 +13,8 @@
 // limitations under the License.
 
 import { Collection } from './collection';
-import { logger } from '@/src/logger';
 import { executeOperation } from './utils';
-
-export interface FindOptions {
-  limit?: number;
-  skip?: number;
-  sort?: Record<string, 1 | -1>;
-  projection?: Record<string, 1 | -1>;
-}
-
-//this is internal options, sent to the JSON API and not exposed to the user
-type QueryOptions = {
-  limit?: number;
-  skip?: number;
-  pagingState?: string;
-}
+import {findInternalOptionsKeys, FindOptions, FindOptionsInternal} from './options';
 
 export class FindCursor {
   collection: Collection;
@@ -92,9 +78,7 @@ export class FindCursor {
   async next(): Promise<any> {
     return executeOperation(async () => {
       if (this.pageIndex < this.page.length) {
-        const doc = this.page[this.pageIndex++];
-
-        return doc;
+        return this.page[this.pageIndex++];
       }
 
       if (this.exhausted) {
@@ -109,9 +93,7 @@ export class FindCursor {
 
       await this._getMore();
 
-      const doc = this.page[this.pageIndex++] || null;
-
-      return doc;
+      return this.page[this.pageIndex++] || null;
     });
   }
 
@@ -119,7 +101,7 @@ export class FindCursor {
     const command: {
       find: {
         filter?: Record<string, any>,
-        options?: Record<string, any>,
+        options?: FindOptionsInternal,
         sort?: Record<string, any>,
         projection?: Record<string, any>
       }
@@ -131,7 +113,7 @@ export class FindCursor {
     if (this.options && this.options.sort) {
       command.find.sort = this.options.sort;
     }
-    const options = {} as QueryOptions;
+    let options: FindOptionsInternal = {};
     if (this.limit != Infinity) {
       options.limit = this.limit;
     }
@@ -147,7 +129,7 @@ export class FindCursor {
     if (Object.keys(options).length > 0) {
       command.find.options = options;
     }
-    const resp = await this.collection.httpClient.executeCommand(command);
+    const resp = await this.collection.httpClient.executeCommand(command, findInternalOptionsKeys);
     this.nextPageState = resp.data.nextPageState;
     if (this.nextPageState == null) {
       this.exhausted = true;

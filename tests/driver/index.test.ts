@@ -27,7 +27,7 @@ describe(`Driver based tests`, async () => {
       return this.skip();
     }
     const astraClient = await testClient.client;
-    if (astraClient == null) {
+    if (astraClient === null) {
       logger.info('Skipping tests for client: %s', testClient);
       return this.skip();
     }
@@ -44,7 +44,9 @@ describe(`Driver based tests`, async () => {
 
       const productSchema = new mongoose.Schema({
         name: String,
-        price: Number
+        price: Number,
+        expiryDate: Date,
+        isCertified: Boolean
       });
       let Cart, Product;
       let astraMongoose, jsonAPIMongoose;
@@ -56,6 +58,7 @@ describe(`Driver based tests`, async () => {
         Cart = astraMongoose.model('Cart', cartSchema);
         Product = astraMongoose.model('Product', productSchema);
 
+        // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
         await astraMongoose.connect(dbUri, { isAstra: true });
         await Promise.all(Object.values(astraMongoose.connection.models).map(Model => Model.init()));
       } else {
@@ -67,17 +70,20 @@ describe(`Driver based tests`, async () => {
         Cart = jsonAPIMongoose.model('Cart', cartSchema);
         Product = jsonAPIMongoose.model('Product', productSchema);
 
-        await jsonAPIMongoose.connect(dbUri, {
+        const options = {
           username: process.env.STARGATE_USERNAME,
           password: process.env.STARGATE_PASSWORD,
-          authUrl: process.env.STARGATE_AUTH_URL
-        });
+          authUrl: process.env.STARGATE_AUTH_URL,
+          logSkippedOptions: true
+        };
+        // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+        await jsonAPIMongoose.connect(dbUri, options);
         await Promise.all(Object.values(jsonAPIMongoose.connection.models).map(Model => Model.init()));
       }
-      const product1 = new Product({ name: 'Product 1', price: 10 });
+      const product1 = new Product({ name: 'Product 1', price: 10, expiryDate: new Date('2024-04-20T00:00:00.000Z'), isCertified: true });
       await product1.save();
 
-      const product2 = new Product({ name: 'Product 2', price: 10 });
+      const product2 = new Product({ name: 'Product 2', price: 10, expiryDate: new Date('2024-11-20T00:00:00.000Z'), isCertified: false });
       await product2.save();
 
       const cart = new Cart({
@@ -86,6 +92,14 @@ describe(`Driver based tests`, async () => {
         products: [product1._id, product2._id]
       });
       await cart.save();
+      assert.strictEqual(await Cart.findOne({ cartName: 'wewson' }).select('name').exec().then((doc: any) => doc.name), cart.name);
+      //compare if product expiryDate is same as saved
+      assert.strictEqual(await Product.findOne({ name: 'Product 1' }).select('expiryDate').exec().then((doc: any) => doc.expiryDate.toISOString()), product1.expiryDate!.toISOString());
+
+      const findOneAndReplaceResp = await Cart.findOneAndReplace({ cartName: 'wewson' }, { name: 'My Cart 2', cartName: 'wewson1' }, { returnDocument: 'after'}).exec();
+      assert.strictEqual(findOneAndReplaceResp!.name, 'My Cart 2');
+      assert.strictEqual(findOneAndReplaceResp!.cartName, 'wewson1');
+
       if (isAstra) {
         astraMongoose?.connection.dropCollection('carts');
         astraMongoose?.connection.dropCollection('products');
@@ -102,11 +116,16 @@ describe(`Driver based tests`, async () => {
       mongooseInstance.set('autoCreate', true);
       mongooseInstance.set('autoIndex', false);
       let options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };
+      // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
       await mongooseInstance.connect(dbUri, options);
       if (isAstra) {
-        await mongooseInstance.connection.dropDatabase().catch(err => {
-          assert.strictEqual(err.message, 'Cannot drop database in Astra. Please use the Astra UI to drop the database.');
-        });
+        let error: any;
+        try {
+          await mongooseInstance.connection.dropDatabase();
+        } catch (e: any) {
+          error = e;
+        }
+        assert.strictEqual(error.message, 'Cannot drop database in Astra. Please use the Astra UI to drop the database.');
       } else {
         const resp = await mongooseInstance.connection.dropDatabase();
         assert.strictEqual(resp.status?.ok, 1);
@@ -126,11 +145,16 @@ describe(`Driver based tests`, async () => {
       let newDbUri = dbUriSplit.join('/');
       //if token is not null, append it to the new dbUri
       newDbUri = token ? newDbUri + '?applicationToken=' + token : newDbUri;
+      // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
       await mongooseInstance.connect(newDbUri, options);
       if (isAstra) {
-        mongooseInstance.connection.createCollection('new_collection').catch(err => {
-          assert.strictEqual(err.message, 'INVALID_ARGUMENT: Unknown keyspace ' + newKeyspaceName);
-        });
+        let error: any;
+        try {
+          await mongooseInstance.connection.createCollection('new_collection');
+        } catch (e: any) {
+          error = e;
+        }
+        assert.strictEqual(error.errors[0].message, 'INVALID_ARGUMENT: Unknown keyspace ' + newKeyspaceName);
       } else {
         const resp = await mongooseInstance.connection.createCollection('new_collection');
         assert.strictEqual(resp.status?.ok, 1);

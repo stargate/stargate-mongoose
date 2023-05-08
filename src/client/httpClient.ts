@@ -13,12 +13,12 @@
 // limitations under the License.
 
 import http from 'http';
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { logger, setLevel } from '@/src/logger';
 import { inspect } from 'util';
 import { LIB_NAME, LIB_VERSION } from '../version';
-import { getStargateAccessToken, StargateAuthError } from '../collections/utils';
-
+import { getStargateAccessToken } from '../collections/utils';
+import { EJSON } from 'bson';
 
 const REQUESTED_WITH = LIB_NAME + '/' + LIB_VERSION;
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
@@ -44,6 +44,7 @@ interface APIClientOptions {
   password?: string;
   authUrl?: string;
   isAstra?: boolean;
+  logSkippedOptions?: boolean;
 }
 
 export interface APIResponse {
@@ -68,15 +69,17 @@ const axiosAgent = axios.create({
 
 const requestInterceptor = (config: AxiosRequestConfig) => {
   const { method, url } = config;
-  logger.http(`--- ${method?.toUpperCase()} ${url}`);
-  logger.http(serializeCommand(config.data, true));
+  if (logger.isLevelEnabled('http')) {
+    logger.http(`--- request ${method?.toUpperCase()} ${url} ${serializeCommand(config.data, true)}`);
+  }
   config.data = serializeCommand(config.data);
   return config;
 };
 
 const responseInterceptor = (response: AxiosResponse) => {
-  const { config, status } = response;
-  logger.http(`${status} ${config.method?.toUpperCase()} ${config.url}`);
+  if (logger.isLevelEnabled('http')) {
+    logger.http(`--- response ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url} ${JSON.stringify(response.data, null, 2)}`);
+  }
   return response;
 };
 
@@ -91,6 +94,7 @@ export class HTTPClient {
   password: string;
   authUrl: string;
   isAstra: boolean;
+  logSkippedOptions: boolean;
 
   constructor(options: APIClientOptions) {
     // do not support usage in browsers
@@ -123,6 +127,7 @@ export class HTTPClient {
     }
     this.authHeaderName = options.authHeaderName || DEFAULT_AUTH_HEADER;
     this.isAstra = options.isAstra || false;
+    this.logSkippedOptions = options.logSkippedOptions || false;
   }
 
   async _request(requestInfo: AxiosRequestConfig): Promise<APIResponse> {
@@ -141,7 +146,6 @@ export class HTTPClient {
           }
         }
       }
-      logger.debug("_request with URL %s", requestInfo.url);
       if (!this.applicationToken) {
         return {
           errors: [
@@ -150,10 +154,6 @@ export class HTTPClient {
             }
           ]
         }
-      }
-      logger.debug('request url %s', requestInfo.url);
-      if(logger.isDebugEnabled()) {
-        logger.debug('request command %s', serializeCommand(requestInfo.data));
       }
       const response = await axiosAgent({
         url: requestInfo.url,
@@ -164,10 +164,7 @@ export class HTTPClient {
         headers: {
           [this.authHeaderName]: this.applicationToken
         }
-      });
-      if(logger.isDebugEnabled()) { 
-        logger.debug('response %s', response?.data ? JSON.stringify(response.data) : `status code : ${response.status}`);
-      }
+      });           
       if (response.status === 401 || (response.data?.errors?.length > 0 && response.data.errors[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
         logger.debug("@stargate-mongoose/rest: reconnecting");
         try {
@@ -186,7 +183,7 @@ export class HTTPClient {
       if (response.status === 200) {
         return {
           status: response.data.status,
-          data: response.data.data,
+          data: deserialize(response.data.data),
           errors: response.data.errors
         };
       } else {
@@ -216,7 +213,9 @@ export class HTTPClient {
     }
   }
 
-  async executeCommand(data: Record<string, any>) {
+  async executeCommand(data: Record<string, any>, optionsToRetain: Set<string> | null) {
+    const commandName = Object.keys(data)[0];
+    cleanupOptions(commandName, data[commandName], optionsToRetain, this.logSkippedOptions)
     const response = await this._request({
       url: this.baseUrl,
       method: HTTP_METHODS.post,
@@ -248,19 +247,36 @@ export const handleIfErrorResponse = (response: any, data: Record<string, any>) 
 }
 
 function serializeCommand(data: Record<string, any>, pretty?: boolean): string {
-  if (pretty) {
-    return JSON.stringify(data, function(key, value) {
-      if (typeof value === 'bigint') {
-        return Number(value);
-      }
-      return value;
-    }, '  ');
-  }
-  return JSON.stringify(data, function(key, value) {
-    if (typeof value === 'bigint') {
-      return Number(value);
-    }
-    return value;
-  });
+  return EJSON.stringify(data, (key, value) => handleValues(key, value), pretty ? '  ' : '');
 }
 
+function deserialize(data: Record<string, any>): Record<string, any> {
+  return data != null ? EJSON.deserialize(data) : data;
+}
+
+function handleValues(key: any, value: any): any {
+  if (value != null && typeof value === 'bigint') {
+    return Number(value);
+  } else if (value != null && typeof value === 'object') {
+    // ObjectId to strings
+    if (value.$oid) return value.$oid;
+    else if (value.$date) {
+      // Use numbers instead of strings for dates
+      value.$date = new Date(value.$date).valueOf();
+    }
+  }
+  return value;
+}
+
+function cleanupOptions(commandName: string, command: Record<string, any>, optionsToRetain: Set<string> | null, logSkippedOptions: boolean) {
+  if (command.options) {
+    Object.keys(command.options!).forEach((key) => {
+      if (optionsToRetain === null || !optionsToRetain.has(key)) {
+        if (logSkippedOptions) {
+          logger.warn(`'${commandName}' does not support option '${key}'`);
+        }
+        delete command.options[key];
+      }
+    });
+  }
+}

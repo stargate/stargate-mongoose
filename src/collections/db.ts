@@ -39,7 +39,8 @@ export class Db {
       authUrl: httpClient.authUrl,
       applicationToken: httpClient.applicationToken,
       authHeaderName: httpClient.authHeaderName,
-      isAstra: httpClient.isAstra
+      isAstra: httpClient.isAstra,
+      logSkippedOptions: httpClient.logSkippedOptions,
     });
     this.name = name;
   }
@@ -70,7 +71,7 @@ export class Db {
           options: options
         }
       };
-      return await this.httpClient.executeCommand(command);
+      return await this.httpClient.executeCommand(command, null);
     });
   }
 
@@ -85,7 +86,7 @@ export class Db {
         name: collectionName
       }
     };
-    return await this.httpClient.executeCommand(command);
+    return await this.httpClient.executeCommand(command, null);
   }
 
   /**
