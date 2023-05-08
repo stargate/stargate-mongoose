@@ -70,13 +70,14 @@ describe(`Driver based tests`, async () => {
         Cart = jsonAPIMongoose.model('Cart', cartSchema);
         Product = jsonAPIMongoose.model('Product', productSchema);
 
-        // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
-        await jsonAPIMongoose.connect(dbUri, {
+        const options = {
           username: process.env.STARGATE_USERNAME,
           password: process.env.STARGATE_PASSWORD,
           authUrl: process.env.STARGATE_AUTH_URL,
           logSkippedOptions: true
-        });
+        };
+        // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+        await jsonAPIMongoose.connect(dbUri, options);
         await Promise.all(Object.values(jsonAPIMongoose.connection.models).map(Model => Model.init()));
       }
       const product1 = new Product({ name: 'Product 1', price: 10, expiryDate: new Date('2024-04-20T00:00:00.000Z'), isCertified: true });

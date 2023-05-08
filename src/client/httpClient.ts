@@ -273,7 +273,7 @@ function cleanupOptions(commandName: string, command: Record<string, any>, optio
     Object.keys(command.options!).forEach((key) => {
       if (optionsToRetain === null || !optionsToRetain.has(key)) {
         if (logSkippedOptions) {
-          logger.warn(`${commandName} does not support ${key} option`);
+          logger.warn(`'${commandName}' does not support option '${key}'`);
         }
         delete command.options[key];
       }

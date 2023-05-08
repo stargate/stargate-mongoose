@@ -24,15 +24,12 @@ import {HTTPClient} from '@/src/client';
 import {executeOperation} from './utils';
 import {InsertManyResult} from 'mongoose';
 import {
-  deleteOneInternalOptionsKeys,
   DeleteOneOptions,
-  findOneAndDeleteInternalOptionsKeys,
   FindOneAndDeleteOptions,
   findOneAndReplaceInternalOptionsKeys,
   FindOneAndReplaceOptions,
   findOneAndUpdateInternalOptionsKeys,
   FindOneAndUpdateOptions,
-  findOneInternalOptionsKeys,
   FindOneOptions,
   insertManyInternalOptionsKeys,
   InsertManyOptions,
@@ -176,7 +173,7 @@ export class Collection {
       if (options?.sort) {
         command.deleteOne.sort = options.sort;
       }
-      const deleteOneResp = await this.httpClient.executeCommand(command, deleteOneInternalOptionsKeys);
+      const deleteOneResp = await this.httpClient.executeCommand(command, null);
       return {
         acknowledged: true,
         deletedCount: deleteOneResp.status.deletedCount
@@ -226,7 +223,7 @@ export class Collection {
         command.findOne.sort = options.sort;
       }
 
-      const resp = await this.httpClient.executeCommand(command, findOneInternalOptionsKeys);
+      const resp = await this.httpClient.executeCommand(command, null);
       return resp.data.document;
     });
   }
@@ -294,7 +291,7 @@ export class Collection {
       command.findOneAndDelete.sort = options.sort;
     }
 
-    const resp = await this.httpClient.executeCommand(command, findOneAndDeleteInternalOptionsKeys);
+    const resp = await this.httpClient.executeCommand(command, null);
     return {
       value : resp.data?.document,
       ok : 1
