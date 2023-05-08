@@ -17,10 +17,10 @@ import { Db } from '@/src/collections/db';
 import { FindCursor } from '@/src/collections/cursor';
 import { Collection } from '@/src/collections/collection';
 import { Client } from '@/src/collections/client';
-import { testClient, Employee, sampleUsersList, TEST_COLLECTION_NAME } from '@/tests/fixtures';
+import { testClient, sampleUsersList, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 
 describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, async () => {
-  let astraClient: Client;
+  let astraClient: Client | null;
   let db: Db;
   let collection: Collection;
   const sampleUsers = sampleUsersList;
@@ -29,7 +29,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
       return this.skip();
     }
     astraClient = await testClient.client;
-    if (astraClient == null) {
+    if (astraClient === null) {
       return this.skip();
     }
     db = astraClient.db();
@@ -142,12 +142,12 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
       await collection.insertMany(sampleUsers);
       const cursor = new FindCursor(collection, {});
       assert.strictEqual(cursor.status, 'initialized');
-      const cursorRes = await cursor.toArray();
+      await cursor.toArray();
       assert.strictEqual(cursor.status, 'executed');
       const count = await cursor.count();
       assert.strictEqual(count, sampleUsers.length);
       //run again
-      const cursorRes2 = await cursor.toArray();
+      await cursor.toArray();
       assert.strictEqual(cursor.status, 'executed');
       const count2 = await cursor.count();
       assert.strictEqual(count2, sampleUsers.length);

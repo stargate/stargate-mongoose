@@ -23,7 +23,7 @@ import {
   InsertManyOptions,
   UpdateManyOptions,
   UpdateOneOptions
-} from '@/src/collections/collection';
+} from '@/src/collections/options';
 
 export class Collection extends MongooseCollection {
   debugType = 'StargateMongooseCollection';
@@ -76,7 +76,7 @@ export class Collection extends MongooseCollection {
   }
 
   deleteOne(filter: Record<string, any>, options?: DeleteOneOptions) {
-    return this.collection.deleteOne(filter);
+    return this.collection.deleteOne(filter, options);
   }
 
   updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {

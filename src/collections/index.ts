@@ -24,8 +24,9 @@ export {
   FindOptions,
   InsertManyOptions,
   UpdateManyOptions,
-  UpdateOneOptions
-} from './collection';
+  UpdateOneOptions,
+  DeleteOneOptions
+} from './options';
 
 // alias for MongoClient shimming
 export { Client as MongoClient } from './client';

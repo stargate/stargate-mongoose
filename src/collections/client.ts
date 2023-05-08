@@ -27,6 +27,7 @@ export interface ClientOptions {
   password?: string;
   authUrl?: string;
   isAstra?: boolean;
+  logSkippedOptions?: boolean;
 }
 
 interface ClientCallback {
@@ -59,7 +60,8 @@ export class Client {
       username: options.username,
       password: options.password,
       authUrl: options.authUrl,
-      isAstra: options.isAstra
+      isAstra: options.isAstra,
+      logSkippedOptions: options.logSkippedOptions
     });
   }
 
@@ -79,7 +81,8 @@ export class Client {
       username: options?.username,
       password: options?.password,
       authUrl: options?.authUrl,
-      isAstra: options?.isAstra
+      isAstra: options?.isAstra,
+      logSkippedOptions: options?.logSkippedOptions
     });
     await client.connect();
     return client;
