@@ -333,26 +333,6 @@ export class Collection {
       };
     });
   }
-
-  /**
-   *
-   * @param index
-   * @param options
-   * @returns any
-   */
-  async createIndex(index: any, options: any) {
-    throw new Error('Not Implemented');
-  }
-
-  /**
-   *
-   * @param index
-   * @param options
-   * @returns any
-   */
-  async dropIndexes(index: any, options: any) {
-    throw new Error('Not Implemented');
-  }
 }
 
 export class StargateMongooseError extends Error {

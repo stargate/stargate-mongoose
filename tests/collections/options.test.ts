@@ -243,13 +243,11 @@ describe(`Options tests`, async () => {
                 const findOneAndReplaceResp = await Product.findOneAndReplace({ name: 'Product 25' },
                     { price: 20, isCertified: false, name: 'Product 25' },
                     { rawResult: false, upsert: true, returnDocument: 'after' });
-                console.log(findOneAndReplaceResp);
                 assert.strictEqual(findOneAndReplaceResp.isCertified,false);
                 assert.strictEqual(findOneAndReplaceResp.price,20);
                 assert.ok(findOneAndReplaceResp._id);
                 //find product 25
                 const product25 = await Product.findOne({ name: 'Product 25' });
-                console.log('product25',product25);
                 assert.strictEqual(product25?.isCertified,false);
                 assert.strictEqual(product25?.price,20);
                 assert.strictEqual(product25?.name,'Product 25');
@@ -308,7 +306,6 @@ describe(`Options tests`, async () => {
                 const findOneAndUpdateResp = await Product.findOneAndUpdate({ name: 'Product 25' },
                     { price: 20, isCertified: false, name: 'Product 25' },
                     { rawResult: false, upsert: true, returnDocument: 'after' });
-                console.log(findOneAndUpdateResp);
                 assert.strictEqual(findOneAndUpdateResp.isCertified,false);
                 assert.strictEqual(findOneAndUpdateResp.price,20);
                 assert.strictEqual(findOneAndUpdateResp.name,'Product 25');

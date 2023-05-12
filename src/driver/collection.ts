@@ -39,6 +39,13 @@ export class Collection extends MongooseCollection {
     return this.conn.db.collection(this.name);
   }
 
+  /**
+  * @deprecated
+  */
+  count(filter: Record<string, any>) {
+    return this.collection.count(filter);
+  }
+
   countDocuments(filter: Record<string, any>) {
     return this.collection.countDocuments(filter);
   }
@@ -87,17 +94,39 @@ export class Collection extends MongooseCollection {
     return this.collection.updateMany(filter, update, options);
   }
 
-  dropIndexes() {
-    return this.collection.dropIndexes();
-  }
-
-  createIndex(index: any, options?: any) {
-    return this.collection.createIndex(index, options);
-  }
-
   // No-ops
   bulkWrite(ops: any[], options?: any) {
     throw new Error('bulkWrite() Not Implemented');
   }
 
+  aggregate(pipeline: any[], options?: any) {
+    throw new OperationNotSupportedError('aggregate() Not Implemented');
+  }
+
+  bulkSave(docs: any[], options?: any) {
+    throw new OperationNotSupportedError('bulkSave() Not Implemented');
+  }
+
+  cleanIndexes(options?: any) {
+    throw new OperationNotSupportedError('cleanIndexes() Not Implemented');
+  }
+
+  listIndexes(options?: any) {
+    throw new OperationNotSupportedError('listIndexes() Not Implemented');
+  }
+
+  createIndex(fieldOrSpec: any, options?: any) {
+    throw new OperationNotSupportedError('createIndex() Not Implemented');
+  }
+
+  dropIndexes() {
+    throw new OperationNotSupportedError('dropIndexes() Not Implemented');
+  }
+}
+
+export class OperationNotSupportedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'OperationNotSupportedError';
+  }
 }
