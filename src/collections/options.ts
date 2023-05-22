@@ -98,7 +98,7 @@ class _InsertManyOptions {
 export interface InsertManyOptions extends _InsertManyOptions {}
 
 export const insertManyInternalOptionsKeys: Set<string> = new Set(
-  Object.keys(_InsertManyOptions)
+  Object.keys(new _InsertManyOptions)
 );
 
 /**
@@ -112,7 +112,7 @@ class _UpdateManyOptions {
 export interface UpdateManyOptions extends _UpdateManyOptions {}
 
 export const updateManyInternalOptionsKeys: Set<string> = new Set(
-  Object.keys(_UpdateManyOptions)
+  Object.keys(new _UpdateManyOptions)
 );
 
 /**
