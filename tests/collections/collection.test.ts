@@ -881,6 +881,21 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.strictEqual(updatedDoc!.address.city, "nyc");
       assert.strictEqual(updatedDoc!.address.state, "ny");
     });
+    it('should make _id an ObjectId when upserting with no _id', async () => {
+      await collection.deleteMany({});
+      const updateOneResp = await collection.updateOne(
+        {},
+        {
+          "$set": {
+            "username": "aaronm"
+          }
+        },
+        {
+          "upsert": true
+        }
+      );
+      assert.ok(updateOneResp.upsertedId.match(/^[a-f\d]{24}$/i), updateOneResp.upsertedId);
+    });
   });
   describe('updateMany tests', () => {
     it('should updateMany documents with ids', async () => {
@@ -1746,6 +1761,21 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         }
       });
     });
+    it('should make _id an ObjectId when upserting with no _id', async () => {
+      await collection.deleteMany({});
+      const { upsertedId } = await collection.updateMany(
+        {},
+        {
+          "$set": {
+            "username": "aaronm"
+          }
+        },
+        {
+          "upsert": true
+        }
+      );
+      assert.ok(upsertedId.match(/^[a-f\d]{24}$/i), upsertedId);
+    });
   });
   describe('findOneAndUpdate tests', () => {
     it('should findOneAndUpdate', async () => {
@@ -1834,6 +1864,22 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       );
       assert.strictEqual(findOneAndUpdateResp.ok, 1);
       assert.strictEqual(findOneAndUpdateResp.value, null);
+    });
+    it('should make _id an ObjectId when upserting with no _id', async () => {
+      await collection.deleteMany({});
+      const { value } = await collection.findOneAndUpdate(
+        {},
+        {
+          "$set": {
+            "username": "aaronm"
+          }
+        },
+        {
+          "returnDocument": "after",
+          "upsert": true
+        }
+      );
+      assert.ok(value!._id!.match(/^[a-f\d]{24}$/i), value!._id);
     });
   });
   describe('deleteOne tests', () => {
@@ -1975,6 +2021,21 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
 
       const docs = await collection.find({}, { sort: { username: 1 } }).toArray();
       assert.deepStrictEqual(docs.map(doc => doc.answer), [undefined, 42, undefined]);
+    });
+    it.skip('findOneAndReplace should make _id an ObjectId when upserting with no _id', async () => {
+      // Skip for now pending stargate/jsonapi#435
+      await collection.deleteMany({});
+      const { value } = await collection.findOneAndReplace(
+        {},
+        {
+          "username": "aaronm"
+        },
+        {
+          "returnDocument": "after",
+          "upsert": true
+        }
+      );
+      assert.ok(value!._id!.match(/^[a-f\d]{24}$/i), value!._id);
     });
     it('should findOneAndUpdate without any updates to apply', async () => {
       await collection.deleteMany({});
