@@ -29,13 +29,17 @@ export interface FindOptions {
     projection?: Record<string, 1 | -1>;
 }
 
-export interface FindOptionsInternal {
-    limit?: number;
-    skip?: number;
-    pagingState?: string;
+class _FindOptionsInternal {
+    limit?: number = undefined;
+    skip?: number = undefined;
+    pagingState?: string = undefined;
 }
 
-export const findInternalOptionsKeys: Set<keyof FindOptionsInternal> = new Set(['limit' as const, 'skip' as const, 'pagingState' as const]);
+export interface FindOptionsInternal extends _FindOptionsInternal {}
+
+export const findInternalOptionsKeys: Set<string> = new Set(
+  Object.keys(new _FindOptionsInternal)
+);
 
 /**
  * findOneOptions
@@ -54,50 +58,75 @@ export interface FindOneAndDeleteOptions {
 /**
  * findOneAndReplaceOptions
  */
-export interface FindOneAndReplaceOptions {
-    upsert?: boolean;
-    returnDocument?: 'before' | 'after';
+
+class _FindOneAndReplaceOptions {
+    upsert?: boolean = undefined;
+    returnDocument?: 'before' | 'after' = undefined;
     sort?: Record<string, 1 | -1>;
 }
 
-export const findOneAndReplaceInternalOptionsKeys: Set<keyof Omit<FindOneAndReplaceOptions, 'sort'>> = new Set(['upsert' as const, 'returnDocument' as const]);
+export interface FindOneAndReplaceOptions extends _FindOneAndReplaceOptions {}
+
+export const findOneAndReplaceInternalOptionsKeys: Set<string> = new Set(
+  Object.keys(new _FindOneAndReplaceOptions)
+);
 
 /**
  * findOneAndUpdateOptions
  */
-export interface FindOneAndUpdateOptions {
-    upsert?: boolean;
-    returnDocument?: 'before' | 'after';
+
+class _FindOneAndUpdateOptions {
+    upsert?: boolean = undefined;
+    returnDocument?: 'before' | 'after' = undefined;
     sort?: Record<string, 1 | -1>;
 }
 
-export const findOneAndUpdateInternalOptionsKeys: Set<keyof Omit<FindOneAndUpdateOptions, 'sort'>> = new Set(['upsert' as const, 'returnDocument' as const]);
+export interface FindOneAndUpdateOptions extends _FindOneAndUpdateOptions {}
+
+export const findOneAndUpdateInternalOptionsKeys: Set<string> = new Set(
+  Object.keys(new _FindOneAndUpdateOptions)
+);
 
 /**
  * insertManyOptions
  */
-export interface InsertManyOptions {
-    ordered?: boolean;
+
+class _InsertManyOptions {
+    ordered?: boolean = undefined;
 }
 
-export const insertManyInternalOptionsKeys: Set<keyof InsertManyOptions> = new Set(['ordered' as const]);
+export interface InsertManyOptions extends _InsertManyOptions {}
+
+export const insertManyInternalOptionsKeys: Set<string> = new Set(
+  Object.keys(new _InsertManyOptions)
+);
 
 /**
  * updateManyOptions
  */
-export interface UpdateManyOptions {
-    upsert?: boolean;
+
+class _UpdateManyOptions {
+    upsert?: boolean = undefined;
 }
 
-export const updateManyInternalOptionsKeys: Set<keyof UpdateManyOptions> = new Set(['upsert' as const]);
+export interface UpdateManyOptions extends _UpdateManyOptions {}
+
+export const updateManyInternalOptionsKeys: Set<string> = new Set(
+  Object.keys(new _UpdateManyOptions)
+);
 
 /**
  * updateOneOptions
  */
-export interface UpdateOneOptions {
-    upsert?: boolean;
+
+class _UpdateOneOptions {
+    upsert?: boolean = undefined;
     sort?: Record<string, 1 | -1>;
 }
 
-export const updateOneInternalOptionsKeys: Set<keyof Omit<UpdateOneOptions, 'sort'>> = new Set(['upsert' as const]);
+export interface UpdateOneOptions extends _UpdateOneOptions {}
+
+export const updateOneInternalOptionsKeys: Set<string> = new Set(
+  Object.keys(new _UpdateOneOptions)
+);
 
