@@ -97,7 +97,7 @@ node index.js
 
 - Stop the JSON API once the test is complete
 ```shell
-docker compose down -v 
+docker compose -f bin/docker-compose.yml down -v
 ```
 
 ## Architecture
