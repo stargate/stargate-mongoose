@@ -10,13 +10,17 @@
 <dd></dd>
 <dt><a href="#Db">Db</a></dt>
 <dd></dd>
+<dt><a href="#_FindOptionsInternal">_FindOptionsInternal</a></dt>
+<dd><p>findOptions</p></dd>
+<dt><a href="#_FindOneAndReplaceOptions">_FindOneAndReplaceOptions</a></dt>
+<dd><p>findOneAndReplaceOptions</p></dd>
 </dl>
 
 ## Members
 
 <dl>
 <dt><a href="#findInternalOptionsKeys">findInternalOptionsKeys</a></dt>
-<dd><p>findOneAndReplaceOptions</p></dd>
+<dd><p>findOneAndDeleteOptions</p></dd>
 <dt><a href="#findOneAndReplaceInternalOptionsKeys">findOneAndReplaceInternalOptionsKeys</a></dt>
 <dd><p>findOneAndUpdateOptions</p></dd>
 <dt><a href="#findOneAndUpdateInternalOptionsKeys">findOneAndUpdateInternalOptionsKeys</a></dt>
@@ -32,13 +36,6 @@
 <dt><a href="#StargateAuthError">StargateAuthError</a> ⇒</dt>
 <dd><p>executeOperation handles running functions
 return a promise.</p></dd>
-</dl>
-
-## Constants
-
-<dl>
-<dt><a href="#findInternalOptionsKeys">findInternalOptionsKeys</a></dt>
-<dd><p>findOptions</p></dd>
 </dl>
 
 ## Functions
@@ -301,10 +298,22 @@ return a promise.</p></dd>
 ### db.createDatabase() ⇒
 **Kind**: instance method of [<code>Db</code>](#Db)  
 **Returns**: <p>Promise</p>  
+<a name="_FindOptionsInternal"></a>
+
+## \_FindOptionsInternal
+<p>findOptions</p>
+
+**Kind**: global class  
+<a name="_FindOneAndReplaceOptions"></a>
+
+## \_FindOneAndReplaceOptions
+<p>findOneAndReplaceOptions</p>
+
+**Kind**: global class  
 <a name="findInternalOptionsKeys"></a>
 
 ## findInternalOptionsKeys
-<p>findOneAndReplaceOptions</p>
+<p>findOneAndDeleteOptions</p>
 
 **Kind**: global variable  
 <a name="findOneAndReplaceInternalOptionsKeys"></a>
@@ -372,12 +381,6 @@ return a promise.</p>
 | --- | --- |
 | operation | <p>a function that takes no parameters and returns a response</p> |
 
-<a name="findInternalOptionsKeys"></a>
-
-## findInternalOptionsKeys
-<p>findOptions</p>
-
-**Kind**: global constant  
 <a name="parseUri"></a>
 
 ## parseUri(uri) ⇒
