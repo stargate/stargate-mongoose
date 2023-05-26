@@ -87,15 +87,15 @@ export class Collection extends MongooseCollection {
     return this.collection.updateMany(filter, update, options);
   }
 
+  // No-ops
   dropIndexes() {
-    return this.collection.dropIndexes();
+    throw new Error('dropIndexes() Not Implemented');
   }
 
   createIndex(index: any, options?: any) {
-    return this.collection.createIndex(index, options);
+    throw new Error('createIndex() Not Implemented');
   }
 
-  // No-ops
   bulkWrite(ops: any[], options?: any) {
     throw new Error('bulkWrite() Not Implemented');
   }
