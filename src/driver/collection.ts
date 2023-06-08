@@ -43,8 +43,12 @@ export class Collection extends MongooseCollection {
     return this.collection.countDocuments(filter);
   }
 
-  find(filter: Record<string, any>, options?: FindOptions) {
-    return this.collection.find(filter, options);
+  find(filter: Record<string, any>, options?: FindOptions, callback?: Function) {
+    const cursor = this.collection.find(filter, options);
+    if (callback != null) {
+      return callback(null, cursor);
+    }
+    return cursor;
   }
 
   findOne(filter: Record<string, any>, options?: FindOneOptions) {
