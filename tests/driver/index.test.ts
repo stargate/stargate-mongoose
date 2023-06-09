@@ -80,6 +80,7 @@ describe(`Driver based tests`, async () => {
         await jsonAPIMongoose.connect(dbUri, options);
         await Promise.all(Object.values(jsonAPIMongoose.connection.models).map(Model => Model.init()));
       }
+      await Promise.all([Product.deleteMany({}), Cart.deleteMany({})]);
       const product1 = new Product({ name: 'Product 1', price: 10, expiryDate: new Date('2024-04-20T00:00:00.000Z'), isCertified: true });
       await product1.save();
 
@@ -99,6 +100,11 @@ describe(`Driver based tests`, async () => {
       const findOneAndReplaceResp = await Cart.findOneAndReplace({ cartName: 'wewson' }, { name: 'My Cart 2', cartName: 'wewson1' }, { returnDocument: 'after'}).exec();
       assert.strictEqual(findOneAndReplaceResp!.name, 'My Cart 2');
       assert.strictEqual(findOneAndReplaceResp!.cartName, 'wewson1');
+
+      let productNames: string[] = [];
+      const cursor = await Product.find().cursor();
+      await cursor.eachAsync(p => productNames.push(p.name));
+      assert.deepEqual(productNames.sort(), ['Product 1', 'Product 2']);
 
       if (isAstra) {
         astraMongoose?.connection.dropCollection('carts');
