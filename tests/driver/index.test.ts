@@ -136,7 +136,7 @@ describe(`Driver based tests`, async () => {
       assert.deepEqual(names.sort(), ['Bill', 'John']);
     });
 
-    it('handles document deleteOne and updateOne', async () => {
+    it('handles document deleteOne() and updateOne()', async () => {
       const mongooseInstance = await createMongooseInstance();
 
       const personSchema = new mongooseInstance.Schema({
@@ -156,7 +156,7 @@ describe(`Driver based tests`, async () => {
       assert.deepEqual(names.map(doc => doc.name).sort(), ['Bill']);
     });
 
-    it('handles updating existing document with save', async () => {
+    it('handles updating existing document with save()', async () => {
       const mongooseInstance = await createMongooseInstance();
 
       const personSchema = new mongooseInstance.Schema({
@@ -173,7 +173,7 @@ describe(`Driver based tests`, async () => {
       assert.deepEqual(names.map(doc => doc.name).sort(), ['Joe']);
     });
 
-    it('handles populate', async () => {
+    it('handles populate()', async () => {
       const mongooseInstance = await createMongooseInstance();
 
       const cartSchema = new mongooseInstance.Schema({
@@ -198,7 +198,54 @@ describe(`Driver based tests`, async () => {
       assert.deepEqual(cart.products.map(p => p.name), ['iPhone 12']);
     });
 
-    it('handles exists', async () => {
+    it('handles nested populate()', async () => {
+      const mongooseInstance = await createMongooseInstance();
+
+      const parentSchema = new mongooseInstance.Schema({
+        name: String,
+        children: [{ type: 'ObjectId', ref: 'Child' }]
+      });
+      const childSchema = new mongooseInstance.Schema({
+        name: String,
+        children: [{ type: 'ObjectId', ref: 'Grandchild' }]
+      });
+      const grandchildSchema = new mongooseInstance.Schema({
+        name: String
+      });
+      const Parent = mongooseInstance.model('Parent', parentSchema);
+      const Child = mongooseInstance.model('Child', childSchema);
+      const Grandchild = mongooseInstance.model('Grandchild', grandchildSchema);
+      await Promise.all([Parent.init(), Child.init(), Grandchild.init()]);
+      await Promise.all([Parent.deleteMany({}), Child.deleteMany({}), Grandchild.deleteMany({})]);
+      const [{ _id: grandchildId }] = await Grandchild.create([
+        { name: 'Ben Skywalker' },
+        { name: 'Jacen Solo' }
+      ]);
+      const [{ _id: childId }] = await Child.create([
+        { name: 'Luke Skywalker', children: [grandchildId] },
+        { name: 'Han Solo' }
+      ]);
+      const { _id: parentId } = await Parent.create({
+        name: 'Anakin Skywalker',
+        children: [childId]
+      });
+
+      type PopulateTypeOverride = {
+        children: { name?: string, children: (typeof Grandchild)[] }[]
+      };
+      const parent = await Parent
+        .findById(parentId)
+        .populate<PopulateTypeOverride>({
+          path: 'children',
+          populate: { path: 'children' }
+        });
+      assert.equal(parent!.children.length, 1);
+      assert.equal(parent!.children[0]!.name, 'Luke Skywalker');
+      assert.equal(parent!.children[0]!.children.length, 1);
+      assert.equal(parent!.children[0]!.children[0].name, 'Ben Skywalker');
+    });
+
+    it('handles exists()', async () => {
       const mongooseInstance = await createMongooseInstance();
 
       const personSchema = new mongooseInstance.Schema({
@@ -211,6 +258,66 @@ describe(`Driver based tests`, async () => {
 
       assert.ok(await Person.exists({ name: 'John' }));
       assert.ok(!(await Person.exists({ name: 'James' })));
+    });
+
+    it('handles insertMany()', async () => {
+      const mongooseInstance = await createMongooseInstance();
+
+      const personSchema = new mongooseInstance.Schema({
+        name: String
+      });
+      const Person = mongooseInstance.model('Person', personSchema);
+      await Person.init();
+      await Person.deleteMany({});
+      await Person.insertMany([{ name: 'John' }, { name: 'Bill' }]);
+
+      const docs = await Person.find();
+      assert.deepEqual(docs.map(doc => doc.name).sort(), ['Bill', 'John']);
+    });
+
+    it('throws readable error on bulkWrite()', async () => {
+      const mongooseInstance = await createMongooseInstance();
+
+      const personSchema = new mongooseInstance.Schema({
+        name: String
+      });
+      const Person = mongooseInstance.model('Person', personSchema);
+      await Person.init();
+      await Person.deleteMany({});
+      await assert.rejects(
+        Person.bulkWrite([{ insertOne: { document: { name: 'John' } } }]),
+        /bulkWrite\(\) Not Implemented/
+      );
+    });
+
+    it('throws readable error on aggregate()', async () => {
+      const mongooseInstance = await createMongooseInstance();
+
+      const personSchema = new mongooseInstance.Schema({
+        name: String
+      });
+      const Person = mongooseInstance.model('Person', personSchema);
+      await Person.init();
+      await Person.deleteMany({});
+      await assert.rejects(
+        Person.aggregate([{ $match: { name: 'John' } }]),
+        /aggregate\(\) Not Implemented/
+      );
+    });
+
+    it('throws readable error on change stream', async () => {
+      const mongooseInstance = await createMongooseInstance();
+
+      const personSchema = new mongooseInstance.Schema({
+        name: String
+      });
+      const Person = mongooseInstance.model('Person', personSchema);
+      await Person.init();
+      await Person.deleteMany({});
+      await assert.throws(
+        () => Person.watch([{ $match: { name: 'John' } }]),
+        /watch\(\) Not Implemented/
+      );
     });
 
     async function createMongooseInstance() {

@@ -101,6 +101,10 @@ export class Collection extends MongooseCollection {
   }
 
   // No-ops
+  aggregate() {
+    throw new Error('aggregate() Not Implemented');
+  }
+
   dropIndexes() {
     throw new Error('dropIndexes() Not Implemented');
   }
@@ -113,4 +117,7 @@ export class Collection extends MongooseCollection {
     throw new Error('bulkWrite() Not Implemented');
   }
 
+  watch() {
+    throw new Error('watch() Not Implemented');
+  }
 }
