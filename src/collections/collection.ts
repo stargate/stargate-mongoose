@@ -38,6 +38,7 @@ import {
   updateOneInternalOptionsKeys,
   UpdateOneOptions,
   FindOptions,
+  SortOption,
 } from './options';
 
 // https://github.com/mongodb/node-mongodb-native/pull/3323
@@ -161,8 +162,8 @@ export class Collection {
     return executeOperation(async (): Promise<DeleteResult> => {
       type DeleteOneCommand = {
         deleteOne: {
-          filter?: Object,
-          sort?: Record<string, 1 | -1>
+          filter?: Record<string, any>,
+          sort?: SortOption
         }
       };
       const command: DeleteOneCommand = {
@@ -208,8 +209,8 @@ export class Collection {
       type FindOneCommand = {
         findOne: {
           filter?: Record<string, any>,
-          options?: Record<string, any>,
-          sort?: Record<string, any>
+          options?: FindOneOptions,
+          sort?: SortOption
         }
       };
       const command: FindOneCommand = {
@@ -232,10 +233,10 @@ export class Collection {
     return executeOperation(async (): Promise<ModifyResult> => {
       type FindOneAndReplaceCommand = {
         findOneAndReplace: {
-          filter?: Object,
-          replacement?: Object,
-          options?: Object,
-          sort?: Object
+          filter?: Record<string, any>,
+          replacement?: Record<string, any>,
+          options?: FindOneAndReplaceOptions,
+          sort?: SortOption
         }
       };
       const command: FindOneAndReplaceCommand = {
@@ -278,8 +279,8 @@ export class Collection {
   async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions): Promise<ModifyResult> {
     type FindOneAndDeleteCommand = {
       findOneAndDelete: {
-        filter?: Object,
-        sort?: Object
+        filter?: Record<string, any>,
+        sort?: SortOption
       }
     };
     const command: FindOneAndDeleteCommand = {
@@ -309,10 +310,10 @@ export class Collection {
     return executeOperation(async (): Promise<ModifyResult> => {
       type FindOneAndUpdateCommand = {
         findOneAndUpdate: {
-          filter?: Object,
-          update?: Object,
-          options?: Object,
-          sort?: Object
+          filter?: Record<string, any>,
+          update?: Record<string, any>,
+          options?: FindOneAndUpdateOptions,
+          sort?: SortOption
         }
       };
       const command: FindOneAndUpdateCommand = {

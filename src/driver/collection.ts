@@ -24,6 +24,9 @@ import {
   UpdateManyOptions,
   UpdateOneOptions
 } from '@/src/collections/options';
+import { DeleteResult } from 'mongodb';
+
+type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null) => unknown;
 
 export class Collection extends MongooseCollection {
   debugType = 'StargateMongooseCollection';
@@ -50,8 +53,12 @@ export class Collection extends MongooseCollection {
     return this.collection.countDocuments(filter);
   }
 
-  find(filter: Record<string, any>, options?: FindOptions) {
-    return this.collection.find(filter, options);
+  find(filter: Record<string, any>, options?: FindOptions, callback?: NodeCallback<Record<string, any>[]>) {
+    const cursor = this.collection.find(filter, options);
+    if (callback != null) {
+      return callback(null, cursor);
+    }
+    return cursor;
   }
 
   findOne(filter: Record<string, any>, options?: FindOneOptions) {
@@ -82,8 +89,14 @@ export class Collection extends MongooseCollection {
     return this.collection.deleteMany(filter);
   }
 
-  deleteOne(filter: Record<string, any>, options?: DeleteOneOptions) {
-    return this.collection.deleteOne(filter, options);
+  deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<DeleteResult>) {
+    const promise = this.collection.deleteOne(filter, options);
+
+    if (callback != null) {
+      promise.then((res: DeleteResult) => callback(null, res), (err: Error) => callback(err, null));
+    }
+
+    return promise;
   }
 
   updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
@@ -121,6 +134,10 @@ export class Collection extends MongooseCollection {
 
   dropIndexes() {
     throw new OperationNotSupportedError('dropIndexes() Not Implemented');
+  }
+
+  watch() {
+    throw new OperationNotSupportedError('watch() Not Implemented');
   }
 }
 
