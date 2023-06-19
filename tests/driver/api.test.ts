@@ -46,12 +46,13 @@ describe(`Mongoose Model API level tests`, async () => {
         isAstra = testClient.isAstra;
     });
     let mongooseInstance: Mongoose | null = null;
-    let Product: Model<any>, astraMongoose: Mongoose | null, jsonAPIMongoose: Mongoose | null;
+    let Product: Model<any>, Cart: Model<any>, astraMongoose: Mongoose | null, jsonAPIMongoose: Mongoose | null;
     beforeEach(async () => {
-        ({Product, astraMongoose, jsonAPIMongoose} = await createClientsAndModels(isAstra));
+        ({Product, Cart, astraMongoose, jsonAPIMongoose} = await createClientsAndModels(isAstra));
     });
     afterEach(async () => {
         await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'products');
+        await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'carts');
     });
 
     async function getInstance() {
@@ -64,7 +65,7 @@ describe(`Mongoose Model API level tests`, async () => {
     }
 
     async function createClientsAndModels(isAstra: boolean) {
-        let Product: Model<any>, astraMongoose: Mongoose | null = null, jsonAPIMongoose: Mongoose | null = null;
+        let Product: Model<any>, Cart: Model<any>, astraMongoose: Mongoose | null = null, jsonAPIMongoose: Mongoose | null = null;
         const productSchema = new mongoose.Schema({
             name: String,
             price: Number,
@@ -72,9 +73,14 @@ describe(`Mongoose Model API level tests`, async () => {
             isCertified: Boolean,
             category: String
         });
+        const cartSchema = new mongoose.Schema({
+            name: String,
+            products: [{ type: Schema.Types.ObjectId, ref: 'Product' }]
+        });
         if (isAstra) {
             astraMongoose = await getInstance();
             Product = astraMongoose.model('Product', productSchema);
+            Cart = astraMongoose.model('Cart', cartSchema);
             // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
             await astraMongoose.connect(dbUri, {isAstra: true, logSkippedOptions: true});
             await Promise.all(Object.values(astraMongoose.connection.models).map(Model => Model.init()));
@@ -82,6 +88,7 @@ describe(`Mongoose Model API level tests`, async () => {
             // @ts-ignore
             jsonAPIMongoose = await getInstance();
             Product = jsonAPIMongoose.model('Product', productSchema);
+            Cart = jsonAPIMongoose.model('Cart', cartSchema);
             const options = {
                 username: process.env.STARGATE_USERNAME,
                 password: process.env.STARGATE_PASSWORD,
@@ -93,7 +100,7 @@ describe(`Mongoose Model API level tests`, async () => {
             await Promise.all(Object.values(jsonAPIMongoose.connection.models).map(Model => Model.init()));
         }
         mongooseInstance = isAstra ? astraMongoose : jsonAPIMongoose;
-        return {Product, astraMongoose, jsonAPIMongoose};
+        return {Product, Cart, astraMongoose, jsonAPIMongoose};
     }
 
     async function dropCollections(isAstra: boolean, astraMongoose: mongoose.Mongoose | null, jsonAPIMongoose: mongoose.Mongoose | null, collectionName: string) {
@@ -370,7 +377,7 @@ describe(`Mongoose Model API level tests`, async () => {
             //TODO
         });
         //TODO - fix this test
-        it.skip('API ops tests Model.discriminator()', async () => {
+        it('API ops tests Model.discriminator()', async () => {
             //Online products have URL
             const OnlineProduct = Product.discriminator('OnlineProduct', new Schema({url: String}));
             const regularProduct = new Product({
@@ -389,6 +396,238 @@ describe(`Mongoose Model API level tests`, async () => {
                 url: 'http://product1.com'
             });
             assert.ok(onlineProduct.url);
+        });
+        it('API ops tests Model.distinct()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
+            const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+            const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+            await Product.insertMany([product1, product2, product3]);
+            let err: OperationNotSupportedError | null = null;
+            try {
+                const query = Product.distinct('category');
+                const distinctResp = await query.exec();
+            } catch (error: any) {
+                err = error;
+            }
+            assert.ok(err);
+            assert.strictEqual(err?.message, 'distinct() Not Implemented');
+        });
+        it.skip('API ops tests Model.ensureIndexes()', async () => {
+            const modelName = 'User';
+            let error: OperationNotSupportedError | null = null;
+            try {
+                const userSchema = new mongoose.Schema({
+                    name: String,
+                    age: Number,
+                    dob: Date
+                });
+                userSchema.index({name: 1});
+                const User = mongooseInstance!.model(modelName, userSchema);
+                await Promise.all(Object.values(mongooseInstance!.connection.models).map(Model => Model.init()));
+                await User.ensureIndexes();
+            } catch (err: any) {
+                //TODO - Check getting 'Uncaught OperationNotSupportedError: createIndex() Not Implemented'
+                error = err;
+            } finally {
+                await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'users');
+            }
+            assert.ok(error);
+            assert.strictEqual(error?.message, 'createIndex() Not Implemented');
+        });
+        it('API ops tests Model.estimatedDocumentCount()', async () => {
+            let error: OperationNotSupportedError | null = null;
+            try {
+                const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
+                const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+                const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+                await Product.insertMany([product1, product2, product3]);
+                const documentCount = await Product.estimatedDocumentCount();
+            } catch (err: any) {
+                error = err;
+            }
+            assert.ok(error);
+            assert.strictEqual(error?.message, 'estimatedDocumentCount() Not Implemented');
+        });
+        //TODO - fix this test
+        it.skip('API ops tests Model.events()', async () => {
+            Product.events.on('error', (err: any) => {
+                console.log('Error in Product.events', err);
+            });
+            await Product.findOne({_id: '123'}).catch(err => { return; });
+        });
+        it('API ops tests Model.exists()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
+            await product1.save();
+            const existsResp = await Product.exists({name: 'Product 1'});
+            assert.ok(existsResp);
+        });
+        it('API ops tests Model.find()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
+            const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+            const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+            await Product.insertMany([product1, product2, product3]);
+            const findResp = await Product.find({category: 'cat 1'});
+            assert.strictEqual(findResp.length, 2);
+            const nameArray: Set<String> = new Set(['Product 1', 'Product 3']);
+            for(const doc of findResp) {
+                assert.strictEqual(doc.category, 'cat 1');
+                assert.strictEqual(nameArray.has(doc.name), true);
+                nameArray.delete(doc.name);
+            }
+        });
+        it('API ops tests Model.findById()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
+            await product1.save();
+            const findResp = await Product.findById(product1._id);
+            assert.strictEqual(findResp?.name, 'Product 1');
+        });
+        it('API ops tests Model.findByIdAndDelete()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
+            await product1.save();
+            const deleteResp = await Product.findByIdAndDelete(product1._id);
+            assert.strictEqual(deleteResp?.name, 'Product 1');
+            const findDeletedDoc = await Product.findById(product1._id);
+            assert.strictEqual(findDeletedDoc, null);
+        });
+        it('API ops tests Model.findByIdAndRemove()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
+            await product1.save();
+            const deleteResp = await Product.findByIdAndRemove(product1._id);
+            assert.strictEqual(deleteResp?.name, 'Product 1');
+            const findDeletedDoc = await Product.findById(product1._id);
+            assert.strictEqual(findDeletedDoc, null);
+        });
+        it('API ops tests Model.findByIdAndUpdate()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1', url: 'http://product1.com'});
+            await product1.save();
+            const updateResp = await Product.findByIdAndUpdate(product1._id, {name: 'Product 2'});
+            assert.strictEqual(updateResp?.name, 'Product 1');
+            const findUpdatedDoc = await Product.findById(product1._id);
+            assert.strictEqual(findUpdatedDoc?.name, 'Product 2');
+        });
+        it('API ops tests Model.findOne()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
+            const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+            const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+            await Product.insertMany([product1, product2, product3]);
+            const findResp = await Product.findOne({category: 'cat 1'});
+            assert.strictEqual(findResp?.category, 'cat 1');
+        });
+        it('API ops tests Model.findOneAndDelete()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
+            const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+            const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+            await Product.insertMany([product1, product2, product3]);
+            const deleteResp = await Product.findOneAndDelete({category: 'cat 1'});
+            assert.strictEqual(deleteResp?.category, 'cat 1');
+            //check if it exists again
+            const findDeletedDoc = await Product.findOne({category: 'cat 1'});
+            assert.strictEqual(findDeletedDoc, null);
+        });
+        it('API ops tests Model.findOneAndRemove()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
+            const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+            const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+            await Product.insertMany([product1, product2, product3]);
+            const deleteResp = await Product.findOneAndRemove({category: 'cat 1'});
+            assert.strictEqual(deleteResp?.category, 'cat 1');
+            //check if it exists again
+            const findDeletedDoc = await Product.findOne({category: 'cat 1'});
+            assert.strictEqual(findDeletedDoc, null);
+        });
+        it('API ops tests Model.findOneAndUpdate()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
+            const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+            const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+            await Product.insertMany([product1, product2, product3]);
+            const updateResp = await Product.findOneAndUpdate({category: 'cat 1'}, {name: 'Product 4'});
+            assert.strictEqual(updateResp?.category, 'cat 1');
+            const findOneResp = await Product.findOne({category: 'cat 1'});
+            assert.strictEqual(findOneResp?.name, 'Product 4');
+        });
+        it('API ops tests Model.hydrate()', async () => {
+            const rawProduct = {name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'};
+            const product1 = Product.hydrate(rawProduct);
+            assert.strictEqual(product1.name, 'Product 1');
+            assert.strictEqual(product1.price, 10);
+            assert.strictEqual(product1.isCertified, true);
+            assert.strictEqual(product1.category, 'cat 2');
+        });
+        it.skip('API ops tests Model.init()', async () => {
+            const modelName = 'User';
+            let error: OperationNotSupportedError | null = null;
+            let autoIndexStatus: boolean | undefined;
+            try {
+                autoIndexStatus = mongooseInstance!.get('autoIndex');
+                mongooseInstance!.set('autoIndex', true);
+                const userSchema = new mongoose.Schema({
+                    name: String,
+                    age: Number,
+                    dob: Date
+                });
+                userSchema.index({name: 1});
+                const User = mongooseInstance!.model(modelName, userSchema);
+                await User.init();
+            } catch(err: OperationNotSupportedError | any) {
+                //console.log('Exception caught: ', err);
+                //TODO - need to figure out how to test this
+                error = err;
+            } finally {
+                if(autoIndexStatus != undefined) {
+                    mongooseInstance!.set('autoIndex', autoIndexStatus);
+                }
+                await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'users');
+            }
+            assert.ok(error);
+            assert.strictEqual(error?.message, 'createIndex() Not Implemented');
+        });
+        it('API ops tests Model.insertMany()', async () => {
+            const product1 = {name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'};
+            const product2 = {name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'};
+            const product3 = {name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'};
+            const insertResp = await Product.insertMany([product1, product2, product3] , {ordered: true});
+            assert.strictEqual(insertResp.length, 3);
+            assert.strictEqual(insertResp[0].name, 'Product 1');
+            assert.strictEqual(insertResp[1].name, 'Product 2');
+            assert.strictEqual(insertResp[2].name, 'Product 3');
+        });
+        //Model.inspect can not be tested since its a helper for console logging. More info here: https://mongoosejs.com/docs/api/model.html#Model.inspect()
+        it('API ops tests Model.listIndexes()', async () => {
+            let error: OperationNotSupportedError | null = null;
+            try {
+                const listIndexesResp = await Product.listIndexes();
+            } catch(err: OperationNotSupportedError | any) {
+                error = err;
+            }
+            assert.ok(error);
+            assert.strictEqual(error?.message, 'listIndexes() Not Implemented');
+        });
+        it('API ops tests Model.populate()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
+            const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+            const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+            await Product.insertMany([product1, product2, product3]);
+            const cart1 = new Cart({name: 'Cart 1', products: [product1._id, product2._id]});
+            await Cart.insertMany([cart1]);
+            const populateResp = await Cart.findOne({name: 'Cart 1'}).populate('products');
+            assert.strictEqual(populateResp?.products.length, 2);
+            assert.strictEqual(populateResp?.products[0].name, 'Product 1');
+            assert.strictEqual(populateResp?.products[1].name, 'Product 2');
+        });
+        //TODO - should we test all Model.prototype. methods as well?
+        it('API ops tests Model.replaceOne()', async () => {
+           let error: OperationNotSupportedError | null = null;
+           try {
+               const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
+               const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+               const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+               await Product.insertMany([product1, product2, product3]);
+               const replaceResp = await Product.replaceOne({category: 'cat 1'}, {name: 'Product 4'});
+           } catch(err: OperationNotSupportedError | any) {
+               error = err;
+           }
+           assert.ok(error);
+           assert.strictEqual(error?.message, 'replaceOne() Not Implemented');
         });
     });
 });

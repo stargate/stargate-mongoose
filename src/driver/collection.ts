@@ -139,6 +139,18 @@ export class Collection extends MongooseCollection {
   watch() {
     throw new OperationNotSupportedError('watch() Not Implemented');
   }
+
+  distinct() {
+    throw new OperationNotSupportedError('distinct() Not Implemented');
+  }
+
+  estimatedDocumentCount() {
+    throw new OperationNotSupportedError('estimatedDocumentCount() Not Implemented');
+  }
+
+  replaceOne() {
+    throw new OperationNotSupportedError('replaceOne() Not Implemented');
+  }
 }
 
 export class OperationNotSupportedError extends Error {

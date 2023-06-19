@@ -154,10 +154,6 @@ export class Collection {
     });
   }
 
-  async replaceOne(filter: any, replacement: any, options?: any) {
-    throw new Error('Not Implemented');
-  }
-
   async deleteOne(filter: Record<string, any>, options?: DeleteOneOptions): Promise<DeleteResult> {
     return executeOperation(async (): Promise<DeleteResult> => {
       type DeleteOneCommand = {
