@@ -63,13 +63,16 @@ export class Db {
    * @param options
    * @returns Promise
    */
-  async createCollection(collectionName: string) {
+  async createCollection(collectionName: string, options?: Record<string, any>) {
     return executeOperation(async () => {
       const command = {
         createCollection: {
           name: collectionName
         }
       };
+      if (options != null) {
+        command.createCollection.options = options;
+      }
       return await this.httpClient.executeCommand(command, null);
     });
   }
