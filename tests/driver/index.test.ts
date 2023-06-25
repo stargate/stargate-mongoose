@@ -159,10 +159,13 @@ describe(`Driver based tests`, async () => {
     it('handles updating existing document with save()', async () => {
       const mongooseInstance = await createMongooseInstance();
 
+      let options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };
+      const conn = await mongooseInstance.createConnection(dbUri, options).asPromise();
+
       const personSchema = new mongooseInstance.Schema({
         name: String
       });
-      const Person = mongooseInstance.model('Person', personSchema);
+      const Person = conn.model('Person', personSchema);
       await Person.init();
       await Person.deleteMany({});
       const [person] = await Person.create([{ name: 'John' }]);
