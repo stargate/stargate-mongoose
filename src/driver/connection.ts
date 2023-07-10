@@ -76,12 +76,11 @@ export class Connection extends MongooseConnection {
   }
 
   async openUri(uri: string, options: any) {
-    let resolveInitialConnection: Function;
-    let rejectInitialConnection: Function;
-    this.initialConnection = new Promise((resolve, reject) => {
-      resolveInitialConnection = resolve;
-      rejectInitialConnection = reject;
-    });
+    let _fireAndForget = false;
+    if (options && '_fireAndForget' in options) {
+      _fireAndForget = options._fireAndForget;
+      delete options._fireAndForget;
+    }
 
     // Set Mongoose-specific config options. Need to set
     // this in order to allow connection-level overrides for
@@ -93,36 +92,44 @@ export class Connection extends MongooseConnection {
       bufferCommands: options?.bufferCommands
     };
 
-    try {
-      this._connectionString = uri;
-      this.readyState = STATES.connecting;
-      this._closeCalled = false;
-
-      for (const model of Object.values(this.models)) {
-        // @ts-ignore
-        model.init().catch(() => { });
-      }
-
-      const client = await Client.connect(uri, options);
-      this.client = client;
-      this.db = client.db();
-
-      this.readyState = STATES.connected;
-
-      this.onOpen();
-
+    for (const model of Object.values(this.models)) {
       // @ts-ignore
-      resolveInitialConnection(this);
-    } catch (err) {
-      this.readyState = STATES.disconnected;
-
-      // @ts-ignore
-      rejectInitialConnection(err);
-
-      throw err;
+      model.init().catch(() => { });
     }
 
+    this.initialConnection = this.createClient(uri, options)
+      .then(() => this)
+      .catch(err => {
+        this.readyState = STATES.disconnected;
+        throw err;
+      });
+
+    if (_fireAndForget) {
+      return this;
+    }
+
+    await this.initialConnection;
+
     return this;
+  }
+
+  async createClient(uri: string, options: any) {
+    this._connectionString = uri;
+    this._closeCalled = false;
+    this.readyState = STATES.connecting;
+
+    const client = await Client.connect(uri, options);
+    this.client = client;
+    this.db = client.db();
+
+    this.readyState = STATES.connected;
+    this.onOpen();
+    return this;
+  }
+
+  setClient(client: Client) {
+    this.client = client;
+    this.db = client.db();
   }
 
   asPromise() {
