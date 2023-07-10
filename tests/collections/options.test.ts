@@ -46,7 +46,6 @@ describe(`Options tests`, async () => {
     async function createClientsAndModels(isAstra: boolean) {
         let Product, astraMongoose, jsonAPIMongoose;
         const productSchema = new mongoose.Schema({
-            _id: ObjectId | String,
             name: String,
             price: Number,
             expiryDate: Date,
@@ -305,17 +304,17 @@ describe(`Options tests`, async () => {
                 }
                 await Product.insertMany(products, { ordered: true, rawResult: false });
                 //findOneAndUpdate with rawResult option
-                const upsertId: string = '1234';
+                const upsertId: ObjectId = new ObjectId();
                 const findOneAndUpdateResp = await Product.findOneAndUpdate({ name: 'Product 25' },
                     { "$set" : {price: 20, isCertified: false, name: 'Product 25'}, "$setOnInsert" : {_id: upsertId} },
                     { rawResult: false, upsert: true, returnDocument: 'after' });
                 assert.strictEqual(findOneAndUpdateResp.isCertified,false);
                 assert.strictEqual(findOneAndUpdateResp.price,20);
                 assert.strictEqual(findOneAndUpdateResp.name,'Product 25');
-                assert.strictEqual(findOneAndUpdateResp._id, upsertId);
+                assert.strictEqual(findOneAndUpdateResp._id.toString(), upsertId.toString());
                 //find product 25
                 const product25 = await Product.findOne({ name: 'Product 25' });
-                assert.strictEqual(product25?._id, upsertId);
+                assert.strictEqual(product25?._id.toString(), upsertId.toString());
                 assert.strictEqual(product25?.isCertified,false);
                 assert.strictEqual(product25?.price,20);
                 assert.strictEqual(product25?.name,'Product 25');

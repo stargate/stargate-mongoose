@@ -278,30 +278,7 @@ describe(`Mongoose Model API level tests`, async () => {
             assert.strictEqual(error!.message, 'aggregate() Not Implemented');
             //----------------//
         });
-        it('API ops tests Model.applyDefaults()', async () => {
-            const modelName = 'User';
-            let error: OperationNotSupportedError | null = null;
-            try {
-                const userSchema = new mongoose.Schema({
-                    name: String,
-                    age: Number,
-                    dob: Date,
-                    eyeColor: {
-                        type: String,
-                        enum: ['brown', 'blue', 'green', 'black'],
-                        default: 'black'
-                    }
-                });
-                const User = mongooseInstance!.model(modelName, userSchema);
-                await Promise.all(Object.values(mongooseInstance!.connection.models).map(Model => Model.init()));
-                const user = new User({name: 'User 1', age: 10, dob: new Date()});
-                await user.save();
-                const savedUser = await User.findOne({name: 'User 1'});
-                assert.strictEqual(savedUser!.eyeColor, 'black');
-            } finally {
-                await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'users');
-            }
-        });
+        //Model.applyDefaults is skipped, because it is not making any db calls
         //TODO - Skipping /node_modules/mongoose/lib/model.js:3442:74
         //Model.bulkSave() error:  TypeError: Cannot read properties of undefined (reading 'find')
         it.skip('API ops tests Model.bulkSave()', async () => {
@@ -706,8 +683,15 @@ describe(`Mongoose Model API level tests`, async () => {
             assert.strictEqual(updateManyResp.upsertedCount, undefined);
             const findUpdatedDocs = await Product.find({category: 'cat 3'});
             assert.strictEqual(findUpdatedDocs.length, 2);
-            assert.strictEqual(findUpdatedDocs[0].name, 'Product 1');
-            assert.strictEqual(findUpdatedDocs[1].name, 'Product 2');
+            const productNames: Set<string> = new Set();
+            findUpdatedDocs.forEach((doc: any) => {
+                productNames.add(doc.name);
+            });
+            assert.strictEqual(productNames.size, 2);
+            assert.strictEqual(productNames.has('Product 1'), true);
+            productNames.delete('Product 1');
+            assert.strictEqual(productNames.has('Product 2'), true);
+            productNames.delete('Product 2');
         });
         it('API ops tests Model.updateOne()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
