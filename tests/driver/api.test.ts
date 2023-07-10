@@ -123,11 +123,12 @@ describe(`Mongoose Model API level tests`, async () => {
             }, null, {
                 strict: true
             }).save();
-            assert.strictEqual(saveResponseWithStrictTrue.name, 'Product 1');
-            assert.strictEqual(saveResponseWithStrictTrue.price, 10);
-            assert.strictEqual(saveResponseWithStrictTrue.isCertified, true);
-            assert.strictEqual(saveResponseWithStrictTrue.category, 'cat 1');
-            assert.strictEqual(saveResponseWithStrictTrue.extraCol, undefined);
+            const savedRow = await Product.findById(saveResponseWithStrictTrue._id);
+            assert.strictEqual(savedRow.name, 'Product 1');
+            assert.strictEqual(savedRow.price, 10);
+            assert.strictEqual(savedRow.isCertified, true);
+            assert.strictEqual(savedRow.category, 'cat 1');
+            assert.strictEqual(savedRow.extraCol, undefined);
             //strict is false, so extraCol should be saved
             const saveResponseWithStrictFalse = await new Product({
                 name: 'Product 1',
@@ -138,12 +139,13 @@ describe(`Mongoose Model API level tests`, async () => {
             }, null, {
                 strict: false
             }).save();
-            assert.strictEqual(saveResponseWithStrictFalse.name, 'Product 1');
-            assert.strictEqual(saveResponseWithStrictFalse.price, 10);
-            assert.strictEqual(saveResponseWithStrictFalse.isCertified, true);
-            assert.strictEqual(saveResponseWithStrictFalse.category, 'cat 1');
+            const savedRowWithStrictFalse = await Product.findById(saveResponseWithStrictFalse._id);
+            assert.strictEqual(savedRowWithStrictFalse.name, 'Product 1');
+            assert.strictEqual(savedRowWithStrictFalse.price, 10);
+            assert.strictEqual(savedRowWithStrictFalse.isCertified, true);
+            assert.strictEqual(savedRowWithStrictFalse.category, 'cat 1');
             //to access extraCol, we need to use get method since it is not part of schema
-            assert.strictEqual(saveResponseWithStrictFalse.get('extraCol'), 'extra val1');
+            assert.strictEqual(savedRowWithStrictFalse.get('extraCol'), 'extra val1');
             //since strictQuery is true, extraCol will be removed from filter, so all docs will be returned
             const findResponse = await Product.find({
                 category: 'cat 1',
@@ -276,23 +278,42 @@ describe(`Mongoose Model API level tests`, async () => {
             assert.strictEqual(error!.message, 'aggregate() Not Implemented');
             //----------------//
         });
-        //TODO
-        it.skip('API ops tests Model.applyDefaults()', async () => {
-            Model.applyDefaults();
-            new Product().applyDefaults({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
+        it('API ops tests Model.applyDefaults()', async () => {
+            const modelName = 'User';
+            let error: OperationNotSupportedError | null = null;
+            try {
+                const userSchema = new mongoose.Schema({
+                    name: String,
+                    age: Number,
+                    dob: Date,
+                    eyeColor: {
+                        type: String,
+                        enum: ['brown', 'blue', 'green', 'black'],
+                        default: 'black'
+                    }
+                });
+                const User = mongooseInstance!.model(modelName, userSchema);
+                await Promise.all(Object.values(mongooseInstance!.connection.models).map(Model => Model.init()));
+                const user = new User({name: 'User 1', age: 10, dob: new Date()});
+                await user.save();
+                const savedUser = await User.findOne({name: 'User 1'});
+                assert.strictEqual(savedUser!.eyeColor, 'black');
+            } finally {
+                await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'users');
+            }
         });
-        //TODO
+        //TODO - Skipping /node_modules/mongoose/lib/model.js:3442:74
+        //Model.bulkSave() error:  TypeError: Cannot read properties of undefined (reading 'find')
         it.skip('API ops tests Model.bulkSave()', async () => {
-            //Skipping /node_modules/mongoose/lib/model.js:3442:74
-            //Model.bulkSave() error:  TypeError: Cannot read properties of undefined (reading 'find')
-            /*try {
+            let error: OperationNotSupportedError | null = null;
+            try {
                 const product2 = new Product({name: 'Product 2', price: 20, isCertified: true, category: 'cat 2'});
                 const product3 = new Product({name: 'Product 3', price: 30, isCertified: true, category: 'cat 3'});
                 const bulkSaveResp = await Product.bulkSave([product2, product3]);
             } catch (err:any) {
                 error = err;
             }
-            assert.strictEqual(error!.message, 'bulkSave() Not Implemented');*/
+            assert.strictEqual(error!.message, 'bulkSave() Not Implemented');
         });
         it('API ops tests Model.bulkWrite()', async () => {
             let error: OperationNotSupportedError | null = null;
@@ -305,16 +326,7 @@ describe(`Mongoose Model API level tests`, async () => {
             }
             assert.strictEqual(error!.message, 'bulkWrite() Not Implemented');
         });
-        it('API ops tests Model.castObjectResp()', async () => {
-            const castObjectResp = Product.castObject({
-                name: 'Product 1',
-                price: 10,
-                isCertified: true,
-                category: 'cat 1'
-            });
-            assert.strictEqual(castObjectResp.name, 'Product 1');
-            //----------------//
-        });
+        //castObject skipped as it is not making any database calls
         it('API ops tests Model.cleanIndexes()', async () => {
             let error: OperationNotSupportedError | null = null;
             try {
@@ -346,8 +358,8 @@ describe(`Mongoose Model API level tests`, async () => {
         //TODO - createIndex() error uncaught internally
         it.skip('API ops tests Model.createIndexes()', async () => {
             let error: any = null;
+            Product.schema.index({name: 1});
             try {
-                Product.schema.index({name: 1});
                 await Product.createIndexes();
             } catch (err: any) {
                 error = err;
@@ -373,10 +385,27 @@ describe(`Mongoose Model API level tests`, async () => {
             const findDeletedDoc = await Product.findOne({name: 'Product 1'});
             assert.strictEqual(findDeletedDoc, null);
         });
-        it.skip('API ops tests Model.diffIndexes()', async () => {
-            //TODO
+        it('API ops tests Model.diffIndexes()', async () => {
+            const modelName = 'User';
+            let error: OperationNotSupportedError | null = null;
+            try {
+                const userSchema = new mongoose.Schema({
+                    name: String,
+                    age: Number,
+                    dob: Date
+                });
+                userSchema.index({name: 1});
+                const User = mongooseInstance!.model(modelName, userSchema);
+                await Promise.all(Object.values(mongooseInstance!.connection.models).map(Model => Model.init()));
+                const diff = await User.diffIndexes();
+            } catch (err: any) {
+                error = err;
+            } finally {
+                await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'users');
+            }
+            assert.ok(error);
+            assert.strictEqual(error?.message, 'listIndexes() Not Implemented');
         });
-        //TODO - fix this test
         it('API ops tests Model.discriminator()', async () => {
             //Online products have URL
             const OnlineProduct = Product.discriminator('OnlineProduct', new Schema({url: String}));
@@ -388,13 +417,26 @@ describe(`Mongoose Model API level tests`, async () => {
                 url: 'http://product1.com'
             });
             assert.ok(!regularProduct.url);
+            await regularProduct.save();
+            const regularProductSaved = await Product.findOne({name: 'Product 1'});
+            assert.strictEqual(regularProductSaved!.name, 'Product 1');
+            assert.strictEqual(regularProductSaved!.price, 10);
+            assert.strictEqual(regularProductSaved!.isCertified, true);
+            assert.strictEqual(regularProductSaved!.category, 'cat 1');
+            assert.ok(!regularProductSaved.url);
             const onlineProduct = new OnlineProduct({
-                name: 'Product 1',
+                name: 'Product 2',
                 price: 10,
                 isCertified: true,
                 category: 'cat 1',
                 url: 'http://product1.com'
             });
+            await onlineProduct.save();
+            const onlineProductSaved = await OnlineProduct.findOne({name: 'Product 2'});
+            assert.strictEqual(onlineProductSaved!.name, 'Product 2');
+            assert.strictEqual(onlineProductSaved!.price, 10);
+            assert.strictEqual(onlineProductSaved!.isCertified, true);
+            assert.strictEqual(onlineProductSaved!.category, 'cat 1');
             assert.ok(onlineProduct.url);
         });
         it('API ops tests Model.distinct()', async () => {
@@ -412,6 +454,7 @@ describe(`Mongoose Model API level tests`, async () => {
             assert.ok(err);
             assert.strictEqual(err?.message, 'distinct() Not Implemented');
         });
+        //TODO - Check getting 'Uncaught OperationNotSupportedError: createIndex() Not Implemented'
         it.skip('API ops tests Model.ensureIndexes()', async () => {
             const modelName = 'User';
             let error: OperationNotSupportedError | null = null;
@@ -426,7 +469,6 @@ describe(`Mongoose Model API level tests`, async () => {
                 await Promise.all(Object.values(mongooseInstance!.connection.models).map(Model => Model.init()));
                 await User.ensureIndexes();
             } catch (err: any) {
-                //TODO - Check getting 'Uncaught OperationNotSupportedError: createIndex() Not Implemented'
                 error = err;
             } finally {
                 await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'users');
@@ -448,13 +490,7 @@ describe(`Mongoose Model API level tests`, async () => {
             assert.ok(error);
             assert.strictEqual(error?.message, 'estimatedDocumentCount() Not Implemented');
         });
-        //TODO - fix this test
-        it.skip('API ops tests Model.events()', async () => {
-            Product.events.on('error', (err: any) => {
-                console.log('Error in Product.events', err);
-            });
-            await Product.findOne({_id: '123'}).catch(err => { return; });
-        });
+        //skipping Model.events() as it is not making any database calls
         it('API ops tests Model.exists()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
@@ -545,14 +581,8 @@ describe(`Mongoose Model API level tests`, async () => {
             const findOneResp = await Product.findOne({category: 'cat 1'});
             assert.strictEqual(findOneResp?.name, 'Product 4');
         });
-        it('API ops tests Model.hydrate()', async () => {
-            const rawProduct = {name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'};
-            const product1 = Product.hydrate(rawProduct);
-            assert.strictEqual(product1.name, 'Product 1');
-            assert.strictEqual(product1.price, 10);
-            assert.strictEqual(product1.isCertified, true);
-            assert.strictEqual(product1.category, 'cat 2');
-        });
+        //hydrate tests removed since it doesn't make any database calls
+        //TODO - Getting Uncaught OperationNotSupportedError: createIndex() Not Implemented
         it.skip('API ops tests Model.init()', async () => {
             const modelName = 'User';
             let error: OperationNotSupportedError | null = null;
@@ -561,16 +591,13 @@ describe(`Mongoose Model API level tests`, async () => {
                 autoIndexStatus = mongooseInstance!.get('autoIndex');
                 mongooseInstance!.set('autoIndex', true);
                 const userSchema = new mongoose.Schema({
-                    name: String,
+                    name: {type: String, index: true},
                     age: Number,
                     dob: Date
                 });
-                userSchema.index({name: 1});
                 const User = mongooseInstance!.model(modelName, userSchema);
                 await User.init();
             } catch(err: OperationNotSupportedError | any) {
-                //console.log('Exception caught: ', err);
-                //TODO - need to figure out how to test this
                 error = err;
             } finally {
                 if(autoIndexStatus != undefined) {
@@ -614,7 +641,16 @@ describe(`Mongoose Model API level tests`, async () => {
             assert.strictEqual(populateResp?.products[0].name, 'Product 1');
             assert.strictEqual(populateResp?.products[1].name, 'Product 2');
         });
-        //TODO - should we test all Model.prototype. methods as well?
+        it('API ops tests Model.prototype.deleteOne()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
+            await product1.save();
+            const docSaved = await Product.findOne({name: 'Product 1'});
+            assert.strictEqual(docSaved.name, 'Product 1');
+            const deleteOneResp = await product1.deleteOne();
+            assert.strictEqual(deleteOneResp.name, 'Product 1');
+            const findDeletedDoc = await Product.findOne({name: 'Product 1'});
+            assert.strictEqual(findDeletedDoc, null);
+        });
         it('API ops tests Model.replaceOne()', async () => {
            let error: OperationNotSupportedError | null = null;
            try {
@@ -628,6 +664,89 @@ describe(`Mongoose Model API level tests`, async () => {
            }
            assert.ok(error);
            assert.strictEqual(error?.message, 'replaceOne() Not Implemented');
+        });
+        //Model.schema() is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.schema
+        it('API ops tests Model.startSession()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
+            const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+            const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+            await Product.insertMany([product1, product2, product3]);
+            let error: OperationNotSupportedError | null = null;
+            try {
+                const session:any = await Product.startSession();
+                await product1.remove();
+            } catch(err: OperationNotSupportedError | any) {
+                error = err;
+            }
+            assert.ok(error);
+            assert.strictEqual(error?.message, 'startSession() Not Implemented');
+        });
+        it('API ops tests Model.syncIndexes()', async () => {
+            let error: OperationNotSupportedError | null = null;
+            try {
+                const syncIndexesResp = await Product.syncIndexes();
+            } catch(err: OperationNotSupportedError | any) {
+                error = err;
+            }
+            assert.ok(error);
+            //since listIndexes is invoked before syncIndexes, the error message will be related to listIndexes
+            assert.strictEqual(error?.message, 'listIndexes() Not Implemented');
+        });
+        //Mode.translateAliases is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.translateAliases
+        it('API ops tests Model.updateMany()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
+            const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+            const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+            await Product.insertMany([product1, product2, product3]);
+            //updateMany
+            const updateManyResp: mongoose.UpdateWriteOpResult = await Product.updateMany({category: 'cat 2'}, {category: 'cat 3'});
+            assert.strictEqual(updateManyResp.acknowledged, true);
+            assert.strictEqual(updateManyResp.matchedCount, 2);
+            assert.strictEqual(updateManyResp.modifiedCount, 2);
+            assert.strictEqual(updateManyResp.upsertedCount, undefined);
+            const findUpdatedDocs = await Product.find({category: 'cat 3'});
+            assert.strictEqual(findUpdatedDocs.length, 2);
+            assert.strictEqual(findUpdatedDocs[0].name, 'Product 1');
+            assert.strictEqual(findUpdatedDocs[1].name, 'Product 2');
+        });
+        it('API ops tests Model.updateOne()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
+            const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+            const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+            await Product.insertMany([product1, product2, product3]);
+            //UpdateOne
+            const updateOneResp: mongoose.UpdateWriteOpResult = await Product.updateOne({category: 'cat 1'}, {category: 'cat 3'});
+            assert.strictEqual(updateOneResp.acknowledged, true);
+            assert.strictEqual(updateOneResp.matchedCount, 1);
+            assert.strictEqual(updateOneResp.modifiedCount, 1);
+            assert.strictEqual(updateOneResp.upsertedCount, undefined);
+            const findUpdatedDoc = await Product.findOne({category: 'cat 3'});
+            assert.strictEqual(findUpdatedDoc?.name, 'Product 3');
+        });
+        //Model.validate is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.validate
+        it('API ops tests Model.watch()', async () => {
+            let error: OperationNotSupportedError | null = null;
+            try {
+                const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
+                await product1.save();
+                const changeStream = Product.watch().on('change', (change) => {
+                    assert.strictEqual(change.operationType, 'delete');
+                    assert.strictEqual(change.documentKey._id.toString(), product1._id.toString());
+                    changeStream.close();
+                });
+                await product1.remove();
+            } catch(err: OperationNotSupportedError | any) {
+                error = err;
+            }
+            assert.ok(error);
+            assert.strictEqual(error?.message, 'watch() Not Implemented');
+        });
+        it('API ops tests Model.where()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
+            await product1.save();
+            const whereResp = await Product.where('name').equals('Product 1');
+            assert.strictEqual(whereResp.length, 1);
+            assert.strictEqual(whereResp[0].name, 'Product 1');
         });
     });
 });

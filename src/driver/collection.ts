@@ -107,9 +107,8 @@ export class Collection extends MongooseCollection {
     return this.collection.updateMany(filter, update, options);
   }
 
-  // No-ops
   bulkWrite(ops: any[], options?: any) {
-    throw new Error('bulkWrite() Not Implemented');
+    throw new OperationNotSupportedError('bulkWrite() Not Implemented');
   }
 
   aggregate(pipeline: any[], options?: any) {
@@ -151,6 +150,11 @@ export class Collection extends MongooseCollection {
   replaceOne() {
     throw new OperationNotSupportedError('replaceOne() Not Implemented');
   }
+
+  syncIndexes() {
+    throw new OperationNotSupportedError('syncIndexes() Not Implemented');
+  }
+
 }
 
 export class OperationNotSupportedError extends Error {

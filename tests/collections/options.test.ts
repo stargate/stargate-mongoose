@@ -19,6 +19,7 @@ import { Client } from '@/src/collections/client';
 import { testClient, testClientName, createSampleDoc, sampleUsersList, createSampleDocWithMultiLevel, createSampleDocWithMultiLevelWithId, getSampleDocs, sleep, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 import mongoose from "mongoose";
 import * as StargateMongooseDriver from "@/src/driver";
+import {ObjectId} from "mongodb";
 
 describe(`Options tests`, async () => {
     let astraClient: Client | null;
@@ -45,6 +46,7 @@ describe(`Options tests`, async () => {
     async function createClientsAndModels(isAstra: boolean) {
         let Product, astraMongoose, jsonAPIMongoose;
         const productSchema = new mongoose.Schema({
+            _id: ObjectId | String,
             name: String,
             price: Number,
             expiryDate: Date,
@@ -121,7 +123,9 @@ describe(`Options tests`, async () => {
             try {
                 ({ Product, astraMongoose, jsonAPIMongoose } = await createClientsAndModels(isAstra));
                 // @ts-ignore
-                const products: Product[] = [new Product({ name: 'Product 2', price: 10, isCertified: true }), new Product({ name: 'Product 1', price: 10, isCertified: false }), new Product({ name: 'Product 3', price: 10, isCertified: true })];
+                const products: Product[] = [new Product({ name: 'Product 2', price: 10, isCertified: true }),
+                    new Product({ name: 'Product 1', price: 10, isCertified: false }),
+                    new Product({ name: 'Product 3', price: 10, isCertified: true })];
                 const insertManyResp = await Product.insertMany(products, { ordered: true, rawResult: false });
                 assert.strictEqual(insertManyResp.length, 3);
                 assert.strictEqual(insertManyResp[0].name, 'Product 2');
@@ -140,7 +144,6 @@ describe(`Options tests`, async () => {
                 //find product 4
                 const product4 = await Product.findOne({ name : 'Product 4' });
                 assert.strictEqual(product4?.name, 'Product 4');
-                //TODO check if upserting $inc is intentional
                 assert.strictEqual(product4?.price, 5);
                 assert.strictEqual(product4?.isCertified, true);
             } finally {
@@ -241,7 +244,7 @@ describe(`Options tests`, async () => {
                 await Product.insertMany(products, { ordered: true, rawResult: false });
                 //findOneAndReplace with rawResult option
                 const findOneAndReplaceResp = await Product.findOneAndReplace({ name: 'Product 25' },
-                    { price: 20, isCertified: false, name: 'Product 25' },
+                    { price: 20, isCertified: false, name: 'Product 25'},
                     { rawResult: false, upsert: true, returnDocument: 'after' });
                 assert.strictEqual(findOneAndReplaceResp.isCertified,false);
                 assert.strictEqual(findOneAndReplaceResp.price,20);
@@ -289,8 +292,7 @@ describe(`Options tests`, async () => {
                 await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'products');
             }
         });
-        //TODO skipping until https://github.com/stargate/jsonapi/issues/417 is fixed
-        it.skip('should cleanup findOneAndUpdateOptions', async () => {
+        it('should cleanup findOneAndUpdateOptions', async () => {
             let Product, astraMongoose, jsonAPIMongoose;
             try {
                 ({ Product, astraMongoose, jsonAPIMongoose } = await createClientsAndModels(isAstra));
@@ -303,15 +305,17 @@ describe(`Options tests`, async () => {
                 }
                 await Product.insertMany(products, { ordered: true, rawResult: false });
                 //findOneAndUpdate with rawResult option
+                const upsertId: string = '1234';
                 const findOneAndUpdateResp = await Product.findOneAndUpdate({ name: 'Product 25' },
-                    { price: 20, isCertified: false, name: 'Product 25' },
+                    { "$set" : {price: 20, isCertified: false, name: 'Product 25'}, "$setOnInsert" : {_id: upsertId} },
                     { rawResult: false, upsert: true, returnDocument: 'after' });
                 assert.strictEqual(findOneAndUpdateResp.isCertified,false);
                 assert.strictEqual(findOneAndUpdateResp.price,20);
                 assert.strictEqual(findOneAndUpdateResp.name,'Product 25');
-                assert.ok(findOneAndUpdateResp._id);
+                assert.strictEqual(findOneAndUpdateResp._id, upsertId);
                 //find product 25
                 const product25 = await Product.findOne({ name: 'Product 25' });
+                assert.strictEqual(product25?._id, upsertId);
                 assert.strictEqual(product25?.isCertified,false);
                 assert.strictEqual(product25?.price,20);
                 assert.strictEqual(product25?.name,'Product 25');
