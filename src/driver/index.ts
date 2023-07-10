@@ -14,4 +14,4 @@
 
 export { Connection } from './connection';
 export { Binary, ObjectId, Decimal128, ReadPreference } from 'mongodb';
-export { Collection } from './collection';
+export { Collection, OperationNotSupportedError } from './collection';

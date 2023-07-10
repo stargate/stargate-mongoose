@@ -1159,8 +1159,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         assert.strictEqual(doc.address.zip, undefined);
       });
     });
-    //TODO: enable this test once $currentDate is supported in update and updateMany APIs
-    it.skip('should set date to current date in the fields inside $currentDate in update and updateMany', async () => {
+    it('should set date to current date in the fields inside $currentDate in update and updateMany', async () => {
       let docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username" }));
       docList.forEach((doc, index) => {
         doc._id += index;

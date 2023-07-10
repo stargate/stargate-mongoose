@@ -42,6 +42,13 @@ export class Collection extends MongooseCollection {
     return this.conn.db.collection(this.name);
   }
 
+  /**
+  * @deprecated
+  */
+  count(filter: Record<string, any>) {
+    return this.collection.count(filter);
+  }
+
   countDocuments(filter: Record<string, any>) {
     return this.collection.countDocuments(filter);
   }
@@ -100,24 +107,59 @@ export class Collection extends MongooseCollection {
     return this.collection.updateMany(filter, update, options);
   }
 
-  // No-ops
-  aggregate() {
-    throw new Error('aggregate() Not Implemented');
+  bulkWrite(ops: any[], options?: any) {
+    throw new OperationNotSupportedError('bulkWrite() Not Implemented');
+  }
+
+  aggregate(pipeline: any[], options?: any) {
+    throw new OperationNotSupportedError('aggregate() Not Implemented');
+  }
+
+  bulkSave(docs: any[], options?: any) {
+    throw new OperationNotSupportedError('bulkSave() Not Implemented');
+  }
+
+  cleanIndexes(options?: any) {
+    throw new OperationNotSupportedError('cleanIndexes() Not Implemented');
+  }
+
+  listIndexes(options?: any) {
+    throw new OperationNotSupportedError('listIndexes() Not Implemented');
+  }
+
+  createIndex(fieldOrSpec: any, options?: any) {
+    throw new OperationNotSupportedError('createIndex() Not Implemented');
   }
 
   dropIndexes() {
-    throw new Error('dropIndexes() Not Implemented');
-  }
-
-  createIndex(index: any, options?: any) {
-    throw new Error('createIndex() Not Implemented');
-  }
-
-  bulkWrite(ops: any[], options?: any) {
-    throw new Error('bulkWrite() Not Implemented');
+    throw new OperationNotSupportedError('dropIndexes() Not Implemented');
   }
 
   watch() {
-    throw new Error('watch() Not Implemented');
+    throw new OperationNotSupportedError('watch() Not Implemented');
+  }
+
+  distinct() {
+    throw new OperationNotSupportedError('distinct() Not Implemented');
+  }
+
+  estimatedDocumentCount() {
+    throw new OperationNotSupportedError('estimatedDocumentCount() Not Implemented');
+  }
+
+  replaceOne() {
+    throw new OperationNotSupportedError('replaceOne() Not Implemented');
+  }
+
+  syncIndexes() {
+    throw new OperationNotSupportedError('syncIndexes() Not Implemented');
+  }
+
+}
+
+export class OperationNotSupportedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'OperationNotSupportedError';
   }
 }
