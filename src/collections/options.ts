@@ -132,3 +132,13 @@ export const updateOneInternalOptionsKeys: Set<string> = new Set(
   Object.keys(new _UpdateOneOptions)
 );
 
+/**
+ * CreateCollectionOptions
+ */
+
+export interface CreateCollectionOptions {
+  vectors?: {
+    size: number,
+    function?: 'cosine' | 'euclidean' | 'dot_product'
+  }
+}

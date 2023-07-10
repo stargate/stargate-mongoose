@@ -48,14 +48,14 @@ export class Connection extends MongooseConnection {
     return super.collection(name, options);
   }
 
-  async createCollection(name: string) {
+  async createCollection(name: string, options?: Record<string, any>) {
     return executeOperation(async () => {
       await this._waitForClient();
       const db = this.client.db();
       if (!this.client.httpClient.isAstra) {
         db.createDatabase();
       }
-      return db.createCollection(name);
+      return db.createCollection(name, options);
     });
   }
 
