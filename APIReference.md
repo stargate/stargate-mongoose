@@ -10,13 +10,17 @@
 <dd></dd>
 <dt><a href="#Db">Db</a></dt>
 <dd></dd>
+<dt><a href="#_FindOptionsInternal">_FindOptionsInternal</a></dt>
+<dd><p>findOptions</p></dd>
+<dt><a href="#_FindOneAndReplaceOptions">_FindOneAndReplaceOptions</a></dt>
+<dd><p>findOneAndReplaceOptions</p></dd>
 </dl>
 
 ## Members
 
 <dl>
 <dt><a href="#findInternalOptionsKeys">findInternalOptionsKeys</a></dt>
-<dd><p>findOneAndReplaceOptions</p></dd>
+<dd><p>findOneAndDeleteOptions</p></dd>
 <dt><a href="#findOneAndReplaceInternalOptionsKeys">findOneAndReplaceInternalOptionsKeys</a></dt>
 <dd><p>findOneAndUpdateOptions</p></dd>
 <dt><a href="#findOneAndUpdateInternalOptionsKeys">findOneAndUpdateInternalOptionsKeys</a></dt>
@@ -25,6 +29,8 @@
 <dd><p>updateManyOptions</p></dd>
 <dt><a href="#updateManyInternalOptionsKeys">updateManyInternalOptionsKeys</a></dt>
 <dd><p>updateOneOptions</p></dd>
+<dt><a href="#updateOneInternalOptionsKeys">updateOneInternalOptionsKeys</a></dt>
+<dd><p>CreateCollectionOptions</p></dd>
 <dt><a href="#createAstraUri">createAstraUri</a> ⇒</dt>
 <dd><p>Create a stargate  connection URI</p></dd>
 <dt><a href="#createStargateUri">createStargateUri</a></dt>
@@ -32,13 +38,6 @@
 <dt><a href="#StargateAuthError">StargateAuthError</a> ⇒</dt>
 <dd><p>executeOperation handles running functions
 return a promise.</p></dd>
-</dl>
-
-## Constants
-
-<dl>
-<dt><a href="#findInternalOptionsKeys">findInternalOptionsKeys</a></dt>
-<dd><p>findOptions</p></dd>
 </dl>
 
 ## Functions
@@ -131,8 +130,7 @@ return a promise.</p></dd>
 * [Collection](#Collection)
     * [new Collection(httpClient, name)](#new_Collection_new)
     * ~~[.count()](#Collection+count)~~
-    * [.createIndex(index, options)](#Collection+createIndex) ⇒
-    * [.dropIndexes(index, options)](#Collection+dropIndexes) ⇒
+    * ~~[.count()](#Collection+count)~~
 
 <a name="new_Collection_new"></a>
 
@@ -149,28 +147,12 @@ return a promise.</p></dd>
 ***Deprecated***
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
-<a name="Collection+createIndex"></a>
+<a name="Collection+count"></a>
 
-### collection.createIndex(index, options) ⇒
+### ~~collection.count()~~
+***Deprecated***
+
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
-**Returns**: <p>any</p>  
-
-| Param |
-| --- |
-| index | 
-| options | 
-
-<a name="Collection+dropIndexes"></a>
-
-### collection.dropIndexes(index, options) ⇒
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-**Returns**: <p>any</p>  
-
-| Param |
-| --- |
-| index | 
-| options | 
-
 <a name="FindCursor"></a>
 
 ## FindCursor
@@ -301,10 +283,22 @@ return a promise.</p></dd>
 ### db.createDatabase() ⇒
 **Kind**: instance method of [<code>Db</code>](#Db)  
 **Returns**: <p>Promise</p>  
+<a name="_FindOptionsInternal"></a>
+
+## \_FindOptionsInternal
+<p>findOptions</p>
+
+**Kind**: global class  
+<a name="_FindOneAndReplaceOptions"></a>
+
+## \_FindOneAndReplaceOptions
+<p>findOneAndReplaceOptions</p>
+
+**Kind**: global class  
 <a name="findInternalOptionsKeys"></a>
 
 ## findInternalOptionsKeys
-<p>findOneAndReplaceOptions</p>
+<p>findOneAndDeleteOptions</p>
 
 **Kind**: global variable  
 <a name="findOneAndReplaceInternalOptionsKeys"></a>
@@ -329,6 +323,12 @@ return a promise.</p></dd>
 
 ## updateManyInternalOptionsKeys
 <p>updateOneOptions</p>
+
+**Kind**: global variable  
+<a name="updateOneInternalOptionsKeys"></a>
+
+## updateOneInternalOptionsKeys
+<p>CreateCollectionOptions</p>
 
 **Kind**: global variable  
 <a name="createAstraUri"></a>
@@ -372,12 +372,6 @@ return a promise.</p>
 | --- | --- |
 | operation | <p>a function that takes no parameters and returns a response</p> |
 
-<a name="findInternalOptionsKeys"></a>
-
-## findInternalOptionsKeys
-<p>findOptions</p>
-
-**Kind**: global constant  
 <a name="parseUri"></a>
 
 ## parseUri(uri) ⇒
