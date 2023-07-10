@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import http from 'http';
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { logger, setLevel } from '@/src/logger';
 import { inspect } from 'util';
 import { LIB_NAME, LIB_VERSION } from '../version';
@@ -67,7 +67,8 @@ const axiosAgent = axios.create({
   timeout: DEFAULT_TIMEOUT
 });
 
-const requestInterceptor = (config: AxiosRequestConfig) => {
+// InternalAxiosRequestConfig because of https://github.com/axios/axios/issues/5494#issuecomment-1402663237
+const requestInterceptor = (config: InternalAxiosRequestConfig) => {
   const { method, url } = config;
   if (logger.isLevelEnabled('http')) {
     logger.http(`--- request ${method?.toUpperCase()} ${url} ${serializeCommand(config.data, true)}`);
