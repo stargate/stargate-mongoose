@@ -15,7 +15,9 @@
 // setup envars
 require("dotenv").config();
 
-import { setLevel } from '@/src/logger';
+import { logger, setLevel } from '@/src/logger';
 if (process.env.D) {
   setLevel('http');
+} else {
+  logger.silent = true;
 }
