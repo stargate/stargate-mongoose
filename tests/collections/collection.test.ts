@@ -896,6 +896,24 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       );
       assert.ok(updateOneResp.upsertedId.match(/^[a-f\d]{24}$/i), updateOneResp.upsertedId);
     });
+    it('should not overwrite user-specified _id in $setOnInsert', async () => {
+      await collection.deleteMany({});
+      const updateOneResp = await collection.updateOne(
+        {},
+        {
+          "$setOnInsert": {
+            "_id": "foo"
+          },
+          "$set": {
+            "username": "aaronm"
+          }
+        },
+        {
+          "upsert": true
+        }
+      );
+      assert.equal(updateOneResp.upsertedId, "foo");
+    });
   });
   describe('updateMany tests', () => {
     it('should updateMany documents with ids', async () => {

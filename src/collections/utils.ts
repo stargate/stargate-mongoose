@@ -244,7 +244,9 @@ export function setDefaultIdForUpsert(command: Record<string, any>, replace?: bo
     if (command.update.$setOnInsert == null) {
       command.update.$setOnInsert = {};
     }
-    command.update.$setOnInsert._id = new ObjectId();
+    if (!('_id' in command.update.$setOnInsert)) {
+      command.update.$setOnInsert._id = new ObjectId();
+    }
   }
 }
 
