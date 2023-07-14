@@ -36,235 +36,289 @@ describe(`Driver based tests`, async () => {
   });
   describe('StargateMongoose - index', () => {
     it('should leverage astradb', async function () {
-      const cartSchema = new mongoose.Schema({
-        name: String,
-        cartName: { type: String, lowercase: true, unique: true, index: true },
-        products: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }]
-      });
-
-      const productSchema = new mongoose.Schema({
-        name: String,
-        price: Number,
-        expiryDate: Date,
-        isCertified: Boolean
-      });
       let Cart, Product;
       let astraMongoose, jsonAPIMongoose;
-      if (isAstra) {
-        astraMongoose = new mongoose.Mongoose();
-        astraMongoose.setDriver(StargateMongooseDriver);
-        astraMongoose.set('autoCreate', true);
-        astraMongoose.set('autoIndex', false);
-        Cart = astraMongoose.model('Cart', cartSchema);
-        Product = astraMongoose.model('Product', productSchema);
+      try {
+        const cartSchema = new mongoose.Schema({
+          name: String,
+          cartName: {type: String, lowercase: true, unique: true, index: true},
+          products: [{type: mongoose.Schema.Types.ObjectId, ref: 'Product'}]
+        });
 
-        // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
-        await astraMongoose.connect(dbUri, { isAstra: true });
-        await Promise.all(Object.values(astraMongoose.connection.models).map(Model => Model.init()));
-      } else {
-        // @ts-ignore
-        jsonAPIMongoose = new mongoose.Mongoose();
-        jsonAPIMongoose.setDriver(StargateMongooseDriver);
-        jsonAPIMongoose.set('autoCreate', true);
-        jsonAPIMongoose.set('autoIndex', false);
-        Cart = jsonAPIMongoose.model('Cart', cartSchema);
-        Product = jsonAPIMongoose.model('Product', productSchema);
+        const productSchema = new mongoose.Schema({
+          name: String,
+          price: Number,
+          expiryDate: Date,
+          isCertified: Boolean
+        });
+        if (isAstra) {
+          astraMongoose = new mongoose.Mongoose();
+          astraMongoose.setDriver(StargateMongooseDriver);
+          astraMongoose.set('autoCreate', true);
+          astraMongoose.set('autoIndex', false);
+          Cart = astraMongoose.model('Cart', cartSchema);
+          Product = astraMongoose.model('Product', productSchema);
 
-        const options = {
-          username: process.env.STARGATE_USERNAME,
-          password: process.env.STARGATE_PASSWORD,
-          authUrl: process.env.STARGATE_AUTH_URL,
-          logSkippedOptions: true
-        };
-        // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
-        await jsonAPIMongoose.connect(dbUri, options);
-        await Promise.all(Object.values(jsonAPIMongoose.connection.models).map(Model => Model.init()));
-      }
-      await Promise.all([Product.deleteMany({}), Cart.deleteMany({})]);
-      const product1 = new Product({ name: 'Product 1', price: 10, expiryDate: new Date('2024-04-20T00:00:00.000Z'), isCertified: true });
-      await product1.save();
+          // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+          await astraMongoose.connect(dbUri, {isAstra: true});
+          await Promise.all(Object.values(astraMongoose.connection.models).map(Model => Model.init()));
+        } else {
+          // @ts-ignore
+          jsonAPIMongoose = new mongoose.Mongoose();
+          jsonAPIMongoose.setDriver(StargateMongooseDriver);
+          jsonAPIMongoose.set('autoCreate', true);
+          jsonAPIMongoose.set('autoIndex', false);
+          Cart = jsonAPIMongoose.model('Cart', cartSchema);
+          Product = jsonAPIMongoose.model('Product', productSchema);
 
-      const product2 = new Product({ name: 'Product 2', price: 10, expiryDate: new Date('2024-11-20T00:00:00.000Z'), isCertified: false });
-      await product2.save();
+          const options = {
+            username: process.env.STARGATE_USERNAME,
+            password: process.env.STARGATE_PASSWORD,
+            authUrl: process.env.STARGATE_AUTH_URL,
+            logSkippedOptions: true
+          };
+          // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+          await jsonAPIMongoose.connect(dbUri, options);
+          await Promise.all(Object.values(jsonAPIMongoose.connection.models).map(Model => Model.init()));
+        }
+        await Promise.all([Product.deleteMany({}), Cart.deleteMany({})]);
+        const product1 = new Product({
+          name: 'Product 1',
+          price: 10,
+          expiryDate: new Date('2024-04-20T00:00:00.000Z'),
+          isCertified: true
+        });
+        await product1.save();
 
-      const cart = new Cart({
-        name: 'My Cart',
-        cartName: 'wewson',
-        products: [product1._id, product2._id]
-      });
-      await cart.save();
-      assert.strictEqual(await Cart.findOne({ cartName: 'wewson' }).select('name').exec().then((doc: any) => doc.name), cart.name);
-      //compare if product expiryDate is same as saved
-      assert.strictEqual(await Product.findOne({ name: 'Product 1' }).select('expiryDate').exec().then((doc: any) => doc.expiryDate.toISOString()), product1.expiryDate!.toISOString());
+        const product2 = new Product({
+          name: 'Product 2',
+          price: 10,
+          expiryDate: new Date('2024-11-20T00:00:00.000Z'),
+          isCertified: false
+        });
+        await product2.save();
 
-      const findOneAndReplaceResp = await Cart.findOneAndReplace({ cartName: 'wewson' }, { name: 'My Cart 2', cartName: 'wewson1' }, { returnDocument: 'after'}).exec();
-      assert.strictEqual(findOneAndReplaceResp!.name, 'My Cart 2');
-      assert.strictEqual(findOneAndReplaceResp!.cartName, 'wewson1');
+        const cart = new Cart({
+          name: 'My Cart',
+          cartName: 'wewson',
+          products: [product1._id, product2._id]
+        });
+        await cart.save();
+        assert.strictEqual(await Cart.findOne({cartName: 'wewson'}).select('name').exec().then((doc: any) => doc.name), cart.name);
+        //compare if product expiryDate is same as saved
+        assert.strictEqual(await Product.findOne({name: 'Product 1'}).select('expiryDate').exec().then((doc: any) => doc.expiryDate.toISOString()), product1.expiryDate!.toISOString());
 
-      let productNames: string[] = [];
-      const cursor = await Product.find().cursor();
-      await cursor.eachAsync(p => productNames.push(p.name));
-      assert.deepEqual(productNames.sort(), ['Product 1', 'Product 2']);
+        const findOneAndReplaceResp = await Cart.findOneAndReplace({cartName: 'wewson'}, {
+          name: 'My Cart 2',
+          cartName: 'wewson1'
+        }, {returnDocument: 'after'}).exec();
+        assert.strictEqual(findOneAndReplaceResp!.name, 'My Cart 2');
+        assert.strictEqual(findOneAndReplaceResp!.cartName, 'wewson1');
 
-      await cart.deleteOne();
-      assert.strictEqual(await Cart.findOne({ cartName: 'wewson' }), null);
+        let productNames: string[] = [];
+        const cursor = await Product.find().cursor();
+        await cursor.eachAsync(p => productNames.push(p.name));
+        assert.deepEqual(productNames.sort(), ['Product 1', 'Product 2']);
 
-      if (isAstra) {
-        astraMongoose?.connection.dropCollection('carts');
-        astraMongoose?.connection.dropCollection('products');
-      } else {
-        jsonAPIMongoose?.connection.dropCollection('carts');
-        jsonAPIMongoose?.connection.dropCollection('products');
+        await cart.deleteOne();
+        assert.strictEqual(await Cart.findOne({cartName: 'wewson'}), null);
+      } finally {
+        if (isAstra) {
+          astraMongoose?.connection.dropCollection('carts');
+          astraMongoose?.connection.dropCollection('products');
+        } else {
+          jsonAPIMongoose?.connection.dropCollection('carts');
+          jsonAPIMongoose?.connection.dropCollection('products');
+        }
       }
     });
   });
   describe('Mongoose API', () => {
     it('handles find cursors', async () => {
-      const mongooseInstance = await createMongooseInstance();
+      let mongooseInstance;
+      try {
+        mongooseInstance = await createMongooseInstance();
 
-      const personSchema = new mongooseInstance.Schema({
-        name: String
-      });
-      const Person = mongooseInstance.model('Person', personSchema);
-      await Person.init();
-      await Person.deleteMany({});
-      await Person.create([{ name: 'John' }, { name: 'Bill' }]);
+        const personSchema = new mongooseInstance.Schema({
+          name: String
+        });
+        const Person = mongooseInstance.model('Person', personSchema);
+        await Person.init();
+        await Person.deleteMany({});
+        await Person.create([{name: 'John'}, {name: 'Bill'}]);
 
-      let names: string[] = [];
-      const cursor = await Person.find().cursor();
-      await cursor.eachAsync(doc => names.push(doc.name));
-      assert.deepEqual(names.sort(), ['Bill', 'John']);
+        let names: string[] = [];
+        const cursor = await Person.find().cursor();
+        await cursor.eachAsync(doc => names.push(doc.name));
+        assert.deepEqual(names.sort(), ['Bill', 'John']);
+      } finally {
+        await mongooseInstance?.connection.dropCollection('people');
+      }
     });
 
     it('handles document deleteOne() and updateOne()', async () => {
-      const mongooseInstance = await createMongooseInstance();
+      let mongooseInstance;
+      try {
+        mongooseInstance = await createMongooseInstance();
 
-      const personSchema = new mongooseInstance.Schema({
-        name: String
-      });
-      const Person = mongooseInstance.model('Person', personSchema);
-      await Person.init();
-      await Person.deleteMany({});
-      const [person1] = await Person.create([{ name: 'John' }, { name: 'Bill' }]);
+        const personSchema = new mongooseInstance.Schema({
+          name: String
+        });
+        const Person = mongooseInstance.model('Person', personSchema);
+        await Person.init();
+        await Person.deleteMany({});
+        const [person1] = await Person.create([{name: 'John'}, {name: 'Bill'}]);
 
-      await person1.updateOne({ name: 'Joe' });
-      let names = await Person.find();
-      assert.deepEqual(names.map(doc => doc.name).sort(), ['Bill', 'Joe']);
+        await person1.updateOne({name: 'Joe'});
+        let names = await Person.find();
+        assert.deepEqual(names.map(doc => doc.name).sort(), ['Bill', 'Joe']);
 
-      await person1.deleteOne();
-      names = await Person.find();
-      assert.deepEqual(names.map(doc => doc.name).sort(), ['Bill']);
+        await person1.deleteOne();
+        names = await Person.find();
+        assert.deepEqual(names.map(doc => doc.name).sort(), ['Bill']);
+      } finally {
+        await mongooseInstance?.connection.dropCollection('people');
+      }
     });
 
     it('handles updating existing document with save()', async () => {
-      const mongooseInstance = await createMongooseInstance();
+      let mongooseInstance;
+      try {
+        mongooseInstance = await createMongooseInstance();
 
-      let options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };
-      const conn = await mongooseInstance.createConnection(dbUri, options).asPromise();
+        let options = isAstra ? {isAstra: true} : {
+          username: process.env.STARGATE_USERNAME,
+          password: process.env.STARGATE_PASSWORD,
+          authUrl: process.env.STARGATE_AUTH_URL
+        };
+        const conn = await mongooseInstance.createConnection(dbUri, options).asPromise();
 
-      const personSchema = new mongooseInstance.Schema({
-        name: String
-      });
-      const Person = conn.model('Person', personSchema);
-      await Person.init();
-      await Person.deleteMany({});
-      const [person] = await Person.create([{ name: 'John' }]);
+        const personSchema = new mongooseInstance.Schema({
+          name: String
+        });
+        const Person = conn.model('Person', personSchema);
+        await Person.init();
+        await Person.deleteMany({});
+        const [person] = await Person.create([{name: 'John'}]);
 
-      person.name = 'Joe';
-      await person.save();
-      const names = await Person.find();
-      assert.deepEqual(names.map(doc => doc.name).sort(), ['Joe']);
+        person.name = 'Joe';
+        await person.save();
+        const names = await Person.find();
+        assert.deepEqual(names.map(doc => doc.name).sort(), ['Joe']);
+      } finally {
+        await mongooseInstance?.connection.dropCollection('people');
+      }
     });
 
     it('handles populate()', async () => {
-      const mongooseInstance = await createMongooseInstance();
+      let mongooseInstance;
+      try {
+        mongooseInstance = await createMongooseInstance();
 
-      const cartSchema = new mongooseInstance.Schema({
-        name: String,
-        products: [{ type: 'ObjectId', ref: 'Product' }]
-      });
-      const productSchema = new mongooseInstance.Schema({
-        name: String,
-        price: Number
-      });
-      const Cart = mongooseInstance.model('Cart', cartSchema);
-      const Product = mongooseInstance.model('Product', productSchema);
-      await Promise.all([Cart.init(), Product.init()]);
-      await Promise.all([Cart.deleteMany({}), Product.deleteMany({})]);
-      const [{ _id: productId }] = await Product.create([
-        { name: 'iPhone 12', price: 500 },
-        { name: 'MacBook Air', price: 1400 }
-      ]);
-      const { _id: cartId } = await Cart.create({ name: 'test', products: [productId] });
+        const cartSchema = new mongooseInstance.Schema({
+          name: String,
+          products: [{ type: 'ObjectId', ref: 'Product' }]
+        });
+        const productSchema = new mongooseInstance.Schema({
+          name: String,
+          price: Number
+        });
+        const Cart = mongooseInstance.model('Cart', cartSchema);
+        const Product = mongooseInstance.model('Product', productSchema);
+        await Promise.all([Cart.init(), Product.init()]);
+        await Promise.all([Cart.deleteMany({}), Product.deleteMany({})]);
+        const [{ _id: productId }] = await Product.create([
+          { name: 'iPhone 12', price: 500 },
+          { name: 'MacBook Air', price: 1400 }
+        ]);
+        const { _id: cartId } = await Cart.create({ name: 'test', products: [productId] });
 
-      const cart = await Cart.findById(cartId).populate('products').orFail();
-      assert.deepEqual(cart.products.map(p => p.name), ['iPhone 12']);
+        const cart = await Cart.findById(cartId).populate('products').orFail();
+        assert.deepEqual(cart.products.map(p => p.name), ['iPhone 12']);
+      } finally {
+        await mongooseInstance?.connection.dropCollection('carts');
+        await mongooseInstance?.connection.dropCollection('products');
+      }
     });
 
     it('handles nested populate()', async () => {
-      const mongooseInstance = await createMongooseInstance();
+      let mongooseInstance;
+      try {
+        mongooseInstance = await createMongooseInstance();
 
-      const parentSchema = new mongooseInstance.Schema({
-        name: String,
-        children: [{ type: 'ObjectId', ref: 'Child' }]
-      });
-      const childSchema = new mongooseInstance.Schema({
-        name: String,
-        children: [{ type: 'ObjectId', ref: 'Grandchild' }]
-      });
-      const grandchildSchema = new mongooseInstance.Schema({
-        name: String
-      });
-      const Parent = mongooseInstance.model('Parent', parentSchema);
-      const Child = mongooseInstance.model('Child', childSchema);
-      const Grandchild = mongooseInstance.model('Grandchild', grandchildSchema);
-      await Promise.all([Parent.init(), Child.init(), Grandchild.init()]);
-      await Promise.all([Parent.deleteMany({}), Child.deleteMany({}), Grandchild.deleteMany({})]);
-      const [{ _id: grandchildId }] = await Grandchild.create([
-        { name: 'Ben Skywalker' },
-        { name: 'Jacen Solo' }
-      ]);
-      const [{ _id: childId }] = await Child.create([
-        { name: 'Luke Skywalker', children: [grandchildId] },
-        { name: 'Han Solo' }
-      ]);
-      const { _id: parentId } = await Parent.create({
-        name: 'Anakin Skywalker',
-        children: [childId]
-      });
-
-      type PopulateTypeOverride = {
-        children: { name?: string, children: (typeof Grandchild)[] }[]
-      };
-      const parent = await Parent
-        .findById(parentId)
-        .populate<PopulateTypeOverride>({
-          path: 'children',
-          populate: { path: 'children' }
+        const parentSchema = new mongooseInstance.Schema({
+          name: String,
+          children: [{type: 'ObjectId', ref: 'Child'}]
         });
-      assert.equal(parent!.children.length, 1);
-      assert.equal(parent!.children[0]!.name, 'Luke Skywalker');
-      assert.equal(parent!.children[0]!.children.length, 1);
-      assert.equal(parent!.children[0]!.children[0].name, 'Ben Skywalker');
+        const childSchema = new mongooseInstance.Schema({
+          name: String,
+          children: [{type: 'ObjectId', ref: 'Grandchild'}]
+        });
+        const grandchildSchema = new mongooseInstance.Schema({
+          name: String
+        });
+        const Parent = mongooseInstance.model('Parent', parentSchema);
+        const Child = mongooseInstance.model('Child', childSchema);
+        const Grandchild = mongooseInstance.model('Grandchild', grandchildSchema);
+        await Promise.all([Parent.init(), Child.init(), Grandchild.init()]);
+        await Promise.all([Parent.deleteMany({}), Child.deleteMany({}), Grandchild.deleteMany({})]);
+        const [{_id: grandchildId}] = await Grandchild.create([
+          {name: 'Ben Skywalker'},
+          {name: 'Jacen Solo'}
+        ]);
+        const [{_id: childId}] = await Child.create([
+          {name: 'Luke Skywalker', children: [grandchildId]},
+          {name: 'Han Solo'}
+        ]);
+        const {_id: parentId} = await Parent.create({
+          name: 'Anakin Skywalker',
+          children: [childId]
+        });
+
+        type PopulateTypeOverride = {
+          children: { name?: string, children: (typeof Grandchild)[] }[]
+        };
+        const parent = await Parent
+            .findById(parentId)
+            .populate<PopulateTypeOverride>({
+              path: 'children',
+              populate: {path: 'children'}
+            });
+        assert.equal(parent!.children.length, 1);
+        assert.equal(parent!.children[0]!.name, 'Luke Skywalker');
+        assert.equal(parent!.children[0]!.children.length, 1);
+        assert.equal(parent!.children[0]!.children[0].name, 'Ben Skywalker');
+      } finally {
+        await mongooseInstance?.connection.dropCollection('parents');
+        await mongooseInstance?.connection.dropCollection('children');
+        await mongooseInstance?.connection.dropCollection('grandchildren');
+      }
     });
 
     it('handles exists()', async () => {
-      const mongooseInstance = await createMongooseInstance();
+      let mongooseInstance;
+      try {
+        mongooseInstance = await createMongooseInstance();
 
-      const personSchema = new mongooseInstance.Schema({
-        name: String
-      });
-      const Person = mongooseInstance.model('Person', personSchema);
-      await Person.init();
-      await Person.deleteMany({});
-      await Person.create([{ name: 'John' }]);
+        const personSchema = new mongooseInstance.Schema({
+          name: String
+        });
+        const Person = mongooseInstance.model('Person', personSchema);
+        await Person.init();
+        await Person.deleteMany({});
+        await Person.create([{name: 'John'}]);
 
-      assert.ok(await Person.exists({ name: 'John' }));
-      assert.ok(!(await Person.exists({ name: 'James' })));
+        assert.ok(await Person.exists({name: 'John'}));
+        assert.ok(!(await Person.exists({name: 'James'})));
+      } finally {
+        await mongooseInstance?.connection.dropCollection('people');
+      }
     });
 
     it('handles insertMany()', async () => {
-      const mongooseInstance = await createMongooseInstance();
+      let mongooseInstance;
+      try {
+      mongooseInstance = await createMongooseInstance();
 
       const personSchema = new mongooseInstance.Schema({
         name: String
@@ -276,51 +330,69 @@ describe(`Driver based tests`, async () => {
 
       const docs = await Person.find();
       assert.deepEqual(docs.map(doc => doc.name).sort(), ['Bill', 'John']);
+      } finally {
+        await mongooseInstance?.connection.dropCollection('people');
+      }
     });
 
     it('throws readable error on bulkWrite()', async () => {
-      const mongooseInstance = await createMongooseInstance();
+      let mongooseInstance;
+      try {
+        mongooseInstance = await createMongooseInstance();
 
-      const personSchema = new mongooseInstance.Schema({
-        name: String
-      });
-      const Person = mongooseInstance.model('Person', personSchema);
-      await Person.init();
-      await Person.deleteMany({});
-      await assert.rejects(
-        Person.bulkWrite([{ insertOne: { document: { name: 'John' } } }]),
-        /bulkWrite\(\) Not Implemented/
-      );
+        const personSchema = new mongooseInstance.Schema({
+          name: String
+        });
+        const Person = mongooseInstance.model('Person', personSchema);
+        await Person.init();
+        await Person.deleteMany({});
+        await assert.rejects(
+            Person.bulkWrite([{insertOne: {document: {name: 'John'}}}]),
+            /bulkWrite\(\) Not Implemented/
+        );
+      } finally {
+        await mongooseInstance?.connection.dropCollection('people');
+      }
     });
 
     it('throws readable error on aggregate()', async () => {
-      const mongooseInstance = await createMongooseInstance();
+      let mongooseInstance;
+      try {
+        mongooseInstance = await createMongooseInstance();
 
-      const personSchema = new mongooseInstance.Schema({
-        name: String
-      });
-      const Person = mongooseInstance.model('Person', personSchema);
-      await Person.init();
-      await Person.deleteMany({});
-      await assert.rejects(
-        Person.aggregate([{ $match: { name: 'John' } }]),
-        /aggregate\(\) Not Implemented/
-      );
+        const personSchema = new mongooseInstance.Schema({
+          name: String
+        });
+        const Person = mongooseInstance.model('Person', personSchema);
+        await Person.init();
+        await Person.deleteMany({});
+        await assert.rejects(
+            Person.aggregate([{$match: {name: 'John'}}]),
+            /aggregate\(\) Not Implemented/
+        );
+      } finally {
+        await mongooseInstance?.connection.dropCollection('people');
+      }
     });
 
     it('throws readable error on change stream', async () => {
-      const mongooseInstance = await createMongooseInstance();
+      let mongooseInstance;
+      try {
+        mongooseInstance = await createMongooseInstance();
 
-      const personSchema = new mongooseInstance.Schema({
-        name: String
-      });
-      const Person = mongooseInstance.model('Person', personSchema);
-      await Person.init();
-      await Person.deleteMany({});
-      await assert.throws(
-        () => Person.watch([{ $match: { name: 'John' } }]),
-        /watch\(\) Not Implemented/
-      );
+        const personSchema = new mongooseInstance.Schema({
+          name: String
+        });
+        const Person = mongooseInstance.model('Person', personSchema);
+        await Person.init();
+        await Person.deleteMany({});
+        await assert.throws(
+            () => Person.watch([{$match: {name: 'John'}}]),
+            /watch\(\) Not Implemented/
+        );
+      } finally {
+        await mongooseInstance?.connection.dropCollection('people');
+      }
     });
 
     async function createMongooseInstance() {
