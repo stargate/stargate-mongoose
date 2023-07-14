@@ -83,9 +83,9 @@ describe(`Options tests`, async () => {
 
     async function dropCollections(isAstra: boolean, astraMongoose: mongoose.Mongoose, jsonAPIMongoose: mongoose.Mongoose, collectionName: string) {
         if (isAstra) {
-            astraMongoose?.connection.dropCollection(collectionName);
+            await astraMongoose?.connection.dropCollection(collectionName);
         } else {
-            jsonAPIMongoose?.connection.dropCollection(collectionName);
+            await jsonAPIMongoose?.connection.dropCollection(collectionName);
         }
     }
 
