@@ -2045,8 +2045,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       const docs = await collection.find({}, { sort: { username: 1 } }).toArray();
       assert.deepStrictEqual(docs.map(doc => doc.answer), [undefined, 42, undefined]);
     });
-    it.skip('findOneAndReplace should make _id an ObjectId when upserting with no _id', async () => {
-      // Skip for now pending stargate/jsonapi#435
+    it('findOneAndReplace should make _id an ObjectId when upserting with no _id', async () => {
       await collection.deleteMany({});
       const { value } = await collection.findOneAndReplace(
         {},
@@ -2058,6 +2057,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
           "upsert": true
         }
       );
+      // @ts-ignore
       assert.ok(value!._id!.match(/^[a-f\d]{24}$/i), value!._id);
     });
     it('should findOneAndUpdate without any updates to apply', async () => {

@@ -244,8 +244,7 @@ export class Collection {
           options
         }
       };
-      // Skip for now pending stargate/jsonapi#435
-      // setDefaultIdForUpsert(command.findOneAndReplace, true);
+      setDefaultIdForUpsert(command.findOneAndReplace, true);
       if (options?.sort) {
         command.findOneAndReplace.sort = options.sort;
         if (options.sort != null) {

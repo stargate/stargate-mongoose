@@ -202,8 +202,7 @@ describe(`Options tests`, async () => {
             const findResp = await Product.find({ }, {}, { rawResult: false, limit : 30 });
             assert.strictEqual(findResp.length, 30);
         });
-        //TODO skipping this until https://github.com/stargate/jsonapi/issues/416 is fixed
-        it.skip('should cleanup findOneAndReplaceOptions', async () => {
+        it('should cleanup findOneAndReplaceOptions', async () => {
             //create 20 products using Array with id suffixed to prduct name
             // @ts-ignore
             let products: Product[] = [];
