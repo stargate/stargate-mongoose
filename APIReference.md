@@ -29,6 +29,8 @@
 <dd><p>updateManyOptions</p></dd>
 <dt><a href="#updateManyInternalOptionsKeys">updateManyInternalOptionsKeys</a></dt>
 <dd><p>updateOneOptions</p></dd>
+<dt><a href="#updateOneInternalOptionsKeys">updateOneInternalOptionsKeys</a></dt>
+<dd><p>CreateCollectionOptions</p></dd>
 <dt><a href="#createAstraUri">createAstraUri</a> ⇒</dt>
 <dd><p>Create a stargate  connection URI</p></dd>
 <dt><a href="#createStargateUri">createStargateUri</a></dt>
@@ -128,8 +130,7 @@ return a promise.</p></dd>
 * [Collection](#Collection)
     * [new Collection(httpClient, name)](#new_Collection_new)
     * ~~[.count()](#Collection+count)~~
-    * [.createIndex(index, options)](#Collection+createIndex) ⇒
-    * [.dropIndexes(index, options)](#Collection+dropIndexes) ⇒
+    * ~~[.count()](#Collection+count)~~
 
 <a name="new_Collection_new"></a>
 
@@ -146,28 +147,12 @@ return a promise.</p></dd>
 ***Deprecated***
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
-<a name="Collection+createIndex"></a>
+<a name="Collection+count"></a>
 
-### collection.createIndex(index, options) ⇒
+### ~~collection.count()~~
+***Deprecated***
+
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
-**Returns**: <p>any</p>  
-
-| Param |
-| --- |
-| index | 
-| options | 
-
-<a name="Collection+dropIndexes"></a>
-
-### collection.dropIndexes(index, options) ⇒
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-**Returns**: <p>any</p>  
-
-| Param |
-| --- |
-| index | 
-| options | 
-
 <a name="FindCursor"></a>
 
 ## FindCursor
@@ -338,6 +323,12 @@ return a promise.</p></dd>
 
 ## updateManyInternalOptionsKeys
 <p>updateOneOptions</p>
+
+**Kind**: global variable  
+<a name="updateOneInternalOptionsKeys"></a>
+
+## updateOneInternalOptionsKeys
+<p>CreateCollectionOptions</p>
 
 **Kind**: global variable  
 <a name="createAstraUri"></a>

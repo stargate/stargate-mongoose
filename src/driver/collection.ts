@@ -24,6 +24,9 @@ import {
   UpdateManyOptions,
   UpdateOneOptions
 } from '@/src/collections/options';
+import { DeleteResult } from 'mongodb';
+
+type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null) => unknown;
 
 export class Collection extends MongooseCollection {
   debugType = 'StargateMongooseCollection';
@@ -39,12 +42,23 @@ export class Collection extends MongooseCollection {
     return this.conn.db.collection(this.name);
   }
 
+  /**
+  * @deprecated
+  */
+  count(filter: Record<string, any>) {
+    return this.collection.count(filter);
+  }
+
   countDocuments(filter: Record<string, any>) {
     return this.collection.countDocuments(filter);
   }
 
-  find(filter: Record<string, any>, options?: FindOptions) {
-    return this.collection.find(filter, options);
+  find(filter: Record<string, any>, options?: FindOptions, callback?: NodeCallback<Record<string, any>[]>) {
+    const cursor = this.collection.find(filter, options);
+    if (callback != null) {
+      return callback(null, cursor);
+    }
+    return cursor;
   }
 
   findOne(filter: Record<string, any>, options?: FindOneOptions) {
@@ -75,8 +89,14 @@ export class Collection extends MongooseCollection {
     return this.collection.deleteMany(filter);
   }
 
-  deleteOne(filter: Record<string, any>, options?: DeleteOneOptions) {
-    return this.collection.deleteOne(filter, options);
+  deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<DeleteResult>) {
+    const promise = this.collection.deleteOne(filter, options);
+
+    if (callback != null) {
+      promise.then((res: DeleteResult) => callback(null, res), (err: Error) => callback(err, null));
+    }
+
+    return promise;
   }
 
   updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
@@ -87,17 +107,59 @@ export class Collection extends MongooseCollection {
     return this.collection.updateMany(filter, update, options);
   }
 
-  // No-ops
-  dropIndexes() {
-    throw new Error('dropIndexes() Not Implemented');
-  }
-
-  createIndex(index: any, options?: any) {
-    throw new Error('createIndex() Not Implemented');
-  }
-
   bulkWrite(ops: any[], options?: any) {
-    throw new Error('bulkWrite() Not Implemented');
+    throw new OperationNotSupportedError('bulkWrite() Not Implemented');
   }
 
+  aggregate(pipeline: any[], options?: any) {
+    throw new OperationNotSupportedError('aggregate() Not Implemented');
+  }
+
+  bulkSave(docs: any[], options?: any) {
+    throw new OperationNotSupportedError('bulkSave() Not Implemented');
+  }
+
+  cleanIndexes(options?: any) {
+    throw new OperationNotSupportedError('cleanIndexes() Not Implemented');
+  }
+
+  listIndexes(options?: any) {
+    throw new OperationNotSupportedError('listIndexes() Not Implemented');
+  }
+
+  createIndex(fieldOrSpec: any, options?: any) {
+    throw new OperationNotSupportedError('createIndex() Not Implemented');
+  }
+
+  dropIndexes() {
+    throw new OperationNotSupportedError('dropIndexes() Not Implemented');
+  }
+
+  watch() {
+    throw new OperationNotSupportedError('watch() Not Implemented');
+  }
+
+  distinct() {
+    throw new OperationNotSupportedError('distinct() Not Implemented');
+  }
+
+  estimatedDocumentCount() {
+    throw new OperationNotSupportedError('estimatedDocumentCount() Not Implemented');
+  }
+
+  replaceOne() {
+    throw new OperationNotSupportedError('replaceOne() Not Implemented');
+  }
+
+  syncIndexes() {
+    throw new OperationNotSupportedError('syncIndexes() Not Implemented');
+  }
+
+}
+
+export class OperationNotSupportedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'OperationNotSupportedError';
+  }
 }

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { HTTPClient } from '@/src/client';
+import { CreateCollectionOptions } from './options';
 import { Collection } from './collection';
 import { executeOperation, createNamespace, dropNamespace } from './utils';
 
@@ -63,13 +64,22 @@ export class Db {
    * @param options
    * @returns Promise
    */
-  async createCollection(collectionName: string) {
+  async createCollection(collectionName: string, options?: CreateCollectionOptions) {
     return executeOperation(async () => {
-      const command = {
+      type CreateCollectionCommand = {
+        createCollection: {
+          name: string,
+          options?: CreateCollectionOptions
+        }
+      };
+      const command: CreateCollectionCommand = {
         createCollection: {
           name: collectionName
         }
       };
+      if (options != null) {
+        command.createCollection.options = options;
+      }
       return await this.httpClient.executeCommand(command, null);
     });
   }

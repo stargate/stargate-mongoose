@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import http from 'http';
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { logger, setLevel } from '@/src/logger';
 import { inspect } from 'util';
 import { LIB_NAME, LIB_VERSION } from '../version';
@@ -67,7 +67,8 @@ const axiosAgent = axios.create({
   timeout: DEFAULT_TIMEOUT
 });
 
-const requestInterceptor = (config: AxiosRequestConfig) => {
+// InternalAxiosRequestConfig because of https://github.com/axios/axios/issues/5494#issuecomment-1402663237
+const requestInterceptor = (config: InternalAxiosRequestConfig) => {
   const { method, url } = config;
   if (logger.isLevelEnabled('http')) {
     logger.http(`--- request ${method?.toUpperCase()} ${url} ${serializeCommand(config.data, true)}`);
@@ -256,15 +257,27 @@ function deserialize(data: Record<string, any>): Record<string, any> {
 
 function handleValues(key: any, value: any): any {
   if (value != null && typeof value === 'bigint') {
+    //BigInt handling
     return Number(value);
   } else if (value != null && typeof value === 'object') {
     // ObjectId to strings
-    if (value.$oid) return value.$oid;
+    if (value.$oid) {
+      return value.$oid;
+    } else if (value.$numberDecimal) {
+      //Decimal128 handling
+      return Number(value.$numberDecimal);
+    } else if (value.$binary && (value.$binary.subType === '03' || value.$binary.subType === '04')) {
+      //UUID handling. Subtype 03 or 04 is UUID. Refer spec : https://bsonspec.org/spec.html
+      return Buffer.from(value.$binary.base64, 'base64').toString('hex')
+          .replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
+    }
+    //Date handling
     else if (value.$date) {
       // Use numbers instead of strings for dates
       value.$date = new Date(value.$date).valueOf();
     }
   }
+  //all other values
   return value;
 }
 

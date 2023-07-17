@@ -19,6 +19,7 @@ import { Client } from '@/src/collections/client';
 import { testClient, testClientName, createSampleDoc, sampleUsersList, createSampleDocWithMultiLevel, createSampleDocWithMultiLevelWithId, getSampleDocs, sleep, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 
 describe(`StargateMongoose - ${testClientName} Connection - collections.collection`, async () => {
+  const isAstra: boolean = testClientName === 'astra';
   let astraClient: Client | null;
   let db: Db;
   let collection: Collection;
@@ -88,7 +89,12 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         error = e;
       };
       assert.ok(error);
-      assert.strictEqual(error.errors[0].message, "Request failed with status code 413");
+      if(isAstra){
+        //In Astra, it returns a 413 error prior to reaching the JSON API
+        assert.strictEqual(error.errors[0].message, "Request failed with status code 413");
+      } else {
+        assert.strictEqual(error.errors[0].message, "Document size limitation violated: document size (1048636 chars) exceeds maximum allowed (1000000)");
+      }
     });
     it('Should fail if the number of levels in the doc is > 8', async () => {
       const docToInsert = { l1: { l2: { l3: { l4: { l5: { l6: { l7: { l8: { l9: "l9value" } } } } } } } } };
@@ -1192,8 +1198,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         assert.strictEqual(doc.address.zip, undefined);
       });
     });
-    //TODO: enable this test once $currentDate is supported in update and updateMany APIs
-    it.skip('should set date to current date in the fields inside $currentDate in update and updateMany', async () => {
+    it('should set date to current date in the fields inside $currentDate in update and updateMany', async () => {
       let docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username" }));
       docList.forEach((doc, index) => {
         doc._id += index;
