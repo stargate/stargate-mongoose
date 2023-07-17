@@ -21,7 +21,7 @@ import {
 } from 'mongodb';
 import {FindCursor} from './cursor';
 import {HTTPClient} from '@/src/client';
-import {executeOperation} from './utils';
+import {executeOperation, setDefaultIdForUpsert} from './utils';
 import {InsertManyResult} from 'mongoose';
 import {
   DeleteOneOptions,
@@ -114,6 +114,7 @@ export class Collection {
           options
         }
       };
+      setDefaultIdForUpsert(command.updateOne);
       const updateOneResp = await this.httpClient.executeCommand(command, updateOneInternalOptionsKeys);
       let resp = {
         modifiedCount: updateOneResp.status.modifiedCount,
@@ -137,6 +138,7 @@ export class Collection {
           options
         }
       };
+      setDefaultIdForUpsert(command.updateMany);
       const updateManyResp = await this.httpClient.executeCommand(command, updateManyInternalOptionsKeys);
       if (updateManyResp.status.moreData) {
         throw new StargateMongooseError(`More than ${updateManyResp.status.modifiedCount} records found for update by the server`, command);
@@ -242,6 +244,7 @@ export class Collection {
           options
         }
       };
+      setDefaultIdForUpsert(command.findOneAndReplace, true);
       if (options?.sort) {
         command.findOneAndReplace.sort = options.sort;
         if (options.sort != null) {
@@ -319,6 +322,7 @@ export class Collection {
           options
         }
       };
+      setDefaultIdForUpsert(command.findOneAndUpdate);
       if (options?.sort) {
         command.findOneAndUpdate.sort = options.sort;
         delete options.sort;
