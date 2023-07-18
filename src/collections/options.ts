@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export type SortOption = Record<string, 1 | -1>;
+export type SortOption = Record<string, 1 | -1> | { $vector: { $meta: Array<number> } } | { $vector: Array<number> };
 
 /**
  * deleteOneOptions
@@ -27,7 +27,7 @@ export interface DeleteOneOptions {
 export interface FindOptions {
     limit?: number;
     skip?: number;
-    sort?: Record<string, 1 | -1>;
+    sort?: SortOption;
     projection?: Record<string, 1 | -1>;
 }
 
@@ -54,7 +54,7 @@ export interface FindOneOptions {
  * findOneAndDeleteOptions
  */
 export interface FindOneAndDeleteOptions {
-    sort?: Record<string, 1 | -1>;
+    sort?: SortOption;
 }
 
 /**
@@ -64,7 +64,7 @@ export interface FindOneAndDeleteOptions {
 class _FindOneAndReplaceOptions {
     upsert?: boolean = undefined;
     returnDocument?: 'before' | 'after' = undefined;
-    sort?: Record<string, 1 | -1>;
+    sort?: SortOption;
 }
 
 export interface FindOneAndReplaceOptions extends _FindOneAndReplaceOptions {}
@@ -80,7 +80,7 @@ export const findOneAndReplaceInternalOptionsKeys: Set<string> = new Set(
 class _FindOneAndUpdateOptions {
     upsert?: boolean = undefined;
     returnDocument?: 'before' | 'after' = undefined;
-    sort?: Record<string, 1 | -1>;
+    sort?: SortOption;
 }
 
 export interface FindOneAndUpdateOptions extends _FindOneAndUpdateOptions {}
@@ -123,7 +123,7 @@ export const updateManyInternalOptionsKeys: Set<string> = new Set(
 
 class _UpdateOneOptions {
     upsert?: boolean = undefined;
-    sort?: Record<string, 1 | -1>;
+    sort?: SortOption;
 }
 
 export interface UpdateOneOptions extends _UpdateOneOptions {}

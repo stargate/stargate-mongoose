@@ -22,6 +22,7 @@ import {
 import mongoose, {Model, Mongoose, Schema} from "mongoose";
 import * as StargateMongooseDriver from "@/src/driver";
 import {randomUUID} from "crypto";
+import sinon from "sinon";
 import {OperationNotSupportedError} from "@/src/driver";
 
 describe(`Mongoose Model API level tests`, async () => {
@@ -732,5 +733,85 @@ describe(`Mongoose Model API level tests`, async () => {
             assert.strictEqual(whereResp.length, 1);
             assert.strictEqual(whereResp[0].name, 'Product 1');
         });
+    });
+
+    describe('vector search', function() {
+      afterEach(() => sinon.restore());
+
+      it('supports sort() with $meta with find()', async function() {
+        sinon.stub(Product.collection.collection, 'find').callsFake(() => Promise.resolve({
+          toArray: async () => ([])
+        }));
+        const res = await Product.find({}).sort({ $vector: { $meta: [1, 2] } });
+        assert.deepStrictEqual(res, []);
+        assert.equal(Product.collection.collection.find.getCalls().length, 1);
+        const calledWithOptions = Product.collection.collection.find.getCalls()[0].args[1];
+        assert.deepEqual(calledWithOptions, {
+          sort: {
+            $vector: [1, 2]
+          }
+        });
+      });
+
+      it('supports sort() with $meta with findOne()', async function() {
+        sinon.stub(Product.collection.collection, 'findOne').callsFake(() => Promise.resolve(null));
+        const res = await Product.findOne({}).sort({ $vector: { $meta: [1, 2] } });
+        assert.deepStrictEqual(res, null);
+        assert.equal(Product.collection.collection.findOne.getCalls().length, 1);
+        const calledWithOptions = Product.collection.collection.findOne.getCalls()[0].args[1];
+        assert.deepEqual(calledWithOptions, {
+          sort: {
+            $vector: [1, 2]
+          }
+        });
+      });
+
+      it('supports sort() with $meta with findOneAndUpdate()', async function() {
+        sinon.stub(Product.collection.collection, 'findOneAndUpdate').callsFake(() => Promise.resolve({}));
+        await Product.findOneAndUpdate({}, { name: 'iPhone' }, { sort: { $vector: { $meta: [1, 2] } } });
+        assert.equal(Product.collection.collection.findOneAndUpdate.getCalls().length, 1);
+        const calledWithOptions = Product.collection.collection.findOneAndUpdate.getCalls()[0].args[2];
+        assert.deepEqual(calledWithOptions, {
+          sort: {
+            $vector: [1, 2]
+          }
+        });
+      });
+
+      it('supports sort() with $meta with findOneAndReplace()', async function() {
+        sinon.stub(Product.collection.collection, 'findOneAndReplace').callsFake(() => Promise.resolve({}));
+        await Product.findOneAndReplace({}, { name: 'iPhone' }, { sort: { $vector: { $meta: [1, 2] } } });
+        assert.equal(Product.collection.collection.findOneAndReplace.getCalls().length, 1);
+        const calledWithOptions = Product.collection.collection.findOneAndReplace.getCalls()[0].args[2];
+        assert.deepEqual(calledWithOptions, {
+          sort: {
+            $vector: [1, 2]
+          }
+        });
+      });
+
+      it('supports sort() with $meta with findOneAndDelete()', async function() {
+        sinon.stub(Product.collection.collection, 'findOneAndDelete').callsFake(() => Promise.resolve({}));
+        await Product.findOneAndDelete({}, { sort: { $vector: { $meta: [1, 2] } } });
+        assert.equal(Product.collection.collection.findOneAndDelete.getCalls().length, 1);
+        const calledWithOptions = Product.collection.collection.findOneAndDelete.getCalls()[0].args[1];
+        assert.deepEqual(calledWithOptions, {
+          sort: {
+            $vector: [1, 2]
+          }
+        });
+      });
+
+      it('supports sort() with $meta with deleteOne()', async function() {
+        sinon.stub(Product.collection.collection, 'deleteOne').callsFake(() => Promise.resolve({}));
+        await Product.deleteOne({}, { sort: { $vector: { $meta: [1, 2] } } });
+        assert.equal(Product.collection.collection.deleteOne.getCalls().length, 1);
+        const calledWithOptions = Product.collection.collection.deleteOne.getCalls()[0].args[1];
+        assert.deepEqual(calledWithOptions, {
+          sort: {
+            $vector: [1, 2]
+          }
+        });
+      });
     });
 });

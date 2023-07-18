@@ -21,6 +21,7 @@ import {
   FindOneOptions,
   FindOptions,
   InsertManyOptions,
+  SortOption,
   UpdateManyOptions,
   UpdateOneOptions
 } from '@/src/collections/options';
@@ -39,7 +40,11 @@ export class Collection extends MongooseCollection {
   }
 
   get collection() {
-    return this.conn.db.collection(this.name);
+    if (this._collection != null) {
+      return this._collection;
+    }
+    this._collection = this.conn.db.collection(this.name);
+    return this._collection;
   }
 
   /**
@@ -54,6 +59,9 @@ export class Collection extends MongooseCollection {
   }
 
   find(filter: Record<string, any>, options?: FindOptions, callback?: NodeCallback<Record<string, any>[]>) {
+    if (options != null) {
+      processSortOption(options);
+    }
     const cursor = this.collection.find(filter, options);
     if (callback != null) {
       return callback(null, cursor);
@@ -62,6 +70,9 @@ export class Collection extends MongooseCollection {
   }
 
   findOne(filter: Record<string, any>, options?: FindOneOptions) {
+    if (options != null) {
+      processSortOption(options);
+    }
     return this.collection.findOne(filter, options);
   }
 
@@ -74,14 +85,23 @@ export class Collection extends MongooseCollection {
   }
 
   findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions) {
+    if (options != null) {
+      processSortOption(options);
+    }
     return this.collection.findOneAndUpdate(filter, update, options);
   }
 
   findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions) {
+    if (options != null) {
+      processSortOption(options);
+    }
     return this.collection.findOneAndDelete(filter, options);
   }
 
   findOneAndReplace(filter: Record<string, any>, newDoc: Record<string, any>, options?: FindOneAndReplaceOptions) {
+    if (options != null) {
+      processSortOption(options);
+    }
     return this.collection.findOneAndReplace(filter, newDoc, options);
   }
 
@@ -90,6 +110,10 @@ export class Collection extends MongooseCollection {
   }
 
   deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<DeleteResult>) {
+    if (options != null) {
+      processSortOption(options);
+    }
+    
     const promise = this.collection.deleteOne(filter, options);
 
     if (callback != null) {
@@ -100,6 +124,9 @@ export class Collection extends MongooseCollection {
   }
 
   updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
+    if (options != null) {
+      processSortOption(options);
+    }
     return this.collection.updateOne(filter, update, options);
   }
 
@@ -155,6 +182,16 @@ export class Collection extends MongooseCollection {
     throw new OperationNotSupportedError('syncIndexes() Not Implemented');
   }
 
+}
+
+function processSortOption(options: { sort?: SortOption }) {
+  if (options.sort == null) {
+    return;
+  }
+  if (typeof options.sort.$vector !== 'object' || Array.isArray(options.sort.$vector)) {
+    return;
+  }
+  options.sort.$vector = options.sort.$vector.$meta;
 }
 
 export class OperationNotSupportedError extends Error {
