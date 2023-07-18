@@ -27,7 +27,7 @@ export interface DeleteOneOptions {
 export interface FindOptions {
     limit?: number;
     skip?: number;
-    sort?: Record<string, 1 | -1>;
+    sort?: SortOption;
     projection?: Record<string, 1 | -1>;
 }
 

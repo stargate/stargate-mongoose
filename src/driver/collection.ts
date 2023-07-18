@@ -40,7 +40,11 @@ export class Collection extends MongooseCollection {
   }
 
   get collection() {
-    return this.conn.db.collection(this.name);
+    if (this._collection != null) {
+      return this._collection;
+    }
+    this._collection = this.conn.db.collection(this.name);
+    return this._collection;
   }
 
   /**
@@ -123,7 +127,7 @@ export class Collection extends MongooseCollection {
     if (options != null) {
       processSortOption(options);
     }
-    
+    console.log('UpdateOne', this.collection.updateOne.toString())
     return this.collection.updateOne(filter, update, options);
   }
 
