@@ -127,7 +127,6 @@ export class Collection extends MongooseCollection {
     if (options != null) {
       processSortOption(options);
     }
-    console.log('UpdateOne', this.collection.updateOne.toString())
     return this.collection.updateOne(filter, update, options);
   }
 
