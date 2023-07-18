@@ -749,7 +749,7 @@ describe(`Mongoose Model API level tests`, async () => {
     describe('vector search', function() {
       afterEach(() => sinon.restore());
 
-      it('supports sort() with $meta with find()', async function() {
+      it('supports sort() with vectorSearch option with find()', async function() {
         const mockCursor = {
           toArray: async () => ([])
         } as unknown as FindCursor<{}>;
@@ -766,7 +766,7 @@ describe(`Mongoose Model API level tests`, async () => {
         });
       });
 
-      it('supports sort() with $meta with findOne()', async function() {
+      it('supports sort() with vectorSearch option with findOne()', async function() {
         const collection: Collection = Product.collection;
         const findOne = sinon.stub(collection.collection, 'findOne')
           .callsFake(() => Promise.resolve(null));
@@ -781,7 +781,7 @@ describe(`Mongoose Model API level tests`, async () => {
         });
       });
 
-      it('supports sort() with $meta with findOneAndUpdate()', async function() {
+      it('supports sort() with vectorSearch option with findOneAndUpdate()', async function() {
         const collection: Collection = Product.collection;
         const findOneAndUpdate = sinon.stub(collection.collection, 'findOneAndUpdate')
           .callsFake(() => Promise.resolve({}));
@@ -795,7 +795,7 @@ describe(`Mongoose Model API level tests`, async () => {
         });
       });
 
-      it('supports sort() with $meta with findOneAndReplace()', async function() {
+      it('supports sort() with vectorSearch option with findOneAndReplace()', async function() {
         const collection: Collection = Product.collection;
         const findOneAndReplace= sinon.stub(collection.collection, 'findOneAndReplace')
           .callsFake(() => Promise.resolve({}));
@@ -809,7 +809,7 @@ describe(`Mongoose Model API level tests`, async () => {
         });
       });
 
-      it('supports sort() with $meta with findOneAndDelete()', async function() {
+      it('supports sort() with vectorSearch option with findOneAndDelete()', async function() {
         const collection: Collection = Product.collection;
         const findOneAndDelete = sinon.stub(collection.collection, 'findOneAndDelete')
           .callsFake(() => Promise.resolve({}));
@@ -823,7 +823,7 @@ describe(`Mongoose Model API level tests`, async () => {
         });
       });
 
-      it('supports sort() with $meta with deleteOne()', async function() {
+      it('supports sort() with vectorSearch option with deleteOne()', async function() {
         const collection: Collection = Product.collection;
         const deleteOne = sinon.stub(collection.collection, 'deleteOne')
           .callsFake(() => Promise.resolve({}));
