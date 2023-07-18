@@ -43,7 +43,7 @@ describe(`Driver based tests`, async () => {
       });
 
       const productSchema = new mongoose.Schema({
-        name: String,
+        name: { type: String, required: true },
         price: Number,
         expiryDate: Date,
         isCertified: Boolean
@@ -123,7 +123,7 @@ describe(`Driver based tests`, async () => {
       const mongooseInstance = await createMongooseInstance();
 
       const personSchema = new mongooseInstance.Schema({
-        name: String
+        name: { type: String, required: true }
       });
       const Person = mongooseInstance.model('Person', personSchema);
       await Person.init();
@@ -197,7 +197,7 @@ describe(`Driver based tests`, async () => {
       ]);
       const { _id: cartId } = await Cart.create({ name: 'test', products: [productId] });
 
-      const cart = await Cart.findById(cartId).populate('products').orFail();
+      const cart = await Cart.findById(cartId).populate<{ products: (typeof Product)[] }>('products').orFail();
       assert.deepEqual(cart.products.map(p => p.name), ['iPhone 12']);
     });
 
@@ -354,7 +354,8 @@ describe(`Driver based tests`, async () => {
         }
         assert.strictEqual(error.message, 'Cannot drop database in Astra. Please use the Astra UI to drop the database.');
       } else {
-        const resp = await mongooseInstance.connection.dropDatabase();
+        const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+        const resp = await connection.dropDatabase();
         assert.strictEqual(resp.status?.ok, 1);
       }
     });
@@ -383,7 +384,8 @@ describe(`Driver based tests`, async () => {
         }
         assert.strictEqual(error.errors[0].message, 'INVALID_ARGUMENT: Unknown keyspace ' + newKeyspaceName);
       } else {
-        const resp = await mongooseInstance.connection.createCollection('new_collection');
+        const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+        const resp = await connection.createCollection('new_collection');
         assert.strictEqual(resp.status?.ok, 1);
       }
     });
