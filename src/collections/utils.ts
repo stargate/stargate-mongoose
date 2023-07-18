@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { ObjectId } from 'mongodb';
 import url from 'url';
 import { logger } from '@/src/logger';
 import axios from 'axios';
-import { HTTPClient, handleIfErrorResponse } from '@/src/client/httpClient'
+import { HTTPClient, handleIfErrorResponse } from '@/src/client/httpClient';
 
 interface ParsedUri {
   baseUrl: string;
@@ -215,4 +216,45 @@ export async function dropNamespace(httpClient: HTTPClient, name: string) {
   });
   handleIfErrorResponse(response, data);
   return response;
+}
+
+export function setDefaultIdForUpsert(command: Record<string, any>, replace?: boolean) {
+  if (command.filter == null || command.options == null) {
+    return;
+  }
+  if (!command.options.upsert) {
+    return;
+  }
+  if ('_id' in command.filter) {
+    return;
+  }
+
+  if (replace) {
+    if (command.replacement != null && '_id' in command.replacement) {
+      return;
+    }
+    command.replacement._id = new ObjectId();
+  } else {
+    if (command.update != null && _updateHasKey(command.update, '_id')) {
+      return;
+    }
+    if (command.update == null) {
+      command.update = {};
+    }
+    if (command.update.$setOnInsert == null) {
+      command.update.$setOnInsert = {};
+    }
+    if (!('_id' in command.update.$setOnInsert)) {
+      command.update.$setOnInsert._id = new ObjectId();
+    }
+  }
+}
+
+function _updateHasKey(update: Record<string, any>, key: string) {
+  for (const operator of Object.keys(update)) {
+    if (update[operator] != null && typeof update[operator] === 'object' && key in update[operator]) {
+      return true;
+    }
+  }
+  return false;
 }

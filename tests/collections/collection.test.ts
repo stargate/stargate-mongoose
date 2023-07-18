@@ -19,6 +19,7 @@ import { Client } from '@/src/collections/client';
 import { testClient, testClientName, createSampleDoc, sampleUsersList, createSampleDocWithMultiLevel, createSampleDocWithMultiLevelWithId, getSampleDocs, sleep, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 
 describe(`StargateMongoose - ${testClientName} Connection - collections.collection`, async () => {
+  const isAstra: boolean = testClientName === 'astra';
   let astraClient: Client | null;
   let db: Db;
   let collection: Collection;
@@ -88,7 +89,12 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         error = e;
       };
       assert.ok(error);
-      assert.strictEqual(error.errors[0].message, "Request failed with status code 413");
+      if(isAstra){
+        //In Astra, it returns a 413 error prior to reaching the JSON API
+        assert.strictEqual(error.errors[0].message, "Request failed with status code 413");
+      } else {
+        assert.strictEqual(error.errors[0].message, "Document size limitation violated: document size (1048636 chars) exceeds maximum allowed (1000000)");
+      }
     });
     it('Should fail if the number of levels in the doc is > 8', async () => {
       const docToInsert = { l1: { l2: { l3: { l4: { l5: { l6: { l7: { l8: { l9: "l9value" } } } } } } } } };
@@ -880,6 +886,39 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.notStrictEqual(updatedDoc!._id, idToCheck);
       assert.strictEqual(updatedDoc!.address.city, "nyc");
       assert.strictEqual(updatedDoc!.address.state, "ny");
+    });
+    it('should make _id an ObjectId when upserting with no _id', async () => {
+      await collection.deleteMany({});
+      const updateOneResp = await collection.updateOne(
+        {},
+        {
+          "$set": {
+            "username": "aaronm"
+          }
+        },
+        {
+          "upsert": true
+        }
+      );
+      assert.ok(updateOneResp.upsertedId.match(/^[a-f\d]{24}$/i), updateOneResp.upsertedId);
+    });
+    it('should not overwrite user-specified _id in $setOnInsert', async () => {
+      await collection.deleteMany({});
+      const updateOneResp = await collection.updateOne(
+        {},
+        {
+          "$setOnInsert": {
+            "_id": "foo"
+          },
+          "$set": {
+            "username": "aaronm"
+          }
+        },
+        {
+          "upsert": true
+        }
+      );
+      assert.equal(updateOneResp.upsertedId, "foo");
     });
   });
   describe('updateMany tests', () => {
@@ -1745,6 +1784,21 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         }
       });
     });
+    it('should make _id an ObjectId when upserting with no _id', async () => {
+      await collection.deleteMany({});
+      const { upsertedId } = await collection.updateMany(
+        {},
+        {
+          "$set": {
+            "username": "aaronm"
+          }
+        },
+        {
+          "upsert": true
+        }
+      );
+      assert.ok(upsertedId.match(/^[a-f\d]{24}$/i), upsertedId);
+    });
   });
   describe('findOneAndUpdate tests', () => {
     it('should findOneAndUpdate', async () => {
@@ -1833,6 +1887,22 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       );
       assert.strictEqual(findOneAndUpdateResp.ok, 1);
       assert.strictEqual(findOneAndUpdateResp.value, null);
+    });
+    it('should make _id an ObjectId when upserting with no _id', async () => {
+      await collection.deleteMany({});
+      const { value } = await collection.findOneAndUpdate(
+        {},
+        {
+          "$set": {
+            "username": "aaronm"
+          }
+        },
+        {
+          "returnDocument": "after",
+          "upsert": true
+        }
+      );
+      assert.ok(value!._id!.match(/^[a-f\d]{24}$/i), value!._id);
     });
   });
   describe('deleteOne tests', () => {
@@ -1974,6 +2044,21 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
 
       const docs = await collection.find({}, { sort: { username: 1 } }).toArray();
       assert.deepStrictEqual(docs.map(doc => doc.answer), [undefined, 42, undefined]);
+    });
+    it('findOneAndReplace should make _id an ObjectId when upserting with no _id', async () => {
+      await collection.deleteMany({});
+      const { value } = await collection.findOneAndReplace(
+        {},
+        {
+          "username": "aaronm"
+        },
+        {
+          "returnDocument": "after",
+          "upsert": true
+        }
+      );
+      // @ts-ignore
+      assert.ok(value!._id!.match(/^[a-f\d]{24}$/i), value!._id);
     });
     it('should findOneAndUpdate without any updates to apply', async () => {
       await collection.deleteMany({});
