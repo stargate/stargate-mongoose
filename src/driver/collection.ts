@@ -61,7 +61,7 @@ export class Collection extends MongooseCollection {
 
   find(filter: Record<string, any>, options?: FindOptions, callback?: NodeCallback<Record<string, any>[]>) {
     if (options != null) {
-      processQueryOptions(options);
+      processSortOption(options);
     }
     const cursor = this.collection.find(filter, options);
     if (callback != null) {
@@ -72,7 +72,7 @@ export class Collection extends MongooseCollection {
 
   findOne(filter: Record<string, any>, options?: FindOneOptions) {
     if (options != null) {
-      processQueryOptions(options);
+      processSortOption(options);
     }
     return this.collection.findOne(filter, options);
   }
@@ -87,21 +87,21 @@ export class Collection extends MongooseCollection {
 
   findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions) {
     if (options != null) {
-      processQueryOptions(options);
+      processSortOption(options);
     }
     return this.collection.findOneAndUpdate(filter, update, options);
   }
 
   findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions) {
     if (options != null) {
-      processQueryOptions(options);
+      processSortOption(options);
     }
     return this.collection.findOneAndDelete(filter, options);
   }
 
   findOneAndReplace(filter: Record<string, any>, newDoc: Record<string, any>, options?: FindOneAndReplaceOptions) {
     if (options != null) {
-      processQueryOptions(options);
+      processSortOption(options);
     }
     return this.collection.findOneAndReplace(filter, newDoc, options);
   }
@@ -112,7 +112,7 @@ export class Collection extends MongooseCollection {
 
   deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<DeleteResult>) {
     if (options != null) {
-      processQueryOptions(options);
+      processSortOption(options);
     }
     
     const promise = this.collection.deleteOne(filter, options);
@@ -126,7 +126,7 @@ export class Collection extends MongooseCollection {
 
   updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
     if (options != null) {
-      processQueryOptions(options);
+      processSortOption(options);
     }
     return this.collection.updateOne(filter, update, options);
   }
@@ -185,15 +185,14 @@ export class Collection extends MongooseCollection {
 
 }
 
-function processQueryOptions(options: { vectorSearch?: number[], sort?: SortOption }) {
-  if (options.vectorSearch == null) {
+function processSortOption(options: { sort?: SortOption }) {
+  if (options.sort == null) {
     return;
   }
-  if (options.sort == null) {
-    options.sort = {};
+  if (typeof options.sort.$vector !== 'object' || Array.isArray(options.sort.$vector)) {
+    return;
   }
-  options.sort.$vector = options.vectorSearch;
-  delete options.vectorSearch;
+  options.sort.$vector = options.sort.$vector.$meta;
 }
 
 export class OperationNotSupportedError extends Error {

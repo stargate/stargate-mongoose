@@ -538,7 +538,13 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
     });
     it('should find doc - return only selected fields (array slice)', async () => {
       //insert some docs
-      let docList = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
+      interface Doc {
+        _id?: string;
+        username: string;
+        address: { city: string },
+        tags?: string[]
+      }
+      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
       docList.forEach((doc, index) => {
         doc._id = 'id' + index;
         doc.username = doc.username + (index + 1);
@@ -573,7 +579,13 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
     });
     it('should find doc - return only selected fields (array slice negative)', async () => {
       //insert some docs
-      let docList = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
+      interface Doc {
+        _id?: string;
+        username: string;
+        address: { city: string },
+        tags?: string[]
+      }
+      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
       docList.forEach((doc, index) => {
         doc._id = 'id' + index;
         doc.username = doc.username + (index + 1);
@@ -608,7 +620,13 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
     });
     it('should find doc - return only selected fields (array slice gt elements)', async () => {
       //insert some docs
-      let docList = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
+      interface Doc {
+        _id?: string;
+        username: string;
+        address: { city: string },
+        tags?: string[]
+      }
+      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
       docList.forEach((doc, index) => {
         doc._id = 'id' + index;
         doc.username = doc.username + (index + 1);
@@ -641,7 +659,13 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
     });
     it('should find doc - return only selected fields (array slice gt elements negative)', async () => {
       //insert some docs
-      let docList = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
+      interface Doc {
+        _id?: string;
+        username: string;
+        address: { city: string },
+        tags?: string[]
+      }
+      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
       docList.forEach((doc, index) => {
         doc._id = 'id' + index;
         doc.username = doc.username + (index + 1);
@@ -675,7 +699,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       });
     });
     it('should find & find doc $in test', async () => {
-      let docList = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+      interface Doc { _id?: string; username: string; city: string; tags?: string[] }
+      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docList.forEach((doc, index) => {
         doc._id = 'id' + index;
         doc.username = doc.username + (index + 1);
@@ -704,7 +729,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.ok(ids.has(findOneRespDoc!._id));
     });
     it('should find & find doc $exists test', async () => {
-      let docList = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+      interface Doc { _id?: string; username: string; city: string; tags?: string[] }
+      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docList.forEach((doc, index) => {
         doc._id = 'id' + index;
         doc.username = doc.username + (index + 1);
@@ -726,7 +752,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.ok(findOneRespDoc!.city);
     });
     it('should find & find doc $all test', async () => {
-      let docList = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+      interface Doc { _id?: string; username: string; city: string; tags?: string[] }
+      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docList.forEach((doc, index) => {
         doc._id = 'id' + index;
         doc.username = doc.username + (index + 1);
@@ -754,7 +781,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.strictEqual(findOneRespDoc!._id, docList[5]._id);
     });
     it('should find & find doc $size test', async () => {
-      let docList = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+      interface Doc { _id?: string; username: string; city: string; tags?: string[] }
+      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docList.forEach((doc, index) => {
         doc._id = 'id' + index;
         doc.username = doc.username + (index + 1);
@@ -785,7 +813,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.strictEqual(findOneRespDoc!._id, docList[5]._id);
     });
     it('should find & find doc $size 0 test', async () => {
-      let docList = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+      interface Doc { _id?: string; username: string; city: string; tags?: string[] }
+      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docList.forEach((doc, index) => {
         doc._id = 'id' + index;
         doc.username = doc.username + (index + 1);
@@ -1902,7 +1931,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
           "upsert": true
         }
       );
-      assert.ok(value!._id!.match(/^[a-f\d]{24}$/i), value!._id);
+      assert.ok(value!._id!.toString().match(/^[a-f\d]{24}$/i), value!._id!.toString());
     });
   });
   describe('deleteOne tests', () => {
@@ -2129,7 +2158,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       });
 
       const res = await collection.findOne({ _id: 'bigint-test' });
-      assert.strictEqual(res.answer, 42);
+      assert.strictEqual(res!.answer, 42);
     });
     it('should deleteOne with sort', async () => {
       await collection.deleteMany({});

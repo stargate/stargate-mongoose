@@ -117,7 +117,7 @@ describe(`Driver based tests`, async () => {
 
         let productNames: string[] = [];
         const cursor = await Product.find().cursor();
-        await cursor.eachAsync(p => productNames.push(p.name));
+        await cursor.eachAsync(p => productNames.push(p.name!));
         assert.deepEqual(productNames.sort(), ['Product 1', 'Product 2']);
 
         await cart.deleteOne();

@@ -23,10 +23,6 @@ declare module 'mongoose' {
     logSkippedOptions?: boolean;
     authUrl?: string;
   }
-
-  interface QueryOptions {
-    vectorSearch?: number[];
-  }
 }
 
 import { createStargateUri, createAstraUri } from './collections';
