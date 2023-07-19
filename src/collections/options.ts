@@ -14,6 +14,8 @@
 
 export type SortOption = Record<string, 1 | -1> | { $vector: { $meta: Array<number> } } | { $vector: Array<number> };
 
+export type ProjectionOption = Record<string, 1 | 0 | true | false | { $slice: number }>;
+
 /**
  * deleteOneOptions
  */
@@ -28,7 +30,7 @@ export interface FindOptions {
     limit?: number;
     skip?: number;
     sort?: SortOption;
-    projection?: Record<string, 1 | -1>;
+    projection?: ProjectionOption;
 }
 
 class _FindOptionsInternal {

@@ -26,6 +26,7 @@ import {
   UpdateOneOptions
 } from '@/src/collections/options';
 import { DeleteResult } from 'mongodb';
+import { QueryOptions } from 'mongoose';
 
 type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null) => unknown;
 

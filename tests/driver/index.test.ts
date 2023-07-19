@@ -117,7 +117,7 @@ describe(`Driver based tests`, async () => {
 
         let productNames: string[] = [];
         const cursor = await Product.find().cursor();
-        await cursor.eachAsync(p => productNames.push(p.name));
+        await cursor.eachAsync(p => productNames.push(p.name!));
         assert.deepEqual(productNames.sort(), ['Product 1', 'Product 2']);
 
         await cart.deleteOne();
@@ -150,7 +150,7 @@ describe(`Driver based tests`, async () => {
     it('handles find cursors', async () => {
       // @ts-ignore
       const personSchema = new mongooseInstance.Schema({
-          name: String
+          name: { type: String, required: true }
       });
       // @ts-ignore
       const Person = mongooseInstance.model('Person', personSchema);
@@ -224,7 +224,7 @@ describe(`Driver based tests`, async () => {
       ]);
       const { _id: cartId } = await Cart.create({ name: 'test', products: [productId] });
 
-      const cart = await Cart.findById(cartId).populate('products').orFail();
+      const cart = await Cart.findById(cartId).populate<{ products: (typeof Product)[] }>('products').orFail();
       assert.deepEqual(cart.products.map(p => p.name), ['iPhone 12']);
     });
 
@@ -386,7 +386,8 @@ describe(`Driver based tests`, async () => {
         }
         assert.strictEqual(error.message, 'Cannot drop database in Astra. Please use the Astra UI to drop the database.');
       } else {
-        const resp = await mongooseInstance.connection.dropDatabase();
+        const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+        const resp = await connection.dropDatabase();
         assert.strictEqual(resp.status?.ok, 1);
       }
     });
@@ -415,7 +416,8 @@ describe(`Driver based tests`, async () => {
         }
         assert.strictEqual(error.errors[0].message, 'INVALID_ARGUMENT: Unknown keyspace ' + newKeyspaceName);
       } else {
-        const resp = await mongooseInstance.connection.createCollection('new_collection');
+        const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+        const resp = await connection.createCollection('new_collection');
         assert.strictEqual(resp.status?.ok, 1);
       }
     });

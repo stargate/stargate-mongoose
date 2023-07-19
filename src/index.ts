@@ -17,5 +17,13 @@ export * as driver from './driver';
 export * as client from './client';
 export * as logger from './logger';
 
+declare module 'mongoose' {
+  interface ConnectOptions {
+    isAstra?: boolean;
+    logSkippedOptions?: boolean;
+    authUrl?: string;
+  }
+}
+
 import { createStargateUri, createAstraUri } from './collections';
 export { createStargateUri, createAstraUri };
