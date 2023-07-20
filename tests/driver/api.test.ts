@@ -25,6 +25,7 @@ import {randomUUID} from "crypto";
 import sinon from "sinon";
 import {OperationNotSupportedError} from "@/src/driver";
 import { FindCursor } from 'mongodb';
+import type { StargateMongoose, StargateMongooseDriverOverrides } from '@/src/index';
 
 const productSchema = new mongoose.Schema({
   name: String,
@@ -55,8 +56,12 @@ describe(`Mongoose Model API level tests`, async () => {
         dbUri = testClient.uri;
         isAstra = testClient.isAstra;
     });
-    let mongooseInstance: Mongoose | null = null;
-    let Product: Model<any>, Cart: Model<any>, astraMongoose: Mongoose | null, jsonAPIMongoose: Mongoose | null;
+
+    let mongooseInstance: StargateMongoose | null = null;
+    let Product: Model<any>;
+    let Cart: Model<any>;
+    let astraMongoose: StargateMongoose | null;
+    let jsonAPIMongoose: StargateMongoose | null;
     beforeEach(async () => {
         ({Product, Cart, astraMongoose, jsonAPIMongoose} = await createClientsAndModels(isAstra));
     });
@@ -66,8 +71,7 @@ describe(`Mongoose Model API level tests`, async () => {
     });
 
     async function getInstance() {
-        const mongooseInstance = new mongoose.Mongoose();
-        mongooseInstance.setDriver(StargateMongooseDriver);
+        const mongooseInstance = (new mongoose.Mongoose()).setDriver<StargateMongooseDriverOverrides>(StargateMongooseDriver);
         mongooseInstance.set('autoCreate', true);
         mongooseInstance.set('autoIndex', false);
         mongooseInstance.set('strictQuery', false);
@@ -75,7 +79,10 @@ describe(`Mongoose Model API level tests`, async () => {
     }
 
     async function createClientsAndModels(isAstra: boolean) {
-        let Product: Model<any>, Cart: Model<any>, astraMongoose: Mongoose | null = null, jsonAPIMongoose: Mongoose | null = null;
+        let Product: Model<any>;
+        let Cart: Model<any>;
+        let astraMongoose: StargateMongoose | null = null;
+        let jsonAPIMongoose: StargateMongoose | null = null;
         const productSchema = new mongoose.Schema({
             name: String,
             price: Number,
@@ -113,7 +120,7 @@ describe(`Mongoose Model API level tests`, async () => {
         return {Product, Cart, astraMongoose, jsonAPIMongoose};
     }
 
-    async function dropCollections(isAstra: boolean, astraMongoose: mongoose.Mongoose | null, jsonAPIMongoose: mongoose.Mongoose | null, collectionName: string) {
+    async function dropCollections(isAstra: boolean, astraMongoose: StargateMongoose | null, jsonAPIMongoose: StargateMongoose | null, collectionName: string) {
         if (isAstra) {
             await astraMongoose?.connection.dropCollection(collectionName);
         } else {

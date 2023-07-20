@@ -17,10 +17,15 @@ import { Collection } from './collection';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import STATES from 'mongoose/lib/connectionstate';
 import { executeOperation } from '../collections/utils';
+import type { Model } from 'mongoose';
 
 export class Connection extends MongooseConnection {
   debugType = 'StargateMongooseConnection';
   initialConnection: Promise<Connection> | null = null;
+  readonly models: Record<
+    string,
+    Model<any>
+  > = {};
 
   constructor(base: any) {
     super(base);

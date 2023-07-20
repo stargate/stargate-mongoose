@@ -17,13 +17,25 @@ export * as driver from './driver';
 export * as client from './client';
 export * as logger from './logger';
 
+import { Collection, Connection } from './driver';
+import { Model, Mongoose } from 'mongoose';
+
 declare module 'mongoose' {
   interface ConnectOptions {
     isAstra?: boolean;
     logSkippedOptions?: boolean;
     authUrl?: string;
   }
+
+  export function setDriver<TOverrides>(driver: any): Omit<Mongoose, keyof TOverrides> & TOverrides;
 }
+
+export interface StargateMongooseDriverOverrides {
+  mongo: never;
+  connection: Connection;
+  connections: Connection[];
+}
+export type StargateMongoose = Omit<Mongoose, keyof StargateMongooseDriverOverrides> & StargateMongooseDriverOverrides;
 
 import { createStargateUri, createAstraUri } from './collections';
 export { createStargateUri, createAstraUri };
