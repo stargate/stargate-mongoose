@@ -744,6 +744,26 @@ describe(`Mongoose Model API level tests`, async () => {
             assert.strictEqual(whereResp.length, 1);
             assert.strictEqual(whereResp[0].name, 'Product 1');
         });
+        it('API ops tests Query cursor', async () => {
+          await Product.create(
+            Array.from({ length: 25 }, (_, index) => ({
+              name: `Product ${(index + 1).toString().padStart(2, '0')}`,
+              price: 10
+            }))
+          );
+
+          let cursor = await Product.find().sort({ product: 1 }).cursor();
+          for (let i = 0; i < 20; ++i) {
+            await cursor.next();
+          }
+          await assert.rejects(cursor.next(), /Cannot load additional cursor data with sort/);
+
+          cursor = await Product.find().sort({ product: 1 }).limit(20).cursor();
+          for (let i = 0; i < 20; ++i) {
+            await cursor.next();
+          }
+          await cursor.next();
+      });
     });
 
     describe('vector search', function() {

@@ -82,6 +82,9 @@ export class FindCursor {
       }
 
       if (this.exhausted) {
+        if (this.options && this.options.sort && this.limit > this.pageIndex) {
+          throw new Error('Cannot load additional cursor data with sort');
+        }
         this.status = 'executed';
       }
 

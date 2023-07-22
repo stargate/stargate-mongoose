@@ -2011,7 +2011,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       }
 
       const cursor = await collection.find({}, { sort: { num: -1 } });
-      await cursor.toArray();
+      await assert.rejects(cursor.toArray(), /Cannot load additional cursor data with sort/);
     });
     it('should findOne with sort', async () => {
       await collection.deleteMany({});
