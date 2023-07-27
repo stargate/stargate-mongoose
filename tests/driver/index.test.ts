@@ -355,6 +355,23 @@ describe(`Driver based tests`, async () => {
       );
     });
 
+    it('create collection with options', async () => {
+      const vectorOptions = {
+        "vector": {
+          "size": 1000,
+          "function": "cosine"
+        }
+      }
+
+      // @ts-ignore
+      const personSchema = new mongooseInstance.Schema({
+        name: String
+      }, vectorOptions);
+      // @ts-ignore
+      const Person = mongooseInstance.model('Person', personSchema);
+      await Person.init();
+    });
+
     async function createMongooseInstance() {
       const mongooseInstance = new mongoose.Mongoose();
       mongooseInstance.setDriver(StargateMongooseDriver);

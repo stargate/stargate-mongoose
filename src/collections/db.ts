@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { HTTPClient } from '@/src/client';
-import { CreateCollectionOptions } from './options';
+import { CreateCollectionOptions, createCollectionOptionsKeys } from './options';
 import { Collection } from './collection';
 import { executeOperation, createNamespace, dropNamespace } from './utils';
 
@@ -64,7 +64,7 @@ export class Db {
    * @param options
    * @returns Promise
    */
-  async createCollection(collectionName: string, options?: CreateCollectionOptions) {
+  async createCollection(collectionName: string, options?: Record<string, any>) {
     return executeOperation(async () => {
       type CreateCollectionCommand = {
         createCollection: {
@@ -77,10 +77,10 @@ export class Db {
           name: collectionName
         }
       };
-      if (options != null) {
-        command.createCollection.options = options;
+      if (options?.schemaUserProvidedOptions != null) {
+        command.createCollection.options = options?.schemaUserProvidedOptions;
       }
-      return await this.httpClient.executeCommand(command, null);
+      return await this.httpClient.executeCommand(command, createCollectionOptionsKeys);
     });
   }
 

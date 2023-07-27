@@ -49,6 +49,10 @@ export class Connection extends MongooseConnection {
   }
 
   async createCollection(name: string, options?: Record<string, any>) {
+    const collection: Collection = this.collections[name];
+    if (collection) {
+      options = options || collection.opts;
+    }
     return executeOperation(async () => {
       await this._waitForClient();
       const db = this.client.db();

@@ -138,9 +138,17 @@ export const updateOneInternalOptionsKeys: Set<string> = new Set(
  * CreateCollectionOptions
  */
 
-export interface CreateCollectionOptions {
-  vectors?: {
-    size: number,
-    function?: 'cosine' | 'euclidean' | 'dot_product'
-  }
+class _VectorOptions {
+    size: number = 0;
+    function?: 'cosine' | 'euclidean' | 'dot_product';
 }
+
+export class _CreateCollectionOptions {
+    vector?: _VectorOptions = undefined;
+}
+
+export interface CreateCollectionOptions extends _CreateCollectionOptions {}
+
+export const createCollectionOptionsKeys: Set<string> = new Set(
+  Object.keys(new _CreateCollectionOptions)
+);
