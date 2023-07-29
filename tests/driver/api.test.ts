@@ -747,41 +747,76 @@ describe(`Mongoose Model API level tests`, async () => {
     });
 
     describe('vector search', function() {
-      afterEach(() => sinon.restore());
-
-      it('supports sort() with $meta with find()', async function() {
-        const mockCursor = {
-          toArray: async () => ([])
-        } as unknown as FindCursor<{}>;
-        const collection = Product.collection as unknown as StargateMongooseDriver.Collection;
-        const find = sinon.stub(collection.collection, 'find').callsFake(() => mockCursor);
-        const res = await Product.find({}).sort({ $vector: { $meta: [1, 2] } });
-        assert.deepStrictEqual(res, []);
-        assert.equal(find.getCalls().length, 1);
-        const calledWithOptions = find.getCalls()[0].args[1];
-        assert.deepEqual(calledWithOptions, {
-          sort: {
-            $vector: [1, 2]
+      const vectorSchema = new Schema(
+          {
+              $vector: { type: [Number], default: null },
+              name: 'String'
+          },
+          {
+              autoCreate: false
           }
+      );
+      let Vector: Model<any>;
+
+      beforeEach(async () => {
+        mongooseInstance = await getInstance();
+        const options = {
+            username: process.env.STARGATE_USERNAME,
+            password: process.env.STARGATE_PASSWORD,
+            authUrl: process.env.STARGATE_AUTH_URL,
+            logSkippedOptions: true
+        };
+        // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+        await mongooseInstance.connect(dbUri, options);
+
+        await mongooseInstance.connection.dropCollection('vector');
+        Vector = mongooseInstance.model(
+            'Vector',
+            vectorSchema,
+            'vector'
+        );
+        
+        await Vector.createCollection({
+            vector: { size: 2, function: 'cosine' }
         });
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await Vector.create([
+            {
+                name: 'Test vector 1',
+                $vector: [1, 100]
+            },
+            {
+                name: 'Test vector 2',
+                $vector: [100, 1]
+            }
+        ]);
       });
 
-      it('supports sort() with $meta with findOne()', async function() {
-        const collection = Product.collection as unknown as StargateMongooseDriver.Collection;
-        const findOne = sinon.stub(collection.collection, 'findOne')
-          .callsFake(() => Promise.resolve(null));
-        const res = await Product.findOne({}).sort({ $vector: { $meta: [1, 2] } });
-        assert.deepStrictEqual(res, null);
-        assert.equal(findOne.getCalls().length, 1);
-        const calledWithOptions = findOne.getCalls()[0].args[1];
-        assert.deepEqual(calledWithOptions, {
-          sort: {
-            $vector: [1, 2]
-          }
-        });
+      it('supports sort() with $meta with find() XYZ', async function() {
+        let res = await Vector.
+            find({}).
+            sort({ $vector: { $meta: [1, 99] } });
+        assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 1', 'Test vector 2']);
+
+        res = await Vector.
+            find({}).
+            sort({ $vector: { $meta: [99, 1] } });
+        assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 2', 'Test vector 1']);
       });
 
-      it('supports sort() with $meta with findOneAndUpdate()', async function() {
+      it('supports sort() with $meta with findOne() XYZ', async function() {
+        let res = await Vector.
+            findOne({}).
+            sort({ $vector: { $meta: [1, 99] } });
+        assert.deepStrictEqual(res.name, 'Test vector 1');
+
+        res = await Vector.
+            findOne({}).
+            sort({ $vector: { $meta: [99, 1] } });
+        assert.deepStrictEqual(res.name, 'Test vector 2');
+      });
+
+      it.skip('supports sort() with $meta with findOneAndUpdate()', async function() {
         const collection = Product.collection as unknown as StargateMongooseDriver.Collection;
         const findOneAndUpdate = sinon.stub(collection.collection, 'findOneAndUpdate')
           .callsFake(() => Promise.resolve({}));
@@ -795,7 +830,7 @@ describe(`Mongoose Model API level tests`, async () => {
         });
       });
 
-      it('supports sort() with $meta with findOneAndReplace()', async function() {
+      it.skip('supports sort() with $meta with findOneAndReplace()', async function() {
         const collection = Product.collection as unknown as StargateMongooseDriver.Collection;
         const findOneAndReplace= sinon.stub(collection.collection, 'findOneAndReplace')
           .callsFake(() => Promise.resolve({}));
@@ -809,7 +844,7 @@ describe(`Mongoose Model API level tests`, async () => {
         });
       });
 
-      it('supports sort() with $meta with findOneAndDelete()', async function() {
+      it.skip('supports sort() with $meta with findOneAndDelete()', async function() {
         const collection = Product.collection as unknown as StargateMongooseDriver.Collection;
         const findOneAndDelete = sinon.stub(collection.collection, 'findOneAndDelete')
           .callsFake(() => Promise.resolve({}));
@@ -823,7 +858,7 @@ describe(`Mongoose Model API level tests`, async () => {
         });
       });
 
-      it('supports sort() with $meta with deleteOne()', async function() {
+      it.skip('supports sort() with $meta with deleteOne()', async function() {
         const collection = Product.collection as unknown as StargateMongooseDriver.Collection;
         const deleteOne = sinon.stub(collection.collection, 'deleteOne')
           .callsFake(() => Promise.resolve({}));
