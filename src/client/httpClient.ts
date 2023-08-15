@@ -216,7 +216,7 @@ export class HTTPClient {
 
   async executeCommand(data: Record<string, any>, optionsToRetain: Set<string> | null) {
     const commandName = Object.keys(data)[0];
-    cleanupOptions(commandName, data[commandName], optionsToRetain, this.logSkippedOptions)
+    cleanupOptions(commandName, data[commandName], optionsToRetain, this.logSkippedOptions);
     const response = await this._request({
       url: this.baseUrl,
       method: HTTP_METHODS.post,

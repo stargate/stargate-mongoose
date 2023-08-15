@@ -2,22 +2,18 @@ version: '2'
 
 services:
   coordinator:
-    image: stargateio/coordinator-dse-68:${SGTAG}
+    image: stargateio/coordinator-dse-next:${SGTAG}
     networks:
       - stargate
     ports:
       - "9042:9042"
       - "8081:8081"
-      - "8090:8090"
-      - "8084:8084"
     mem_limit: 2G
     environment:
-      - JAVA_OPTS="-Xmx2G"
-      - CLUSTER_NAME=dse-6.8-cluster
-      - CLUSTER_VERSION=6.8
-      - DSE=1
+      - JAVA_OPTS="-Xmx1536M"
+      - CLUSTER_NAME=dse-${DSETAG}-cluster
       - RACK_NAME=rack1
-      - DATACENTER_NAME=dc1
+      - DATACENTER_NAME=datacenter1
       - ENABLE_AUTH=true
       - DEVELOPER_MODE=true
     healthcheck:
@@ -34,10 +30,12 @@ services:
     networks:
       - stargate
     ports:
-      - "8080:8080"
       - "8181:8181"
     mem_limit: 2G
     environment:
+      - JAVA_MAX_MEM_RATIO=75
+      - JAVA_INITIAL_MEM_RATIO=50
+      - GC_CONTAINER_OPTIONS=-XX:+UseG1GC
       - QUARKUS_GRPC_CLIENTS_BRIDGE_HOST=coordinator
       - QUARKUS_GRPC_CLIENTS_BRIDGE_PORT=8091
       - QUARKUS_HTTP_ACCESS_LOG_ENABLED=${REQUESTLOG}

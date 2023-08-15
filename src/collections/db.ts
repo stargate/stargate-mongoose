@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { HTTPClient } from '@/src/client';
-import { CreateCollectionOptions } from './options';
+import { CreateCollectionOptions, createCollectionOptionsKeys } from './options';
 import { Collection } from './collection';
 import { executeOperation, createNamespace, dropNamespace } from './utils';
 
@@ -80,7 +80,7 @@ export class Db {
       if (options != null) {
         command.createCollection.options = options;
       }
-      return await this.httpClient.executeCommand(command, null);
+      return await this.httpClient.executeCommand(command, createCollectionOptionsKeys);
     });
   }
 
