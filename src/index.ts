@@ -34,5 +34,5 @@ declare module 'mongoose' {
   }
 }
 
-import { createStargateUri, createAstraUri } from './collections';
-export { createStargateUri, createAstraUri };
+import { createStargateUri, createAstraUri, AstraEnvironment } from './collections';
+export { createStargateUri, createAstraUri, AstraEnvironment };

@@ -31,4 +31,4 @@ export {
 // alias for MongoClient shimming
 export { Client as MongoClient } from './client';
 
-export { createAstraUri, createStargateUri } from './utils';
+export { createAstraUri, createStargateUri, AstraEnvironment } from './utils';
