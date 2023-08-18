@@ -70,8 +70,8 @@ function getBaseAPIPath(pathFromUrl?: string | null) {
 
 export enum AstraEnvironment {
   PRODUCTION = 1,
-  DEVELOPMENT = 2,
-  TEST = 3
+  TEST = 2,
+  DEVELOPMENT = 3
 }
 
 /**
