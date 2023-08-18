@@ -75,13 +75,13 @@ export enum AstraEnvironment {
 }
 
 /**
- * Create a production Astra connection URI
+ * Create a Astra connection URI
  * @param databaseId the database id of the Astra database
  * @param region the region of the Astra database
- * @param baseApiPath baseAPI path such as /api/json/v1
  * @param keyspace the keyspace to connect to
  * @param applicationToken an Astra application token
  * @param astraEnv the Astra environment (defaults to prod)
+ * @param baseApiPath baseAPI path defaults to /api/json/v1
  * @param logLevel an winston log level
  * @param authHeaderName
  * @returns URL as string
@@ -89,10 +89,10 @@ export enum AstraEnvironment {
 export const createAstraUri = (
   databaseId: string,
   region: string,
-  baseApiPath: string,
   keyspace: string,
   applicationToken?: string,
   astraEnv?: AstraEnvironment,
+  baseApiPath?: string,
   logLevel?: string,
   authHeaderName?: string,
 ) => {
@@ -113,12 +113,8 @@ export const createAstraUri = (
   }
   let uri = new url.URL(`https://${databaseId}-${region}.apps.astra${astraEnvironment}.datastax.com`);
   let contextPath: string = '';
-  if (baseApiPath) {
-    contextPath += `/${baseApiPath}`;
-  }
-  if (keyspace) {
-    contextPath += `/${keyspace}`;
-  }
+  contextPath += baseApiPath ? `/${baseApiPath}` : '/api/json/v1';
+  contextPath += `/${keyspace}`;
   uri.pathname = contextPath;
   if (applicationToken) {
     uri.searchParams.append('applicationToken', applicationToken);

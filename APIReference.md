@@ -31,6 +31,8 @@
 <dd><p>updateOneOptions</p></dd>
 <dt><a href="#updateOneInternalOptionsKeys">updateOneInternalOptionsKeys</a></dt>
 <dd><p>CreateCollectionOptions</p></dd>
+<dt><a href="#AstraEnvironment">AstraEnvironment</a> ⇒</dt>
+<dd><p>Create a Astra connection URI</p></dd>
 <dt><a href="#createAstraUri">createAstraUri</a> ⇒</dt>
 <dd><p>Create a stargate  connection URI</p></dd>
 <dt><a href="#createStargateUri">createStargateUri</a></dt>
@@ -45,8 +47,6 @@ return a promise.</p></dd>
 <dl>
 <dt><a href="#parseUri">parseUri(uri)</a> ⇒</dt>
 <dd><p>Parse a connection URI</p></dd>
-<dt><a href="#createAstraUri">createAstraUri(databaseId, region, keyspace, applicationToken, logLevel, authHeaderName)</a> ⇒</dt>
-<dd><p>Create a production Astra connection URI</p></dd>
 </dl>
 
 <a name="Client"></a>
@@ -331,6 +331,25 @@ return a promise.</p></dd>
 <p>CreateCollectionOptions</p>
 
 **Kind**: global variable  
+<a name="AstraEnvironment"></a>
+
+## AstraEnvironment ⇒
+<p>Create a Astra connection URI</p>
+
+**Kind**: global variable  
+**Returns**: <p>URL as string</p>  
+
+| Param | Description |
+| --- | --- |
+| databaseId | <p>the database id of the Astra database</p> |
+| region | <p>the region of the Astra database</p> |
+| keyspace | <p>the keyspace to connect to</p> |
+| applicationToken | <p>an Astra application token</p> |
+| astraEnv | <p>the Astra environment (defaults to prod)</p> |
+| baseApiPath | <p>baseAPI path defaults to /api/json/v1</p> |
+| logLevel | <p>an winston log level</p> |
+| authHeaderName |  |
+
 <a name="createAstraUri"></a>
 
 ## createAstraUri ⇒
@@ -383,21 +402,4 @@ return a promise.</p>
 | Param | Type | Description |
 | --- | --- | --- |
 | uri | <code>baseUrl</code> | <p>a uri in the format of: https://$/${baseAPIPath}/${keyspace}?applicationToken=${applicationToken}</p> |
-
-<a name="createAstraUri"></a>
-
-## createAstraUri(databaseId, region, keyspace, applicationToken, logLevel, authHeaderName) ⇒
-<p>Create a production Astra connection URI</p>
-
-**Kind**: global function  
-**Returns**: <p>URL as string</p>  
-
-| Param | Description |
-| --- | --- |
-| databaseId | <p>the database id of the Astra database</p> |
-| region | <p>the region of the Astra database</p> |
-| keyspace | <p>the keyspace to connect to</p> |
-| applicationToken | <p>an Astra application token</p> |
-| logLevel | <p>an winston log level</p> |
-| authHeaderName |  |
 
