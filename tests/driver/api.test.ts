@@ -792,12 +792,12 @@ describe(`Mongoose Model API level tests`, async () => {
       it('supports sort() with $meta with find()', async function() {
         let res = await Vector.
             find({}).
-            sort({ $vector: { $meta: [1, 99] } });
+            sort({ $vector: { $meta: [1, 99] } }).limit(20);
         assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 1', 'Test vector 2']);
 
         res = await Vector.
             find({}).
-            sort({ $vector: { $meta: [99, 1] } });
+            sort({ $vector: { $meta: [99, 1] } }).limit(20);
         assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 2', 'Test vector 1']);
       });
 
