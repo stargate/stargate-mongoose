@@ -68,12 +68,20 @@ function getBaseAPIPath(pathFromUrl?: string | null) {
   return baseApiPath === '/' ? '' : baseApiPath.substring(1, baseApiPath.length - 1);
 }
 
+export enum AstraEnvironment {
+  PRODUCTION = 1,
+  DEVELOPMENT = 2,
+  TEST = 3
+}
+
 /**
  * Create a production Astra connection URI
  * @param databaseId the database id of the Astra database
  * @param region the region of the Astra database
+ * @param baseApiPath baseAPI path such as /api/json/v1
  * @param keyspace the keyspace to connect to
  * @param applicationToken an Astra application token
+ * @param astraEnv the Astra environment (defaults to prod)
  * @param logLevel an winston log level
  * @param authHeaderName
  * @returns URL as string
@@ -81,15 +89,37 @@ function getBaseAPIPath(pathFromUrl?: string | null) {
 export const createAstraUri = (
   databaseId: string,
   region: string,
-  keyspace?: string,
+  baseApiPath: string,
+  keyspace: string,
   applicationToken?: string,
+  astraEnv?: AstraEnvironment,
   logLevel?: string,
   authHeaderName?: string,
 ) => {
-  let uri = new url.URL(`https://${databaseId}-${region}.apps.astra.datastax.com`);
-  if (keyspace) {
-    uri.pathname = `/${keyspace}`;
+  let astraEnvironment: string = '';
+  if (astraEnv) {
+    switch (astraEnv) {
+      case AstraEnvironment.PRODUCTION:
+        break;
+      case AstraEnvironment.DEVELOPMENT:
+        astraEnvironment = '-dev';
+        break;
+      case AstraEnvironment.TEST:
+        astraEnvironment = '-test';
+        break;
+      default:
+        throw new Error(`Invalid Astra environment: ${astraEnv}`);
+    }
   }
+  let uri = new url.URL(`https://${databaseId}-${region}.apps.astra${astraEnvironment}.datastax.com`);
+  let contextPath: string = '';
+  if (baseApiPath) {
+    contextPath += `/${baseApiPath}`;
+  }
+  if (keyspace) {
+    contextPath += `/${keyspace}`;
+  }
+  uri.pathname = contextPath;
   if (applicationToken) {
     uri.searchParams.append('applicationToken', applicationToken);
   }
