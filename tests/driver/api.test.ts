@@ -819,6 +819,17 @@ describe(`Mongoose Model API level tests`, async () => {
             find({}).
             sort({ $vector: { $meta: [99, 1] } });
         assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 2', 'Test vector 1']);
+
+        res = await Vector.
+            find({}).
+            limit(999).
+            sort({ $vector: { $meta: [99, 1] } });
+        assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 2', 'Test vector 1']);
+
+        await assert.rejects(
+            Vector.find().limit(1001).sort({ $vector: { $meta: [99, 1] } }),
+            /limit options should not be greater than 1000 for vector search/
+        );
       });
 
       it('supports sort() with $meta with findOne()', async function() {
