@@ -68,19 +68,12 @@ function getBaseAPIPath(pathFromUrl?: string | null) {
   return baseApiPath === '/' ? '' : baseApiPath.substring(1, baseApiPath.length - 1);
 }
 
-export enum AstraEnvironment {
-  PRODUCTION = 1,
-  TEST = 2,
-  DEVELOPMENT = 3
-}
-
 /**
  * Create a Astra connection URI
  * @param databaseId the database id of the Astra database
  * @param region the region of the Astra database
  * @param keyspace the keyspace to connect to
  * @param applicationToken an Astra application token
- * @param astraEnv the Astra environment (defaults to prod)
  * @param baseApiPath baseAPI path defaults to /api/json/v1
  * @param logLevel an winston log level
  * @param authHeaderName
@@ -91,27 +84,11 @@ export const createAstraUri = (
   region: string,
   keyspace: string,
   applicationToken?: string,
-  astraEnv?: AstraEnvironment,
   baseApiPath?: string,
   logLevel?: string,
   authHeaderName?: string,
 ) => {
-  let astraEnvironment: string = '';
-  if (astraEnv) {
-    switch (astraEnv) {
-      case AstraEnvironment.PRODUCTION:
-        break;
-      case AstraEnvironment.DEVELOPMENT:
-        astraEnvironment = '-dev';
-        break;
-      case AstraEnvironment.TEST:
-        astraEnvironment = '-test';
-        break;
-      default:
-        throw new Error(`Invalid Astra environment: ${astraEnv}`);
-    }
-  }
-  let uri = new url.URL(`https://${databaseId}-${region}.apps.astra${astraEnvironment}.datastax.com`);
+  let uri = new url.URL(`https://${databaseId}-${region}.apps.astra.datastax.com`);
   let contextPath: string = '';
   contextPath += baseApiPath ? `/${baseApiPath}` : '/api/json/v1';
   contextPath += `/${keyspace}`;
@@ -186,7 +163,7 @@ export async function getStargateAccessToken(
     }
     throw e;
   }
-};
+}
 
 export class StargateAuthError extends Error {
   message: string
