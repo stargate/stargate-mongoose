@@ -1998,10 +1998,10 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         { username: 'b' }
       ]);
 
-      let docs = await collection.find({}, { sort: { username: 1 } }).toArray();
+      let docs = await collection.find({}, { sort: { username: 1 }, limit: 20 }).toArray();
       assert.deepStrictEqual(docs.map(doc => doc.username), ['a', 'b', 'c']);
 
-      docs = await collection.find({}, { sort: { username: -1 } }).toArray();
+      docs = await collection.find({}, { sort: { username: -1 }, limit: 20 }).toArray();
       assert.deepStrictEqual(docs.map(doc => doc.username), ['c', 'b', 'a']);
     });
     it('throws if using cursor with sort', async () => {
@@ -2009,9 +2009,10 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       for (let i = 0; i < 20; ++i) {
         await collection.insertMany(Array(20).fill(0).map((_, i) => ({ num: i })));
       }
-
-      const cursor = await collection.find({}, { sort: { num: -1 } });
-      await cursor.toArray();
+      await assert.rejects(
+        async () => collection.find({}, { sort: { num: -1 }, limit: 22 }),
+        /JSON API can currently only return 20 documents with sort/
+      );
     });
     it('should findOne with sort', async () => {
       await collection.deleteMany({});
@@ -2071,7 +2072,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       );
       assert.deepStrictEqual(res.value!.username, 'c');
 
-      const docs = await collection.find({}, { sort: { username: 1 } }).toArray();
+      const docs = await collection.find({}, { sort: { username: 1 }, limit: 20 }).toArray();
       assert.deepStrictEqual(docs.map(doc => doc.answer), [undefined, 42, undefined]);
     });
     it('findOneAndReplace should make _id an ObjectId when upserting with no _id', async () => {
@@ -2173,7 +2174,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         { sort: { username: 1 } }
       );
 
-      const docs = await collection.find({}, { sort: { username: 1 } }).toArray();
+      const docs = await collection.find({}, { sort: { username: 1 }, limit: 20 }).toArray();
       assert.deepStrictEqual(docs.map(doc => doc.username), ['b', 'c']);
     });
     it.skip('should updateOne with sort', async () => {

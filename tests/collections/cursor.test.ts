@@ -78,6 +78,18 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
       assert.strictEqual(res.length, 3);
       assert.strictEqual(cursor.page.length, 3);
     });
+    it('should treat limit 0 as no limit', async () => {
+      await collection.insertMany(sampleUsers);
+      const cursor = new FindCursor(collection, {}, { limit: 0 });
+      const res = await cursor.toArray();
+      assert.strictEqual(res.length, 3);
+      assert.strictEqual(cursor.page.length, 3);
+    });
+    it('should handle negative limit', async () => {
+      await collection.insertMany(sampleUsers);
+      const cursor = new FindCursor(collection, {}, { limit: -2 });
+      await assert.rejects(cursor.toArray(), /limit should be greater than `0`/);
+    });
     it('should execute a limited query with limit set less than default page size', async () => {
       let docList = Array.from({ length: 20 }, () => ({ "username": "id" }));
       docList.forEach((doc, index) => {

@@ -744,6 +744,26 @@ describe(`Mongoose Model API level tests`, async () => {
             assert.strictEqual(whereResp.length, 1);
             assert.strictEqual(whereResp[0].name, 'Product 1');
         });
+        it('API ops tests Query cursor', async () => {
+          await Product.create(
+            Array.from({ length: 25 }, (_, index) => ({
+              name: `Product ${(index + 1).toString().padStart(2, '0')}`,
+              price: 10
+            }))
+          );
+
+          let cursor = Product.find().sort({ product: 1 }).cursor();
+          await assert.rejects(
+            cursor.next(),
+            /JSON API can currently only return 20 documents with sort/
+          );
+
+          cursor = await Product.find().sort({ product: 1 }).limit(20).cursor();
+          for (let i = 0; i < 20; ++i) {
+            await cursor.next();
+          }
+          assert.equal(await cursor.next(), null);
+      });
     });
 
     describe('vector search', function() {
@@ -799,6 +819,17 @@ describe(`Mongoose Model API level tests`, async () => {
             find({}).
             sort({ $vector: { $meta: [99, 1] } });
         assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 2', 'Test vector 1']);
+
+        res = await Vector.
+            find({}).
+            limit(999).
+            sort({ $vector: { $meta: [99, 1] } });
+        assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 2', 'Test vector 1']);
+
+        await assert.rejects(
+            Vector.find().limit(1001).sort({ $vector: { $meta: [99, 1] } }),
+            /limit options should not be greater than 1000 for vector search/
+        );
       });
 
       it('supports sort() with $meta with findOne()', async function() {
