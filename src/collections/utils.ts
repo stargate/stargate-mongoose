@@ -69,11 +69,12 @@ function getBaseAPIPath(pathFromUrl?: string | null) {
 }
 
 /**
- * Create a production Astra connection URI
+ * Create a Astra connection URI
  * @param databaseId the database id of the Astra database
  * @param region the region of the Astra database
  * @param keyspace the keyspace to connect to
  * @param applicationToken an Astra application token
+ * @param baseApiPath baseAPI path defaults to /api/json/v1
  * @param logLevel an winston log level
  * @param authHeaderName
  * @returns URL as string
@@ -81,15 +82,17 @@ function getBaseAPIPath(pathFromUrl?: string | null) {
 export const createAstraUri = (
   databaseId: string,
   region: string,
-  keyspace?: string,
+  keyspace: string,
   applicationToken?: string,
+  baseApiPath?: string,
   logLevel?: string,
   authHeaderName?: string,
 ) => {
   let uri = new url.URL(`https://${databaseId}-${region}.apps.astra.datastax.com`);
-  if (keyspace) {
-    uri.pathname = `/${keyspace}`;
-  }
+  let contextPath: string = '';
+  contextPath += baseApiPath ? `/${baseApiPath}` : '/api/json/v1';
+  contextPath += `/${keyspace}`;
+  uri.pathname = contextPath;
   if (applicationToken) {
     uri.searchParams.append('applicationToken', applicationToken);
   }
@@ -160,7 +163,7 @@ export async function getStargateAccessToken(
     }
     throw e;
   }
-};
+}
 
 export class StargateAuthError extends Error {
   message: string

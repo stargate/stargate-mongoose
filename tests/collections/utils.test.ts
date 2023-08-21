@@ -11,3 +11,29 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+import assert from 'assert';
+import { createAstraUri } from '@/src/collections/utils';
+
+describe('Utils test', () => {
+  it('createProdAstraUri', () => {
+    const dbIdUUID: string = 'ddd5843c-3dea-11ee-be56-0242ac120002';
+    const uri: string = createAstraUri(dbIdUUID,'us-east1','testks1');
+    assert.strictEqual(uri, 'https://'+dbIdUUID+'-us-east1.apps.astra.datastax.com/api/json/v1/testks1');
+  });
+  it('createProdAstraUriWithToken', () => {
+    const dbIdUUID: string = 'ddd5843c-3dea-11ee-be56-0242ac120002';
+    const uri: string = createAstraUri(dbIdUUID,'us-east1','testks1', 'myToken');
+    assert.strictEqual(uri, 'https://'+dbIdUUID+'-us-east1.apps.astra.datastax.com/api/json/v1/testks1?applicationToken=myToken');
+  });
+  it('createProdAstraUriWithTokenAndProdEnum', () => {
+    const dbIdUUID: string = 'ddd5843c-3dea-11ee-be56-0242ac120002';
+    const uri: string = createAstraUri(dbIdUUID,'us-east1','testks1', 'myToken');
+    assert.strictEqual(uri, 'https://'+dbIdUUID+'-us-east1.apps.astra.datastax.com/api/json/v1/testks1?applicationToken=myToken');
+  });
+  it('createProdAstraUriWithTokenAndProdEnumWithBaseAPIPath', () => {
+    const dbIdUUID: string = 'ddd5843c-3dea-11ee-be56-0242ac120002';
+    const uri: string = createAstraUri(dbIdUUID,'us-east1','testks1', 'myToken', 'apis');
+    assert.strictEqual(uri, 'https://'+dbIdUUID+'-us-east1.apps.astra.datastax.com/apis/testks1?applicationToken=myToken');
+  });
+});

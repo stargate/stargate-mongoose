@@ -45,8 +45,8 @@ return a promise.</p></dd>
 <dl>
 <dt><a href="#parseUri">parseUri(uri)</a> ⇒</dt>
 <dd><p>Parse a connection URI</p></dd>
-<dt><a href="#createAstraUri">createAstraUri(databaseId, region, keyspace, applicationToken, logLevel, authHeaderName)</a> ⇒</dt>
-<dd><p>Create a production Astra connection URI</p></dd>
+<dt><a href="#createAstraUri">createAstraUri(databaseId, region, keyspace, applicationToken, baseApiPath, logLevel, authHeaderName)</a> ⇒</dt>
+<dd><p>Create a Astra connection URI</p></dd>
 </dl>
 
 <a name="Client"></a>
@@ -386,8 +386,8 @@ return a promise.</p>
 
 <a name="createAstraUri"></a>
 
-## createAstraUri(databaseId, region, keyspace, applicationToken, logLevel, authHeaderName) ⇒
-<p>Create a production Astra connection URI</p>
+## createAstraUri(databaseId, region, keyspace, applicationToken, baseApiPath, logLevel, authHeaderName) ⇒
+<p>Create a Astra connection URI</p>
 
 **Kind**: global function  
 **Returns**: <p>URL as string</p>  
@@ -398,6 +398,7 @@ return a promise.</p>
 | region | <p>the region of the Astra database</p> |
 | keyspace | <p>the keyspace to connect to</p> |
 | applicationToken | <p>an Astra application token</p> |
+| baseApiPath | <p>baseAPI path defaults to /api/json/v1</p> |
 | logLevel | <p>an winston log level</p> |
 | authHeaderName |  |
 
