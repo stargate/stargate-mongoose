@@ -19,128 +19,128 @@ import STATES from 'mongoose/lib/connectionstate';
 import { executeOperation } from '../collections/utils';
 
 export class Connection extends MongooseConnection {
-  debugType = 'StargateMongooseConnection';
-  initialConnection: Promise<Connection> | null = null;
+    debugType = 'StargateMongooseConnection';
+    initialConnection: Promise<Connection> | null = null;
 
-  constructor(base: any) {
-    super(base);
-  }
+    constructor(base: any) {
+        super(base);
+    }
 
-  _waitForClient() {
-    return new Promise<void>((resolve, reject) => {
-      if (
-        (this.readyState === STATES.connecting || this.readyState === STATES.disconnected) &&
+    _waitForClient() {
+        return new Promise<void>((resolve, reject) => {
+            if (
+                (this.readyState === STATES.connecting || this.readyState === STATES.disconnected) &&
         this._shouldBufferCommands()
-      ) {
-        this._queue.push({ fn: resolve });
-      } else if (this.readyState === STATES.disconnected && this.db == null) {
-        reject(new Error('Connection is disconnected'));
-      } else {
-        resolve();
-      }
-    });
-  }
-
-  collection(name: string, options: any) {
-    if (!(name in this.collections)) {
-      this.collections[name] = new Collection(name, this, options);
-    }
-    return super.collection(name, options);
-  }
-
-  async createCollection(name: string, options?: Record<string, any>) {
-    return executeOperation(async () => {
-      await this._waitForClient();
-      const db = this.client.db();
-      if (!this.client.httpClient.isAstra) {
-        db.createDatabase();
-      }
-      return db.createCollection(name, options);
-    });
-  }
-
-  async dropCollection(name: string) {
-    return executeOperation(async () => {
-      await this._waitForClient();
-      const db = this.client.db();
-      return db.dropCollection(name);
-    });
-  }
-
-  async dropDatabase() {
-    return executeOperation(async () => {
-      await this._waitForClient();
-      const db = this.client.db();
-      return db.dropDatabase();
-    });
-  }
-
-  async openUri(uri: string, options: any) {
-    let _fireAndForget = false;
-    if (options && '_fireAndForget' in options) {
-      _fireAndForget = options._fireAndForget;
-      delete options._fireAndForget;
+            ) {
+                this._queue.push({ fn: resolve });
+            } else if (this.readyState === STATES.disconnected && this.db == null) {
+                reject(new Error('Connection is disconnected'));
+            } else {
+                resolve();
+            }
+        });
     }
 
-    // Set Mongoose-specific config options. Need to set
-    // this in order to allow connection-level overrides for
-    // these options.
-    this.config = {
-      autoCreate: options?.autoCreate,
-      autoIndex: options?.autoIndex,
-      sanitizeFilter: options?.sanitizeFilter,
-      bufferCommands: options?.bufferCommands
-    };
-
-    for (const model of Object.values(this.models)) {
-      // @ts-ignore
-      model.init().catch(() => { });
+    collection(name: string, options: any) {
+        if (!(name in this.collections)) {
+            this.collections[name] = new Collection(name, this, options);
+        }
+        return super.collection(name, options);
     }
 
-    this.initialConnection = this.createClient(uri, options)
-      .then(() => this)
-      .catch(err => {
-        this.readyState = STATES.disconnected;
-        throw err;
-      });
-
-    if (_fireAndForget) {
-      return this;
+    async createCollection(name: string, options?: Record<string, any>) {
+        return executeOperation(async () => {
+            await this._waitForClient();
+            const db = this.client.db();
+            if (!this.client.httpClient.isAstra) {
+                db.createDatabase();
+            }
+            return db.createCollection(name, options);
+        });
     }
 
-    await this.initialConnection;
+    async dropCollection(name: string) {
+        return executeOperation(async () => {
+            await this._waitForClient();
+            const db = this.client.db();
+            return db.dropCollection(name);
+        });
+    }
 
-    return this;
-  }
+    async dropDatabase() {
+        return executeOperation(async () => {
+            await this._waitForClient();
+            const db = this.client.db();
+            return db.dropDatabase();
+        });
+    }
 
-  async createClient(uri: string, options: any) {
-    this._connectionString = uri;
-    this._closeCalled = false;
-    this.readyState = STATES.connecting;
+    async openUri(uri: string, options: any) {
+        let _fireAndForget = false;
+        if (options && '_fireAndForget' in options) {
+            _fireAndForget = options._fireAndForget;
+            delete options._fireAndForget;
+        }
 
-    const client = await Client.connect(uri, options);
-    this.client = client;
-    this.db = client.db();
+        // Set Mongoose-specific config options. Need to set
+        // this in order to allow connection-level overrides for
+        // these options.
+        this.config = {
+            autoCreate: options?.autoCreate,
+            autoIndex: options?.autoIndex,
+            sanitizeFilter: options?.sanitizeFilter,
+            bufferCommands: options?.bufferCommands
+        };
 
-    this.readyState = STATES.connected;
-    this.onOpen();
-    return this;
-  }
+        for (const model of Object.values(this.models)) {
+            // @ts-ignore
+            model.init().catch(() => { });
+        }
 
-  setClient(client: Client) {
-    this.client = client;
-    this.db = client.db();
-  }
+        this.initialConnection = this.createClient(uri, options)
+            .then(() => this)
+            .catch(err => {
+                this.readyState = STATES.disconnected;
+                throw err;
+            });
 
-  asPromise() {
-    return this.initialConnection;
-  }
+        if (_fireAndForget) {
+            return this;
+        }
 
-  /**
+        await this.initialConnection;
+
+        return this;
+    }
+
+    async createClient(uri: string, options: any) {
+        this._connectionString = uri;
+        this._closeCalled = false;
+        this.readyState = STATES.connecting;
+
+        const client = await Client.connect(uri, options);
+        this.client = client;
+        this.db = client.db();
+
+        this.readyState = STATES.connected;
+        this.onOpen();
+        return this;
+    }
+
+    setClient(client: Client) {
+        this.client = client;
+        this.db = client.db();
+    }
+
+    asPromise() {
+        return this.initialConnection;
+    }
+
+    /**
    *
    * @returns Client
    */
-  doClose(force?: boolean) {
-    return this;
-  }
+    doClose(force?: boolean) {
+        return this;
+    }
 }
