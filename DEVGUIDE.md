@@ -34,6 +34,12 @@ STARGATE_PASSWORD=cassandra
 ```shell
 npm run test
 ```
+
+### Lint
+Run `npm run lint` to run ESLint.
+ESLint will point out any formatting and code quality issues it finds.
+ESLint can automatically fix some issues: run `npm run lint -- --fix` to tell ESLint to automatically fix what issues it can.
+
 ## Update Stargate and JSON API versions
 
 Stargate and the JSON API versions are maintained in the file `api-compatibility.versions`. Update the versions accordingly, submit a PR and make sure that the GitHub Actions that verify the new versions run fine.
