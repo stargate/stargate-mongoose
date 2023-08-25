@@ -493,7 +493,7 @@ describe(`Mongoose Model API level tests`, async () => {
             await Product.insertMany([product1, product2, product3]);
             const findResp = await Product.find({category: 'cat 1'});
             assert.strictEqual(findResp.length, 2);
-            const nameArray: Set<String> = new Set(['Product 1', 'Product 3']);
+            const nameArray: Set<string> = new Set(['Product 1', 'Product 3']);
             for(const doc of findResp) {
                 assert.strictEqual(doc.category, 'cat 1');
                 assert.strictEqual(nameArray.has(doc.name), true);
