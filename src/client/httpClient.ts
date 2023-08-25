@@ -16,11 +16,11 @@ import http from 'http';
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { logger, setLevel } from '@/src/logger';
 import { inspect } from 'util';
-import { LIB_NAME, LIB_VERSION } from '../version';
+import { name, version } from '../../package.json';
 import { getStargateAccessToken } from '../collections/utils';
 import { EJSON } from 'bson';
 
-const REQUESTED_WITH = LIB_NAME + '/' + LIB_VERSION;
+const REQUESTED_WITH = name + '/' + version;
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
 const DEFAULT_METHOD = 'get';
 const DEFAULT_TIMEOUT = 30000;
