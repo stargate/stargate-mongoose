@@ -9,7 +9,8 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    steps:      
+    steps:
+      - uses: actions/checkout@v3
       - name: Setting up the node version
         uses: actions/setup-node@v3
         with:

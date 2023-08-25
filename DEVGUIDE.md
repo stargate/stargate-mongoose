@@ -39,6 +39,7 @@ npm run test
 Run `npm run lint` to run ESLint.
 ESLint will point out any formatting and code quality issues it finds.
 ESLint can automatically fix some issues: run `npm run lint -- --fix` to tell ESLint to automatically fix what issues it can.
+You should try to run `npm run lint` before committing to minimize risk of regressions.
 
 ## Update Stargate and JSON API versions
 
