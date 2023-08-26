@@ -846,27 +846,42 @@ describe(`Mongoose Model API level tests`, async () => {
 
       it('supports sort() with $meta with findOneAndUpdate()', async function() {
         const res = await Vector.
-            findOneAndUpdate({}, { name: 'found vector' }, { returnDocument: 'after' }).
+            findOneAndUpdate(
+              {},
+              { name: 'found vector', $vector: [990, 1] },
+              { returnDocument: 'before' }
+            ).
             sort({ $vector: { $meta: [99, 1] } });
         assert.deepStrictEqual(res.$vector, [100, 1]);
-        assert.strictEqual(res.name, 'found vector');
+        assert.strictEqual(res.name, 'Test vector 2');
+
+        const doc = await Vector.findById(res._id);
+        assert.strictEqual(doc.name, 'found vector');
+        assert.deepStrictEqual(doc.$vector, [990, 1]);
       });
 
       it('supports sort() with $meta with findOneAndReplace()', async function() {
         const res = await Vector.
             findOneAndReplace(
                 {},
-                { name: 'found vector' },
+                { name: 'found vector', $vector: [990, 1] },
                 { returnDocument: 'before' }
             ).
             sort({ $vector: { $meta: [99, 1] } });
         assert.deepStrictEqual(res.$vector, [100, 1]);
         assert.strictEqual(res.name, 'Test vector 2');
+
+        const doc = await Vector.findById(res._id);
+        assert.strictEqual(doc.name, 'found vector');
+        assert.deepStrictEqual(doc.$vector, [990, 1]);
       });
 
       it('supports sort() with $meta with findOneAndDelete()', async function() {
         const res = await Vector.
-            findOneAndDelete({}, { name: 'found vector' }, { returnDocument: 'before' }).
+            findOneAndDelete(
+                {},
+                { returnDocument: 'before' }
+            ).
             sort({ $vector: { $meta: [1, 99] } });
         assert.deepStrictEqual(res.$vector, [1, 100]);
         assert.strictEqual(res.name, 'Test vector 1');
