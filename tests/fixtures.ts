@@ -13,9 +13,7 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { createAstraUri, createStargateUri } from '@/src/collections/utils';
 import { Client, ClientOptions } from '@/src/collections/client';
-import { randFirstName, randLastName } from '@ngneat/falso';
 
 export const TEST_COLLECTION_NAME = 'collection1';
 
@@ -23,7 +21,7 @@ export const getJSONAPIClient = async () => {
     if (!process.env.JSON_API_URI) {
         return null;
     }
-    let options: ClientOptions = { authHeaderName: process.env.AUTH_HEADER_NAME };
+    const options: ClientOptions = { authHeaderName: process.env.AUTH_HEADER_NAME };
     if (process.env.STARGATE_AUTH_URL && process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD) {
         options.authUrl = process.env.STARGATE_AUTH_URL;
         options.username = process.env.STARGATE_USERNAME;
@@ -37,7 +35,7 @@ export const getAstraClient = async () => {
     if (!process.env.ASTRA_URI) {
         return null;
     }
-    let options: ClientOptions = { authHeaderName: process.env.AUTH_HEADER_NAME };
+    const options: ClientOptions = { authHeaderName: process.env.AUTH_HEADER_NAME };
     if (process.env.STARGATE_AUTH_URL && process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD) {
         options.authUrl = process.env.STARGATE_AUTH_URL;
         options.username = process.env.STARGATE_USERNAME;
@@ -84,7 +82,7 @@ const sampleMultiLevelDoc: Employee = {
 };
 
 export const createSampleDocWithMultiLevelWithId = (docId: string) => {
-    let sampleMultiLevelDocWithId = JSON.parse(JSON.stringify(sampleMultiLevelDoc)) as Employee; //parse and stringigy is to clone and modify only the new object
+    const sampleMultiLevelDocWithId = JSON.parse(JSON.stringify(sampleMultiLevelDoc)) as Employee; //parse and stringigy is to clone and modify only the new object
     sampleMultiLevelDocWithId._id = docId;
     return sampleMultiLevelDocWithId;
 };

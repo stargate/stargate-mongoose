@@ -26,7 +26,6 @@ import {
     UpdateOneOptions
 } from '@/src/collections/options';
 import { DeleteResult } from 'mongodb';
-import { QueryOptions } from 'mongoose';
 
 type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null) => unknown;
 
@@ -135,27 +134,27 @@ export class Collection extends MongooseCollection {
         return this.collection.updateMany(filter, update, options);
     }
 
-    bulkWrite(ops: any[], options?: any) {
+    bulkWrite(_ops: any[], _options?: any) {
         throw new OperationNotSupportedError('bulkWrite() Not Implemented');
     }
 
-    aggregate(pipeline: any[], options?: any) {
+    aggregate(_pipeline: any[], _options?: any) {
         throw new OperationNotSupportedError('aggregate() Not Implemented');
     }
 
-    bulkSave(docs: any[], options?: any) {
+    bulkSave(_docs: any[], _options?: any) {
         throw new OperationNotSupportedError('bulkSave() Not Implemented');
     }
 
-    cleanIndexes(options?: any) {
+    cleanIndexes(_options?: any) {
         throw new OperationNotSupportedError('cleanIndexes() Not Implemented');
     }
 
-    listIndexes(options?: any) {
+    listIndexes(_options?: any) {
         throw new OperationNotSupportedError('listIndexes() Not Implemented');
     }
 
-    createIndex(fieldOrSpec: any, options?: any) {
+    createIndex(_fieldOrSpec: any, _options?: any) {
         throw new OperationNotSupportedError('createIndex() Not Implemented');
     }
 

@@ -16,14 +16,13 @@ import assert from 'assert';
 import { Db } from '@/src/collections/db';
 import { Collection } from '@/src/collections/collection';
 import { Client } from '@/src/collections/client';
-import { testClient, testClientName, createSampleDoc, sampleUsersList, createSampleDocWithMultiLevel, createSampleDocWithMultiLevelWithId, getSampleDocs, sleep, TEST_COLLECTION_NAME } from '@/tests/fixtures';
+import { testClient, testClientName, sampleUsersList, createSampleDocWithMultiLevel, createSampleDocWithMultiLevelWithId, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 
 describe(`StargateMongoose - ${testClientName} Connection - collections.collection`, async () => {
     const isAstra: boolean = testClientName === 'astra';
     let astraClient: Client | null;
     let db: Db;
     let collection: Collection;
-    const sampleDoc = createSampleDoc();
     before(async function () {
         if (testClient == null) {
             return this.skip();
@@ -112,7 +111,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             const docToInsert = { [fieldName]: "value" };
             let error: any;
             try {
-                const resp = await collection.insertOne(docToInsert);
+                await collection.insertOne(docToInsert);
             } catch (e: any) {
                 error = e;
             }
@@ -124,7 +123,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             const docToInsert = { username: _string16klength };
             let error: any;
             try {
-                const resp = await collection.insertOne(docToInsert);
+                await collection.insertOne(docToInsert);
             } catch (e: any) {
                 error = e;
             }
@@ -135,7 +134,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             const docToInsert = { tags: new Array(101).fill("tag") };
             let error: any;
             try {
-                const resp = await collection.insertOne(docToInsert);
+                await collection.insertOne(docToInsert);
             } catch (e: any) {
                 error = e;
             }
@@ -143,13 +142,13 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(error.errors[0].message, "Document size limitation violated: number of elements an Array has (101) exceeds maximum allowed (100)");
         });
         it('Should fail if a doc contains more than 64 properties', async () => {
-            let docToInsert: any = { _id: "123" };
+            const docToInsert: any = { _id: "123" };
             for (let i = 1; i <= 64; i++) {
                 docToInsert[`prop${i}`] = `prop${i}value`;
             }
             let error: any;
             try {
-                const resp = await collection.insertOne(docToInsert);
+                await collection.insertOne(docToInsert);
             } catch (e: any) {
                 error = e;
             }
@@ -165,7 +164,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(Object.keys(res.insertedIds).length, 3);
         });
         it('should insertMany documents with ids', async () => {
-            let sampleDocsWithIdList = JSON.parse(JSON.stringify(sampleUsersList));
+            const sampleDocsWithIdList = JSON.parse(JSON.stringify(sampleUsersList));
             sampleDocsWithIdList[0]._id = "docml1";
             sampleDocsWithIdList[1]._id = "docml2";
             sampleDocsWithIdList[2]._id = "docml3";
@@ -175,13 +174,13 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(Object.keys(res.insertedIds).length, 3);
         });
         it('should not insert more than allowed number of documents in one insertMany call', async () => {
-            let docList = Array.from({ length: 21 }, () => ({ "username": "id" }));
+            const docList = Array.from({ length: 21 }, () => ({ "username": "id" }));
             docList.forEach((doc, index) => {
                 doc.username = doc.username + (index + 1);
             });
             let error: any;
             try {
-                const res = await collection.insertMany(docList);
+                await collection.insertMany(docList);
             } catch (e: any) {
                 error = e;
             }
@@ -191,14 +190,14 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         it('should error out when docs list is empty in insertMany', async () => {
             let error: any;
             try {
-                const res = await collection.insertMany([]);
+                await collection.insertMany([]);
             } catch (e: any) {
                 error = e;
             }
             assert.strictEqual(error.errors[0].message, "Request invalid, the field postCommand.command.documents not valid: must not be empty.");
         });
         it('should insertMany documents ordered', async () => {
-            let docList:{ _id?: string, username:string }[]  = Array.from({ length: 20 }, () => ({ "username": "id" }));
+            const docList:{ _id?: string, username:string }[]  = Array.from({ length: 20 }, () => ({ "username": "id" }));
             docList.forEach((doc, index) => {
                 doc._id = "docml" + (index + 1);
                 doc.username = doc.username + (index + 1);
@@ -211,16 +210,15 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should error out when one of the docs in insertMany is invalid with ordered true', async () => {
-            let docList:{ _id?: string, username:string }[] = Array.from({ length: 20 }, () => ({ "username": "id" }));
+            const docList:{ _id?: string, username:string }[] = Array.from({ length: 20 }, () => ({ "username": "id" }));
             docList.forEach((doc, index) => {
                 doc._id = "docml" + (index + 1);
                 doc.username = doc.username + (index + 1);
             });
             docList[10] = docList[9];
             let error: any;
-            let res: any;
             try {
-                res = await collection.insertMany(docList, { ordered: true });
+                await collection.insertMany(docList, { ordered: true });
             } catch (e: any) {
                 error = e;
             }
@@ -233,16 +231,15 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should error out when one of the docs in insertMany is invalid with ordered false', async () => {
-            let docList:{ _id?: string, username:string }[] = Array.from({ length: 20 }, () => ({ "username": "id" }));
+            const docList:{ _id?: string, username:string }[] = Array.from({ length: 20 }, () => ({ "username": "id" }));
             docList.forEach((doc, index) => {
                 doc._id = "docml" + (index + 1);
                 doc.username = doc.username + (index + 1);
             });
             docList[10] = docList[9];
             let error: any;
-            let res: any;
             try {
-                res = await collection.insertMany(docList, { ordered: false });
+                await collection.insertMany(docList, { ordered: false });
             } catch (e: any) {
                 error = e;
             }
@@ -251,7 +248,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(error.errors[0].errorCode, "DOCUMENT_ALREADY_EXISTS");
             assert.strictEqual(error.status.insertedIds.length, 19);
             //check if response insertedIds contains all the docs except the one that failed
-            docList.slice(0, 9).concat(docList.slice(10)).forEach((doc, index) => {
+            docList.slice(0, 9).concat(docList.slice(10)).forEach((doc) => {
                 //check if error.status.insertedIds contains doc._id
                 assert.ok(error.status.insertedIds.includes(doc._id));
             });
@@ -544,7 +541,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         address: { city: string },
         tags?: string[]
       }
-      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
+      const docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
       docList.forEach((doc, index) => {
           doc._id = 'id' + index;
           doc.username = doc.username + (index + 1);
@@ -562,7 +559,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       //read that back with projection      
       const findDocs = await collection.find({}, { projection: { username: 1, "address.city": true, _id: 0, tags: { "$slice": 1 } } }).toArray();
       assert.strictEqual(findDocs.length, 20);
-      findDocs.forEach((resDoc, index) => {
+      findDocs.forEach((resDoc) => {
           assert.ok(resDoc);
           assert.strictEqual(resDoc._id, undefined);
           assert.ok(resDoc.username);
@@ -585,7 +582,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         address: { city: string },
         tags?: string[]
       }
-      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
+      const docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
       docList.forEach((doc, index) => {
           doc._id = 'id' + index;
           doc.username = doc.username + (index + 1);
@@ -603,7 +600,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       //read that back with projection      
       const findDocs = await collection.find({}, { projection: { username: 1, "address.city": true, _id: 0, tags: { "$slice": -1 } } }).toArray();
       assert.strictEqual(findDocs.length, 20);
-      findDocs.forEach((resDoc, index) => {
+      findDocs.forEach((resDoc) => {
           assert.ok(resDoc);
           assert.strictEqual(resDoc._id, undefined);
           assert.ok(resDoc.username);
@@ -626,7 +623,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         address: { city: string },
         tags?: string[]
       }
-      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
+      const docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
       docList.forEach((doc, index) => {
           doc._id = 'id' + index;
           doc.username = doc.username + (index + 1);
@@ -644,7 +641,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       //read that back with projection      
       const findDocs = await collection.find({}, { projection: { username: 1, "address.city": true, _id: 0, tags: { "$slice": 6 } } }).toArray();
       assert.strictEqual(findDocs.length, 20);
-      findDocs.forEach((resDoc, index) => {
+      findDocs.forEach((resDoc) => {
           assert.ok(resDoc);
           assert.strictEqual(resDoc._id, undefined);
           assert.ok(resDoc.username);
@@ -665,7 +662,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         address: { city: string },
         tags?: string[]
       }
-      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
+      const docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", address: { city: "nyc" } }));
       docList.forEach((doc, index) => {
           doc._id = 'id' + index;
           doc.username = doc.username + (index + 1);
@@ -683,7 +680,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       //read that back with projection      
       const findDocs = await collection.find({}, { projection: { username: 1, "address.city": true, _id: 0, tags: { "$slice": -6 } } }).toArray();
       assert.strictEqual(findDocs.length, 20);
-      findDocs.forEach((resDoc, index) => {
+      findDocs.forEach((resDoc) => {
           assert.ok(resDoc);
           assert.strictEqual(resDoc._id, undefined);
           assert.ok(resDoc.username);
@@ -700,7 +697,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         });
         it('should find & find doc $in test', async () => {
       interface Doc { _id?: string; username: string; city: string; tags?: string[] }
-      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+      const docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docList.forEach((doc, index) => {
           doc._id = 'id' + index;
           doc.username = doc.username + (index + 1);
@@ -730,7 +727,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         });
         it('should find & find doc $exists test', async () => {
       interface Doc { _id?: string; username: string; city: string; tags?: string[] }
-      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+      const docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docList.forEach((doc, index) => {
           doc._id = 'id' + index;
           doc.username = doc.username + (index + 1);
@@ -739,7 +736,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.strictEqual(res.insertedCount, docList.length);
       assert.strictEqual(res.acknowledged, true);
       assert.strictEqual(Object.keys(res.insertedIds).length, 20);
-      let filter = { "city": { "$exists": true } };
+      const filter = { "city": { "$exists": true } };
       const findRespDocs = await collection.find(filter).toArray();
       assert.strictEqual(findRespDocs.length, 20);
       //check if the doc ids of the returned docs are in the input list
@@ -753,7 +750,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         });
         it('should find & find doc $all test', async () => {
       interface Doc { _id?: string; username: string; city: string; tags?: string[] }
-      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+      const docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docList.forEach((doc, index) => {
           doc._id = 'id' + index;
           doc.username = doc.username + (index + 1);
@@ -765,7 +762,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.strictEqual(res.insertedCount, docList.length);
       assert.strictEqual(res.acknowledged, true);
       assert.strictEqual(Object.keys(res.insertedIds).length, 20);
-      let filter = { "tags": { "$all": ["tag1", "tag2", "tag3"] } };
+      const filter = { "tags": { "$all": ["tag1", "tag2", "tag3"] } };
       const findRespDocs = await collection.find(filter).toArray();
       assert.strictEqual(findRespDocs.length, 1);
       //check if the doc ids of the returned docs are in the input list
@@ -782,7 +779,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         });
         it('should find & find doc $size test', async () => {
       interface Doc { _id?: string; username: string; city: string; tags?: string[] }
-      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+      const docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docList.forEach((doc, index) => {
           doc._id = 'id' + index;
           doc.username = doc.username + (index + 1);
@@ -797,7 +794,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.strictEqual(res.insertedCount, docList.length);
       assert.strictEqual(res.acknowledged, true);
       assert.strictEqual(Object.keys(res.insertedIds).length, 20);
-      let filter = { "tags": { "$size": 3 } };
+      const filter = { "tags": { "$size": 3 } };
       const findRespDocs = await collection.find(filter).toArray();
       assert.strictEqual(findRespDocs.length, 1);
       //check if the doc ids of the returned docs are in the input list
@@ -814,7 +811,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         });
         it('should find & find doc $size 0 test', async () => {
       interface Doc { _id?: string; username: string; city: string; tags?: string[] }
-      let docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+      const docList: Doc[] = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
       docList.forEach((doc, index) => {
           doc._id = 'id' + index;
           doc.username = doc.username + (index + 1);
@@ -832,7 +829,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.strictEqual(res.insertedCount, docList.length);
       assert.strictEqual(res.acknowledged, true);
       assert.strictEqual(Object.keys(res.insertedIds).length, 20);
-      let filter = { "tags": { "$size": 0 } };
+      const filter = { "tags": { "$size": 0 } };
       const findRespDocs = await collection.find(filter).toArray();
       assert.strictEqual(findRespDocs.length, 1);
       //check if the doc ids of the returned docs are in the input list
@@ -952,7 +949,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
     });
     describe('updateMany tests', () => {
         it('should updateMany documents with ids', async () => {
-            let sampleDocsWithIdList = JSON.parse(JSON.stringify(sampleUsersList));
+            const sampleDocsWithIdList = JSON.parse(JSON.stringify(sampleUsersList));
             sampleDocsWithIdList[0]._id = "docml1";
             sampleDocsWithIdList[1]._id = "docml2";
             sampleDocsWithIdList[2]._id = "docml3";
@@ -977,7 +974,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updatedDoc!.address.city, undefined);
         });
         it('should update when updateMany is invoked with updates for records <= 20', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+            const docList = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
             docList.forEach((doc, index) => {
                 doc.username = doc.username + (index + 1);
             });
@@ -998,7 +995,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updateManyResp.upsertedId, undefined);
         });
         it('should upsert with upsert flag set to false/not set when not found', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+            const docList = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
             docList.forEach((doc, index) => {
                 doc.username = doc.username + (index + 1);
             });
@@ -1019,7 +1016,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updateManyResp.upsertedId, undefined);
         });
         it('should upsert with upsert flag set to true when not found', async () => {
-            let docList = Array.from({ length: 2 }, () => ({ username: "id", city: "nyc" }));
+            const docList = Array.from({ length: 2 }, () => ({ username: "id", city: "nyc" }));
             docList.forEach((doc, index) => {
                 doc.username = doc.username + (index + 1);
             });
@@ -1043,7 +1040,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.ok(updateManyResp.upsertedId);
         });
         it('should fail when moreData returned by updateMany as true', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+            const docList = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
             docList.forEach((doc, index) => {
                 doc.username = doc.username + (index + 1);
             });
@@ -1052,7 +1049,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(res.acknowledged, true);
             assert.strictEqual(Object.keys(res.insertedIds).length, docList.length);
             //insert next 20
-            let docListNextSet = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+            const docListNextSet = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
             docListNextSet.forEach((doc, index) => {
                 doc.username = doc.username + (index + 21);
             });
@@ -1069,7 +1066,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             };
             let error;
             try {
-                const updateManyResp = await collection.updateMany(filter, update);
+                await collection.updateMany(filter, update);
             }
             catch (e: any) {
                 error = e;
@@ -1080,7 +1077,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.deepStrictEqual(error.command.updateMany.update, update);
         });
         it('should increment number when $inc is used', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", city: "trichy", count: 0 }));
+            const docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", city: "trichy", count: 0 }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.username = doc.username + index;        
@@ -1108,7 +1105,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updateManyResp.upsertedId, undefined);
             const allDocs = await collection.find({}).toArray();
             assert.strictEqual(allDocs.length, 20);
-            allDocs.forEach((doc, index) => {
+            allDocs.forEach((doc) => {
                 const docIdNum = parseInt(doc._id.substring(2));
                 if (docIdNum === 5) {
                     assert.strictEqual(doc.count, 7);
@@ -1120,7 +1117,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should increment decimal when $inc is used', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", city: "trichy", count: 0.0 }));
+            const docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", city: "trichy", count: 0.0 }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.username = doc.username + index;        
@@ -1148,7 +1145,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updateManyResp.upsertedId, undefined);
             const allDocs = await collection.find({}).toArray();
             assert.strictEqual(allDocs.length, 20);
-            allDocs.forEach((doc, index) => {
+            allDocs.forEach((doc) => {
                 const docIdNum = parseInt(doc._id.substring(2));
                 if (docIdNum === 5) {
                     assert.strictEqual(doc.count, 7.5);
@@ -1160,7 +1157,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should rename a field when $rename is used in update and updateMany', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", city: "trichy", zip: 620020 }));
+            const docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", city: "trichy", zip: 620020 }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.username = doc.username + index;        
@@ -1188,13 +1185,13 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updateManyResp.upsertedId, undefined);
             const allDocs = await collection.find({}).toArray();
             assert.strictEqual(allDocs.length, 20);
-            allDocs.forEach((doc, index) => {
+            allDocs.forEach((doc) => {
                 assert.strictEqual(doc.pincode, 620020);
                 assert.strictEqual(doc.zip, undefined);
             });
         });
         it('should rename a sub doc field when $rename is used in update and updateMany', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", address: { zip: 620020, city: "trichy" } }));
+            const docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", address: { zip: 620020, city: "trichy" } }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.username = doc.username + index;        
@@ -1222,13 +1219,13 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updateManyResp.upsertedId, undefined);
             const allDocs = await collection.find({}).toArray();
             assert.strictEqual(allDocs.length, 20);
-            allDocs.forEach((doc, index) => {
+            allDocs.forEach((doc) => {
                 assert.strictEqual(doc.address.pincode, 620020);
                 assert.strictEqual(doc.address.zip, undefined);
             });
         });
         it('should set date to current date in the fields inside $currentDate in update and updateMany', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username" }));
+            const docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username" }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.username = doc.username + index;        
@@ -1255,12 +1252,12 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updateManyResp.upsertedId, undefined);
             const allDocs = await collection.find({}).toArray();
             assert.strictEqual(allDocs.length, 20);
-            allDocs.forEach((doc, index) => {
+            allDocs.forEach((doc) => {
                 assert.ok(doc.createdAt);
             });
         });
         it('should set fields under $setOnInsert when upsert is true in updateOne', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", city: "trichy" }));
+            const docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", city: "trichy" }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.username = doc.username + index;        
@@ -1294,7 +1291,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updatedDoc1!.country, "India");
         });
         it('should set fields under $setOnInsert when upsert is true in updateMany', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", city: "trichy" }));
+            const docList = Array.from({ length: 20 }, () => ({ _id : "id", username: "username", city: "trichy" }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.username = doc.username + index;        
@@ -1328,7 +1325,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updatedDoc1!.country, "India");
         });
         it('should set a field value to new value when the new value is < existing value with $min in updateOne and updateMany', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ _id : "id", departmentName: "dept", minScore: 50, maxScore: 800 }));
+            const docList = Array.from({ length: 20 }, () => ({ _id : "id", departmentName: "dept", minScore: 50, maxScore: 800 }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.departmentName = doc.departmentName + index;        
@@ -1395,7 +1392,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should set a field value to new value when the new value is > existing value with $max in updateOne and updateMany', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ _id : "id", departmentName: "dept", minScore: 50, maxScore: 800 }));
+            const docList = Array.from({ length: 20 }, () => ({ _id : "id", departmentName: "dept", minScore: 50, maxScore: 800 }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.departmentName = doc.departmentName + index;        
@@ -1462,7 +1459,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should multiply a value by number provided for each field in the $mul in updateOne and updateMany', async () => {
-            let docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", price: 50, njStatePrice: 50 }));
+            const docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", price: 50, njStatePrice: 50 }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.productName = doc.productName + index;                
@@ -1496,7 +1493,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             }); 
         });
         it('should push an element to an array when an item is added using $push', async () => {
-            let docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", tags: ["tag1", "tag2"] }));
+            const docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", tags: ["tag1", "tag2"] }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.productName = doc.productName + index; 
@@ -1539,7 +1536,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should push an element to an array when each item in $each is added using $push with $position', async () => {
-            let docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", tags: ["tag1", "tag2"] }));
+            const docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", tags: ["tag1", "tag2"] }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.productName = doc.productName + index; 
@@ -1586,7 +1583,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should push an element to an array skipping duplicates when an item is added using $addToSet', async () => {
-            let docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", tags: ["tag1", "tag2"] }));
+            const docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", tags: ["tag1", "tag2"] }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.productName = doc.productName + index; 
@@ -1648,7 +1645,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should push an element to an array skipping duplicates when an item is added using $addToSet with $each', async () => {
-            let docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", tags: ["tag1", "tag2"] }));
+            const docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", tags: ["tag1", "tag2"] }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.productName = doc.productName + index; 
@@ -1677,7 +1674,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updateOneResp2.acknowledged, true);
             assert.strictEqual(updateOneResp2.upsertedCount, undefined);
             assert.strictEqual(updateOneResp2.upsertedId, undefined);
-            const updatedDoc2 = await collection.findOne({ "_id": "id4" });
+            await collection.findOne({ "_id": "id4" });
             //assert that the tag3 and tag4 are not added to the tags array in the 4th doc because the $addToSet operator does not add the item to the array if it already exists
             assert.strictEqual(updatedDoc!.tags.length, 4);
             assert.strictEqual(updatedDoc!.tags[2], "tag3");
@@ -1714,7 +1711,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should remove last 1 item from array when $pop is passed with 1 in updateOne and updateMany', async () => {
-            let docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", tags: ["tag1", "tag2", "tag3", "tag4", "tag5"] }));
+            const docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", tags: ["tag1", "tag2", "tag3", "tag4", "tag5"] }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.productName = doc.productName + index; 
@@ -1764,7 +1761,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should remove first 1 item from array when $pop is passed with -1 in updateOne and updateMany', async () => {
-            let docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", tags: ["tag1", "tag2", "tag3", "tag4", "tag5"] }));
+            const docList = Array.from({ length: 5 }, () => ({ _id : "id", productName: "prod", tags: ["tag1", "tag2", "tag3", "tag4", "tag5"] }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.productName = doc.productName + index; 
@@ -1876,7 +1873,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(findOneAndUpdateResp.value!.address.city, cityBefore);
         });
         it('should findOneAndUpdate with upsert true', async () => {
-            const res = await collection.insertOne(createSampleDocWithMultiLevel());
+            await collection.insertOne(createSampleDocWithMultiLevel());
             const newDocId = "123";
             const findOneAndUpdateResp = await collection.findOneAndUpdate({ "_id": newDocId },
                 {
@@ -1898,7 +1895,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(findOneAndUpdateResp.value!.address, undefined);
         });
         it('should findOneAndUpdate with upsert true and returnDocument before', async () => {
-            const res = await collection.insertOne(createSampleDocWithMultiLevel());
+            await collection.insertOne(createSampleDocWithMultiLevel());
             const newDocId = "123";
             const findOneAndUpdateResp = await collection.findOneAndUpdate({ "_id": newDocId },
                 {
@@ -1943,8 +1940,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(deleteOneResp.acknowledged, true);
         });
         it('should not delete any when no match in deleteOne', async () => {
-            const res = await collection.insertOne(createSampleDocWithMultiLevel());
-            const docId = res.insertedId;
+            await collection.insertOne(createSampleDocWithMultiLevel());
             const deleteOneResp = await collection.deleteOne({ "username": "samlxyz" });
             assert.strictEqual(deleteOneResp.deletedCount, 0);
             assert.strictEqual(deleteOneResp.acknowledged, true);
@@ -1952,7 +1948,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
     });
     describe('deleteMany tests', () => {
         it('should deleteMany when match is <= 20', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
+            const docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
             docList.forEach((doc, index) => {
                 doc.username = doc.username + (index + 1);
             });
@@ -1963,14 +1959,14 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(deleteManyResp.acknowledged, true);
         });
         it('should throw an error when deleteMany finds more than 20 records', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
+            const docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
             docList.forEach((doc, index) => {
                 doc.username = doc.username + (index + 1);
             });
             const res = await collection.insertMany(docList);
             assert.strictEqual(res.insertedCount, 20);
             //insert next 20
-            let docListNextSet = Array.from({ length: 20 }, () => ({ username: "id", city: "trichy" }));
+            const docListNextSet = Array.from({ length: 20 }, () => ({ username: "id", city: "trichy" }));
             docListNextSet.forEach((doc, index) => {
                 doc.username = doc.username + (index + 21);
             });
@@ -1982,7 +1978,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             let exception: any;
             const filter = { "city": "trichy" };
             try {
-                const deleteManyResp = await collection.deleteMany(filter);
+                await collection.deleteMany(filter);
             } catch (e: any) {
                 exception = e;
             }
@@ -2096,7 +2092,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 { username: 'a' }
             ]);
 
-            let res = await collection.findOneAndUpdate(
+            const res = await collection.findOneAndUpdate(
                 {},
                 { $set: { username: 'a' } },
                 { sort: { username: 1 }, returnDocument: 'before' }
@@ -2198,7 +2194,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
     });
     describe('countDocuments tests', () => {
         it('should return count of documents with non id filter', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
+            const docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
             docList.forEach((doc, index) => {
                 doc.username = doc.username + (index + 1);
             });
@@ -2208,7 +2204,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(count, 20);
         });
         it('should return count of documents with no filter', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
+            const docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
             docList.forEach((doc, index) => {
                 doc.username = doc.username + (index + 1);
             });
@@ -2218,14 +2214,14 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(count, 20);
         });
         it('should return count of documents for more than default page size limit', async () => {
-            let docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
+            const docList = Array.from({ length: 20 }, () => ({ "username": "id", "city": "trichy" }));
             docList.forEach((doc, index) => {
                 doc.username = doc.username + (index + 1);
             });
             const res = await collection.insertMany(docList);
             assert.strictEqual(res.insertedCount, 20);
             //insert next 20
-            let docListNextSet = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+            const docListNextSet = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
             docListNextSet.forEach((doc, index) => {
                 doc.username = doc.username + (index + 21);
             });

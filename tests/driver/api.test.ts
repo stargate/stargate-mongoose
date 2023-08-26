@@ -22,9 +22,7 @@ import {
 import mongoose, {Model, Mongoose, Schema, InferSchemaType} from "mongoose";
 import * as StargateMongooseDriver from "@/src/driver";
 import {randomUUID} from "crypto";
-import sinon from "sinon";
 import {OperationNotSupportedError} from "@/src/driver";
-import { FindCursor } from 'mongodb';
 
 const productSchema = new mongoose.Schema({
     name: String,
@@ -281,7 +279,7 @@ describe(`Mongoose Model API level tests`, async () => {
             //Model.aggregate()
             let error: OperationNotSupportedError | null = null;
             try {
-                const aggregateResp = await Product.aggregate([{$match: {name: 'Product 1'}}]);
+                await Product.aggregate([{$match: {name: 'Product 1'}}]);
             } catch (err: any) {
                 error = err;
             }
@@ -296,7 +294,7 @@ describe(`Mongoose Model API level tests`, async () => {
             try {
                 const product2 = new Product({name: 'Product 2', price: 20, isCertified: true, category: 'cat 2'});
                 const product3 = new Product({name: 'Product 3', price: 30, isCertified: true, category: 'cat 3'});
-                const bulkSaveResp = await Product.bulkSave([product2, product3]);
+                await Product.bulkSave([product2, product3]);
             } catch (err:any) {
                 error = err;
             }
@@ -386,7 +384,7 @@ describe(`Mongoose Model API level tests`, async () => {
                 userSchema.index({name: 1});
                 const User = mongooseInstance!.model(modelName, userSchema);
                 await Promise.all(Object.values(mongooseInstance!.connection.models).map(Model => Model.init()));
-                const diff = await User.diffIndexes();
+                await User.diffIndexes();
             } catch (err: any) {
                 error = err;
             } finally {
@@ -436,7 +434,7 @@ describe(`Mongoose Model API level tests`, async () => {
             let err: OperationNotSupportedError | null = null;
             try {
                 const query = Product.distinct('category');
-                const distinctResp = await query.exec();
+                await query.exec();
             } catch (error: any) {
                 err = error;
             }
@@ -472,7 +470,7 @@ describe(`Mongoose Model API level tests`, async () => {
                 const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
                 const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
                 await Product.insertMany([product1, product2, product3]);
-                const documentCount = await Product.estimatedDocumentCount();
+                await Product.estimatedDocumentCount();
             } catch (err: any) {
                 error = err;
             }
@@ -611,7 +609,7 @@ describe(`Mongoose Model API level tests`, async () => {
         it('API ops tests Model.listIndexes()', async () => {
             let error: OperationNotSupportedError | null = null;
             try {
-                const listIndexesResp = await Product.listIndexes();
+                await Product.listIndexes();
             } catch(err: OperationNotSupportedError | any) {
                 error = err;
             }
@@ -647,7 +645,7 @@ describe(`Mongoose Model API level tests`, async () => {
                 const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
                 const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
                 await Product.insertMany([product1, product2, product3]);
-                const replaceResp = await Product.replaceOne({category: 'cat 1'}, {name: 'Product 4'});
+                await Product.replaceOne({category: 'cat 1'}, {name: 'Product 4'});
             } catch(err: OperationNotSupportedError | any) {
                 error = err;
             }
@@ -662,7 +660,7 @@ describe(`Mongoose Model API level tests`, async () => {
             await Product.insertMany([product1, product2, product3]);
             let error: OperationNotSupportedError | null = null;
             try {
-                const session:any = await Product.startSession();
+                await Product.startSession();
                 await product1.remove();
             } catch(err: OperationNotSupportedError | any) {
                 error = err;
@@ -673,7 +671,7 @@ describe(`Mongoose Model API level tests`, async () => {
         it('API ops tests Model.syncIndexes()', async () => {
             let error: OperationNotSupportedError | null = null;
             try {
-                const syncIndexesResp = await Product.syncIndexes();
+                await Product.syncIndexes();
             } catch(err: OperationNotSupportedError | any) {
                 error = err;
             }

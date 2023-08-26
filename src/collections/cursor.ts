@@ -121,7 +121,7 @@ export class FindCursor {
         if (this.options && this.options.sort) {
             command.find.sort = this.options.sort;
         }
-        let options: FindOptionsInternal = {};
+        const options: FindOptionsInternal = {};
         if (this.limit != Infinity) {
             options.limit = this.limit;
         }
@@ -163,7 +163,7 @@ export class FindCursor {
    * @param options
    * @returns Promise<number>
    */
-    async count(options?: any) {
+    async count(_options?: any) {
         return executeOperation(async () => {
             await this.getAll();
             return this.documents.length;
@@ -176,7 +176,7 @@ export class FindCursor {
    *
    * @param options
    */
-    stream(options?: any) {
+    stream(_options?: any) {
         throw new Error('Streaming cursors are not supported');
     }
 }

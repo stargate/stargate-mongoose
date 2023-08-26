@@ -7,7 +7,6 @@ module.exports = {
         'no-const-assign': 'error',
         'no-undef': 'error',
         'no-unreachable': 'error',
-        'prefer-const': 'off',
 
         // Warnings: style and readability concerns
         'indent': [
@@ -40,11 +39,14 @@ module.exports = {
                 '@typescript-eslint/no-explicit-any': 'off',
                 '@typescript-eslint/no-inferrable-types': 'off',
                 '@typescript-eslint/no-this-alias': 'off',
-                '@typescript-eslint/no-unused-vars': 'off',
                 '@typescript-eslint/no-empty-interface': 'off',
                 '@typescript-eslint/no-empty-function': 'off',
                 '@typescript-eslint/ban-types': 'off',
-                'prefer-const': 'off'
+                '@typescript-eslint/no-unused-vars': [
+                    'warn',
+                    // https://stackoverflow.com/questions/64052318/how-to-disable-warn-about-some-unused-params-but-keep-typescript-eslint-no-un
+                    {  'argsIgnorePattern': '^_' }
+                ]
             }
         }
     ],

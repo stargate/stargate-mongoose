@@ -137,10 +137,10 @@ export class Connection extends MongooseConnection {
     }
 
     /**
-   *
-   * @returns Client
-   */
-    doClose(force?: boolean) {
+     *
+     * @returns Client
+     */
+    doClose(_force?: boolean) {
         return this;
     }
 }

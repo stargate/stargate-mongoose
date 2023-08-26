@@ -88,7 +88,7 @@ export const createAstraUri = (
     logLevel?: string,
     authHeaderName?: string,
 ) => {
-    let uri = new url.URL(`https://${databaseId}-${region}.apps.astra.datastax.com`);
+    const uri = new url.URL(`https://${databaseId}-${region}.apps.astra.datastax.com`);
     let contextPath: string = '';
     contextPath += baseApiPath ? `/${baseApiPath}` : '/api/json/v1';
     contextPath += `/${keyspace}`;
@@ -123,7 +123,7 @@ export const createStargateUri = async (
     password: string,
     logLevel?: string
 ) => {
-    let uri = new url.URL(baseUrl);
+    const uri = new url.URL(baseUrl);
     uri.pathname = `/${keyspace}`;
     if (logLevel) {
         uri.searchParams.append('logLevel', logLevel);
@@ -196,7 +196,7 @@ export async function createNamespace(httpClient: HTTPClient, name: string) {
             name
         }
     };
-    const parsedUri = parseUri(httpClient.baseUrl);
+    parseUri(httpClient.baseUrl);
     const response = await httpClient._request({
         url: httpClient.baseUrl,
         method: 'POST',

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Db } from './db';
-import { createNamespace, executeOperation, parseUri } from './utils';
+import { createNamespace, parseUri } from './utils';
 import { HTTPClient } from '@/src/client';
 import { logger } from '@/src/logger';
 import {OperationNotSupportedError} from "@/src/driver";
@@ -29,10 +29,6 @@ export interface ClientOptions {
   authUrl?: string;
   isAstra?: boolean;
   logSkippedOptions?: boolean;
-}
-
-interface ClientCallback {
-  (err: Error | undefined, client: Client): void;
 }
 
 export class Client {

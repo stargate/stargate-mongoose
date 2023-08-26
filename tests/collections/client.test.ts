@@ -160,7 +160,6 @@ describe('StargateMongoose clients test', () => {
         it('should handle empty baseApiPath', async () => {
             const AUTH_TOKEN_TO_CHECK = "123";
             const KEYSPACE_TO_CHECK = "testks1";
-            const BASE_API_PATH_TO_CHECK = "baseAPIPath1";
             const AUTH_HEADER_NAME_TO_CHECK = "x-token";
       
             const client = await Client.connect(baseUrl + "/" + KEYSPACE_TO_CHECK, {
@@ -240,7 +239,7 @@ describe('StargateMongoose clients test', () => {
                 const client = new Client(baseUrl, 'keyspace1', {
                     username: "user1"
                 });
-                const connectedClient = client.connect();
+                client.connect();
             } catch (e: any) {
                 error = e;
             }
@@ -288,7 +287,7 @@ describe('StargateMongoose clients test', () => {
             await client.connect();
             let error: any;
             try {
-                const db = client.db();
+                client.db();
                 assert.ok(false);
             } catch (e) {
                 error = e;

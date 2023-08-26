@@ -115,7 +115,7 @@ describe(`Driver based tests`, async () => {
                 assert.strictEqual(findOneAndReplaceResp!.name, 'My Cart 2');
                 assert.strictEqual(findOneAndReplaceResp!.cartName, 'wewson1');
 
-                let productNames: string[] = [];
+                const productNames: string[] = [];
                 const cursor = await Product.find().cursor();
                 await cursor.eachAsync(p => productNames.push(p.name!));
                 assert.deepEqual(productNames.sort(), ['Product 1', 'Product 2']);
@@ -158,7 +158,7 @@ describe(`Driver based tests`, async () => {
             await Person.deleteMany({});
             await Person.create([{name: 'John'}, {name: 'Bill'}]);
 
-            let names: string[] = [];
+            const names: string[] = [];
             const cursor = await Person.find().cursor();
             await cursor.eachAsync(doc => names.push(doc.name));
             assert.deepEqual(names.sort(), ['Bill', 'John']);
@@ -361,7 +361,7 @@ describe(`Driver based tests`, async () => {
             mongooseInstance.set('autoCreate', true);
             mongooseInstance.set('autoIndex', false);
 
-            let options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };
+            const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };
             // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
             await mongooseInstance.connect(dbUri, options);
 
@@ -374,7 +374,7 @@ describe(`Driver based tests`, async () => {
             mongooseInstance.setDriver(StargateMongooseDriver);
             mongooseInstance.set('autoCreate', true);
             mongooseInstance.set('autoIndex', false);
-            let options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };
+            const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };
             // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
             await mongooseInstance.connect(dbUri, options);
             if (isAstra) {
@@ -396,7 +396,7 @@ describe(`Driver based tests`, async () => {
             mongooseInstance.setDriver(StargateMongooseDriver);
             mongooseInstance.set('autoCreate', true);
             mongooseInstance.set('autoIndex', false);
-            let options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };
+            const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };
             //split dbUri by / and replace last element with newKeyspaceName
             const dbUriSplit = dbUri.split('/');
             const token = parseUri(dbUri).applicationToken;

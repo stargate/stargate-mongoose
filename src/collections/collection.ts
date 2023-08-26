@@ -75,7 +75,7 @@ export class Collection {
 
     async insertOne(document: Record<string, any>) {
         return executeOperation(async (): Promise<InsertOneResult> => {
-            let command = {
+            const command = {
                 insertOne: {
                     document
                 }
@@ -116,7 +116,7 @@ export class Collection {
             };
             setDefaultIdForUpsert(command.updateOne);
             const updateOneResp = await this.httpClient.executeCommand(command, updateOneInternalOptionsKeys);
-            let resp = {
+            const resp = {
                 modifiedCount: updateOneResp.status.modifiedCount,
                 matchedCount: updateOneResp.status.matchedCount,
                 acknowledged: true
@@ -143,7 +143,7 @@ export class Collection {
             if (updateManyResp.status.moreData) {
                 throw new StargateMongooseError(`More than ${updateManyResp.status.modifiedCount} records found for update by the server`, command);
             }
-            let resp = {
+            const resp = {
                 modifiedCount: updateManyResp.status.modifiedCount,
                 matchedCount: updateManyResp.status.matchedCount,
                 acknowledged: true,
@@ -259,7 +259,7 @@ export class Collection {
         });
     }
 
-    async distinct(key: any, filter: any, options?: any) {
+    async distinct(_key: any, _filter: any, _options?: any) {
         throw new Error('Not Implemented');
     }
 
