@@ -14,190 +14,189 @@
 
 import { default as MongooseCollection } from 'mongoose/lib/collection';
 import {
-  DeleteOneOptions,
-  FindOneAndDeleteOptions,
-  FindOneAndReplaceOptions,
-  FindOneAndUpdateOptions,
-  FindOneOptions,
-  FindOptions,
-  InsertManyOptions,
-  SortOption,
-  UpdateManyOptions,
-  UpdateOneOptions
+    DeleteOneOptions,
+    FindOneAndDeleteOptions,
+    FindOneAndReplaceOptions,
+    FindOneAndUpdateOptions,
+    FindOneOptions,
+    FindOptions,
+    InsertManyOptions,
+    SortOption,
+    UpdateManyOptions,
+    UpdateOneOptions
 } from '@/src/collections/options';
 import { DeleteResult } from 'mongodb';
-import { QueryOptions } from 'mongoose';
 
 type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null) => unknown;
 
 export class Collection extends MongooseCollection {
-  debugType = 'StargateMongooseCollection';
+    debugType = 'StargateMongooseCollection';
 
-  constructor(name: string, conn: any, options: any) {
-    super(name, conn, options);
-    this.modelName = options.modelName;
-    delete options.modelName;
-    this._closed = false;
-  }
-
-  get collection() {
-    if (this._collection != null) {
-      return this._collection;
+    constructor(name: string, conn: any, options: any) {
+        super(name, conn, options);
+        this.modelName = options.modelName;
+        delete options.modelName;
+        this._closed = false;
     }
-    this._collection = this.conn.db.collection(this.name);
-    return this._collection;
-  }
 
-  /**
+    get collection() {
+        if (this._collection != null) {
+            return this._collection;
+        }
+        this._collection = this.conn.db.collection(this.name);
+        return this._collection;
+    }
+
+    /**
   * @deprecated
   */
-  count(filter: Record<string, any>) {
-    return this.collection.count(filter);
-  }
-
-  countDocuments(filter: Record<string, any>) {
-    return this.collection.countDocuments(filter);
-  }
-
-  find(filter: Record<string, any>, options?: FindOptions, callback?: NodeCallback<Record<string, any>[]>) {
-    if (options != null) {
-      processSortOption(options);
+    count(filter: Record<string, any>) {
+        return this.collection.count(filter);
     }
-    const cursor = this.collection.find(filter, options);
-    if (callback != null) {
-      return callback(null, cursor);
+
+    countDocuments(filter: Record<string, any>) {
+        return this.collection.countDocuments(filter);
     }
-    return cursor;
-  }
 
-  findOne(filter: Record<string, any>, options?: FindOneOptions) {
-    if (options != null) {
-      processSortOption(options);
+    find(filter: Record<string, any>, options?: FindOptions, callback?: NodeCallback<Record<string, any>[]>) {
+        if (options != null) {
+            processSortOption(options);
+        }
+        const cursor = this.collection.find(filter, options);
+        if (callback != null) {
+            return callback(null, cursor);
+        }
+        return cursor;
     }
-    return this.collection.findOne(filter, options);
-  }
 
-  insertOne(doc: Record<string, any>) {
-    return this.collection.insertOne(doc);
-  }
-
-  insertMany(documents: Record<string, any>[], options?: InsertManyOptions) {
-    return this.collection.insertMany(documents, options);
-  }
-
-  findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions) {
-    if (options != null) {
-      processSortOption(options);
+    findOne(filter: Record<string, any>, options?: FindOneOptions) {
+        if (options != null) {
+            processSortOption(options);
+        }
+        return this.collection.findOne(filter, options);
     }
-    return this.collection.findOneAndUpdate(filter, update, options);
-  }
 
-  findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions) {
-    if (options != null) {
-      processSortOption(options);
+    insertOne(doc: Record<string, any>) {
+        return this.collection.insertOne(doc);
     }
-    return this.collection.findOneAndDelete(filter, options);
-  }
 
-  findOneAndReplace(filter: Record<string, any>, newDoc: Record<string, any>, options?: FindOneAndReplaceOptions) {
-    if (options != null) {
-      processSortOption(options);
+    insertMany(documents: Record<string, any>[], options?: InsertManyOptions) {
+        return this.collection.insertMany(documents, options);
     }
-    return this.collection.findOneAndReplace(filter, newDoc, options);
-  }
 
-  deleteMany(filter: Record<string, any>) {
-    return this.collection.deleteMany(filter);
-  }
-
-  deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<DeleteResult>) {
-    if (options != null) {
-      processSortOption(options);
+    findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions) {
+        if (options != null) {
+            processSortOption(options);
+        }
+        return this.collection.findOneAndUpdate(filter, update, options);
     }
+
+    findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions) {
+        if (options != null) {
+            processSortOption(options);
+        }
+        return this.collection.findOneAndDelete(filter, options);
+    }
+
+    findOneAndReplace(filter: Record<string, any>, newDoc: Record<string, any>, options?: FindOneAndReplaceOptions) {
+        if (options != null) {
+            processSortOption(options);
+        }
+        return this.collection.findOneAndReplace(filter, newDoc, options);
+    }
+
+    deleteMany(filter: Record<string, any>) {
+        return this.collection.deleteMany(filter);
+    }
+
+    deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<DeleteResult>) {
+        if (options != null) {
+            processSortOption(options);
+        }
     
-    const promise = this.collection.deleteOne(filter, options);
+        const promise = this.collection.deleteOne(filter, options);
 
-    if (callback != null) {
-      promise.then((res: DeleteResult) => callback(null, res), (err: Error) => callback(err, null));
+        if (callback != null) {
+            promise.then((res: DeleteResult) => callback(null, res), (err: Error) => callback(err, null));
+        }
+
+        return promise;
     }
 
-    return promise;
-  }
-
-  updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
-    if (options != null) {
-      processSortOption(options);
+    updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
+        if (options != null) {
+            processSortOption(options);
+        }
+        return this.collection.updateOne(filter, update, options);
     }
-    return this.collection.updateOne(filter, update, options);
-  }
 
-  updateMany(filter: Record<string, any>, update: Record<string, any>, options?: UpdateManyOptions) {
-    return this.collection.updateMany(filter, update, options);
-  }
+    updateMany(filter: Record<string, any>, update: Record<string, any>, options?: UpdateManyOptions) {
+        return this.collection.updateMany(filter, update, options);
+    }
 
-  bulkWrite(ops: any[], options?: any) {
-    throw new OperationNotSupportedError('bulkWrite() Not Implemented');
-  }
+    bulkWrite(_ops: any[], _options?: any) {
+        throw new OperationNotSupportedError('bulkWrite() Not Implemented');
+    }
 
-  aggregate(pipeline: any[], options?: any) {
-    throw new OperationNotSupportedError('aggregate() Not Implemented');
-  }
+    aggregate(_pipeline: any[], _options?: any) {
+        throw new OperationNotSupportedError('aggregate() Not Implemented');
+    }
 
-  bulkSave(docs: any[], options?: any) {
-    throw new OperationNotSupportedError('bulkSave() Not Implemented');
-  }
+    bulkSave(_docs: any[], _options?: any) {
+        throw new OperationNotSupportedError('bulkSave() Not Implemented');
+    }
 
-  cleanIndexes(options?: any) {
-    throw new OperationNotSupportedError('cleanIndexes() Not Implemented');
-  }
+    cleanIndexes(_options?: any) {
+        throw new OperationNotSupportedError('cleanIndexes() Not Implemented');
+    }
 
-  listIndexes(options?: any) {
-    throw new OperationNotSupportedError('listIndexes() Not Implemented');
-  }
+    listIndexes(_options?: any) {
+        throw new OperationNotSupportedError('listIndexes() Not Implemented');
+    }
 
-  createIndex(fieldOrSpec: any, options?: any) {
-    throw new OperationNotSupportedError('createIndex() Not Implemented');
-  }
+    createIndex(_fieldOrSpec: any, _options?: any) {
+        throw new OperationNotSupportedError('createIndex() Not Implemented');
+    }
 
-  dropIndexes() {
-    throw new OperationNotSupportedError('dropIndexes() Not Implemented');
-  }
+    dropIndexes() {
+        throw new OperationNotSupportedError('dropIndexes() Not Implemented');
+    }
 
-  watch() {
-    throw new OperationNotSupportedError('watch() Not Implemented');
-  }
+    watch() {
+        throw new OperationNotSupportedError('watch() Not Implemented');
+    }
 
-  distinct() {
-    throw new OperationNotSupportedError('distinct() Not Implemented');
-  }
+    distinct() {
+        throw new OperationNotSupportedError('distinct() Not Implemented');
+    }
 
-  estimatedDocumentCount() {
-    throw new OperationNotSupportedError('estimatedDocumentCount() Not Implemented');
-  }
+    estimatedDocumentCount() {
+        throw new OperationNotSupportedError('estimatedDocumentCount() Not Implemented');
+    }
 
-  replaceOne() {
-    throw new OperationNotSupportedError('replaceOne() Not Implemented');
-  }
+    replaceOne() {
+        throw new OperationNotSupportedError('replaceOne() Not Implemented');
+    }
 
-  syncIndexes() {
-    throw new OperationNotSupportedError('syncIndexes() Not Implemented');
-  }
+    syncIndexes() {
+        throw new OperationNotSupportedError('syncIndexes() Not Implemented');
+    }
 
 }
 
 function processSortOption(options: { sort?: SortOption }) {
-  if (options.sort == null) {
-    return;
-  }
-  if (typeof options.sort.$vector !== 'object' || Array.isArray(options.sort.$vector)) {
-    return;
-  }
-  options.sort.$vector = options.sort.$vector.$meta;
+    if (options.sort == null) {
+        return;
+    }
+    if (typeof options.sort.$vector !== 'object' || Array.isArray(options.sort.$vector)) {
+        return;
+    }
+    options.sort.$vector = options.sort.$vector.$meta;
 }
 
 export class OperationNotSupportedError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'OperationNotSupportedError';
-  }
+    constructor(message: string) {
+        super(message);
+        this.name = 'OperationNotSupportedError';
+    }
 }

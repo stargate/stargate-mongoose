@@ -42,7 +42,7 @@ class _FindOptionsInternal {
 export interface FindOptionsInternal extends _FindOptionsInternal {}
 
 export const findInternalOptionsKeys: Set<string> = new Set(
-  Object.keys(new _FindOptionsInternal)
+    Object.keys(new _FindOptionsInternal)
 );
 
 /**
@@ -72,7 +72,7 @@ class _FindOneAndReplaceOptions {
 export interface FindOneAndReplaceOptions extends _FindOneAndReplaceOptions {}
 
 export const findOneAndReplaceInternalOptionsKeys: Set<string> = new Set(
-  Object.keys(new _FindOneAndReplaceOptions)
+    Object.keys(new _FindOneAndReplaceOptions)
 );
 
 /**
@@ -88,7 +88,7 @@ class _FindOneAndUpdateOptions {
 export interface FindOneAndUpdateOptions extends _FindOneAndUpdateOptions {}
 
 export const findOneAndUpdateInternalOptionsKeys: Set<string> = new Set(
-  Object.keys(new _FindOneAndUpdateOptions)
+    Object.keys(new _FindOneAndUpdateOptions)
 );
 
 /**
@@ -102,7 +102,7 @@ class _InsertManyOptions {
 export interface InsertManyOptions extends _InsertManyOptions {}
 
 export const insertManyInternalOptionsKeys: Set<string> = new Set(
-  Object.keys(new _InsertManyOptions)
+    Object.keys(new _InsertManyOptions)
 );
 
 /**
@@ -116,7 +116,7 @@ class _UpdateManyOptions {
 export interface UpdateManyOptions extends _UpdateManyOptions {}
 
 export const updateManyInternalOptionsKeys: Set<string> = new Set(
-  Object.keys(new _UpdateManyOptions)
+    Object.keys(new _UpdateManyOptions)
 );
 
 /**
@@ -131,7 +131,7 @@ class _UpdateOneOptions {
 export interface UpdateOneOptions extends _UpdateOneOptions {}
 
 export const updateOneInternalOptionsKeys: Set<string> = new Set(
-  Object.keys(new _UpdateOneOptions)
+    Object.keys(new _UpdateOneOptions)
 );
 
 /**
@@ -142,11 +142,11 @@ class _CreateCollectionOptions {
     vector?: {
         size: number,
         function?: 'cosine' | 'euclidean' | 'dot_product'
-    } = undefined
+    } = undefined;
 }
 
 export interface CreateCollectionOptions extends _CreateCollectionOptions {}
 
 export const createCollectionOptionsKeys: Set<string> = new Set(
-  Object.keys(new _CreateCollectionOptions)
+    Object.keys(new _CreateCollectionOptions)
 );

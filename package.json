@@ -50,6 +50,7 @@
     "url": "git+https://github.com/stargate/stargate-mongoose.git"
   },
   "scripts": {
+    "lint": "eslint .",
     "test": "env TEST_DOC_DB=jsonapi ts-mocha --paths -p tsconfig.json tests/**/*.test.ts",
     "test-astra": "env TEST_DOC_DB=astra nyc ts-mocha --paths -p tsconfig.json tests/**/*.test.ts",
     "test-jsonapi": "env TEST_DOC_DB=jsonapi nyc ts-mocha --paths -p tsconfig.json tests/**/*.test.ts",
@@ -72,7 +73,10 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "^17.0.36",
     "@types/sinon": "10.0.15",
+    "@typescript-eslint/eslint-plugin": "5.61.0",
+    "@typescript-eslint/parser": "5.62.0",
     "dotenv": "^16.0.1",
+    "eslint": "8.47.0",
     "jsdoc-babel": "^0.5.0",
     "jsdoc-to-markdown": "^7.1.1",
     "mongoose": "^7.4.0",
