@@ -809,6 +809,15 @@ describe(`Mongoose Model API level tests`, async () => {
         ]);
       });
 
+      it('supports updating $vector with save()', async function() {
+        const vector = await Vector.findOne({ name: 'Test vector 1' }).orFail();
+        vector.$vector = [1, 101];
+        await vector.save();
+
+        const { $vector } = await Vector.findOne({ name: 'Test vector 1' }).orFail();
+        assert.deepStrictEqual($vector, [1, 101]);
+      });
+
       it('supports sort() with $meta with find()', async function() {
         let res = await Vector.
             find({}).
@@ -826,6 +835,13 @@ describe(`Mongoose Model API level tests`, async () => {
             sort({ $vector: { $meta: [99, 1] } });
         assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 2', 'Test vector 1']);
 
+        res = await Vector.
+            find({}).
+            select({ $vector: 0 }).
+            sort({ $vector: { $meta: [99, 1] } });
+        assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 2', 'Test vector 1']);
+        assert.deepStrictEqual(res.map(doc => doc.$vector), [undefined, undefined]);
+
         await assert.rejects(
             Vector.find().limit(1001).sort({ $vector: { $meta: [99, 1] } }),
             /limit options should not be greater than 1000 for vector search/
@@ -842,6 +858,23 @@ describe(`Mongoose Model API level tests`, async () => {
             findOne({}).
             sort({ $vector: { $meta: [99, 1] } });
         assert.deepStrictEqual(res.name, 'Test vector 2');
+
+        /*res = await Vector.
+            findOne({ $vector: [100, 1] });
+        console.log(await Vector.find());
+        assert.deepStrictEqual(res.name, 'Test vector 2');*/
+      });
+
+      it('supports sort() with $meta with updateOne()', async function() {
+        await Vector.
+            updateOne(
+              {},
+              { name: 'found vector', $vector: [990, 1] }
+            ).
+            sort({ $vector: { $meta: [99, 1] } });
+        const vectors = await Vector.find().limit(20).sort({ name: 1 });
+        assert.deepStrictEqual(vectors.map(v => v.name), ['Test vector 1', 'found vector']);
+        assert.deepStrictEqual(vectors.map(v => v.$vector), [[1, 100], [990, 1]]);
       });
 
       it('supports sort() with $meta with findOneAndUpdate()', async function() {
@@ -858,6 +891,37 @@ describe(`Mongoose Model API level tests`, async () => {
         const doc = await Vector.findById(res._id);
         assert.strictEqual(doc.name, 'found vector');
         assert.deepStrictEqual(doc.$vector, [990, 1]);
+      });
+
+      it('supports $setOnInsert of $vector with findOneAndUpdate()', async function() {
+        let res = await Vector.
+            findOneAndUpdate(
+              { name: 'Test vector 2' },
+              { $setOnInsert: { $vector: [990, 1] } },
+              { returnDocument: 'after', upsert: true }
+            );
+        assert.deepStrictEqual(res.$vector, [100, 1]);
+        assert.strictEqual(res.name, 'Test vector 2');
+
+        res = await Vector.
+            findOneAndUpdate(
+              { name: 'Test vector 3' },
+              { $setOnInsert: { $vector: [990, 1] } },
+              { returnDocument: 'after', upsert: true }
+            );
+        assert.deepStrictEqual(res.$vector, [990, 1]);
+        assert.strictEqual(res.name, 'Test vector 3');
+      });
+
+      it('supports $unset of $vector with findOneAndUpdate()', async function() {
+        let res = await Vector.
+            findOneAndUpdate(
+              { name: 'Test vector 2' },
+              { $unset: { $vector: 1 } },
+              { returnDocument: 'after' }
+            );
+        assert.deepStrictEqual(res.$vector, undefined);
+        assert.strictEqual(res.name, 'Test vector 2');
       });
 
       it('supports sort() with $meta with findOneAndReplace()', async function() {
