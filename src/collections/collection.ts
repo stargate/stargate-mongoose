@@ -107,13 +107,24 @@ export class Collection {
 
   async updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
     return executeOperation(async (): Promise<JSONAPIUpdateResult> => {
-      const command = {
+      type UpdateOneCommand = {
+        updateOne: {
+          filter?: Record<string, any>,
+          sort?: SortOption,
+          update?: Record<string, any>,
+          options?: UpdateOneOptions
+        }
+      }
+      const command: UpdateOneCommand = {
         updateOne: {
           filter,
           update,
           options
         }
       };
+      if (options?.sort != null) {
+        command.updateOne.sort = options?.sort;
+      }
       setDefaultIdForUpsert(command.updateOne);
       const updateOneResp = await this.httpClient.executeCommand(command, updateOneInternalOptionsKeys);
       let resp = {

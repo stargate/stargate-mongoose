@@ -75,7 +75,7 @@
     "dotenv": "^16.0.1",
     "jsdoc-babel": "^0.5.0",
     "jsdoc-to-markdown": "^7.1.1",
-    "mongoose": "git@github.com:Automattic/mongoose.git#vkarpov15/handle-top-level-dollar-keys",
+    "mongoose": "^7.5.0",
     "nyc": "^15.1.0",
     "sinon": "15.2.0",
     "ts-mocha": "^10.0.0",
@@ -89,7 +89,7 @@
     "winston": "^3.7.2"
   },
   "peerDependencies": {
-    "mongoose": "^7.4.0"
+    "mongoose": "^7.5.0"
   },
   "engines": {
     "node": ">=14.0.0"
