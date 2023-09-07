@@ -14,18 +14,15 @@
 
 import assert from 'assert';
 import { Db } from '@/src/collections/db';
-import { Collection } from '@/src/collections/collection';
 import { Client } from '@/src/collections/client';
-import { testClient, testClientName, createSampleDoc, sampleUsersList, createSampleDocWithMultiLevel, createSampleDocWithMultiLevelWithId, getSampleDocs, sleep, TEST_COLLECTION_NAME } from '@/tests/fixtures';
-import mongoose, {Model} from "mongoose";
+import { testClient, TEST_COLLECTION_NAME } from '@/tests/fixtures';
+import mongoose from "mongoose";
 import * as StargateMongooseDriver from "@/src/driver";
 import {ObjectId} from "mongodb";
 
 describe(`Options tests`, async () => {
     let astraClient: Client | null;
     let db: Db;
-    let collection: Collection;
-    const sampleDoc = createSampleDoc();
     let dbUri: string;
     let isAstra: boolean;
     let Product:mongoose.Model<any>, astraMongoose:mongoose.Mongoose | undefined, jsonAPIMongoose:mongoose.Mongoose | undefined;
@@ -111,7 +108,7 @@ describe(`Options tests`, async () => {
             const productsSaved = await Product.find({});
             assert.strictEqual(productsSaved.length, 2);
             //check if product name is one of the inserted products names
-            let productNames:Set<string> = new Set<string>();
+            const productNames:Set<string> = new Set<string>();
             products.map(product => product.name!).forEach(name => productNames.add(name));
             assert.ok(productNames.has(productsSaved[0].name!));
             productNames.delete(productsSaved[0].name!);
@@ -205,7 +202,7 @@ describe(`Options tests`, async () => {
         it('should cleanup findOneAndReplaceOptions', async () => {
             //create 20 products using Array with id suffixed to prduct name
             // @ts-ignore
-            let products: Product[] = [];
+            const products: Product[] = [];
             for (let i = 0; i < 20; i++) {
                 // @ts-ignore
                 products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true }));
@@ -227,7 +224,7 @@ describe(`Options tests`, async () => {
         it('should cleanup findOneAndDeleteOptions', async () => {
             //create 20 products using Array with id suffixed to prduct name
             // @ts-ignore
-            let products: Product[] = [];
+            const products: Product[] = [];
             for (let i = 0; i < 20; i++) {
                 if(i === 5 || i === 6) {
                     // @ts-ignore
@@ -239,7 +236,7 @@ describe(`Options tests`, async () => {
             }
             await Product.insertMany(products, { ordered: true, rawResult: false });
             //findOneAndDelete with rawResult option and sort with name in ascending order
-            const findOneAndDeleteResp = await Product.findOneAndDelete({ category: 'cat 6' }, { rawResult: false, sort : { name : 1} });
+            await Product.findOneAndDelete({ category: 'cat 6' }, { rawResult: false, sort : { name : 1} });
             //check if Product 5 is deleted
             const product5 = await Product.findOne({ name: 'Product 5' });
             assert.strictEqual(product5, null);
@@ -253,7 +250,7 @@ describe(`Options tests`, async () => {
         it('should cleanup findOneAndUpdateOptions', async () => {
             //create 20 products using Array with id suffixed to product name
             // @ts-ignore
-            let products: Product[] = [];
+            const products: Product[] = [];
             for (let i = 0; i < 20; i++) {
                 // @ts-ignore
                 products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true }));

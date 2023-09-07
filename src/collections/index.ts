@@ -17,15 +17,15 @@ export { Collection } from './collection';
 export { Binary, Decimal128, ObjectId, ReadPreference } from 'mongodb';
 
 export {
-  FindOneAndDeleteOptions,
-  FindOneAndReplaceOptions,
-  FindOneAndUpdateOptions,
-  FindOneOptions,
-  FindOptions,
-  InsertManyOptions,
-  UpdateManyOptions,
-  UpdateOneOptions,
-  DeleteOneOptions
+    FindOneAndDeleteOptions,
+    FindOneAndReplaceOptions,
+    FindOneAndUpdateOptions,
+    FindOneOptions,
+    FindOptions,
+    InsertManyOptions,
+    UpdateManyOptions,
+    UpdateOneOptions,
+    DeleteOneOptions
 } from './options';
 
 // alias for MongoClient shimming

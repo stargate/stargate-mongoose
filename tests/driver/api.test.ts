@@ -22,16 +22,14 @@ import {
 import mongoose, {Model, Mongoose, Schema, InferSchemaType} from "mongoose";
 import * as StargateMongooseDriver from "@/src/driver";
 import {randomUUID} from "crypto";
-import sinon from "sinon";
 import {OperationNotSupportedError} from "@/src/driver";
-import { FindCursor } from 'mongodb';
 
 const productSchema = new mongoose.Schema({
-  name: String,
-  price: Number,
-  expiryDate: Date,
-  isCertified: Boolean,
-  category: String
+    name: String,
+    price: Number,
+    expiryDate: Date,
+    isCertified: Boolean,
+    category: String
 });
 
 describe(`Mongoose Model API level tests`, async () => {
@@ -272,7 +270,7 @@ describe(`Mongoose Model API level tests`, async () => {
             //Mode.$where()
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
-            const whereJSexpressionResp = await Product.$where('this.name === "Product 1"').exec()
+            const whereJSexpressionResp = await Product.$where('this.name === "Product 1"').exec();
             //find command doesn't support   "filter": { "$where": "this.name === \"Product 1\"" }
             assert.strictEqual(whereJSexpressionResp.length, 0);
             //----------------//
@@ -281,7 +279,7 @@ describe(`Mongoose Model API level tests`, async () => {
             //Model.aggregate()
             let error: OperationNotSupportedError | null = null;
             try {
-                const aggregateResp = await Product.aggregate([{$match: {name: 'Product 1'}}]);
+                await Product.aggregate([{$match: {name: 'Product 1'}}]);
             } catch (err: any) {
                 error = err;
             }
@@ -296,7 +294,7 @@ describe(`Mongoose Model API level tests`, async () => {
             try {
                 const product2 = new Product({name: 'Product 2', price: 20, isCertified: true, category: 'cat 2'});
                 const product3 = new Product({name: 'Product 3', price: 30, isCertified: true, category: 'cat 3'});
-                const bulkSaveResp = await Product.bulkSave([product2, product3]);
+                await Product.bulkSave([product2, product3]);
             } catch (err:any) {
                 error = err;
             }
@@ -386,7 +384,7 @@ describe(`Mongoose Model API level tests`, async () => {
                 userSchema.index({name: 1});
                 const User = mongooseInstance!.model(modelName, userSchema);
                 await Promise.all(Object.values(mongooseInstance!.connection.models).map(Model => Model.init()));
-                const diff = await User.diffIndexes();
+                await User.diffIndexes();
             } catch (err: any) {
                 error = err;
             } finally {
@@ -436,7 +434,7 @@ describe(`Mongoose Model API level tests`, async () => {
             let err: OperationNotSupportedError | null = null;
             try {
                 const query = Product.distinct('category');
-                const distinctResp = await query.exec();
+                await query.exec();
             } catch (error: any) {
                 err = error;
             }
@@ -472,7 +470,7 @@ describe(`Mongoose Model API level tests`, async () => {
                 const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
                 const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
                 await Product.insertMany([product1, product2, product3]);
-                const documentCount = await Product.estimatedDocumentCount();
+                await Product.estimatedDocumentCount();
             } catch (err: any) {
                 error = err;
             }
@@ -493,7 +491,7 @@ describe(`Mongoose Model API level tests`, async () => {
             await Product.insertMany([product1, product2, product3]);
             const findResp = await Product.find({category: 'cat 1'});
             assert.strictEqual(findResp.length, 2);
-            const nameArray: Set<String> = new Set(['Product 1', 'Product 3']);
+            const nameArray: Set<string> = new Set(['Product 1', 'Product 3']);
             for(const doc of findResp) {
                 assert.strictEqual(doc.category, 'cat 1');
                 assert.strictEqual(nameArray.has(doc.name), true);
@@ -611,7 +609,7 @@ describe(`Mongoose Model API level tests`, async () => {
         it('API ops tests Model.listIndexes()', async () => {
             let error: OperationNotSupportedError | null = null;
             try {
-                const listIndexesResp = await Product.listIndexes();
+                await Product.listIndexes();
             } catch(err: OperationNotSupportedError | any) {
                 error = err;
             }
@@ -641,18 +639,18 @@ describe(`Mongoose Model API level tests`, async () => {
             assert.strictEqual(findDeletedDoc, null);
         });
         it('API ops tests Model.replaceOne()', async () => {
-           let error: OperationNotSupportedError | null = null;
-           try {
-               const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
-               const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
-               const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
-               await Product.insertMany([product1, product2, product3]);
-               const replaceResp = await Product.replaceOne({category: 'cat 1'}, {name: 'Product 4'});
-           } catch(err: OperationNotSupportedError | any) {
-               error = err;
-           }
-           assert.ok(error);
-           assert.strictEqual(error?.message, 'replaceOne() Not Implemented');
+            let error: OperationNotSupportedError | null = null;
+            try {
+                const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
+                const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+                const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+                await Product.insertMany([product1, product2, product3]);
+                await Product.replaceOne({category: 'cat 1'}, {name: 'Product 4'});
+            } catch(err: OperationNotSupportedError | any) {
+                error = err;
+            }
+            assert.ok(error);
+            assert.strictEqual(error?.message, 'replaceOne() Not Implemented');
         });
         //Model.schema() is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.schema
         it('API ops tests Model.startSession()', async () => {
@@ -662,7 +660,7 @@ describe(`Mongoose Model API level tests`, async () => {
             await Product.insertMany([product1, product2, product3]);
             let error: OperationNotSupportedError | null = null;
             try {
-                const session:any = await Product.startSession();
+                await Product.startSession();
                 await product1.remove();
             } catch(err: OperationNotSupportedError | any) {
                 error = err;
@@ -673,7 +671,7 @@ describe(`Mongoose Model API level tests`, async () => {
         it('API ops tests Model.syncIndexes()', async () => {
             let error: OperationNotSupportedError | null = null;
             try {
-                const syncIndexesResp = await Product.syncIndexes();
+                await Product.syncIndexes();
             } catch(err: OperationNotSupportedError | any) {
                 error = err;
             }
@@ -745,144 +743,197 @@ describe(`Mongoose Model API level tests`, async () => {
             assert.strictEqual(whereResp[0].name, 'Product 1');
         });
         it('API ops tests Query cursor', async () => {
-          await Product.create(
-            Array.from({ length: 25 }, (_, index) => ({
-              name: `Product ${(index + 1).toString().padStart(2, '0')}`,
-              price: 10
-            }))
-          );
+            await Product.create(
+                Array.from({ length: 25 }, (_, index) => ({
+                    name: `Product ${(index + 1).toString().padStart(2, '0')}`,
+                    price: 10
+                }))
+            );
 
-          let cursor = Product.find().sort({ product: 1 }).cursor();
-          await assert.rejects(
-            cursor.next(),
-            /JSON API can currently only return 20 documents with sort/
-          );
+            let cursor = Product.find().sort({ product: 1 }).cursor();
+            await assert.rejects(
+                cursor.next(),
+                /JSON API can currently only return 20 documents with sort/
+            );
 
-          cursor = await Product.find().sort({ product: 1 }).limit(20).cursor();
-          for (let i = 0; i < 20; ++i) {
-            await cursor.next();
-          }
-          assert.equal(await cursor.next(), null);
-      });
+            cursor = await Product.find().sort({ product: 1 }).limit(20).cursor();
+            for (let i = 0; i < 20; ++i) {
+                await cursor.next();
+            }
+            assert.equal(await cursor.next(), null);
+        });
     });
 
     describe('vector search', function() {
-      const vectorSchema = new Schema(
-          {
-              $vector: { type: [Number], default: () => void 0 },
-              name: 'String'
-          },
-          {
-              collectionOptions: { vector: { size: 2, function: 'cosine' } },
-              autoCreate: true
-          }
-      );
-      let Vector: Model<any>;
-
-      beforeEach(async () => {
-        mongooseInstance = await getInstance();
-        const options = {
-            username: process.env.STARGATE_USERNAME,
-            password: process.env.STARGATE_PASSWORD,
-            authUrl: process.env.STARGATE_AUTH_URL,
-            logSkippedOptions: true
-        };
-        await mongooseInstance.connect(dbUri, options);
-
-        await mongooseInstance.connection.dropCollection('vector');
-        Vector = mongooseInstance.model(
-            'Vector',
-            vectorSchema,
-            'vector'
-        );
-        
-        await Vector.init();
-        await Vector.create([
+        const vectorSchema = new Schema(
             {
-                name: 'Test vector 1',
-                $vector: [1, 100]
+                $vector: { type: [Number], default: () => void 0 },
+                name: 'String'
             },
             {
-                name: 'Test vector 2',
-                $vector: [100, 1]
+                collectionOptions: { vector: { size: 2, function: 'cosine' } },
+                autoCreate: true
             }
-        ]);
-      });
-
-      it('supports sort() with $meta with find()', async function() {
-        let res = await Vector.
-            find({}).
-            sort({ $vector: { $meta: [1, 99] } });
-        assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 1', 'Test vector 2']);
-
-        res = await Vector.
-            find({}).
-            sort({ $vector: { $meta: [99, 1] } });
-        assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 2', 'Test vector 1']);
-
-        res = await Vector.
-            find({}).
-            limit(999).
-            sort({ $vector: { $meta: [99, 1] } });
-        assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 2', 'Test vector 1']);
-
-        await assert.rejects(
-            Vector.find().limit(1001).sort({ $vector: { $meta: [99, 1] } }),
-            /limit options should not be greater than 1000 for vector search/
         );
-      });
+        let Vector: Model<any>;
 
-      it('supports sort() with $meta with findOne()', async function() {
-        let res = await Vector.
-            findOne({}).
-            sort({ $vector: { $meta: [1, 99] } });
-        assert.deepStrictEqual(res.name, 'Test vector 1');
+        this.beforeEach(async function() {
+            await mongooseInstance.connection.dropCollection('vector');
+            Vector = mongooseInstance.model(
+                'Vector',
+                vectorSchema,
+                'vector'
+            );
+        
+            await Vector.init();
+            await Vector.create([
+                {
+                    name: 'Test vector 1',
+                    $vector: [1, 100]
+                },
+                {
+                    name: 'Test vector 2',
+                    $vector: [100, 1]
+                }
+            ]);
+        });
 
-        res = await Vector.
-            findOne({}).
-            sort({ $vector: { $meta: [99, 1] } });
-        assert.deepStrictEqual(res.name, 'Test vector 2');
-      });
+        it('supports updating $vector with save()', async function() {
+            const vector = await Vector.findOne({ name: 'Test vector 1' }).orFail();
+            vector.$vector = [1, 101];
+            await vector.save();
 
-      it('supports sort() with $meta with findOneAndUpdate()', async function() {
-        const res = await Vector.
-            findOneAndUpdate({}, { name: 'found vector' }, { returnDocument: 'after' }).
-            sort({ $vector: { $meta: [99, 1] } });
-        assert.deepStrictEqual(res.$vector, [100, 1]);
-        assert.strictEqual(res.name, 'found vector');
-      });
+            const { $vector } = await Vector.findOne({ name: 'Test vector 1' }).orFail();
+            assert.deepStrictEqual($vector, [1, 101]);
+        });
 
-      it('supports sort() with $meta with findOneAndReplace()', async function() {
-        const res = await Vector.
-            findOneAndReplace(
-                {},
-                { name: 'found vector' },
-                { returnDocument: 'before' }
-            ).
-            sort({ $vector: { $meta: [99, 1] } });
-        assert.deepStrictEqual(res.$vector, [100, 1]);
-        assert.strictEqual(res.name, 'Test vector 2');
-      });
+        it('supports sort() with $meta with find()', async function() {
+            let res = await Vector.
+                find({}).
+                sort({ $vector: { $meta: [1, 99] } });
+            assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 1', 'Test vector 2']);
 
-      it('supports sort() with $meta with findOneAndDelete()', async function() {
-        const res = await Vector.
-            findOneAndDelete({}, { name: 'found vector' }, { returnDocument: 'before' }).
-            sort({ $vector: { $meta: [1, 99] } });
-        assert.deepStrictEqual(res.$vector, [1, 100]);
-        assert.strictEqual(res.name, 'Test vector 1');
+            res = await Vector.
+                find({}).
+                select({ $vector: 0 }).
+                sort({ $vector: { $meta: [99, 1] } });
+            assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 2', 'Test vector 1']);
+            assert.deepStrictEqual(res.map(doc => doc.$vector), [undefined, undefined]);
 
-        const fromDb = await Vector.findOne({ name: 'Test vector 1' });
-        assert.equal(fromDb, null);
-      });
+            res = await Vector.
+                find({}).
+                limit(999).
+                sort({ $vector: { $meta: [99, 1] } });
+            assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 2', 'Test vector 1']);
 
-      it('supports sort() with $meta with deleteOne()', async function() {
-        const res = await Vector.
-            deleteOne({}).
-            sort({ $vector: { $meta: [1, 99] } });
-        assert.equal(res.deletedCount, 1);
+            res = await Vector.
+                findOne({}).
+                sort({ $vector: { $meta: [99, 1] } });
+            assert.deepStrictEqual(res.name, 'Test vector 2');
 
-        const fromDb = await Vector.findOne({ name: 'Test vector 1' });
-        assert.equal(fromDb, null);
-      });
+            await assert.rejects(
+                Vector.find().limit(1001).sort({ $vector: { $meta: [99, 1] } }),
+                /limit options should not be greater than 1000 for vector search/
+            );
+        });
+
+        it('supports sort() with $meta with updateOne()', async function() {
+            await Vector.
+                updateOne(
+                    {},
+                    { name: 'found vector', $vector: [990, 1] }
+                ).
+                sort({ $vector: { $meta: [99, 1] } });
+            const vectors = await Vector.find().limit(20).sort({ name: 1 });
+            assert.deepStrictEqual(vectors.map(v => v.name), ['Test vector 1', 'found vector']);
+            assert.deepStrictEqual(vectors.map(v => v.$vector), [[1, 100], [990, 1]]);
+        });
+
+        it('supports sort() with $meta with findOneAndUpdate()', async function() {
+            const res = await Vector.
+                findOneAndUpdate(
+                    {},
+                    { name: 'found vector', $vector: [990, 1] },
+                    { returnDocument: 'before' }
+                ).
+                sort({ $vector: { $meta: [99, 1] } });
+            assert.deepStrictEqual(res.$vector, [100, 1]);
+            assert.strictEqual(res.name, 'Test vector 2');
+
+            const doc = await Vector.findById(res._id);
+            assert.strictEqual(doc.name, 'found vector');
+            assert.deepStrictEqual(doc.$vector, [990, 1]);
+        });
+
+        it('supports $setOnInsert of $vector with findOneAndUpdate()', async function() {
+            let res = await Vector.
+                findOneAndUpdate(
+                    { name: 'Test vector 2' },
+                    { $setOnInsert: { $vector: [990, 1] } },
+                    { returnDocument: 'after', upsert: true }
+                );
+            assert.deepStrictEqual(res.$vector, [100, 1]);
+            assert.strictEqual(res.name, 'Test vector 2');
+
+            res = await Vector.
+                findOneAndUpdate(
+                    { name: 'Test vector 3' },
+                    { $setOnInsert: { $vector: [990, 1] } },
+                    { returnDocument: 'after', upsert: true }
+                );
+            assert.deepStrictEqual(res.$vector, [990, 1]);
+            assert.strictEqual(res.name, 'Test vector 3');
+        });
+
+        it('supports $unset of $vector with findOneAndUpdate()', async function() {
+            const res = await Vector.
+                findOneAndUpdate(
+                    { name: 'Test vector 2' },
+                    { $unset: { $vector: 1 } },
+                    { returnDocument: 'after' }
+                );
+            assert.deepStrictEqual(res.$vector, undefined);
+            assert.strictEqual(res.name, 'Test vector 2');
+        });
+
+        it('supports sort() with $meta with findOneAndReplace()', async function() {
+            const res = await Vector.
+                findOneAndReplace(
+                    {},
+                    { name: 'found vector', $vector: [990, 1] },
+                    { returnDocument: 'before' }
+                ).
+                sort({ $vector: { $meta: [99, 1] } });
+            assert.deepStrictEqual(res.$vector, [100, 1]);
+            assert.strictEqual(res.name, 'Test vector 2');
+
+            const doc = await Vector.findById(res._id);
+            assert.strictEqual(doc.name, 'found vector');
+            assert.deepStrictEqual(doc.$vector, [990, 1]);
+        });
+
+        it('supports sort() with $meta with findOneAndDelete()', async function() {
+            const res = await Vector.
+                findOneAndDelete(
+                    {},
+                    { returnDocument: 'before' }
+                ).
+                sort({ $vector: { $meta: [1, 99] } });
+            assert.deepStrictEqual(res.$vector, [1, 100]);
+            assert.strictEqual(res.name, 'Test vector 1');
+
+            const fromDb = await Vector.findOne({ name: 'Test vector 1' });
+            assert.equal(fromDb, null);
+        });
+
+        it('supports sort() with $meta with deleteOne()', async function() {
+            const res = await Vector.
+                deleteOne({}).
+                sort({ $vector: { $meta: [1, 99] } });
+            assert.equal(res.deletedCount, 1);
+
+            const fromDb = await Vector.findOne({ name: 'Test vector 1' });
+            assert.equal(fromDb, null);
+        });
     });
 });
