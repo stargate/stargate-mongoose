@@ -21,7 +21,7 @@ export class FindCursor {
     filter: Record<string, any>;
     options: FindOptions;
     documents: Record<string, any>[] = [];
-    status: string = 'uninitialized';
+    status = 'uninitialized';
     nextPageState?: string;
     limit: number;
 
