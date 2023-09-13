@@ -813,6 +813,13 @@ describe('Mongoose Model API level tests', async () => {
             assert.deepStrictEqual(res.map(doc => doc.get('$similarity')), [1, 0.51004946]);
         });
 
+        it('supports sort() and similarity score with $meta with findOne()', async function() {
+            const doc: any = await Vector.findOne({}, { name: 1, $similarity : 1}).sort({ $vector: { $meta: [1, 99] } });
+            console.log('doc', doc);
+            assert.strictEqual(doc.name, 'Test vector 1');
+            assert.strictEqual(doc.get('$similarity'), 1);
+        });
+
         it('supports sort() with $meta with find()', async function() {
             let res = await Vector.
                 find({}).

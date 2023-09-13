@@ -24,21 +24,21 @@ import {HTTPClient} from '@/src/client';
 import {executeOperation, setDefaultIdForUpsert} from './utils';
 import {InsertManyResult} from 'mongoose';
 import {
-    DeleteOneOptions,
-    FindOneAndDeleteOptions,
-    findOneAndReplaceInternalOptionsKeys,
-    FindOneAndReplaceOptions,
-    findOneAndUpdateInternalOptionsKeys,
-    FindOneAndUpdateOptions,
-    FindOneOptions,
-    insertManyInternalOptionsKeys,
-    InsertManyOptions,
-    updateManyInternalOptionsKeys,
-    UpdateManyOptions,
-    updateOneInternalOptionsKeys,
-    UpdateOneOptions,
-    FindOptions,
-    SortOption,
+  DeleteOneOptions,
+  FindOneAndDeleteOptions,
+  findOneAndReplaceInternalOptionsKeys,
+  FindOneAndReplaceOptions,
+  findOneAndUpdateInternalOptionsKeys,
+  FindOneAndUpdateOptions,
+  FindOneOptions,
+  insertManyInternalOptionsKeys,
+  InsertManyOptions,
+  updateManyInternalOptionsKeys,
+  UpdateManyOptions,
+  updateOneInternalOptionsKeys,
+  UpdateOneOptions,
+  FindOptions,
+  SortOption
 } from './options';
 
 // https://github.com/mongodb/node-mongodb-native/pull/3323
@@ -219,7 +219,8 @@ export class Collection {
         findOne: {
           filter?: Record<string, any>,
           options?: FindOneOptions,
-          sort?: SortOption
+          sort?: SortOption,
+          projection?: Record<string, any>
         }
       };
       const command: FindOneCommand = {
@@ -231,6 +232,10 @@ export class Collection {
 
       if (options?.sort) {
           command.findOne.sort = options.sort;
+      }
+
+      if (options?.projection && Object.keys(options.projection).length > 0) {
+          command.findOne.projection = options.projection;
       }
 
       const resp = await this.httpClient.executeCommand(command, null);
