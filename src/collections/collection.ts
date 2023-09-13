@@ -24,21 +24,21 @@ import {HTTPClient} from '@/src/client';
 import {executeOperation, setDefaultIdForUpsert} from './utils';
 import {InsertManyResult} from 'mongoose';
 import {
-  DeleteOneOptions,
-  FindOneAndDeleteOptions,
-  findOneAndReplaceInternalOptionsKeys,
-  FindOneAndReplaceOptions,
-  findOneAndUpdateInternalOptionsKeys,
-  FindOneAndUpdateOptions,
-  FindOneOptions,
-  insertManyInternalOptionsKeys,
-  InsertManyOptions,
-  updateManyInternalOptionsKeys,
-  UpdateManyOptions,
-  updateOneInternalOptionsKeys,
-  UpdateOneOptions,
-  FindOptions,
-  SortOption
+    DeleteOneOptions,
+    FindOneAndDeleteOptions,
+    findOneAndReplaceInternalOptionsKeys,
+    FindOneAndReplaceOptions,
+    findOneAndUpdateInternalOptionsKeys,
+    FindOneAndUpdateOptions,
+    FindOneOptions,
+    insertManyInternalOptionsKeys,
+    InsertManyOptions,
+    updateManyInternalOptionsKeys,
+    UpdateManyOptions,
+    updateOneInternalOptionsKeys,
+    UpdateOneOptions,
+    FindOptions,
+    SortOption
 } from './options';
 
 // https://github.com/mongodb/node-mongodb-native/pull/3323
