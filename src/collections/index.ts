@@ -14,7 +14,6 @@
 
 export { Client } from './client';
 export { Collection } from './collection';
-export { Binary, Decimal128, ObjectId, ReadPreference } from 'mongodb';
 
 export {
     FindOneAndDeleteOptions,
