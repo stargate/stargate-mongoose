@@ -124,7 +124,7 @@ export class HTTPClient {
             setLevel(options.logLevel);
         }
         if (options.baseApiPath) {
-            this.baseUrl = this.baseUrl + "/" + options.baseApiPath;
+            this.baseUrl = this.baseUrl + '/' + options.baseApiPath;
         }
         this.authHeaderName = options.authHeaderName || DEFAULT_AUTH_HEADER;
         this.isAstra = options.isAstra || false;
@@ -134,14 +134,14 @@ export class HTTPClient {
     async _request(requestInfo: AxiosRequestConfig): Promise<APIResponse> {
         try {
             if (this.applicationToken === '') {
-                logger.debug("@stargate-mongoose/rest: getting token");
+                logger.debug('@stargate-mongoose/rest: getting token');
                 try {
                     this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
                 } catch (authError: any) {
                     return {
                         errors: [
                             {
-                                message: authError.message ? authError.message : "Authentication failed, please retry!"
+                                message: authError.message ? authError.message : 'Authentication failed, please retry!'
                             }
                         ]
                     };
@@ -151,7 +151,7 @@ export class HTTPClient {
                 return {
                     errors: [
                         {
-                            message: "Unable to get token for the credentials provided"
+                            message: 'Unable to get token for the credentials provided'
                         }
                     ]
                 };
@@ -167,14 +167,14 @@ export class HTTPClient {
                 }
             });           
             if (response.status === 401 || (response.data?.errors?.length > 0 && response.data.errors[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
-                logger.debug("@stargate-mongoose/rest: reconnecting");
+                logger.debug('@stargate-mongoose/rest: reconnecting');
                 try {
                     this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
                 } catch (authError: any) {
                     return {
                         errors: [
                             {
-                                message: authError.message ? authError.message : "Authentication failed, please retry!"
+                                message: authError.message ? authError.message : 'Authentication failed, please retry!'
                             }
                         ]
                     };
@@ -193,7 +193,7 @@ export class HTTPClient {
                 return {
                     errors: [
                         {
-                            message: "Server response received : " + response.status + "!"
+                            message: 'Server response received : ' + response.status + '!'
                         }
                     ]
                 };
@@ -207,7 +207,7 @@ export class HTTPClient {
             return {
                 errors: [
                     {
-                        message: e.message ? e.message : "Server call failed, please retry!"
+                        message: e.message ? e.message : 'Server call failed, please retry!'
                     }
                 ]
             };

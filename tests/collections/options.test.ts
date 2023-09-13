@@ -16,11 +16,11 @@ import assert from 'assert';
 import { Db } from '@/src/collections/db';
 import { Client } from '@/src/collections/client';
 import { testClient, TEST_COLLECTION_NAME } from '@/tests/fixtures';
-import mongoose from "mongoose";
-import * as StargateMongooseDriver from "@/src/driver";
-import {ObjectId} from "mongodb";
+import mongoose from 'mongoose';
+import * as StargateMongooseDriver from '@/src/driver';
+import {ObjectId} from 'mongodb';
 
-describe(`Options tests`, async () => {
+describe('Options tests', async () => {
     let astraClient: Client | null;
     let db: Db;
     let dbUri: string;
@@ -228,7 +228,7 @@ describe(`Options tests`, async () => {
             for (let i = 0; i < 20; i++) {
                 if(i === 5 || i === 6) {
                     // @ts-ignore
-                    products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true, category: `cat 6` }));
+                    products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true, category: 'cat 6' }));
                 } else {
                     // @ts-ignore
                     products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true, category: `cat ${i}` }));
@@ -259,7 +259,7 @@ describe(`Options tests`, async () => {
             //findOneAndUpdate with rawResult option
             const upsertId: ObjectId = new ObjectId();
             const findOneAndUpdateResp = await Product.findOneAndUpdate({ name: 'Product 25' },
-                { "$set" : {price: 20, isCertified: false, name: 'Product 25'}, "$setOnInsert" : {_id: upsertId} },
+                { '$set' : {price: 20, isCertified: false, name: 'Product 25'}, '$setOnInsert' : {_id: upsertId} },
                 { rawResult: false, upsert: true, returnDocument: 'after' });
             assert.strictEqual(findOneAndUpdateResp.isCertified,false);
             assert.strictEqual(findOneAndUpdateResp.price,20);

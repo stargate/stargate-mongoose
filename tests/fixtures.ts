@@ -47,8 +47,8 @@ export const getAstraClient = async () => {
 };
 
 export const createSampleDoc = () => ({
-    _id: "doc1",
-    username: "aaron"
+    _id: 'doc1',
+    username: 'aaron'
 });
 
 export type Employee = {
@@ -68,15 +68,15 @@ export type Employee = {
 }
 
 const sampleMultiLevelDoc: Employee = {
-    username: "aaron",
+    username: 'aaron',
     human: true,
     age: 47,
     password: null,
     address: {
         number: 86,
-        street: "monkey street",
+        street: 'monkey street',
         suburb: null,
-        city: "big banana",
+        city: 'big banana',
         is_office: false
     }
 };
@@ -90,32 +90,32 @@ export const createSampleDocWithMultiLevelWithId = (docId: string) => {
 export const createSampleDocWithMultiLevel = () => (sampleMultiLevelDoc as Employee);
 
 export const createSampleDoc2WithMultiLevel = () => ({
-    username: "jimr",
+    username: 'jimr',
     human: true,
     age: 52,
-    password: "gasxaq==",
+    password: 'gasxaq==',
     address: {
         number: 45,
-        street: "main street",
+        street: 'main street',
         suburb: null,
-        city: "nyc",
+        city: 'nyc',
         is_office: true,
-        country: "usa"
+        country: 'usa'
     }
 } as Employee);
 
 export const createSampleDoc3WithMultiLevel = () => ({
-    username: "saml",
+    username: 'saml',
     human: false,
     age: 25,
-    password: "jhkasfka==",
+    password: 'jhkasfka==',
     address: {
         number: 123,
-        street: "church street",
+        street: 'church street',
         suburb: null,
-        city: "la",
+        city: 'la',
         is_office: true,
-        country: "usa"
+        country: 'usa'
     }
 } as Employee);
 

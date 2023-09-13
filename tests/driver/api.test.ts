@@ -19,10 +19,10 @@ import {
     testClient,
     TEST_COLLECTION_NAME
 } from '@/tests/fixtures';
-import mongoose, {Model, Mongoose, Schema, InferSchemaType} from "mongoose";
-import * as StargateMongooseDriver from "@/src/driver";
-import {randomUUID} from "crypto";
-import {OperationNotSupportedError} from "@/src/driver";
+import mongoose, {Model, Mongoose, Schema, InferSchemaType} from 'mongoose';
+import * as StargateMongooseDriver from '@/src/driver';
+import {randomUUID} from 'crypto';
+import {OperationNotSupportedError} from '@/src/driver';
 
 const productSchema = new mongoose.Schema({
     name: String,
@@ -32,7 +32,7 @@ const productSchema = new mongoose.Schema({
     category: String
 });
 
-describe(`Mongoose Model API level tests`, async () => {
+describe('Mongoose Model API level tests', async () => {
     let astraClient: Client | null;
     let db: Db;
     //let collection: Collection;
