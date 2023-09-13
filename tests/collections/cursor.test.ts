@@ -91,7 +91,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
             await assert.rejects(cursor.toArray(), /limit should be greater than `0`/);
         });
         it('should execute a limited query with limit set less than default page size', async () => {
-            const docList = Array.from({ length: 20 }, () => ({ "username": "id" }));
+            const docList = Array.from({ length: 20 }, () => ({ 'username': 'id' }));
             docList.forEach((doc, index) => {
                 doc.username = doc.username + (index + 1);
             });
@@ -106,7 +106,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
             assert.strictEqual(countWithLimitSet, 5);
         });
         it('should execute a limited query with limit set equal to default page size', async () => {
-            const docList = Array.from({ length: 20 }, () => ({ "username": "id" }));
+            const docList = Array.from({ length: 20 }, () => ({ 'username': 'id' }));
             docList.forEach((doc, index) => {
                 doc.username = doc.username + (index + 1);
             });
@@ -114,7 +114,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
             assert.ok(insertManyResp);
             assert.strictEqual(insertManyResp.insertedCount, 20);
             //insert next 20
-            const docListNextSet = Array.from({ length: 20 }, () => ({ username: "id", city: "nyc" }));
+            const docListNextSet = Array.from({ length: 20 }, () => ({ username: 'id', city: 'nyc' }));
             docListNextSet.forEach((doc, index) => {
                 doc.username = doc.username + (index + 21);
             });
@@ -130,7 +130,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
             assert.strictEqual(countWithLimitSet, 20);
         });
         it('should execute a limited query with limit set greater than available', async () => {
-            const docList = Array.from({ length: 20 }, () => ({ "username": "id" }));
+            const docList = Array.from({ length: 20 }, () => ({ 'username': 'id' }));
             docList.forEach((doc, index) => {
                 doc.username = doc.username + (index + 1);
             });

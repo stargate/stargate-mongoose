@@ -62,7 +62,7 @@ function getBaseAPIPath(pathFromUrl?: string | null) {
     if (!pathFromUrl) {
         return '';
     }
-    const pathElements = pathFromUrl.split("/");
+    const pathElements = pathFromUrl.split('/');
     pathElements[pathElements.length - 1] = '';
     const baseApiPath = pathElements.join('/');
     return baseApiPath === '/' ? '' : baseApiPath.substring(1, baseApiPath.length - 1);
@@ -89,7 +89,7 @@ export const createAstraUri = (
     authHeaderName?: string,
 ) => {
     const uri = new url.URL(`https://${databaseId}-${region}.apps.astra.datastax.com`);
-    let contextPath: string = '';
+    let contextPath = '';
     contextPath += baseApiPath ? `/${baseApiPath}` : '/api/json/v1';
     contextPath += `/${keyspace}`;
     uri.pathname = contextPath;
@@ -179,7 +179,7 @@ export class StargateAuthError extends Error {
  * @param operation a function that takes no parameters and returns a response
  * @returns Promise
  */
-export const executeOperation = async (operation: Function) => {
+export const executeOperation = async (operation: () => Promise<unknown>) => {
     let res: any = {};
     try {
         res = await operation();

@@ -18,7 +18,7 @@ import { Client } from '@/src/collections/client';
 import { parseUri, createNamespace } from '@/src/collections/utils';
 import { testClient, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 import { randAlphaNumeric } from '@ngneat/falso';
-import {HTTPClient} from "@/src/client";
+import {HTTPClient} from '@/src/client';
 
 describe('StargateMongoose - collections.Db', async () => {
     let astraClient: Client | null;

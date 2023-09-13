@@ -19,7 +19,7 @@ import { testClient } from '@/tests/fixtures';
 import { logger } from '@/src/logger';
 import { parseUri } from '@/src/collections/utils';
 
-describe(`Driver based tests`, async () => {
+describe('Driver based tests', async () => {
     let dbUri: string;
     let isAstra: boolean;
     before(async function () {
