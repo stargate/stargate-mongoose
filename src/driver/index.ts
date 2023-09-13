@@ -13,5 +13,4 @@
 // limitations under the License.
 
 export { Connection } from './connection';
-export { Binary, ObjectId, Decimal128, ReadPreference } from 'mongodb';
 export { Collection, OperationNotSupportedError } from './collection';
