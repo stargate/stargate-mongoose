@@ -92,7 +92,6 @@
     "winston": "^3.7.2"
   },
   "peerDependencies": {
-    "mongodb": "^5.8.0",
     "mongoose": "^7.5.0"
   },
   "engines": {
