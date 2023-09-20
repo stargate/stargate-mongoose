@@ -50,6 +50,7 @@ export const findInternalOptionsKeys: Set<string> = new Set(
  */
 export interface FindOneOptions {
     sort?: Record<string, 1 | -1>;
+    projection?: ProjectionOption;
 }
 
 /**
