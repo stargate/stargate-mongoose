@@ -18,7 +18,6 @@ import { Client } from '@/src/collections/client';
 import { testClient, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 import mongoose from 'mongoose';
 import * as StargateMongooseDriver from '@/src/driver';
-import {ObjectId} from 'mongodb';
 
 describe('Options tests', async () => {
     let astraClient: Client | null;
@@ -257,7 +256,7 @@ describe('Options tests', async () => {
             }
             await Product.insertMany(products, { ordered: true, rawResult: false });
             //findOneAndUpdate with rawResult option
-            const upsertId: ObjectId = new ObjectId();
+            const upsertId = new mongoose.Types.ObjectId();
             const findOneAndUpdateResp = await Product.findOneAndUpdate({ name: 'Product 25' },
                 { '$set' : {price: 20, isCertified: false, name: 'Product 25'}, '$setOnInsert' : {_id: upsertId} },
                 { rawResult: false, upsert: true, returnDocument: 'after' });
