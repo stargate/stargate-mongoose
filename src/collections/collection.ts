@@ -266,9 +266,9 @@ export class Collection {
                 command.findOne.sort = options.sort;
             }
 
-          if (options?.projection && Object.keys(options.projection).length > 0) {
-            command.findOne.projection = options.projection;
-          }
+            if (options?.projection && Object.keys(options.projection).length > 0) {
+                command.findOne.projection = options.projection;
+            }
 
             const resp = await this.httpClient.executeCommand(command, null);
             return resp.data.document;
