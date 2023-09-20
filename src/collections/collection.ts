@@ -77,7 +77,8 @@ export type FindOneCommand = {
   findOne: {
     filter?: Record<string, any>,
     options?: FindOneOptions,
-    sort?: SortOption
+    sort?: SortOption,
+    projection?: Record<string, any>
   }
 };
 
@@ -263,6 +264,10 @@ export class Collection {
 
             if (options?.sort) {
                 command.findOne.sort = options.sort;
+            }
+
+            if (options?.projection && Object.keys(options.projection).length > 0) {
+                command.findOne.projection = options.projection;
             }
 
             const resp = await this.httpClient.executeCommand(command, null);
