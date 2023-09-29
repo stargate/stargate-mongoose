@@ -1,6 +1,6 @@
 {
   "name": "stargate-mongoose",
-  "version": "0.2.0-ALPHA-7",
+  "version": "0.2.0-ALPHA-8",
   "description": "Stargate's NodeJS Mongoose compatability client",
   "contributors": [
     "CRW (http://barnyrubble.tumblr.com/)",
@@ -54,8 +54,10 @@
     "test": "env TEST_DOC_DB=jsonapi ts-mocha --paths -p tsconfig.json tests/**/*.test.ts",
     "test-astra": "env TEST_DOC_DB=astra nyc ts-mocha --paths -p tsconfig.json tests/**/*.test.ts",
     "test-jsonapi": "env TEST_DOC_DB=jsonapi nyc ts-mocha --paths -p tsconfig.json tests/**/*.test.ts",
-    "build": "tsc --project tsconfig.build.json && tscpaths -p tsconfig.build.json -s ./src -o ./dist",
-    "build:docs": "jsdoc2md -t APIReference.hbs --files src/**/*.ts --configure ./jsdoc2md.json > APIReference.md"
+    "preinstall": "npm run update-version-file",
+    "build": "npm run update-version-file && tsc --project tsconfig.build.json && tscpaths -p tsconfig.build.json -s ./src -o ./dist",
+    "build:docs": "jsdoc2md -t APIReference.hbs --files src/**/*.ts --configure ./jsdoc2md.json > APIReference.md",
+    "update-version-file": "node -p \"'export const LIB_NAME = ' + JSON.stringify(require('./package.json').name) + ';'\" > src/version.ts && node -p \"'export const LIB_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" >> src/version.ts"
   },
   "bugs": {
     "url": "https://github.com/stargate/stargate-mongoose/issues"
