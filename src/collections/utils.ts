@@ -27,11 +27,7 @@ interface ParsedUri {
   authHeaderName: string;
 }
 
-/**
- * Parse a connection URI
- * @param uri - a uri in the format of: https://${baseUrl}/${baseAPIPath}/${keyspace}?applicationToken=${applicationToken}
- * @returns ParsedUri
- */
+// Parse a connection URI in the format of: https://${baseUrl}/${baseAPIPath}/${keyspace}?applicationToken=${applicationToken}
 export const parseUri = (uri: string): ParsedUri => {
     const parsedUrl = url.parse(uri, true);
     const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
@@ -53,11 +49,10 @@ export const parseUri = (uri: string): ParsedUri => {
     };
 };
 
-/* Removes the last part of the api path (which is assumed as the keyspace name). for example below are the sample input => output from this function
- * /v1/testks1 => v1
- * /apis/v1/testks1 => apis/v1
- * /testks1 => '' (empty string)
-*/
+// Removes the last part of the api path (which is assumed as the keyspace name). for example below are the sample input => output from this function
+// /v1/testks1 => v1
+// /apis/v1/testks1 => apis/v1
+// /testks1 => '' (empty string)
 function getBaseAPIPath(pathFromUrl?: string | null) {
     if (!pathFromUrl) {
         return '';
@@ -69,7 +64,7 @@ function getBaseAPIPath(pathFromUrl?: string | null) {
 }
 
 /**
- * Create a Astra connection URI
+ * Create an Astra connection URI while connecting to Astra JSON API
  * @param databaseId the database id of the Astra database
  * @param region the region of the Astra database
  * @param keyspace the keyspace to connect to
@@ -79,7 +74,7 @@ function getBaseAPIPath(pathFromUrl?: string | null) {
  * @param authHeaderName
  * @returns URL as string
  */
-export const createAstraUri = (
+export function createAstraUri (
     databaseId: string,
     region: string,
     keyspace: string,
@@ -87,7 +82,7 @@ export const createAstraUri = (
     baseApiPath?: string,
     logLevel?: string,
     authHeaderName?: string,
-) => {
+) {
     const uri = new url.URL(`https://${databaseId}-${region}.apps.astra.datastax.com`);
     let contextPath = '';
     contextPath += baseApiPath ? `/${baseApiPath}` : '/api/json/v1';
@@ -103,10 +98,10 @@ export const createAstraUri = (
         uri.searchParams.append('authHeaderName', authHeaderName);
     }
     return uri.toString();
-};
+}
 
 /**
- * Create a stargate  connection URI
+ * Create a JSON API connection URI while connecting to Open source JSON API
  * @param baseUrl
  * @param baseAuthUrl
  * @param keyspace
@@ -115,14 +110,14 @@ export const createAstraUri = (
  * @param logLevel
 * @returns URL as string
  */
-export const createStargateUri = async (
+export async function createStargateUri (
     baseUrl: string,
     baseAuthUrl: string,
     keyspace: string,
     username: string,
     password: string,
     logLevel?: string
-) => {
+) {
     const uri = new url.URL(baseUrl);
     uri.pathname = `/${keyspace}`;
     if (logLevel) {
@@ -131,10 +126,10 @@ export const createStargateUri = async (
     const accessToken = await getStargateAccessToken(baseAuthUrl, username, password);
     uri.searchParams.append('applicationToken', accessToken);
     return uri.toString();
-};
+}
 
 /**
- *
+ * Get an access token from Stargate (this is useful while connecting to open source JSON API)
  * @param authUrl
  * @param username
  * @param password
@@ -172,13 +167,6 @@ export class StargateAuthError extends Error {
         this.message = message;
     }
 }
-
-/**
- * executeOperation handles running functions
- * return a promise.
- * @param operation a function that takes no parameters and returns a response
- * @returns Promise
- */
 export const executeOperation = async (operation: () => Promise<unknown>) => {
     let res: any = {};
     try {

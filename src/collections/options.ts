@@ -16,16 +16,10 @@ export type SortOption = Record<string, 1 | -1> | { $vector: { $meta: Array<numb
 
 export type ProjectionOption = Record<string, 1 | 0 | true | false | { $slice: number }>;
 
-/**
- * deleteOneOptions
- */
 export interface DeleteOneOptions {
     sort?: Record<string, 1 | -1>;
 }
 
-/**
- * findOptions
- */
 export interface FindOptions {
     limit?: number;
     skip?: number;
@@ -45,24 +39,15 @@ export const findInternalOptionsKeys: Set<string> = new Set(
     Object.keys(new _FindOptionsInternal)
 );
 
-/**
- * findOneOptions
- */
 export interface FindOneOptions {
     sort?: Record<string, 1 | -1>;
     projection?: ProjectionOption;
 }
 
-/**
- * findOneAndDeleteOptions
- */
 export interface FindOneAndDeleteOptions {
     sort?: SortOption;
 }
 
-/**
- * findOneAndReplaceOptions
- */
 
 class _FindOneAndReplaceOptions {
     upsert?: boolean = undefined;
@@ -76,10 +61,6 @@ export const findOneAndReplaceInternalOptionsKeys: Set<string> = new Set(
     Object.keys(new _FindOneAndReplaceOptions)
 );
 
-/**
- * findOneAndUpdateOptions
- */
-
 class _FindOneAndUpdateOptions {
     upsert?: boolean = undefined;
     returnDocument?: 'before' | 'after' = undefined;
@@ -92,10 +73,6 @@ export const findOneAndUpdateInternalOptionsKeys: Set<string> = new Set(
     Object.keys(new _FindOneAndUpdateOptions)
 );
 
-/**
- * insertManyOptions
- */
-
 class _InsertManyOptions {
     ordered?: boolean = undefined;
 }
@@ -105,10 +82,6 @@ export interface InsertManyOptions extends _InsertManyOptions {}
 export const insertManyInternalOptionsKeys: Set<string> = new Set(
     Object.keys(new _InsertManyOptions)
 );
-
-/**
- * updateManyOptions
- */
 
 class _UpdateManyOptions {
     upsert?: boolean = undefined;
@@ -120,10 +93,6 @@ export const updateManyInternalOptionsKeys: Set<string> = new Set(
     Object.keys(new _UpdateManyOptions)
 );
 
-/**
- * updateOneOptions
- */
-
 class _UpdateOneOptions {
     upsert?: boolean = undefined;
     sort?: SortOption;
@@ -134,10 +103,6 @@ export interface UpdateOneOptions extends _UpdateOneOptions {}
 export const updateOneInternalOptionsKeys: Set<string> = new Set(
     Object.keys(new _UpdateOneOptions)
 );
-
-/**
- * CreateCollectionOptions
- */
 
 class _CreateCollectionOptions {
     vector?: {

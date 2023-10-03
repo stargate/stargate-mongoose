@@ -29,6 +29,9 @@ import { JSONAPIDeleteResult } from '../collections/collection';
 
 type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null) => unknown;
 
+/**
+ * Collection operations supported by the driver.
+ */
 export class Collection extends MongooseCollection {
     debugType = 'StargateMongooseCollection';
 
@@ -48,16 +51,26 @@ export class Collection extends MongooseCollection {
     }
 
     /**
-  * @deprecated
-  */
+    * @deprecated
+    */
     count(filter: Record<string, any>) {
         return this.collection.count(filter);
     }
 
+    /**
+     * Count documents in the collection that match the given filter.
+     * @param filter
+     */
     countDocuments(filter: Record<string, any>) {
         return this.collection.countDocuments(filter);
     }
 
+    /**
+     * Find documents in the collection that match the given filter.
+     * @param filter
+     * @param options
+     * @param callback
+     */
     find(filter: Record<string, any>, options?: FindOptions, callback?: NodeCallback<Record<string, any>[]>) {
         if (options != null) {
             processSortOption(options);
@@ -69,6 +82,11 @@ export class Collection extends MongooseCollection {
         return cursor;
     }
 
+    /**
+     * Find a single document in the collection that matches the given filter.
+     * @param filter
+     * @param options
+     */
     findOne(filter: Record<string, any>, options?: FindOneOptions) {
         if (options != null) {
             processSortOption(options);
@@ -76,14 +94,29 @@ export class Collection extends MongooseCollection {
         return this.collection.findOne(filter, options);
     }
 
+    /**
+     * Insert a single document into the collection.
+     * @param doc
+     */
     insertOne(doc: Record<string, any>) {
         return this.collection.insertOne(doc);
     }
 
+    /**
+     * Insert multiple documents into the collection.
+     * @param documents
+     * @param options
+     */
     insertMany(documents: Record<string, any>[], options?: InsertManyOptions) {
         return this.collection.insertMany(documents, options);
     }
 
+    /**
+     * Update a single document in a collection.
+     * @param filter
+     * @param update
+     * @param options
+     */
     findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions) {
         if (options != null) {
             processSortOption(options);
@@ -91,6 +124,11 @@ export class Collection extends MongooseCollection {
         return this.collection.findOneAndUpdate(filter, update, options);
     }
 
+    /**
+     * Find a single document in the collection and delete it.
+     * @param filter
+     * @param options
+     */
     findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions) {
         if (options != null) {
             processSortOption(options);
@@ -98,6 +136,12 @@ export class Collection extends MongooseCollection {
         return this.collection.findOneAndDelete(filter, options);
     }
 
+    /**
+     * Find a single document in the collection and replace it.
+     * @param filter
+     * @param newDoc
+     * @param options
+     */
     findOneAndReplace(filter: Record<string, any>, newDoc: Record<string, any>, options?: FindOneAndReplaceOptions) {
         if (options != null) {
             processSortOption(options);
@@ -105,10 +149,20 @@ export class Collection extends MongooseCollection {
         return this.collection.findOneAndReplace(filter, newDoc, options);
     }
 
+    /**
+     * Delete one or more documents in a collection that match the given filter.
+     * @param filter
+     */
     deleteMany(filter: Record<string, any>) {
         return this.collection.deleteMany(filter);
     }
 
+    /**
+     * Delete a single document in a collection that matches the given filter.
+     * @param filter
+     * @param options
+     * @param callback
+     */
     deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<JSONAPIDeleteResult>) {
         if (options != null) {
             processSortOption(options);
@@ -123,6 +177,12 @@ export class Collection extends MongooseCollection {
         return promise;
     }
 
+    /**
+     * Update a single document in a collection that matches the given filter.
+     * @param filter
+     * @param update
+     * @param options
+     */
     updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
         if (options != null) {
             processSortOption(options);
@@ -130,54 +190,106 @@ export class Collection extends MongooseCollection {
         return this.collection.updateOne(filter, update, options);
     }
 
+    /**
+     * Update multiple documents in a collection that match the given filter.
+     * @param filter
+     * @param update
+     * @param options
+     */
     updateMany(filter: Record<string, any>, update: Record<string, any>, options?: UpdateManyOptions) {
         return this.collection.updateMany(filter, update, options);
     }
 
+    /**
+     * Bulk write not supported.
+     * @param _ops
+     * @param _options
+     */
     bulkWrite(_ops: any[], _options?: any) {
         throw new OperationNotSupportedError('bulkWrite() Not Implemented');
     }
 
+    /**
+     * Aggregate not supported.
+     * @param _pipeline
+     * @param _options
+     */
     aggregate(_pipeline: any[], _options?: any) {
         throw new OperationNotSupportedError('aggregate() Not Implemented');
     }
 
+    /**
+     * Bulk Save not supported.
+     * @param _docs
+     * @param _options
+     */
     bulkSave(_docs: any[], _options?: any) {
         throw new OperationNotSupportedError('bulkSave() Not Implemented');
     }
 
+    /**
+     * Clean indexes not supported.
+     * @param _options
+     */
     cleanIndexes(_options?: any) {
         throw new OperationNotSupportedError('cleanIndexes() Not Implemented');
     }
 
+    /**
+     * List indexes not supported.
+     * @param _options
+     */
     listIndexes(_options?: any) {
         throw new OperationNotSupportedError('listIndexes() Not Implemented');
     }
 
+    /**
+     * Create index not supported.
+     * @param _fieldOrSpec
+     * @param _options
+     */
     createIndex(_fieldOrSpec: any, _options?: any) {
         throw new OperationNotSupportedError('createIndex() Not Implemented');
     }
 
+    /**
+     * Drop indexes not supported.
+     */
     dropIndexes() {
         throw new OperationNotSupportedError('dropIndexes() Not Implemented');
     }
 
+    /**
+     * Watch operation not supported.
+     */
     watch() {
         throw new OperationNotSupportedError('watch() Not Implemented');
     }
 
+    /**
+     * Distinct operation not supported.
+     */
     distinct() {
         throw new OperationNotSupportedError('distinct() Not Implemented');
     }
 
+    /**
+     * Estimated document count operation not supported.
+     */
     estimatedDocumentCount() {
         throw new OperationNotSupportedError('estimatedDocumentCount() Not Implemented');
     }
 
+    /**
+     * Replace one operation not supported.
+     */
     replaceOne() {
         throw new OperationNotSupportedError('replaceOne() Not Implemented');
     }
 
+    /**
+     * Sync indexes operation not supported.
+     */
     syncIndexes() {
         throw new OperationNotSupportedError('syncIndexes() Not Implemented');
     }

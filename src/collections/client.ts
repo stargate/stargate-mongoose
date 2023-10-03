@@ -35,12 +35,7 @@ export class Client {
     httpClient: HTTPClient;
     keyspaceName?: string;
     createNamespaceOnConnect?: boolean;
-    /**
-   * Set up a MongoClient that works with the Stargate JSON API
-   * @param baseUrl A JSON API Connection URI (Eg. http://localhost:8181/v1)
-   * @param keyspaceName Name of the Namespace (or Keyspace in Apache Cassandra terminology)
-   * @param options ClientOptions
-   */
+
     constructor(baseUrl: string, keyspaceName: string, options: ClientOptions) {
         this.keyspaceName = keyspaceName;
         this.createNamespaceOnConnect = options?.createNamespaceOnConnect ?? true;
