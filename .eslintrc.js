@@ -45,8 +45,9 @@ module.exports = {
                 '@typescript-eslint/no-empty-function': 'off',
                 '@typescript-eslint/no-unused-vars': [
                     'warn',
-                    // https://stackoverflow.com/questions/64052318/how-to-disable-warn-about-some-unused-params-but-keep-typescript-eslint-no-un
-                    {  'argsIgnorePattern': '^_' }
+                    // Never warn about unused parameters
+                    // See: https://eslint.org/docs/latest/rules/no-unused-vars#args
+                    {'args': 'none'}
                 ]
             }
         }

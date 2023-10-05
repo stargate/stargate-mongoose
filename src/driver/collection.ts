@@ -134,27 +134,27 @@ export class Collection extends MongooseCollection {
         return this.collection.updateMany(filter, update, options);
     }
 
-    bulkWrite(_ops: any[], _options?: any) {
+    bulkWrite(ops: any[], options?: any) {
         throw new OperationNotSupportedError('bulkWrite() Not Implemented');
     }
 
-    aggregate(_pipeline: any[], _options?: any) {
+    aggregate(pipeline: any[], options?: any) {
         throw new OperationNotSupportedError('aggregate() Not Implemented');
     }
 
-    bulkSave(_docs: any[], _options?: any) {
+    bulkSave(docs: any[], options?: any) {
         throw new OperationNotSupportedError('bulkSave() Not Implemented');
     }
 
-    cleanIndexes(_options?: any) {
+    cleanIndexes(options?: any) {
         throw new OperationNotSupportedError('cleanIndexes() Not Implemented');
     }
 
-    listIndexes(_options?: any) {
+    listIndexes(options?: any) {
         throw new OperationNotSupportedError('listIndexes() Not Implemented');
     }
 
-    createIndex(_fieldOrSpec: any, _options?: any) {
+    createIndex(fieldOrSpec: any, options?: any) {
         throw new OperationNotSupportedError('createIndex() Not Implemented');
     }
 
