@@ -941,7 +941,7 @@ describe('Mongoose Model API level tests', async () => {
         it('supports sort() with $meta with deleteOne()', async function() {
             const res = await Vector.
                 deleteOne({}).
-                sort({ $vector: { $meta: [1, 99] } });;
+                sort({ $vector: { $meta: [1, 99] } });
             assert.equal(res.deletedCount, 1);
 
             const fromDb = await Vector.findOne({ name: 'Test vector 1' });
