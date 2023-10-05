@@ -70,7 +70,7 @@ function getBaseAPIPath(pathFromUrl?: string | null) {
  * @param keyspace the keyspace to connect to
  * @param applicationToken an Astra application token
  * @param baseApiPath baseAPI path defaults to /api/json/v1
- * @param logLevel an winston log level
+ * @param logLevel an winston log level (error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6)
  * @param authHeaderName
  * @returns URL as string
  */
@@ -102,12 +102,12 @@ export function createAstraUri (
 
 /**
  * Create a JSON API connection URI while connecting to Open source JSON API
- * @param baseUrl
- * @param baseAuthUrl
- * @param keyspace
- * @param username
- * @param password
- * @param logLevel
+ * @param baseUrl the base URL of the JSON API
+ * @param baseAuthUrl the base URL of the JSON API auth (this is generally the Stargate Coordinator auth URL)
+ * @param keyspace the keyspace to connect to
+ * @param username the username to connect with
+ * @param password the password to connect with
+ * @param logLevel an winston log level (error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6)
 * @returns URL as string
  */
 export async function createStargateUri (
@@ -130,9 +130,10 @@ export async function createStargateUri (
 
 /**
  * Get an access token from Stargate (this is useful while connecting to open source JSON API)
- * @param authUrl
- * @param username
- * @param password
+ * @param authUrl the base URL of the JSON API auth (this is generally the Stargate Coordinator auth URL)
+ * @param username Username
+ * @param password Password
+ * @returns access token as string
  */
 export async function getStargateAccessToken(
     authUrl: string,

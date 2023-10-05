@@ -13,7 +13,7 @@
 <dd><p>Create an Astra connection URI while connecting to Astra JSON API</p></dd>
 <dt><a href="#createStargateUri">createStargateUri(baseUrl, baseAuthUrl, keyspace, username, password, logLevel)</a> ⇒</dt>
 <dd><p>Create a JSON API connection URI while connecting to Open source JSON API</p></dd>
-<dt><a href="#getStargateAccessToken">getStargateAccessToken(authUrl, username, password)</a></dt>
+<dt><a href="#getStargateAccessToken">getStargateAccessToken(authUrl, username, password)</a> ⇒</dt>
 <dd><p>Get an access token from Stargate (this is useful while connecting to open source JSON API)</p></dd>
 </dl>
 
@@ -26,7 +26,7 @@
 
 * [Collection](#Collection)
     * ~~[.count()](#Collection+count)~~
-    * ~~[.count()](#Collection+count)~~
+    * ~~[.count(filter)](#Collection+count)~~
     * [.countDocuments(filter)](#Collection+countDocuments)
     * [.find(filter, options, callback)](#Collection+find)
     * [.findOne(filter, options)](#Collection+findOne)
@@ -39,12 +39,12 @@
     * [.deleteOne(filter, options, callback)](#Collection+deleteOne)
     * [.updateOne(filter, update, options)](#Collection+updateOne)
     * [.updateMany(filter, update, options)](#Collection+updateMany)
-    * [.bulkWrite(_ops, _options)](#Collection+bulkWrite)
-    * [.aggregate(_pipeline, _options)](#Collection+aggregate)
-    * [.bulkSave(_docs, _options)](#Collection+bulkSave)
-    * [.cleanIndexes(_options)](#Collection+cleanIndexes)
-    * [.listIndexes(_options)](#Collection+listIndexes)
-    * [.createIndex(_fieldOrSpec, _options)](#Collection+createIndex)
+    * [.bulkWrite(ops, options)](#Collection+bulkWrite)
+    * [.aggregate(pipeline, options)](#Collection+aggregate)
+    * [.bulkSave(docs, options)](#Collection+bulkSave)
+    * [.cleanIndexes(options)](#Collection+cleanIndexes)
+    * [.listIndexes(options)](#Collection+listIndexes)
+    * [.createIndex(fieldOrSpec, options)](#Collection+createIndex)
     * [.dropIndexes()](#Collection+dropIndexes)
     * [.watch()](#Collection+watch)
     * [.distinct()](#Collection+distinct)
@@ -60,10 +60,17 @@
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 <a name="Collection+count"></a>
 
-### ~~collection.count()~~
+### ~~collection.count(filter)~~
 ***Deprecated***
 
+<p>Count documents in the collection that match the given filter. Use countDocuments() instead.</p>
+
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| filter | 
+
 <a name="Collection+countDocuments"></a>
 
 ### collection.countDocuments(filter)
@@ -213,73 +220,73 @@
 
 <a name="Collection+bulkWrite"></a>
 
-### collection.bulkWrite(_ops, _options)
+### collection.bulkWrite(ops, options)
 <p>Bulk write not supported.</p>
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 
 | Param |
 | --- |
-| _ops | 
-| _options | 
+| ops | 
+| options | 
 
 <a name="Collection+aggregate"></a>
 
-### collection.aggregate(_pipeline, _options)
+### collection.aggregate(pipeline, options)
 <p>Aggregate not supported.</p>
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 
 | Param |
 | --- |
-| _pipeline | 
-| _options | 
+| pipeline | 
+| options | 
 
 <a name="Collection+bulkSave"></a>
 
-### collection.bulkSave(_docs, _options)
+### collection.bulkSave(docs, options)
 <p>Bulk Save not supported.</p>
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 
 | Param |
 | --- |
-| _docs | 
-| _options | 
+| docs | 
+| options | 
 
 <a name="Collection+cleanIndexes"></a>
 
-### collection.cleanIndexes(_options)
+### collection.cleanIndexes(options)
 <p>Clean indexes not supported.</p>
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 
 | Param |
 | --- |
-| _options | 
+| options | 
 
 <a name="Collection+listIndexes"></a>
 
-### collection.listIndexes(_options)
+### collection.listIndexes(options)
 <p>List indexes not supported.</p>
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 
 | Param |
 | --- |
-| _options | 
+| options | 
 
 <a name="Collection+createIndex"></a>
 
-### collection.createIndex(_fieldOrSpec, _options)
+### collection.createIndex(fieldOrSpec, options)
 <p>Create index not supported.</p>
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 
 | Param |
 | --- |
-| _fieldOrSpec | 
-| _options | 
+| fieldOrSpec | 
+| options | 
 
 <a name="Collection+dropIndexes"></a>
 
@@ -332,7 +339,7 @@
 | keyspace | <p>the keyspace to connect to</p> |
 | applicationToken | <p>an Astra application token</p> |
 | baseApiPath | <p>baseAPI path defaults to /api/json/v1</p> |
-| logLevel | <p>an winston log level</p> |
+| logLevel | <p>an winston log level (error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6)</p> |
 | authHeaderName |  |
 
 <a name="createStargateUri"></a>
@@ -343,25 +350,26 @@
 **Kind**: global function  
 **Returns**: <p>URL as string</p>  
 
-| Param |
-| --- |
-| baseUrl | 
-| baseAuthUrl | 
-| keyspace | 
-| username | 
-| password | 
-| logLevel | 
+| Param | Description |
+| --- | --- |
+| baseUrl | <p>the base URL of the JSON API</p> |
+| baseAuthUrl | <p>the base URL of the JSON API auth (this is generally the Stargate Coordinator auth URL)</p> |
+| keyspace | <p>the keyspace to connect to</p> |
+| username | <p>the username to connect with</p> |
+| password | <p>the password to connect with</p> |
+| logLevel | <p>an winston log level (error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6)</p> |
 
 <a name="getStargateAccessToken"></a>
 
-## getStargateAccessToken(authUrl, username, password)
+## getStargateAccessToken(authUrl, username, password) ⇒
 <p>Get an access token from Stargate (this is useful while connecting to open source JSON API)</p>
 
 **Kind**: global function  
+**Returns**: <p>access token as string</p>  
 
-| Param |
-| --- |
-| authUrl | 
-| username | 
-| password | 
+| Param | Description |
+| --- | --- |
+| authUrl | <p>the base URL of the JSON API auth (this is generally the Stargate Coordinator auth URL)</p> |
+| username | <p>Username</p> |
+| password | <p>Password</p> |
 

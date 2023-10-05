@@ -42,6 +42,7 @@ export class Collection extends MongooseCollection {
         this._closed = false;
     }
 
+    //getter for collection
     get collection() {
         if (this._collection != null) {
             return this._collection;
@@ -51,6 +52,8 @@ export class Collection extends MongooseCollection {
     }
 
     /**
+    * Count documents in the collection that match the given filter. Use countDocuments() instead.
+    * @param filter
     * @deprecated
     */
     count(filter: Record<string, any>) {
@@ -202,53 +205,53 @@ export class Collection extends MongooseCollection {
 
     /**
      * Bulk write not supported.
-     * @param _ops
-     * @param _options
+     * @param ops
+     * @param options
      */
-    bulkWrite(_ops: any[], _options?: any) {
+    bulkWrite(ops: any[], options?: any) {
         throw new OperationNotSupportedError('bulkWrite() Not Implemented');
     }
 
     /**
      * Aggregate not supported.
-     * @param _pipeline
-     * @param _options
+     * @param pipeline
+     * @param options
      */
-    aggregate(_pipeline: any[], _options?: any) {
+    aggregate(pipeline: any[], options?: any) {
         throw new OperationNotSupportedError('aggregate() Not Implemented');
     }
 
     /**
      * Bulk Save not supported.
-     * @param _docs
-     * @param _options
+     * @param docs
+     * @param options
      */
-    bulkSave(_docs: any[], _options?: any) {
+    bulkSave(docs: any[], options?: any) {
         throw new OperationNotSupportedError('bulkSave() Not Implemented');
     }
 
     /**
      * Clean indexes not supported.
-     * @param _options
+     * @param options
      */
-    cleanIndexes(_options?: any) {
+    cleanIndexes(options?: any) {
         throw new OperationNotSupportedError('cleanIndexes() Not Implemented');
     }
 
     /**
      * List indexes not supported.
-     * @param _options
+     * @param options
      */
-    listIndexes(_options?: any) {
+    listIndexes(options?: any) {
         throw new OperationNotSupportedError('listIndexes() Not Implemented');
     }
 
     /**
      * Create index not supported.
-     * @param _fieldOrSpec
-     * @param _options
+     * @param fieldOrSpec
+     * @param options
      */
-    createIndex(_fieldOrSpec: any, _options?: any) {
+    createIndex(fieldOrSpec: any, options?: any) {
         throw new OperationNotSupportedError('createIndex() Not Implemented');
     }
 
