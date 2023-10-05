@@ -605,7 +605,7 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(insertResp[1].name, 'Product 2');
             assert.strictEqual(insertResp[2].name, 'Product 3');
         });
-        //Model.inspect can not be tested since its a helper for console logging. More info here: https://mongoosejs.com/docs/api/model.html#Model.inspect()
+        //Model.inspect can not be tested since it is a helper for console logging. More info here: https://mongoosejs.com/docs/api/model.html#Model.inspect()
         it('API ops tests Model.listIndexes()', async () => {
             let error: OperationNotSupportedError | null = null;
             try {
@@ -778,8 +778,8 @@ describe('Mongoose Model API level tests', async () => {
         let Vector: Model<any>;
 
         this.beforeEach(async function() {
-            await mongooseInstance.connection.dropCollection('vector');
-            Vector = mongooseInstance.model(
+            await mongooseInstance!.connection.dropCollection('vector');
+            Vector = mongooseInstance!.model(
                 'Vector',
                 vectorSchema,
                 'vector'
@@ -841,6 +841,7 @@ describe('Mongoose Model API level tests', async () => {
             res = await Vector.
                 findOne({}).
                 sort({ $vector: { $meta: [99, 1] } });
+            //@ts-ignore
             assert.deepStrictEqual(res.name, 'Test vector 2');
 
             await assert.rejects(
