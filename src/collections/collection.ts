@@ -103,11 +103,6 @@ export class Collection {
     name: string;
     collectionName: string;
 
-    /**
-   *
-   * @param httpClient
-   * @param name
-   */
     constructor(httpClient: HTTPClient, name: string) {
         if (!name) {
             throw new Error('Collection name is required');

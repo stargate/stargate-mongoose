@@ -2,144 +2,55 @@
 ## Classes
 
 <dl>
-<dt><a href="#Client">Client</a></dt>
-<dd></dd>
 <dt><a href="#Collection">Collection</a></dt>
-<dd></dd>
-<dt><a href="#FindCursor">FindCursor</a></dt>
-<dd></dd>
-<dt><a href="#Db">Db</a></dt>
-<dd></dd>
-<dt><a href="#_FindOptionsInternal">_FindOptionsInternal</a></dt>
-<dd><p>findOptions</p></dd>
-<dt><a href="#_FindOneAndReplaceOptions">_FindOneAndReplaceOptions</a></dt>
-<dd><p>findOneAndReplaceOptions</p></dd>
-</dl>
-
-## Members
-
-<dl>
-<dt><a href="#findInternalOptionsKeys">findInternalOptionsKeys</a></dt>
-<dd><p>findOneAndDeleteOptions</p></dd>
-<dt><a href="#findOneAndReplaceInternalOptionsKeys">findOneAndReplaceInternalOptionsKeys</a></dt>
-<dd><p>findOneAndUpdateOptions</p></dd>
-<dt><a href="#findOneAndUpdateInternalOptionsKeys">findOneAndUpdateInternalOptionsKeys</a></dt>
-<dd><p>insertManyOptions</p></dd>
-<dt><a href="#insertManyInternalOptionsKeys">insertManyInternalOptionsKeys</a></dt>
-<dd><p>updateManyOptions</p></dd>
-<dt><a href="#updateManyInternalOptionsKeys">updateManyInternalOptionsKeys</a></dt>
-<dd><p>updateOneOptions</p></dd>
-<dt><a href="#updateOneInternalOptionsKeys">updateOneInternalOptionsKeys</a></dt>
-<dd><p>CreateCollectionOptions</p></dd>
-<dt><a href="#createAstraUri">createAstraUri</a> ⇒</dt>
-<dd><p>Create a stargate  connection URI</p></dd>
-<dt><a href="#createStargateUri">createStargateUri</a></dt>
-<dd></dd>
-<dt><a href="#StargateAuthError">StargateAuthError</a> ⇒</dt>
-<dd><p>executeOperation handles running functions
-return a promise.</p></dd>
+<dd><p>Collection operations supported by the driver.</p></dd>
 </dl>
 
 ## Functions
 
 <dl>
-<dt><a href="#parseUri">parseUri(uri)</a> ⇒</dt>
-<dd><p>Parse a connection URI</p></dd>
 <dt><a href="#createAstraUri">createAstraUri(databaseId, region, keyspace, applicationToken, baseApiPath, logLevel, authHeaderName)</a> ⇒</dt>
-<dd><p>Create a Astra connection URI</p></dd>
+<dd><p>Create an Astra connection URI while connecting to Astra JSON API</p></dd>
+<dt><a href="#createStargateUri">createStargateUri(baseUrl, baseAuthUrl, keyspace, username, password, logLevel)</a> ⇒</dt>
+<dd><p>Create a JSON API connection URI while connecting to Open source JSON API</p></dd>
+<dt><a href="#getStargateAccessToken">getStargateAccessToken(authUrl, username, password)</a> ⇒</dt>
+<dd><p>Get an access token from Stargate (this is useful while connecting to open source JSON API)</p></dd>
 </dl>
-
-<a name="Client"></a>
-
-## Client
-**Kind**: global class  
-
-* [Client](#Client)
-    * [new Client(baseUrl, keyspaceName, options)](#new_Client_new)
-    * _instance_
-        * [.connect()](#Client+connect) ⇒
-        * [.db(dbName)](#Client+db) ⇒
-        * [.setMaxListeners(maxListeners)](#Client+setMaxListeners) ⇒
-        * [.close()](#Client+close) ⇒
-    * _static_
-        * [.connect(uri)](#Client.connect) ⇒
-
-<a name="new_Client_new"></a>
-
-### new Client(baseUrl, keyspaceName, options)
-<p>Set up a MongoClient that works with the Stargate JSON API</p>
-
-
-| Param | Description |
-| --- | --- |
-| baseUrl | <p>A JSON API Connection URI (Eg. http://localhost:8181/v1)</p> |
-| keyspaceName | <p>Name of the Namespace (or Keyspace in Apache Cassandra terminology)</p> |
-| options | <p>ClientOptions</p> |
-
-<a name="Client+connect"></a>
-
-### client.connect() ⇒
-<p>Connect the MongoClient instance to JSON API (create Namespace automatically when the 'createNamespaceOnConnect' flag is set to true)</p>
-
-**Kind**: instance method of [<code>Client</code>](#Client)  
-**Returns**: <p>a MongoClient instance</p>  
-<a name="Client+db"></a>
-
-### client.db(dbName) ⇒
-<p>Use a JSON API keyspace</p>
-
-**Kind**: instance method of [<code>Client</code>](#Client)  
-**Returns**: <p>Db</p>  
-
-| Param | Description |
-| --- | --- |
-| dbName | <p>the JSON API keyspace to connect to</p> |
-
-<a name="Client+setMaxListeners"></a>
-
-### client.setMaxListeners(maxListeners) ⇒
-**Kind**: instance method of [<code>Client</code>](#Client)  
-**Returns**: <p>number</p>  
-
-| Param |
-| --- |
-| maxListeners | 
-
-<a name="Client+close"></a>
-
-### client.close() ⇒
-**Kind**: instance method of [<code>Client</code>](#Client)  
-**Returns**: <p>Client</p>  
-<a name="Client.connect"></a>
-
-### Client.connect(uri) ⇒
-<p>Setup a connection to the Astra/Stargate JSON API</p>
-
-**Kind**: static method of [<code>Client</code>](#Client)  
-**Returns**: <p>MongoClient</p>  
-
-| Param | Description |
-| --- | --- |
-| uri | <p>an Stargate JSON API uri (Eg. http://localhost:8181/v1/testks1) where testks1 is the name of the keyspace/Namespace which should always be the last part of the URL</p> |
 
 <a name="Collection"></a>
 
 ## Collection
+<p>Collection operations supported by the driver.</p>
+
 **Kind**: global class  
 
 * [Collection](#Collection)
-    * [new Collection(httpClient, name)](#new_Collection_new)
     * ~~[.count()](#Collection+count)~~
-    * ~~[.count()](#Collection+count)~~
-
-<a name="new_Collection_new"></a>
-
-### new Collection(httpClient, name)
-
-| Param |
-| --- |
-| httpClient | 
-| name | 
+    * ~~[.count(filter)](#Collection+count)~~
+    * [.countDocuments(filter)](#Collection+countDocuments)
+    * [.find(filter, options, callback)](#Collection+find)
+    * [.findOne(filter, options)](#Collection+findOne)
+    * [.insertOne(doc)](#Collection+insertOne)
+    * [.insertMany(documents, options)](#Collection+insertMany)
+    * [.findOneAndUpdate(filter, update, options)](#Collection+findOneAndUpdate)
+    * [.findOneAndDelete(filter, options)](#Collection+findOneAndDelete)
+    * [.findOneAndReplace(filter, newDoc, options)](#Collection+findOneAndReplace)
+    * [.deleteMany(filter)](#Collection+deleteMany)
+    * [.deleteOne(filter, options, callback)](#Collection+deleteOne)
+    * [.updateOne(filter, update, options)](#Collection+updateOne)
+    * [.updateMany(filter, update, options)](#Collection+updateMany)
+    * [.bulkWrite(ops, options)](#Collection+bulkWrite)
+    * [.aggregate(pipeline, options)](#Collection+aggregate)
+    * [.bulkSave(docs, options)](#Collection+bulkSave)
+    * [.cleanIndexes(options)](#Collection+cleanIndexes)
+    * [.listIndexes(options)](#Collection+listIndexes)
+    * [.createIndex(fieldOrSpec, options)](#Collection+createIndex)
+    * [.dropIndexes()](#Collection+dropIndexes)
+    * [.watch()](#Collection+watch)
+    * [.distinct()](#Collection+distinct)
+    * [.estimatedDocumentCount()](#Collection+estimatedDocumentCount)
+    * [.replaceOne()](#Collection+replaceOne)
+    * [.syncIndexes()](#Collection+syncIndexes)
 
 <a name="Collection+count"></a>
 
@@ -149,245 +60,274 @@ return a promise.</p></dd>
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 <a name="Collection+count"></a>
 
-### ~~collection.count()~~
+### ~~collection.count(filter)~~
 ***Deprecated***
 
+<p>Count documents in the collection that match the given filter. Use countDocuments() instead.</p>
+
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
-<a name="FindCursor"></a>
-
-## FindCursor
-**Kind**: global class  
-
-* [FindCursor](#FindCursor)
-    * [new FindCursor(collection, filter, options)](#new_FindCursor_new)
-    * [.getAll()](#FindCursor+getAll) ⇒
-    * [.toArray()](#FindCursor+toArray) ⇒
-    * [.next()](#FindCursor+next) ⇒
-    * [.forEach(iterator)](#FindCursor+forEach)
-    * [.count(options)](#FindCursor+count) ⇒
-    * [.stream(options)](#FindCursor+stream)
-
-<a name="new_FindCursor_new"></a>
-
-### new FindCursor(collection, filter, options)
 
 | Param |
 | --- |
-| collection | 
+| filter | 
+
+<a name="Collection+countDocuments"></a>
+
+### collection.countDocuments(filter)
+<p>Count documents in the collection that match the given filter.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| filter | 
+
+<a name="Collection+find"></a>
+
+### collection.find(filter, options, callback)
+<p>Find documents in the collection that match the given filter.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| filter | 
+| options | 
+| callback | 
+
+<a name="Collection+findOne"></a>
+
+### collection.findOne(filter, options)
+<p>Find a single document in the collection that matches the given filter.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
 | filter | 
 | options | 
 
-<a name="FindCursor+getAll"></a>
+<a name="Collection+insertOne"></a>
 
-### findCursor.getAll() ⇒
-**Kind**: instance method of [<code>FindCursor</code>](#FindCursor)  
-**Returns**: <p>void</p>  
-<a name="FindCursor+toArray"></a>
+### collection.insertOne(doc)
+<p>Insert a single document into the collection.</p>
 
-### findCursor.toArray() ⇒
-**Kind**: instance method of [<code>FindCursor</code>](#FindCursor)  
-**Returns**: <p>Record&lt;string, any&gt;[]</p>  
-<a name="FindCursor+next"></a>
-
-### findCursor.next() ⇒
-**Kind**: instance method of [<code>FindCursor</code>](#FindCursor)  
-**Returns**: <p>Promise</p>  
-<a name="FindCursor+forEach"></a>
-
-### findCursor.forEach(iterator)
-**Kind**: instance method of [<code>FindCursor</code>](#FindCursor)  
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
 
 | Param |
 | --- |
-| iterator | 
+| doc | 
 
-<a name="FindCursor+count"></a>
+<a name="Collection+insertMany"></a>
 
-### findCursor.count(options) ⇒
-**Kind**: instance method of [<code>FindCursor</code>](#FindCursor)  
-**Returns**: <p>Promise<number></p>  
+### collection.insertMany(documents, options)
+<p>Insert multiple documents into the collection.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| documents | 
+| options | 
+
+<a name="Collection+findOneAndUpdate"></a>
+
+### collection.findOneAndUpdate(filter, update, options)
+<p>Update a single document in a collection.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| filter | 
+| update | 
+| options | 
+
+<a name="Collection+findOneAndDelete"></a>
+
+### collection.findOneAndDelete(filter, options)
+<p>Find a single document in the collection and delete it.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| filter | 
+| options | 
+
+<a name="Collection+findOneAndReplace"></a>
+
+### collection.findOneAndReplace(filter, newDoc, options)
+<p>Find a single document in the collection and replace it.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| filter | 
+| newDoc | 
+| options | 
+
+<a name="Collection+deleteMany"></a>
+
+### collection.deleteMany(filter)
+<p>Delete one or more documents in a collection that match the given filter.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| filter | 
+
+<a name="Collection+deleteOne"></a>
+
+### collection.deleteOne(filter, options, callback)
+<p>Delete a single document in a collection that matches the given filter.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| filter | 
+| options | 
+| callback | 
+
+<a name="Collection+updateOne"></a>
+
+### collection.updateOne(filter, update, options)
+<p>Update a single document in a collection that matches the given filter.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| filter | 
+| update | 
+| options | 
+
+<a name="Collection+updateMany"></a>
+
+### collection.updateMany(filter, update, options)
+<p>Update multiple documents in a collection that match the given filter.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| filter | 
+| update | 
+| options | 
+
+<a name="Collection+bulkWrite"></a>
+
+### collection.bulkWrite(ops, options)
+<p>Bulk write not supported.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| ops | 
+| options | 
+
+<a name="Collection+aggregate"></a>
+
+### collection.aggregate(pipeline, options)
+<p>Aggregate not supported.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| pipeline | 
+| options | 
+
+<a name="Collection+bulkSave"></a>
+
+### collection.bulkSave(docs, options)
+<p>Bulk Save not supported.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| docs | 
+| options | 
+
+<a name="Collection+cleanIndexes"></a>
+
+### collection.cleanIndexes(options)
+<p>Clean indexes not supported.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
 
 | Param |
 | --- |
 | options | 
 
-<a name="FindCursor+stream"></a>
+<a name="Collection+listIndexes"></a>
 
-### findCursor.stream(options)
-**Kind**: instance method of [<code>FindCursor</code>](#FindCursor)  
+### collection.listIndexes(options)
+<p>List indexes not supported.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
 
 | Param |
 | --- |
 | options | 
 
-<a name="Db"></a>
+<a name="Collection+createIndex"></a>
 
-## Db
-**Kind**: global class  
+### collection.createIndex(fieldOrSpec, options)
+<p>Create index not supported.</p>
 
-* [Db](#Db)
-    * [new Db(httpClient, name)](#new_Db_new)
-    * [.collection(collectionName)](#Db+collection) ⇒
-    * [.createCollection(collectionName, options)](#Db+createCollection) ⇒
-    * [.dropCollection(collectionName)](#Db+dropCollection) ⇒
-    * [.dropDatabase()](#Db+dropDatabase) ⇒
-    * [.createDatabase()](#Db+createDatabase) ⇒
-
-<a name="new_Db_new"></a>
-
-### new Db(httpClient, name)
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
 
 | Param |
 | --- |
-| httpClient | 
-| name | 
-
-<a name="Db+collection"></a>
-
-### db.collection(collectionName) ⇒
-**Kind**: instance method of [<code>Db</code>](#Db)  
-**Returns**: <p>Collection</p>  
-
-| Param |
-| --- |
-| collectionName | 
-
-<a name="Db+createCollection"></a>
-
-### db.createCollection(collectionName, options) ⇒
-**Kind**: instance method of [<code>Db</code>](#Db)  
-**Returns**: <p>Promise</p>  
-
-| Param |
-| --- |
-| collectionName | 
+| fieldOrSpec | 
 | options | 
 
-<a name="Db+dropCollection"></a>
+<a name="Collection+dropIndexes"></a>
 
-### db.dropCollection(collectionName) ⇒
-**Kind**: instance method of [<code>Db</code>](#Db)  
-**Returns**: <p>APIResponse</p>  
+### collection.dropIndexes()
+<p>Drop indexes not supported.</p>
 
-| Param |
-| --- |
-| collectionName | 
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+<a name="Collection+watch"></a>
 
-<a name="Db+dropDatabase"></a>
+### collection.watch()
+<p>Watch operation not supported.</p>
 
-### db.dropDatabase() ⇒
-**Kind**: instance method of [<code>Db</code>](#Db)  
-**Returns**: <p>Promise</p>  
-<a name="Db+createDatabase"></a>
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+<a name="Collection+distinct"></a>
 
-### db.createDatabase() ⇒
-**Kind**: instance method of [<code>Db</code>](#Db)  
-**Returns**: <p>Promise</p>  
-<a name="_FindOptionsInternal"></a>
+### collection.distinct()
+<p>Distinct operation not supported.</p>
 
-## \_FindOptionsInternal
-<p>findOptions</p>
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+<a name="Collection+estimatedDocumentCount"></a>
 
-**Kind**: global class  
-<a name="_FindOneAndReplaceOptions"></a>
+### collection.estimatedDocumentCount()
+<p>Estimated document count operation not supported.</p>
 
-## \_FindOneAndReplaceOptions
-<p>findOneAndReplaceOptions</p>
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+<a name="Collection+replaceOne"></a>
 
-**Kind**: global class  
-<a name="findInternalOptionsKeys"></a>
+### collection.replaceOne()
+<p>Replace one operation not supported.</p>
 
-## findInternalOptionsKeys
-<p>findOneAndDeleteOptions</p>
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+<a name="Collection+syncIndexes"></a>
 
-**Kind**: global variable  
-<a name="findOneAndReplaceInternalOptionsKeys"></a>
+### collection.syncIndexes()
+<p>Sync indexes operation not supported.</p>
 
-## findOneAndReplaceInternalOptionsKeys
-<p>findOneAndUpdateOptions</p>
-
-**Kind**: global variable  
-<a name="findOneAndUpdateInternalOptionsKeys"></a>
-
-## findOneAndUpdateInternalOptionsKeys
-<p>insertManyOptions</p>
-
-**Kind**: global variable  
-<a name="insertManyInternalOptionsKeys"></a>
-
-## insertManyInternalOptionsKeys
-<p>updateManyOptions</p>
-
-**Kind**: global variable  
-<a name="updateManyInternalOptionsKeys"></a>
-
-## updateManyInternalOptionsKeys
-<p>updateOneOptions</p>
-
-**Kind**: global variable  
-<a name="updateOneInternalOptionsKeys"></a>
-
-## updateOneInternalOptionsKeys
-<p>CreateCollectionOptions</p>
-
-**Kind**: global variable  
-<a name="createAstraUri"></a>
-
-## createAstraUri ⇒
-<p>Create a stargate  connection URI</p>
-
-**Kind**: global variable  
-**Returns**: <p>URL as string</p>  
-
-| Param |
-| --- |
-| baseUrl | 
-| baseAuthUrl | 
-| keyspace | 
-| username | 
-| password | 
-| logLevel | 
-
-<a name="createStargateUri"></a>
-
-## createStargateUri
-**Kind**: global variable  
-
-| Param |
-| --- |
-| authUrl | 
-| username | 
-| password | 
-
-<a name="StargateAuthError"></a>
-
-## StargateAuthError ⇒
-<p>executeOperation handles running functions
-return a promise.</p>
-
-**Kind**: global variable  
-**Returns**: <p>Promise</p>  
-
-| Param | Description |
-| --- | --- |
-| operation | <p>a function that takes no parameters and returns a response</p> |
-
-<a name="parseUri"></a>
-
-## parseUri(uri) ⇒
-<p>Parse a connection URI</p>
-
-**Kind**: global function  
-**Returns**: <p>ParsedUri</p>  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| uri | <code>baseUrl</code> | <p>a uri in the format of: https://$/${baseAPIPath}/${keyspace}?applicationToken=${applicationToken}</p> |
-
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
 <a name="createAstraUri"></a>
 
 ## createAstraUri(databaseId, region, keyspace, applicationToken, baseApiPath, logLevel, authHeaderName) ⇒
-<p>Create a Astra connection URI</p>
+<p>Create an Astra connection URI while connecting to Astra JSON API</p>
 
 **Kind**: global function  
 **Returns**: <p>URL as string</p>  
@@ -399,6 +339,37 @@ return a promise.</p>
 | keyspace | <p>the keyspace to connect to</p> |
 | applicationToken | <p>an Astra application token</p> |
 | baseApiPath | <p>baseAPI path defaults to /api/json/v1</p> |
-| logLevel | <p>an winston log level</p> |
+| logLevel | <p>an winston log level (error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6)</p> |
 | authHeaderName |  |
+
+<a name="createStargateUri"></a>
+
+## createStargateUri(baseUrl, baseAuthUrl, keyspace, username, password, logLevel) ⇒
+<p>Create a JSON API connection URI while connecting to Open source JSON API</p>
+
+**Kind**: global function  
+**Returns**: <p>URL as string</p>  
+
+| Param | Description |
+| --- | --- |
+| baseUrl | <p>the base URL of the JSON API</p> |
+| baseAuthUrl | <p>the base URL of the JSON API auth (this is generally the Stargate Coordinator auth URL)</p> |
+| keyspace | <p>the keyspace to connect to</p> |
+| username | <p>the username to connect with</p> |
+| password | <p>the password to connect with</p> |
+| logLevel | <p>an winston log level (error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6)</p> |
+
+<a name="getStargateAccessToken"></a>
+
+## getStargateAccessToken(authUrl, username, password) ⇒
+<p>Get an access token from Stargate (this is useful while connecting to open source JSON API)</p>
+
+**Kind**: global function  
+**Returns**: <p>access token as string</p>  
+
+| Param | Description |
+| --- | --- |
+| authUrl | <p>the base URL of the JSON API auth (this is generally the Stargate Coordinator auth URL)</p> |
+| username | <p>Username</p> |
+| password | <p>Password</p> |
 

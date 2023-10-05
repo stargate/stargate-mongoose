@@ -29,12 +29,6 @@ export class FindCursor {
     pageIndex: number;
     exhausted: boolean;
 
-    /**
-   *
-   * @param collection
-   * @param filter
-   * @param options
-   */
     constructor(collection: Collection, filter: Record<string, any>, options?: FindOptions) {
         this.collection = collection;
         this.filter = filter;
@@ -159,10 +153,10 @@ export class FindCursor {
     }
 
     /**
-   *
-   * @param options
-   * @returns Promise<number>
-   */
+     *
+     * @returns Promise<number>
+     * @param _options
+     */
     async count(_options?: any) {
         return executeOperation(async () => {
             await this.getAll();
@@ -173,9 +167,9 @@ export class FindCursor {
     // NOOPS and unimplemented
 
     /**
-   *
-   * @param options
-   */
+     *
+     * @param _options
+     */
     stream(_options?: any) {
         throw new Error('Streaming cursors are not supported');
     }
