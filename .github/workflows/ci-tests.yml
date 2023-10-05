@@ -38,6 +38,7 @@ jobs:
           npm run test
   e2e:
     runs-on: ubuntu-latest
+    needs: test
     steps:      
       - name: disable and stop mono-xsp4.service
         run: |
