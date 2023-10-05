@@ -3,10 +3,6 @@
 module.exports = {
     rules: {
         'semi': 'error',
-        'no-dupe-keys': 'error',
-        'no-const-assign': 'error',
-        'no-undef': 'error',
-        'no-unreachable': 'error',
 
         // Warnings: style and readability concerns
         'indent': [
@@ -37,6 +33,8 @@ module.exports = {
                 '@typescript-eslint'
             ],
             rules: {
+                'no-dupe-keys': 'error',
+                'no-unreachable': 'error',
                 '@typescript-eslint/ban-ts-comment': 'off',
                 '@typescript-eslint/no-non-null-assertion': 'off',
                 '@typescript-eslint/no-explicit-any': 'off',
