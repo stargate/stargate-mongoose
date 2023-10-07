@@ -125,12 +125,16 @@ export class FindCursor {
         if (this.options?.skip) {
             options.skip = this.options.skip;
         }
+        if (this.options.includeSimilarity) {
+          options.includeSimilarity = this.options.includeSimilarity;
+        }
         if (this.options?.projection && Object.keys(this.options.projection).length > 0) {
             command.find.projection = this.options.projection;
         }
         if (Object.keys(options).length > 0) {
             command.find.options = options;
         }
+        console.log('FX', command);
         const resp = await this.collection.httpClient.executeCommand(command, findInternalOptionsKeys);
         this.nextPageState = resp.data.nextPageState;
         if (this.nextPageState == null) {

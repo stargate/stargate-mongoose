@@ -25,12 +25,14 @@ export interface FindOptions {
     skip?: number;
     sort?: SortOption;
     projection?: ProjectionOption;
+    includeSimilarity?: boolean;
 }
 
 class _FindOptionsInternal {
     limit?: number = undefined;
     skip?: number = undefined;
     pagingState?: string = undefined;
+    includeSimilarity?: boolean = undefined;
 }
 
 export interface FindOptionsInternal extends _FindOptionsInternal {}
