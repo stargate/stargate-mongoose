@@ -120,11 +120,15 @@ export class Collection extends MongooseCollection {
      * @param update
      * @param options
      */
-    findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions) {
+    async findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions) {
         if (options != null) {
             processSortOption(options);
         }
-        return this.collection.findOneAndUpdate(filter, update, options);
+        const res = await this.collection.findOneAndUpdate(filter, update, options);
+        if (options?.includeResultMetadata !== false) {
+            return res.value;
+        }
+        return res;
     }
 
     /**
@@ -132,11 +136,15 @@ export class Collection extends MongooseCollection {
      * @param filter
      * @param options
      */
-    findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions) {
+    async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions) {
         if (options != null) {
             processSortOption(options);
         }
-        return this.collection.findOneAndDelete(filter, options);
+        const res = await this.collection.findOneAndDelete(filter, options);
+        if (options?.includeResultMetadata !== false) {
+            return res.value;
+        }
+        return res;
     }
 
     /**
@@ -145,11 +153,15 @@ export class Collection extends MongooseCollection {
      * @param newDoc
      * @param options
      */
-    findOneAndReplace(filter: Record<string, any>, newDoc: Record<string, any>, options?: FindOneAndReplaceOptions) {
+    async findOneAndReplace(filter: Record<string, any>, newDoc: Record<string, any>, options?: FindOneAndReplaceOptions) {
         if (options != null) {
             processSortOption(options);
         }
-        return this.collection.findOneAndReplace(filter, newDoc, options);
+        const res = await this.collection.findOneAndReplace(filter, newDoc, options);
+        if (options?.includeResultMetadata !== false) {
+            return res.value;
+        }
+        return res;
     }
 
     /**

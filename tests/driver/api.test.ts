@@ -323,10 +323,10 @@ describe('Mongoose Model API level tests', async () => {
             //cleanIndexes invokes listIndexes() which is not supported
             assert.strictEqual(error!.message, 'listIndexes() Not Implemented');
         });
-        it('API ops tests Model.count()', async () => {
+        it('API ops tests Model.countDocuments()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
-            const countResp = await Product.count({name: 'Product 1'});
+            const countResp = await Product.countDocuments({name: 'Product 1'});
             assert.strictEqual(countResp, 1);
         });
         it('API ops tests Model.create()', async () => {
@@ -512,14 +512,6 @@ describe('Mongoose Model API level tests', async () => {
             const findDeletedDoc = await Product.findById(product1._id);
             assert.strictEqual(findDeletedDoc, null);
         });
-        it('API ops tests Model.findByIdAndRemove()', async () => {
-            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
-            await product1.save();
-            const deleteResp = await Product.findByIdAndRemove(product1._id);
-            assert.strictEqual(deleteResp?.name, 'Product 1');
-            const findDeletedDoc = await Product.findById(product1._id);
-            assert.strictEqual(findDeletedDoc, null);
-        });
         it('API ops tests Model.findByIdAndUpdate()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1', url: 'http://product1.com'});
             await product1.save();
@@ -542,17 +534,6 @@ describe('Mongoose Model API level tests', async () => {
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
             await Product.insertMany([product1, product2, product3]);
             const deleteResp = await Product.findOneAndDelete({category: 'cat 1'});
-            assert.strictEqual(deleteResp?.category, 'cat 1');
-            //check if it exists again
-            const findDeletedDoc = await Product.findOne({category: 'cat 1'});
-            assert.strictEqual(findDeletedDoc, null);
-        });
-        it('API ops tests Model.findOneAndRemove()', async () => {
-            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
-            const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
-            const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
-            await Product.insertMany([product1, product2, product3]);
-            const deleteResp = await Product.findOneAndRemove({category: 'cat 1'});
             assert.strictEqual(deleteResp?.category, 'cat 1');
             //check if it exists again
             const findDeletedDoc = await Product.findOne({category: 'cat 1'});
@@ -633,8 +614,7 @@ describe('Mongoose Model API level tests', async () => {
             await product1.save();
             const docSaved = await Product.findOne({name: 'Product 1'});
             assert.strictEqual(docSaved.name, 'Product 1');
-            const deleteOneResp = await product1.deleteOne();
-            assert.strictEqual(deleteOneResp.name, 'Product 1');
+            await product1.deleteOne();
             const findDeletedDoc = await Product.findOne({name: 'Product 1'});
             assert.strictEqual(findDeletedDoc, null);
         });
