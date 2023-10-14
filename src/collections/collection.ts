@@ -259,6 +259,7 @@ export class Collection {
 
             if (options?.sort) {
                 command.findOne.sort = options.sort;
+                delete options.sort;
             }
 
             if (options?.projection && Object.keys(options.projection).length > 0) {
