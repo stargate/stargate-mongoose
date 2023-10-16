@@ -36,3 +36,27 @@ jobs:
       - name: run tests
         run: |
           npm run test
+  e2e:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:      
+      - name: disable and stop mono-xsp4.service
+        run: |
+          sudo kill -9 $(sudo lsof -t -i:8084)
+      - uses: actions/checkout@v3
+      - name: Setting up the node version
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.15.0
+      - name: setup project
+        run: npm i   
+      - name: build
+        run: npm run build
+      - name: pack
+        run: node ./bin/create-tarball.js
+      - name: install smoke test
+        working-directory: ./tests/e2e
+        run: npm install
+      - name: run e2e smoke test
+        working-directory: ./tests/e2e
+        run: node .
