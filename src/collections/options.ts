@@ -47,6 +47,14 @@ export interface FindOneOptions {
     includeSimilarity?: boolean;
 }
 
+class _FindOneOptionsInternal {
+    includeSimilarity?: boolean = undefined;
+}
+
+export const findOneInternalOptionsKeys: Set<string> = new Set(
+    Object.keys(new _FindOneOptionsInternal)
+);
+
 export interface FindOneAndDeleteOptions {
     sort?: SortOption;
 }

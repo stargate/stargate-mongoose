@@ -32,6 +32,7 @@ import {
     UpdateOneOptions,
     FindOptions,
     SortOption,
+    findOneInternalOptionsKeys
 } from './options';
 
 export interface JSONAPIUpdateResult {
@@ -266,7 +267,7 @@ export class Collection {
                 command.findOne.projection = options.projection;
             }
 
-            const resp = await this.httpClient.executeCommand(command, null);
+            const resp = await this.httpClient.executeCommand(command, findOneInternalOptionsKeys);
             return resp.data.document;
         });
     }

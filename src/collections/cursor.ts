@@ -126,7 +126,7 @@ export class FindCursor {
             options.skip = this.options.skip;
         }
         if (this.options.includeSimilarity) {
-          options.includeSimilarity = this.options.includeSimilarity;
+            options.includeSimilarity = this.options.includeSimilarity;
         }
         if (this.options?.projection && Object.keys(this.options.projection).length > 0) {
             command.find.projection = this.options.projection;
