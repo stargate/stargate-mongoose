@@ -29,12 +29,6 @@ export class FindCursor {
     pageIndex: number;
     exhausted: boolean;
 
-    /**
-   *
-   * @param collection
-   * @param filter
-   * @param options
-   */
     constructor(collection: Collection, filter: Record<string, any>, options?: FindOptions) {
         this.collection = collection;
         this.filter = filter;
@@ -131,6 +125,9 @@ export class FindCursor {
         if (this.options?.skip) {
             options.skip = this.options.skip;
         }
+        if (this.options.includeSimilarity) {
+            options.includeSimilarity = this.options.includeSimilarity;
+        }
         if (this.options?.projection && Object.keys(this.options.projection).length > 0) {
             command.find.projection = this.options.projection;
         }
@@ -159,11 +156,11 @@ export class FindCursor {
     }
 
     /**
-   *
-   * @param options
-   * @returns Promise<number>
-   */
-    async count(_options?: any) {
+     *
+     * @returns Promise<number>
+     * @param options
+     */
+    async count(options?: any) {
         return executeOperation(async () => {
             await this.getAll();
             return this.documents.length;
@@ -173,10 +170,10 @@ export class FindCursor {
     // NOOPS and unimplemented
 
     /**
-   *
-   * @param options
-   */
-    stream(_options?: any) {
+     *
+     * @param options
+     */
+    stream(options?: any) {
         throw new Error('Streaming cursors are not supported');
     }
 }

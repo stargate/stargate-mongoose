@@ -12,6 +12,7 @@ jobs:
       STARGATE_AUTH_URL: http://localhost:8081/v1/auth
       STARGATE_USERNAME: cassandra
       STARGATE_PASSWORD: cassandra
+    needs: e2e
     steps:      
       - name: disable and stop mono-xsp4.service
         run: |

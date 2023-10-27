@@ -22,11 +22,6 @@ export class Db {
     httpClient: HTTPClient;
     name: string;
 
-    /**
-   *
-   * @param httpClient
-   * @param name
-   */
     constructor(httpClient: HTTPClient, name: string) {
         if (!name) {
             throw new Error('Db: name is required');

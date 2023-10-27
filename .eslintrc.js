@@ -3,10 +3,6 @@
 module.exports = {
     rules: {
         'semi': 'error',
-        'no-dupe-keys': 'error',
-        'no-const-assign': 'error',
-        'no-undef': 'error',
-        'no-unreachable': 'error',
 
         // Warnings: style and readability concerns
         'indent': [
@@ -37,6 +33,8 @@ module.exports = {
                 '@typescript-eslint'
             ],
             rules: {
+                'no-dupe-keys': 'error',
+                'no-unreachable': 'error',
                 '@typescript-eslint/ban-ts-comment': 'off',
                 '@typescript-eslint/no-non-null-assertion': 'off',
                 '@typescript-eslint/no-explicit-any': 'off',
@@ -45,8 +43,9 @@ module.exports = {
                 '@typescript-eslint/no-empty-function': 'off',
                 '@typescript-eslint/no-unused-vars': [
                     'warn',
-                    // https://stackoverflow.com/questions/64052318/how-to-disable-warn-about-some-unused-params-but-keep-typescript-eslint-no-un
-                    {  'argsIgnorePattern': '^_' }
+                    // Never warn about unused parameters
+                    // See: https://eslint.org/docs/latest/rules/no-unused-vars#args
+                    {'args': 'none'}
                 ]
             }
         }
