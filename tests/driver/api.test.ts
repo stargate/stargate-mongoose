@@ -775,15 +775,14 @@ describe('Mongoose Model API level tests', async () => {
                 autoCreate: true
             }
         );
-        let Vector: Model<any>;
+        const Vector = mongooseInstance!.model(
+            'Vector',
+            vectorSchema,
+            'vector'
+        );
 
         this.beforeEach(async function() {
             await mongooseInstance!.connection.dropCollection('vector');
-            Vector = mongooseInstance!.model(
-                'Vector',
-                vectorSchema,
-                'vector'
-            );
         
             await Vector.init();
             await Vector.create([
@@ -846,11 +845,11 @@ describe('Mongoose Model API level tests', async () => {
                 sort({ $vector: { $meta: [99, 1] } });
             assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 2', 'Test vector 1']);
 
-            res = await Vector.
+            const doc = await Vector.
                 findOne({}).
+                orFail().
                 sort({ $vector: { $meta: [99, 1] } });
-            //@ts-ignore
-            assert.deepStrictEqual(res.name, 'Test vector 2');
+            assert.deepStrictEqual(doc.name, 'Test vector 2');
 
             await assert.rejects(
                 Vector.find().limit(1001).sort({ $vector: { $meta: [99, 1] } }),
@@ -877,11 +876,12 @@ describe('Mongoose Model API level tests', async () => {
                     { name: 'found vector', $vector: [990, 1] },
                     { returnDocument: 'before' }
                 ).
+                orFail().
                 sort({ $vector: { $meta: [99, 1] } });
             assert.deepStrictEqual(res.$vector, [100, 1]);
             assert.strictEqual(res.name, 'Test vector 2');
 
-            const doc = await Vector.findById(res._id);
+            const doc = await Vector.findById(res._id).orFail();
             assert.strictEqual(doc.name, 'found vector');
             assert.deepStrictEqual(doc.$vector, [990, 1]);
         });
@@ -912,7 +912,8 @@ describe('Mongoose Model API level tests', async () => {
                     { name: 'Test vector 2' },
                     { $unset: { $vector: 1 } },
                     { returnDocument: 'after' }
-                );
+                ).
+                orFail();
             assert.deepStrictEqual(res.$vector, undefined);
             assert.strictEqual(res.name, 'Test vector 2');
         });
@@ -924,11 +925,12 @@ describe('Mongoose Model API level tests', async () => {
                     { name: 'found vector', $vector: [990, 1] },
                     { returnDocument: 'before' }
                 ).
+                orFail().
                 sort({ $vector: { $meta: [99, 1] } });
             assert.deepStrictEqual(res.$vector, [100, 1]);
             assert.strictEqual(res.name, 'Test vector 2');
 
-            const doc = await Vector.findById(res._id);
+            const doc = await Vector.findById(res._id).orFail();
             assert.strictEqual(doc.name, 'found vector');
             assert.deepStrictEqual(doc.$vector, [990, 1]);
         });
@@ -939,6 +941,7 @@ describe('Mongoose Model API level tests', async () => {
                     {},
                     { returnDocument: 'before' }
                 ).
+                orFail().
                 sort({ $vector: { $meta: [1, 99] } });
             assert.deepStrictEqual(res.$vector, [1, 100]);
             assert.strictEqual(res.name, 'Test vector 1');
