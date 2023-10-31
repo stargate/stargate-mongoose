@@ -183,6 +183,24 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
             });
             assert.strictEqual(docCount, sampleUsers.length);
         });
+        it('should only store at most `pageSize` documents at a time', async () => {
+            const docs = [];
+            for (let i = 0; i < 35; ++i) {
+                docs.push({ name: `doc ${i}` });
+            }
+            while (docs.length > 0) {
+                const toInsert = docs.splice(0, 20);
+                await collection.insertMany(toInsert);
+            }
+
+            const cursor = new FindCursor(collection, {});
+            let docCount = 0;
+            await cursor.forEach(() => {
+                assert.equal(cursor.page.length, docCount < 20 ? 20 : 15);
+                docCount++;
+            });
+            assert.strictEqual(docCount, 35);
+        });
     });
 
     describe('Cursor noops', () => {
