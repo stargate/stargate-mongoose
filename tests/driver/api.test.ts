@@ -63,7 +63,7 @@ describe('Mongoose Model API level tests', async () => {
         await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'carts');
     });
 
-    async function getInstance() {
+    function getInstance() {
         const mongooseInstance = new mongoose.Mongoose();
         mongooseInstance.setDriver(StargateMongooseDriver);
         mongooseInstance.set('autoCreate', true);
@@ -86,7 +86,7 @@ describe('Mongoose Model API level tests', async () => {
             products: [{ type: Schema.Types.ObjectId, ref: 'Product' }]
         });
         if (isAstra) {
-            astraMongoose = await getInstance();
+            astraMongoose = getInstance();
             Product = astraMongoose.model('Product', productSchema);
             Cart = astraMongoose.model('Cart', cartSchema);
             
@@ -94,7 +94,7 @@ describe('Mongoose Model API level tests', async () => {
             await Promise.all(Object.values(astraMongoose.connection.models).map(Model => Model.init()));
         } else {
             // @ts-ignore
-            jsonAPIMongoose = await getInstance();
+            jsonAPIMongoose = getInstance();
             Product = jsonAPIMongoose.model('Product', productSchema);
             Cart = jsonAPIMongoose.model('Cart', cartSchema);
             const options = {
@@ -771,20 +771,36 @@ describe('Mongoose Model API level tests', async () => {
                 name: 'String'
             },
             {
-                collectionOptions: { vector: { size: 2, function: 'cosine' } },
+                collectionOptions: { vector: { dimension: 2, metric: 'cosine' } },
                 autoCreate: true
             }
         );
-        const Vector = mongooseInstance!.model(
+        const mongooseInstance = getInstance();
+        const Vector = mongooseInstance.model(
             'Vector',
             vectorSchema,
             'vector'
         );
 
-        this.beforeEach(async function() {
-            await mongooseInstance!.connection.dropCollection('vector');
+        before(async function() {
+            if (isAstra) {
+                await mongooseInstance.connect(dbUri, {isAstra: true, logSkippedOptions: true});
+            } else {
+                const options = {
+                    username: process.env.STARGATE_USERNAME,
+                    password: process.env.STARGATE_PASSWORD,
+                    authUrl: process.env.STARGATE_AUTH_URL,
+                    logSkippedOptions: true
+                };
+                // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+                await mongooseInstance.connect(dbUri, options);
+            }
+        });
         
-            await Vector.init();
+
+        beforeEach(async function() {
+            await mongooseInstance!.connection.dropCollection('vector');
+            await Vector.createCollection();
             await Vector.create([
                 {
                     name: 'Test vector 1',
