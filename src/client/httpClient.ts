@@ -19,10 +19,11 @@ import { inspect } from 'util';
 import { LIB_NAME, LIB_VERSION } from '../version';
 import { getStargateAccessToken } from '../collections/utils';
 import { EJSON } from 'bson';
+import http2 from 'http2';
 
 const REQUESTED_WITH = LIB_NAME + '/' + LIB_VERSION;
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
-const DEFAULT_METHOD = 'get';
+// const DEFAULT_METHOD = 'get';
 const DEFAULT_TIMEOUT = 30000;
 export const AUTH_API_PATH = '/v1/auth';
 const HTTP_METHODS = {
@@ -88,6 +89,7 @@ axiosAgent.interceptors.request.use(requestInterceptor);
 axiosAgent.interceptors.response.use(responseInterceptor);
 
 export class HTTPClient {
+    origin: string;
     baseUrl: string;
     applicationToken: string;
     authHeaderName: string;
@@ -96,6 +98,7 @@ export class HTTPClient {
     authUrl: string;
     isAstra: boolean;
     logSkippedOptions: boolean;
+    session: http2.ClientHttp2Session;
 
     constructor(options: APIClientOptions) {
     // do not support usage in browsers
@@ -119,6 +122,9 @@ export class HTTPClient {
             }
             this.applicationToken = '';//We will set this by accessing the auth url when the first request is received
         }
+
+        this.origin = new URL(this.baseUrl).origin;
+        this.session = http2.connect(this.origin);
 
         if (options.logLevel) {
             setLevel(options.logLevel);
@@ -156,16 +162,31 @@ export class HTTPClient {
                     ]
                 };
             }
-            const response = await axiosAgent({
-                url: requestInfo.url,
-                data: requestInfo.data,
-                params: requestInfo.params,
-                method: requestInfo.method || DEFAULT_METHOD,
-                timeout: requestInfo.timeout || DEFAULT_TIMEOUT,
-                headers: {
-                    [this.authHeaderName]: this.applicationToken
-                }
-            });           
+
+            const response: { status?: number, data?: Record<string, any> } = await new Promise((resolve, reject) => {
+                const path = requestInfo.url?.replace(this.origin, '');
+                const req = this.session.request({
+                    ':path': path,
+                    ':method': 'POST',
+                    token: this.applicationToken
+                });
+                req.write(serializeCommand(requestInfo.data), 'utf8');
+                req.end();
+
+                const response: { status?: number, data?: Record<string, any> } = {};
+                req.on('response', data => {
+                    response.status = data[':status'];
+                });
+
+                req.setEncoding('utf8');
+                let data = '';
+                req.on('data', (chunk) => { data += chunk; });
+                req.on('end', () => {
+                    response.data = JSON.parse(data);
+                    resolve(response);
+                });
+            });
+   
             if (response.status === 401 || (response.data?.errors?.length > 0 && response.data.errors[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
                 logger.debug('@stargate-mongoose/rest: reconnecting');
                 try {

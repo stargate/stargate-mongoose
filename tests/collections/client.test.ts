@@ -25,6 +25,9 @@ describe('StargateMongoose clients test', () => {
     let appClient: Client | null;
     let clientURI: string;
     before(async function () {
+        if (process.env.TEST_DOC_DB === 'jsonapi') {
+            return this.skip();
+        }
         if (testClient == null) {
             return this.skip();
         }
