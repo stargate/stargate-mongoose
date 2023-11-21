@@ -187,7 +187,7 @@ export class HTTPClient {
                 });
             });
    
-            if (response.status === 401 || (response.data?.errors?.length > 0 && response.data.errors[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
+            if (response.status === 401 || (response.data?.errors?.length > 0 && response.data?.errors?.[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
                 logger.debug('@stargate-mongoose/rest: reconnecting');
                 try {
                     this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
@@ -204,9 +204,9 @@ export class HTTPClient {
             }
             if (response.status === 200) {
                 return {
-                    status: response.data.status,
-                    data: deserialize(response.data.data),
-                    errors: response.data.errors
+                    status: response.data?.status,
+                    data: deserialize(response.data?.data),
+                    errors: response.data?.errors
                 };
             } else {
                 logger.error(requestInfo.url + ': ' + response.status);
