@@ -25,12 +25,14 @@ export interface FindOptions {
     skip?: number;
     sort?: SortOption;
     projection?: ProjectionOption;
+    includeSimilarity?: boolean;
 }
 
 class _FindOptionsInternal {
     limit?: number = undefined;
     skip?: number = undefined;
     pagingState?: string = undefined;
+    includeSimilarity?: boolean = undefined;
 }
 
 export interface FindOptionsInternal extends _FindOptionsInternal {}
@@ -42,7 +44,16 @@ export const findInternalOptionsKeys: Set<string> = new Set(
 export interface FindOneOptions {
     sort?: Record<string, 1 | -1>;
     projection?: ProjectionOption;
+    includeSimilarity?: boolean;
 }
+
+class _FindOneOptionsInternal {
+    includeSimilarity?: boolean = undefined;
+}
+
+export const findOneInternalOptionsKeys: Set<string> = new Set(
+    Object.keys(new _FindOneOptionsInternal)
+);
 
 export interface FindOneAndDeleteOptions {
     sort?: SortOption;
@@ -109,8 +120,8 @@ export const updateOneInternalOptionsKeys: Set<string> = new Set(
 
 class _CreateCollectionOptions {
     vector?: {
-        size: number,
-        function?: 'cosine' | 'euclidean' | 'dot_product'
+        dimension: number,
+        metric?: 'cosine' | 'euclidean' | 'dot_product'
     } = undefined;
 }
 

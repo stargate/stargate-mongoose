@@ -127,7 +127,7 @@ describe('StargateMongoose - collections.Db', async () => {
                 assert.strictEqual(err.errors.length, 1);
                 assert.strictEqual(
                     err.errors[0].message,
-                    'INVALID_ARGUMENT: Keyspace \'' + keyspaceName + '\' doesn\'t exist'
+                    'INVALID_ARGUMENT: Unknown namespace \'' + keyspaceName + '\', you must create it first.'
                 );
             }
         });
@@ -166,7 +166,7 @@ describe('StargateMongoose - collections.Db', async () => {
                 assert.strictEqual(err.errors.length, 1);
                 assert.strictEqual(
                     err.errors[0].message,
-                    'INVALID_ARGUMENT: Keyspace \'' + keyspaceName + '\' doesn\'t exist'
+                    'INVALID_ARGUMENT: Unknown namespace \'' + keyspaceName + '\', you must create it first.'
                 );
             }
 
