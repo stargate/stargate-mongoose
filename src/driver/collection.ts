@@ -27,6 +27,10 @@ import {
 } from '@/src/collections/options';
 import { JSONAPIDeleteResult } from '../collections/collection';
 
+import { version } from 'mongoose';
+
+const IS_MONGOOSE_7 = version.startsWith('7.');
+
 type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null) => unknown;
 
 /**
@@ -125,7 +129,9 @@ export class Collection extends MongooseCollection {
             processSortOption(options);
         }
         const res = await this.collection.findOneAndUpdate(filter, update, options);
-        if (options?.includeResultMetadata !== false) {
+        if (IS_MONGOOSE_7) {
+            return options?.includeResultMetadata === false ? res.value : res;
+        } else if (options?.includeResultMetadata !== false) {
             return res.value;
         }
         return res;
@@ -141,7 +147,9 @@ export class Collection extends MongooseCollection {
             processSortOption(options);
         }
         const res = await this.collection.findOneAndDelete(filter, options);
-        if (options?.includeResultMetadata !== false) {
+        if (IS_MONGOOSE_7) {
+            return options?.includeResultMetadata === false ? res.value : res;
+        } else if (options?.includeResultMetadata !== false) {
             return res.value;
         }
         return res;
@@ -158,7 +166,9 @@ export class Collection extends MongooseCollection {
             processSortOption(options);
         }
         const res = await this.collection.findOneAndReplace(filter, newDoc, options);
-        if (options?.includeResultMetadata !== false) {
+        if (IS_MONGOOSE_7) {
+            return options?.includeResultMetadata === false ? res.value : res;
+        } else if (options?.includeResultMetadata !== false) {
             return res.value;
         }
         return res;
