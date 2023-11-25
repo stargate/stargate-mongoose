@@ -144,4 +144,7 @@ export const testClient = process.env.TEST_DOC_DB === 'astra' ?
         } : null
     ) : null);
 
-
+after(async function() {
+    const client = await testClient?.client;
+    client?.close();
+});

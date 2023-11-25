@@ -21,6 +21,7 @@ export class Db {
     rootHttpClient: HTTPClient;
     httpClient: HTTPClient;
     name: string;
+    collections: Map<string, Collection>;
 
     constructor(httpClient: HTTPClient, name: string) {
         if (!name) {
@@ -39,6 +40,7 @@ export class Db {
             logSkippedOptions: httpClient.logSkippedOptions,
         });
         this.name = name;
+        this.collections = new Map<string, Collection>();
     }
 
     /**
@@ -50,7 +52,13 @@ export class Db {
         if (!collectionName) {
             throw new Error('Db: collection name is required');
         }
-        return new Collection(this.httpClient, collectionName);
+        const collection = this.collections.get(collectionName);
+        if (collection != null) {
+            return collection;
+        }
+        const newCollection = new Collection(this.httpClient, collectionName);
+        this.collections.set(collectionName, newCollection);
+        return newCollection;
     }
 
     /**
@@ -110,6 +118,13 @@ export class Db {
    */
     async createDatabase() {
         return await createNamespace(this.rootHttpClient, this.name);
+    }
+
+    close() {
+        for (const collection of this.collections.values()) {
+            collection.httpClient.close();
+        }
+        this.httpClient.close();
     }
 }
 

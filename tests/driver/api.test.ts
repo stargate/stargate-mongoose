@@ -53,6 +53,10 @@ describe('Mongoose Model API level tests', async () => {
         dbUri = testClient.uri;
         isAstra = testClient.isAstra;
     });
+    after(function() {
+        jsonAPIMongoose?.connection?.getClient()?.close();
+        astraMongoose?.connection?.getClient()?.close();
+    });
     let mongooseInstance: Mongoose | null = null;
     let Product: Model<any>, Cart: Model<any>, astraMongoose: Mongoose | null, jsonAPIMongoose: Mongoose | null;
     beforeEach(async () => {

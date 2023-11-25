@@ -143,6 +143,10 @@ export class HTTPClient {
         this.logSkippedOptions = options.logSkippedOptions || false;
     }
 
+    close() {
+        this.session.close();
+    }
+
     async _request(requestInfo: AxiosRequestConfig): Promise<APIResponse> {
         try {
             if (this.applicationToken === '') {

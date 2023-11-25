@@ -126,9 +126,11 @@ describe('Driver based tests', async () => {
                 if (isAstra) {
                     astraMongoose?.connection.dropCollection('carts');
                     astraMongoose?.connection.dropCollection('products');
+                    astraMongoose?.connection?.getClient()?.close();
                 } else {
                     jsonAPIMongoose?.connection.dropCollection('carts');
                     jsonAPIMongoose?.connection.dropCollection('products');
+                    jsonAPIMongoose?.connection?.getClient()?.close();
                 }
             }
         });
@@ -146,6 +148,7 @@ describe('Driver based tests', async () => {
             await mongooseInstance?.connection.dropCollection('grandchildren');
             await mongooseInstance?.connection.dropCollection('carts');
             await mongooseInstance?.connection.dropCollection('products');
+            mongooseInstance?.connection?.getClient()?.close();
         });
         it('handles find cursors', async () => {
             // @ts-ignore
@@ -390,6 +393,7 @@ describe('Driver based tests', async () => {
                 const resp = await connection.dropDatabase();
                 assert.strictEqual(resp.status?.ok, 1);
             }
+            mongooseInstance.connection.getClient().close();
         });
         it('should createDatabase if not exists in createCollection call for non-AstraDB', async () => {
             const mongooseInstance = new mongoose.Mongoose();
@@ -420,6 +424,7 @@ describe('Driver based tests', async () => {
                 const resp = await connection.createCollection('new_collection');
                 assert.strictEqual(resp.status?.ok, 1);
             }
+            mongooseInstance.connection.getClient().close();
         });
     });
 });
