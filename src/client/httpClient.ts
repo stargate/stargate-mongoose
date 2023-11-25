@@ -126,6 +126,12 @@ export class HTTPClient {
         this.origin = new URL(this.baseUrl).origin;
         this.session = http2.connect(this.origin);
 
+        // Without these handlers, any errors will end up as uncaught exceptions,
+        // even if they are handled in `_request()`.
+        // More info: https://github.com/nodejs/node/issues/16345
+        this.session.on('error', () => {});
+        this.session.on('socketError', () => {});
+
         if (options.logLevel) {
             setLevel(options.logLevel);
         }
@@ -178,11 +184,20 @@ export class HTTPClient {
                     response.status = data[':status'];
                 });
 
+                req.on('error', error => {
+                    reject(error);
+                });
+
                 req.setEncoding('utf8');
                 let data = '';
                 req.on('data', (chunk) => { data += chunk; });
                 req.on('end', () => {
-                    response.data = JSON.parse(data);
+                    try {
+                        response.data = JSON.parse(data);
+                    } catch (error) {
+                        reject(new Error('Unable to parse response as JSON, got: "' + data + '"'));
+                        return;
+                    }
                     resolve(response);
                 });
             });
