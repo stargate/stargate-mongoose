@@ -53,10 +53,6 @@ describe('Mongoose Model API level tests', async () => {
         dbUri = testClient.uri;
         isAstra = testClient.isAstra;
     });
-    after(function() {
-        jsonAPIMongoose?.connection?.getClient()?.close();
-        astraMongoose?.connection?.getClient()?.close();
-    });
     let mongooseInstance: Mongoose | null = null;
     let Product: Model<any>, Cart: Model<any>, astraMongoose: Mongoose | null, jsonAPIMongoose: Mongoose | null;
     beforeEach(async () => {
@@ -66,6 +62,10 @@ describe('Mongoose Model API level tests', async () => {
         await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'products');
         await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'carts');
     });
+    afterEach(function() {
+      jsonAPIMongoose?.connection?.getClient()?.close();
+      astraMongoose?.connection?.getClient()?.close();
+  });
 
     function getInstance() {
         const mongooseInstance = new mongoose.Mongoose();
@@ -801,6 +801,9 @@ describe('Mongoose Model API level tests', async () => {
             }
         });
         
+        after(function() {
+          mongooseInstance.connection.getClient().close();
+        });
 
         beforeEach(async function() {
             await mongooseInstance!.connection.dropCollection('vector');

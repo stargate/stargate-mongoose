@@ -47,6 +47,7 @@ describe('StargateMongoose - collections.Db', async () => {
         it('should initialize a Db', () => {
             const db = new Db(httpClient, 'test-db');
             assert.ok(db);
+            db.close();
         });
         it('should not initialize a Db without a name', () => {
             let error: any;
@@ -66,11 +67,13 @@ describe('StargateMongoose - collections.Db', async () => {
             const db = new Db(httpClient, 'test-db');
             const collection = db.collection('test-collection');
             assert.ok(collection);
+            db.close();
         });
         it('should not initialize a Collection without a name', () => {
             let error: any;
+            let db: Db | null = null;
             try {
-                const db = new Db(httpClient, 'test-db');
+                db = new Db(httpClient, 'test-db');
                 // @ts-ignore - intentionally passing undefined for testing purposes
                 const collection = db.collection();
                 assert.ok(collection);
@@ -78,6 +81,7 @@ describe('StargateMongoose - collections.Db', async () => {
                 error = e;
             }
             assert.ok(error);
+            db?.close();
         });
         it('should create a Collection', async () => {
             const collectionName = TEST_COLLECTION_NAME;
@@ -88,6 +92,7 @@ describe('StargateMongoose - collections.Db', async () => {
             const res2 = await db.createCollection(collectionName);
             assert.ok(res2);
             assert.strictEqual(res2.status.ok, 1);
+            db.close();
         });
 
         it('should drop a Collection', async () => {
@@ -97,6 +102,7 @@ describe('StargateMongoose - collections.Db', async () => {
             const res = await db.dropCollection(`test_db_collection_${suffix}`);
             assert.strictEqual(res.status?.ok, 1);
             assert.strictEqual(res.errors, undefined);
+            db.close();
         });
     });
 
@@ -130,6 +136,8 @@ describe('StargateMongoose - collections.Db', async () => {
                     'INVALID_ARGUMENT: Unknown namespace \'' + keyspaceName + '\', you must create it first.'
                 );
             }
+
+            db.close();
         });
     });
 
@@ -174,6 +182,7 @@ describe('StargateMongoose - collections.Db', async () => {
             assert.strictEqual(res.status?.ok, 1);
 
             await db.createCollection(`test_db_collection_${suffix}`);
+            db.close();
         });
     });
 });
