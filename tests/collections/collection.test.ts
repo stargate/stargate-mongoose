@@ -49,7 +49,6 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         it('should initialize a Collection', () => {
             const collection = new Collection(db.httpClient, 'new_collection');
             assert.ok(collection);
-            collection.httpClient.close();
         });
         it('should not initialize a Collection without a name', () => {
             let error: any;

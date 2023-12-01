@@ -265,6 +265,18 @@ export class HTTPClient {
         handleIfErrorResponse(response, data);
         return response;
     }
+
+    async executeCommandWithUrl(url: string, data: Record<string, any>, optionsToRetain: Set<string> | null) {
+      const commandName = Object.keys(data)[0];
+      cleanupOptions(commandName, data[commandName], optionsToRetain, this.logSkippedOptions);
+      const response = await this._request({
+          url: this.baseUrl + url,
+          method: HTTP_METHODS.post,
+          data
+      });
+      handleIfErrorResponse(response, data);
+      return response;
+  }
 }
 
 export class StargateServerError extends Error {

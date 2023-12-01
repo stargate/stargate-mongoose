@@ -102,6 +102,7 @@ export type UpdateOneCommand = {
 export class Collection {
     httpClient: any;
     name: string;
+    httpBasePath: string;
     collectionName: string;
 
     constructor(httpClient: HTTPClient, name: string) {
@@ -109,18 +110,10 @@ export class Collection {
             throw new Error('Collection name is required');
         }
         // use a clone of the underlying http client to support multiple collections from a single db
-        this.httpClient = new HTTPClient({
-            baseUrl: httpClient.baseUrl + `/${name}`,
-            username: httpClient.username,
-            password: httpClient.password,
-            authUrl: httpClient.authUrl,
-            applicationToken: httpClient.applicationToken,
-            authHeaderName: httpClient.authHeaderName,
-            isAstra: httpClient.isAstra,
-            logSkippedOptions: httpClient.logSkippedOptions
-        });
+        this.httpClient = httpClient;
         this.name = name;
         this.collectionName = name;
+        this.httpBasePath = `/${name}`;
     }
 
     async insertOne(document: Record<string, any>) {
@@ -130,7 +123,11 @@ export class Collection {
                     document
                 }
             };
-            const resp = await this.httpClient.executeCommand(command, null);
+            const resp = await this.httpClient.executeCommandWithUrl(
+              this.httpBasePath,
+              command,
+              null
+            );
             return {
                 acknowledged: true,
                 insertedId: resp.status.insertedIds[0]
@@ -146,7 +143,11 @@ export class Collection {
                     options
                 }
             };
-            const resp = await this.httpClient.executeCommand(command, insertManyInternalOptionsKeys);
+            const resp = await this.httpClient.executeCommandWithUrl(
+              this.httpBasePath,
+              command,
+              insertManyInternalOptionsKeys
+            );
             return {
                 acknowledged: true,
                 insertedCount: resp.status.insertedIds?.length || 0,
@@ -168,7 +169,11 @@ export class Collection {
                 command.updateOne.sort = options?.sort;
             }
             setDefaultIdForUpsert(command.updateOne);
-            const updateOneResp = await this.httpClient.executeCommand(command, updateOneInternalOptionsKeys);
+            const updateOneResp = await this.httpClient.executeCommandWithUrl(
+              this.httpBasePath,
+              command,
+              updateOneInternalOptionsKeys
+            );
             const resp = {
                 modifiedCount: updateOneResp.status.modifiedCount,
                 matchedCount: updateOneResp.status.matchedCount,
@@ -192,7 +197,11 @@ export class Collection {
                 }
             };
             setDefaultIdForUpsert(command.updateMany);
-            const updateManyResp = await this.httpClient.executeCommand(command, updateManyInternalOptionsKeys);
+            const updateManyResp = await this.httpClient.executeCommandWithUrl(
+              this.httpBasePath,
+              command,
+              updateManyInternalOptionsKeys
+            );
             if (updateManyResp.status.moreData) {
                 throw new StargateMongooseError(`More than ${updateManyResp.status.modifiedCount} records found for update by the server`, command);
             }
@@ -219,7 +228,11 @@ export class Collection {
             if (options?.sort) {
                 command.deleteOne.sort = options.sort;
             }
-            const deleteOneResp = await this.httpClient.executeCommand(command, null);
+            const deleteOneResp = await this.httpClient.executeCommandWithUrl(
+              this.httpBasePath,
+              command,
+              null
+            );
             return {
                 acknowledged: true,
                 deletedCount: deleteOneResp.status.deletedCount
@@ -234,7 +247,11 @@ export class Collection {
                     filter
                 }
             };
-            const deleteManyResp = await this.httpClient.executeCommand(command, null);
+            const deleteManyResp = await this.httpClient.executeCommandWithUrl(
+              this.httpBasePath,
+              command,
+              null
+            );
             if (deleteManyResp.status.moreData) {
                 throw new StargateMongooseError(`More records found to be deleted even after deleting ${deleteManyResp.status.deletedCount} records`, command);
             }
@@ -267,7 +284,11 @@ export class Collection {
                 command.findOne.projection = options.projection;
             }
 
-            const resp = await this.httpClient.executeCommand(command, findOneInternalOptionsKeys);
+            const resp = await this.httpClient.executeCommandWithUrl(
+              this.httpBasePath,
+              command,
+              findOneInternalOptionsKeys
+            );
             return resp.data.document;
         });
     }
@@ -296,7 +317,11 @@ export class Collection {
                     delete options.sort;
                 }
             }
-            const resp = await this.httpClient.executeCommand(command, findOneAndReplaceInternalOptionsKeys);
+            const resp = await this.httpClient.executeCommandWithUrl(
+              this.httpBasePath,
+              command,
+              findOneAndReplaceInternalOptionsKeys
+            );
             return {
                 value : resp.data?.document,
                 ok : 1
@@ -315,7 +340,11 @@ export class Collection {
                     filter
                 }
             };
-            const resp = await this.httpClient.executeCommand(command, null);
+            const resp = await this.httpClient.executeCommandWithUrl(
+              this.httpBasePath,
+              command,
+              null
+            );
             return resp.status.count;
         });
     }
@@ -330,7 +359,11 @@ export class Collection {
             command.findOneAndDelete.sort = options.sort;
         }
 
-        const resp = await this.httpClient.executeCommand(command, null);
+        const resp = await this.httpClient.executeCommandWithUrl(
+          this.httpBasePath,
+          command,
+          null
+        );
         return {
             value : resp.data?.document,
             ok : 1
@@ -358,7 +391,11 @@ export class Collection {
                 command.findOneAndUpdate.sort = options.sort;
                 delete options.sort;
             }
-            const resp = await this.httpClient.executeCommand(command, findOneAndUpdateInternalOptionsKeys);
+            const resp = await this.httpClient.executeCommandWithUrl(
+              this.httpBasePath,
+              command,
+              findOneAndUpdateInternalOptionsKeys
+            );
             return {
                 value : resp.data?.document,
                 ok : 1
