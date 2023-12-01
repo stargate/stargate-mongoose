@@ -142,7 +142,7 @@ export class Connection extends MongooseConnection {
      */
     doClose(_force?: boolean) {
         if (this.client != null) {
-          this.client.close();
+            this.client.close();
         }
         return this;
     }

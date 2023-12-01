@@ -104,7 +104,7 @@ export class Client {
     db(dbName?: string) {
         if (dbName) {
             if (this.dbs.has(dbName)) {
-              return this.dbs.get(dbName);
+                return this.dbs.get(dbName);
             }
             const db = new Db(this.httpClient, dbName);
             this.dbs.set(dbName, db);
@@ -112,7 +112,7 @@ export class Client {
         }
         if (this.keyspaceName) {
             if (this.dbs.has(this.keyspaceName)) {
-              return this.dbs.get(this.keyspaceName);
+                return this.dbs.get(this.keyspaceName);
             }
             const db = new Db(this.httpClient, this.keyspaceName);
             this.dbs.set(this.keyspaceName, db);
@@ -136,9 +136,6 @@ export class Client {
    */
     close() {
         this.httpClient.close();
-        for (const db of this.dbs.values()) {
-          db.close();
-        }
         return this;
     }
 

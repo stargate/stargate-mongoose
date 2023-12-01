@@ -22,6 +22,7 @@ export class Db {
     httpClient: HTTPClient;
     name: string;
     collections: Map<string, Collection>;
+    httpBasePath: string;
 
     constructor(httpClient: HTTPClient, name: string) {
         if (!name) {
@@ -29,18 +30,10 @@ export class Db {
         }
         this.rootHttpClient = httpClient;
         // use a clone of the underlying http client to support multiple db's from a single connection
-        this.httpClient = new HTTPClient({
-            baseUrl: httpClient.baseUrl + `/${name}`,
-            username: httpClient.username,
-            password: httpClient.password,
-            authUrl: httpClient.authUrl,
-            applicationToken: httpClient.applicationToken,
-            authHeaderName: httpClient.authHeaderName,
-            isAstra: httpClient.isAstra,
-            logSkippedOptions: httpClient.logSkippedOptions,
-        });
+        this.httpClient = httpClient;
         this.name = name;
         this.collections = new Map<string, Collection>();
+        this.httpBasePath = `/${name}`;
     }
 
     /**
@@ -56,7 +49,7 @@ export class Db {
         if (collection != null) {
             return collection;
         }
-        const newCollection = new Collection(this.httpClient, collectionName);
+        const newCollection = new Collection(this, collectionName);
         this.collections.set(collectionName, newCollection);
         return newCollection;
     }
@@ -69,21 +62,25 @@ export class Db {
    */
     async createCollection(collectionName: string, options?: CreateCollectionOptions) {
         return executeOperation(async () => {
-      type CreateCollectionCommand = {
-        createCollection: {
-          name: string,
-          options?: CreateCollectionOptions
-        }
-      };
-      const command: CreateCollectionCommand = {
-          createCollection: {
-              name: collectionName
-          }
-      };
-      if (options != null) {
-          command.createCollection.options = options;
-      }
-      return await this.httpClient.executeCommand(command, createCollectionOptionsKeys);
+            type CreateCollectionCommand = {
+              createCollection: {
+                name: string,
+                options?: CreateCollectionOptions
+              }
+            };
+            const command: CreateCollectionCommand = {
+                createCollection: {
+                    name: collectionName
+                }
+            };
+            if (options != null) {
+                command.createCollection.options = options;
+            }
+            return await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                createCollectionOptionsKeys
+            );
         });
     }
 
@@ -98,7 +95,11 @@ export class Db {
                 name: collectionName
             }
         };
-        return await this.httpClient.executeCommand(command, null);
+        return await this.httpClient.executeCommandWithUrl(
+            this.httpBasePath,
+            command,
+            null
+        );
     }
 
     /**
@@ -118,13 +119,6 @@ export class Db {
    */
     async createDatabase() {
         return await createNamespace(this.rootHttpClient, this.name);
-    }
-
-    close() {
-        for (const collection of this.collections.values()) {
-            collection.httpClient.close();
-        }
-        this.httpClient.close();
     }
 }
 

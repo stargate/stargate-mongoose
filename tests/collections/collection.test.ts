@@ -47,7 +47,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
 
     describe('Collection initialization', () => {
         it('should initialize a Collection', () => {
-            const collection = new Collection(db.httpClient, 'new_collection');
+            const collection = new Collection(db, 'new_collection');
             assert.ok(collection);
         });
         it('should not initialize a Collection without a name', () => {
@@ -55,7 +55,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             let collection: Collection | null = null;
             try {
                 // @ts-ignore: Testing invalid input
-                collection = new Collection(db.httpClient);
+                collection = new Collection(db);
                 assert.ok(collection);
             } catch (e) {
                 error = e;

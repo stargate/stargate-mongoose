@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {Db} from './db';
 import {FindCursor} from './cursor';
-import {HTTPClient} from '@/src/client';
 import {executeOperation, setDefaultIdForUpsert} from './utils';
 import {InsertManyResult} from 'mongoose';
 import {
@@ -105,15 +105,15 @@ export class Collection {
     httpBasePath: string;
     collectionName: string;
 
-    constructor(httpClient: HTTPClient, name: string) {
+    constructor(db: Db, name: string) {
         if (!name) {
             throw new Error('Collection name is required');
         }
         // use a clone of the underlying http client to support multiple collections from a single db
-        this.httpClient = httpClient;
+        this.httpClient = db.httpClient;
         this.name = name;
         this.collectionName = name;
-        this.httpBasePath = `/${name}`;
+        this.httpBasePath = `/${db.name}/${name}`;
     }
 
     async insertOne(document: Record<string, any>) {
@@ -124,9 +124,9 @@ export class Collection {
                 }
             };
             const resp = await this.httpClient.executeCommandWithUrl(
-              this.httpBasePath,
-              command,
-              null
+                this.httpBasePath,
+                command,
+                null
             );
             return {
                 acknowledged: true,
@@ -144,9 +144,9 @@ export class Collection {
                 }
             };
             const resp = await this.httpClient.executeCommandWithUrl(
-              this.httpBasePath,
-              command,
-              insertManyInternalOptionsKeys
+                this.httpBasePath,
+                command,
+                insertManyInternalOptionsKeys
             );
             return {
                 acknowledged: true,
@@ -170,9 +170,9 @@ export class Collection {
             }
             setDefaultIdForUpsert(command.updateOne);
             const updateOneResp = await this.httpClient.executeCommandWithUrl(
-              this.httpBasePath,
-              command,
-              updateOneInternalOptionsKeys
+                this.httpBasePath,
+                command,
+                updateOneInternalOptionsKeys
             );
             const resp = {
                 modifiedCount: updateOneResp.status.modifiedCount,
@@ -198,9 +198,9 @@ export class Collection {
             };
             setDefaultIdForUpsert(command.updateMany);
             const updateManyResp = await this.httpClient.executeCommandWithUrl(
-              this.httpBasePath,
-              command,
-              updateManyInternalOptionsKeys
+                this.httpBasePath,
+                command,
+                updateManyInternalOptionsKeys
             );
             if (updateManyResp.status.moreData) {
                 throw new StargateMongooseError(`More than ${updateManyResp.status.modifiedCount} records found for update by the server`, command);
@@ -229,9 +229,9 @@ export class Collection {
                 command.deleteOne.sort = options.sort;
             }
             const deleteOneResp = await this.httpClient.executeCommandWithUrl(
-              this.httpBasePath,
-              command,
-              null
+                this.httpBasePath,
+                command,
+                null
             );
             return {
                 acknowledged: true,
@@ -248,9 +248,9 @@ export class Collection {
                 }
             };
             const deleteManyResp = await this.httpClient.executeCommandWithUrl(
-              this.httpBasePath,
-              command,
-              null
+                this.httpBasePath,
+                command,
+                null
             );
             if (deleteManyResp.status.moreData) {
                 throw new StargateMongooseError(`More records found to be deleted even after deleting ${deleteManyResp.status.deletedCount} records`, command);
@@ -285,9 +285,9 @@ export class Collection {
             }
 
             const resp = await this.httpClient.executeCommandWithUrl(
-              this.httpBasePath,
-              command,
-              findOneInternalOptionsKeys
+                this.httpBasePath,
+                command,
+                findOneInternalOptionsKeys
             );
             return resp.data.document;
         });
@@ -318,9 +318,9 @@ export class Collection {
                 }
             }
             const resp = await this.httpClient.executeCommandWithUrl(
-              this.httpBasePath,
-              command,
-              findOneAndReplaceInternalOptionsKeys
+                this.httpBasePath,
+                command,
+                findOneAndReplaceInternalOptionsKeys
             );
             return {
                 value : resp.data?.document,
@@ -341,9 +341,9 @@ export class Collection {
                 }
             };
             const resp = await this.httpClient.executeCommandWithUrl(
-              this.httpBasePath,
-              command,
-              null
+                this.httpBasePath,
+                command,
+                null
             );
             return resp.status.count;
         });
@@ -360,9 +360,9 @@ export class Collection {
         }
 
         const resp = await this.httpClient.executeCommandWithUrl(
-          this.httpBasePath,
-          command,
-          null
+            this.httpBasePath,
+            command,
+            null
         );
         return {
             value : resp.data?.document,
@@ -392,9 +392,9 @@ export class Collection {
                 delete options.sort;
             }
             const resp = await this.httpClient.executeCommandWithUrl(
-              this.httpBasePath,
-              command,
-              findOneAndUpdateInternalOptionsKeys
+                this.httpBasePath,
+                command,
+                findOneAndUpdateInternalOptionsKeys
             );
             return {
                 value : resp.data?.document,

@@ -135,9 +135,9 @@ export class FindCursor {
             command.find.options = options;
         }
         const resp = await this.collection.httpClient.executeCommandWithUrl(
-          this.collection.httpBasePath,
-          command,
-          findInternalOptionsKeys
+            this.collection.httpBasePath,
+            command,
+            findInternalOptionsKeys
         );
         this.nextPageState = resp.data.nextPageState;
         if (this.nextPageState == null) {

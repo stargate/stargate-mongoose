@@ -101,7 +101,7 @@ export class HTTPClient {
     session: http2.ClientHttp2Session;
 
     constructor(options: APIClientOptions) {
-    // do not support usage in browsers
+        // do not support usage in browsers
         if (typeof window !== 'undefined') {
             throw new Error('not for use in a web browser');
         }
@@ -267,16 +267,16 @@ export class HTTPClient {
     }
 
     async executeCommandWithUrl(url: string, data: Record<string, any>, optionsToRetain: Set<string> | null) {
-      const commandName = Object.keys(data)[0];
-      cleanupOptions(commandName, data[commandName], optionsToRetain, this.logSkippedOptions);
-      const response = await this._request({
-          url: this.baseUrl + url,
-          method: HTTP_METHODS.post,
-          data
-      });
-      handleIfErrorResponse(response, data);
-      return response;
-  }
+        const commandName = Object.keys(data)[0];
+        cleanupOptions(commandName, data[commandName], optionsToRetain, this.logSkippedOptions);
+        const response = await this._request({
+            url: this.baseUrl + url,
+            method: HTTP_METHODS.post,
+            data
+        });
+        handleIfErrorResponse(response, data);
+        return response;
+    }
 }
 
 export class StargateServerError extends Error {
