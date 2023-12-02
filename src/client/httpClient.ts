@@ -172,39 +172,21 @@ export class HTTPClient {
                     ]
                 };
             }
+            if (!requestInfo.url) {
+                return {
+                    errors: [
+                        {
+                            message: 'URL not specified'
+                        }
+                    ]
+                };
+            }
 
-            const response: { status?: number, data?: Record<string, any> } = await new Promise((resolve, reject) => {
-                const path = requestInfo.url?.replace(this.origin, '');
-                const req = this.session.request({
-                    ':path': path,
-                    ':method': 'POST',
-                    token: this.applicationToken
-                });
-                req.write(serializeCommand(requestInfo.data), 'utf8');
-                req.end();
-
-                const response: { status?: number, data?: Record<string, any> } = {};
-                req.on('response', data => {
-                    response.status = data[':status'];
-                });
-
-                req.on('error', error => {
-                    reject(error);
-                });
-
-                req.setEncoding('utf8');
-                let data = '';
-                req.on('data', (chunk) => { data += chunk; });
-                req.on('end', () => {
-                    try {
-                        response.data = JSON.parse(data);
-                    } catch (error) {
-                        reject(new Error('Unable to parse response as JSON, got: "' + data + '"'));
-                        return;
-                    }
-                    resolve(response);
-                });
-            });
+            const response = await this.makeHTTP2Request(
+                requestInfo.url.replace(this.origin, ''),
+                this.applicationToken,
+                requestInfo.data
+            );
    
             if (response.status === 401 || (response.data?.errors?.length > 0 && response.data?.errors?.[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
                 logger.debug('@stargate-mongoose/rest: reconnecting');
@@ -254,16 +236,43 @@ export class HTTPClient {
         }
     }
 
-    async executeCommand(data: Record<string, any>, optionsToRetain: Set<string> | null) {
-        const commandName = Object.keys(data)[0];
-        cleanupOptions(commandName, data[commandName], optionsToRetain, this.logSkippedOptions);
-        const response = await this._request({
-            url: this.baseUrl,
-            method: HTTP_METHODS.post,
-            data
+    makeHTTP2Request(
+        path: string,
+        token: string,
+        body: Record<string, any>
+    ): Promise<{ status: number, data: Record<string, any> }> {
+        return new Promise((resolve, reject) => {
+            const req = this.session.request({
+                ':path': path,
+                ':method': 'POST',
+                token
+            });
+            req.write(serializeCommand(body), 'utf8');
+            req.end();
+
+            let status = 0;
+            req.on('response', data => {
+                status = data[':status'] ?? 0;
+            });
+
+            req.on('error', error => {
+                reject(error);
+            });
+
+            req.setEncoding('utf8');
+            let responseBody = '';
+            req.on('data', (chunk) => { responseBody += chunk; });
+            req.on('end', () => {
+                let data = {};
+                try {
+                    data = JSON.parse(responseBody);
+                    resolve({ status, data });
+                } catch (error) {
+                    reject(new Error('Unable to parse response as JSON, got: "' + data + '"'));
+                    return;
+                }
+            });
         });
-        handleIfErrorResponse(response, data);
-        return response;
     }
 
     async executeCommandWithUrl(url: string, data: Record<string, any>, optionsToRetain: Set<string> | null) {
