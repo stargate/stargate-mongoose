@@ -99,6 +99,7 @@ export class HTTPClient {
     isAstra: boolean;
     logSkippedOptions: boolean;
     session: http2.ClientHttp2Session;
+    closed: boolean;
 
     constructor(options: APIClientOptions) {
         // do not support usage in browsers
@@ -125,6 +126,7 @@ export class HTTPClient {
 
         this.origin = new URL(this.baseUrl).origin;
         this.session = http2.connect(this.origin);
+        this.closed = false;
 
         // Without these handlers, any errors will end up as uncaught exceptions,
         // even if they are handled in `_request()`.
@@ -145,6 +147,7 @@ export class HTTPClient {
 
     close() {
         this.session.close();
+        this.closed = true;
     }
 
     async _request(requestInfo: AxiosRequestConfig): Promise<APIResponse> {

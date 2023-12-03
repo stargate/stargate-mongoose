@@ -25,9 +25,6 @@ describe('StargateMongoose clients test', () => {
     let appClient: Client | null;
     let clientURI: string;
     before(async function () {
-        if (process.env.TEST_DOC_DB === 'jsonapi') {
-            return this.skip();
-        }
         if (testClient == null) {
             return this.skip();
         }
@@ -78,6 +75,7 @@ describe('StargateMongoose clients test', () => {
             assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
             const db = client.db();
             assert.ok(db);
+            await client.close();
         });
         it('should parse baseApiPath from URL when possible', async () => {
             const AUTH_TOKEN_TO_CHECK = '123';
@@ -97,6 +95,7 @@ describe('StargateMongoose clients test', () => {
             assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
             const db = client.db();
             assert.ok(db);
+            await client.close();
         });
         it('should parse baseApiPath from URL when possible (multiple path elements)', async () => {
             const AUTH_TOKEN_TO_CHECK = '123';
@@ -116,6 +115,7 @@ describe('StargateMongoose clients test', () => {
             assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
             const db = client.db();
             assert.ok(db);
+            await client.close();
         });
         it('should handle when the keyspace name is present in the baseApiPath also', async () => {
             //only the last occurrence of the keyspace name in the url path must be treated as keyspace
@@ -138,6 +138,7 @@ describe('StargateMongoose clients test', () => {
             assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
             const db = client.db();
             assert.ok(db);
+            await client.close();
         });
         it('should honor the baseApiPath from options when provided', async () => {
             const AUTH_TOKEN_TO_CHECK = '123';
@@ -159,6 +160,7 @@ describe('StargateMongoose clients test', () => {
             assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
             const db = client.db();
             assert.ok(db);
+            await client.close();
         });
         it('should handle empty baseApiPath', async () => {
             const AUTH_TOKEN_TO_CHECK = '123';
@@ -178,6 +180,7 @@ describe('StargateMongoose clients test', () => {
             assert.strictEqual(client.httpClient.authHeaderName, AUTH_HEADER_NAME_TO_CHECK);
             const db = client.db();
             assert.ok(db);
+            await client.close();
         });
         it('should initialize a Client connection with a uri using the constructor', () => {
             const client = new Client(baseUrl, 'keyspace1', {
@@ -216,6 +219,7 @@ describe('StargateMongoose clients test', () => {
             await client.connect();
             assert.ok(client);
             assert.ok(client.httpClient);
+            await client.close();
         });
         it('should set the auth header name as set in the options', async () => {
             const TEST_HEADER_NAME = 'test-header';
@@ -227,6 +231,7 @@ describe('StargateMongoose clients test', () => {
             const connectedClient = await client.connect();
             assert.ok(connectedClient);
             assert.strictEqual(connectedClient.httpClient.authHeaderName, TEST_HEADER_NAME);
+            await client.close();
         });
         it('should create client when token is not present, but auth details are present', async () => {
             const client = new Client(baseUrl, 'keyspace1', {
@@ -235,6 +240,7 @@ describe('StargateMongoose clients test', () => {
             });
             const connectedClient = client.connect();
             assert.ok(connectedClient);
+            await client.close();
         });
         it('should not create client when token is not present & one/more of auth details are missing', async () => {
             let error: any;
@@ -260,6 +266,8 @@ describe('StargateMongoose clients test', () => {
             const connectedClient = client.connect();
             assert.ok(connectedClient);
             assert.strictEqual((await connectedClient).httpClient.authUrl, TEST_AUTH_URL);
+        
+            await client.close();
         });
         it('should construct the auth url with baseUrl when not provided', async () => {
             const client = new Client(baseUrl, 'keyspace1', {
@@ -270,6 +278,8 @@ describe('StargateMongoose clients test', () => {
             const connectedClient = client.connect();
             assert.ok(connectedClient);
             assert.strictEqual((await connectedClient).httpClient.authUrl, baseUrl + AUTH_API_PATH);
+            
+            await client.close();
         });
     });
     describe('Client Db operations', () => {
@@ -281,6 +291,8 @@ describe('StargateMongoose clients test', () => {
             await client.connect();
             const db = client.db('keyspace1');
             assert.ok(db);
+
+            await client.close();
         });
         it('should not return a db if no name is provided', async () => {
             const client = new Client(baseUrl, 'keyspace1', {
@@ -296,16 +308,23 @@ describe('StargateMongoose clients test', () => {
                 error = e;
             }
             assert.ok(error);
+            await client.close();
+        });
+        it('close() should close HTTP client', async () => {
+            const client = new Client(baseUrl, 'keyspace1', {
+                applicationToken: '123',
+                createNamespaceOnConnect: false
+            });
+            await client.connect();
+            assert.ok(!client.httpClient.closed);
+            await client.close();
+            assert.ok(client.httpClient.closed);
         });
     });
     describe('Client noops', () => {
         it('should handle noop: setMaxListeners', async () => {
             const maxListeners = appClient?.setMaxListeners(1);
             assert.strictEqual(maxListeners, 1);
-        });
-        it('should handle noop: close', async () => {
-            const closedClient = appClient?.close();
-            assert.ok(closedClient);
         });
     });
 });

@@ -18,6 +18,8 @@ import * as StargateMongooseDriver from '@/src/driver';
 import { testClient } from '@/tests/fixtures';
 import { logger } from '@/src/logger';
 import { parseUri } from '@/src/collections/utils';
+import { HTTPClient } from '@/src/client';
+import { Client } from '@/src/collections';
 
 describe('Driver based tests', async () => {
     let dbUri: string;
@@ -356,6 +358,26 @@ describe('Driver based tests', async () => {
                 () => Person.watch([{$match: {name: 'John'}}]),
                 /watch\(\) Not Implemented/
             );
+        });
+
+        it('disconnect() closes all httpClients', async () => {
+            const mongooseInstance = await createMongooseInstance();
+            const client: Client = mongooseInstance.connection.getClient() as any as Client;
+            const httpClient: HTTPClient = client.httpClient;
+            assert.ok(!httpClient.closed);
+            await mongooseInstance.disconnect();
+
+            assert.ok(httpClient.closed);
+        });
+
+        it('close() close underlying httpClient', async () => {
+            const mongooseInstance = await createMongooseInstance();
+            const client: Client = mongooseInstance.connection.getClient() as any as Client;
+            const httpClient: HTTPClient = client.httpClient;
+            assert.ok(!httpClient.closed);
+            await client.close();
+
+            assert.ok(httpClient.closed);
         });
 
         async function createMongooseInstance() {
