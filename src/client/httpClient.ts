@@ -245,7 +245,7 @@ export class HTTPClient {
         body: Record<string, any>
     ): Promise<{ status: number, data: Record<string, any> }> {
         return new Promise((resolve, reject) => {
-            const req = this.session.request({
+            const req: http2.ClientHttp2Stream = this.session.request({
                 ':path': path,
                 ':method': 'POST',
                 token
@@ -254,17 +254,19 @@ export class HTTPClient {
             req.end();
 
             let status = 0;
-            req.on('response', data => {
+            req.on('response', (data: http2.IncomingHttpStatusHeader) => {
                 status = data[':status'] ?? 0;
             });
 
-            req.on('error', error => {
+            req.on('error', (error: Error) => {
                 reject(error);
             });
 
             req.setEncoding('utf8');
             let responseBody = '';
-            req.on('data', (chunk) => { responseBody += chunk; });
+            req.on('data', (chunk: string) => {
+                responseBody += chunk;
+            });
             req.on('end', () => {
                 let data = {};
                 try {
