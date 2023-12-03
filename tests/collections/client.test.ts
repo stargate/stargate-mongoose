@@ -319,6 +319,9 @@ describe('StargateMongoose clients test', () => {
             assert.ok(!client.httpClient.closed);
             await client.close();
             assert.ok(client.httpClient.closed);
+
+            await client.close();
+            assert.ok(client.httpClient.closed);
         });
     });
     describe('Client noops', () => {
