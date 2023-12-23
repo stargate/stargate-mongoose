@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { driver } from '../';
 import mongoose from 'mongoose';
 
@@ -7,7 +8,7 @@ mongoose.set('autoIndex', false);
 mongoose.setDriver(driver);
 
 main().then(
-  () => process.exit(0),
+  () => { process.exit(0); },
   err => {
     console.error(err);
     process.exit(-1);
@@ -15,7 +16,6 @@ main().then(
 );
 
 async function main() {
-  console.log()
   await mongoose.connect(process.env.JSON_API_URI ?? '', {
     username: process.env.JSON_API_USERNAME,
     password: process.env.JSON_API_PASSWORD,
@@ -37,14 +37,28 @@ async function main() {
 
   await Test.db.dropCollection('tests').catch(() => {});
   await Test.createCollection();
+  // @ts-ignore
+  const token = mongoose.connection.getClient().httpClient.applicationToken;
 
   const start = Date.now();
   for (let i = 0; i < 10000; ++i) {
-    await Test.create({
-      name: `John Smith ${i}`,
-      email: `john${i}@gmail.com`,
-      age: 30
-    });
+    await axios.post(
+      `${process.env.JSON_API_URI}/tests`,
+      {
+        insertOne: {
+          document: {
+            name: `John Smith ${i}`,
+            email: `john${i}@gmail.com`,
+            age: 30
+          }
+        }
+      },
+      {
+        headers: {
+          Token: token
+        }
+      }
+    );
   }
   const results = {
     'Total time MS': Date.now() - start
