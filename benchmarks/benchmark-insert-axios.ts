@@ -61,7 +61,8 @@ async function main() {
     );
   }
   const results = {
-    'Total time MS': Date.now() - start
+    name: 'benchmark-insert-axios',
+    totalTimeMS: Date.now() - start
   };
-  console.log(results);
+  console.log(JSON.stringify(results, null, '  '));
 }
