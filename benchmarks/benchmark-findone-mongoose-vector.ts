@@ -7,7 +7,7 @@ mongoose.set('autoIndex', false);
 mongoose.setDriver(driver);
 
 main().then(
-  () => console.log('Done'),
+  () => { process.exit(0); },
   err => {
     console.error(err);
     process.exit(-1);
