@@ -16,7 +16,7 @@ main().then(
 
 async function main() {
     if (!process.env.ASTRA_CONNECTION_STRING) {
-        console.log('{}');
+        console.log('{"name":"benchmark-findone-mongoose-vector-astra"}');
         return;
     }
     await mongoose.connect(process.env.ASTRA_CONNECTION_STRING, {
