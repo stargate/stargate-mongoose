@@ -15,10 +15,12 @@ main().then(
 );
 
 async function main() {
-    await mongoose.connect(process.env.JSON_API_URI ?? '', {
-        username: process.env.JSON_API_USERNAME,
-        password: process.env.JSON_API_PASSWORD,
-        authUrl: process.env.JSON_API_AUTH_URL
+    if (!process.env.ASTRA_CONNECTION_STRING) {
+        console.log('{}');
+        return;
+    }
+    await mongoose.connect(process.env.ASTRA_CONNECTION_STRING, {
+        isAstra: true
     } as mongoose.ConnectOptions);
     const Vector = mongoose.model(
         'Vector',
@@ -31,21 +33,10 @@ async function main() {
                 required: true
             }
         }, {
-            collectionOptions: { vector: { size: 1536, function: 'cosine' } },
             autoCreate: false
         }),
-        'vectors'
+        process.env.ASTRA_COLLECTION_NAME
     );
-
-    await Vector.db.dropCollection('vectors').catch(() => {});
-    await Vector.createCollection();
-
-    const numVectors = 1000;
-    for (let i = 0; i < numVectors; ++i) {
-        const $vector = Array(1536).fill(0);
-        $vector[i] = 1;
-        await Vector.create({ $vector, prompt: `Test ${i}` });
-    }
 
     const $meta = [1, ...Array(1535).fill(0)];
     const start = Date.now();
@@ -55,7 +46,7 @@ async function main() {
             .sort({ $vector: { $meta } });
     }
     const results = {
-        name: 'benchmark-findone-mongoose-vector',
+        name: 'benchmark-findone-mongoose-vector-astra',
         totalTimeMS: Date.now() - start
     };
     console.log(JSON.stringify(results, null, '  '));

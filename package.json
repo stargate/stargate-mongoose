@@ -50,7 +50,7 @@
     "url": "git+https://github.com/stargate/stargate-mongoose.git"
   },
   "scripts": {
-    "benchmark": "for file in ./benchmarks/benchmark-*.ts; do echo \"$file\"; ts-node -r ./benchmarks/setup \"$file\" > \"$file\".out; done",
+    "benchmark": "npm run build; for file in ./benchmarks/benchmark-*.ts; do echo \"$file\"; ts-node -r ./benchmarks/setup \"$file\" > \"$file\".out; done",
     "lint": "eslint .",
     "test": "env TEST_DOC_DB=jsonapi ts-mocha --paths -p tsconfig.json tests/**/*.test.ts",
     "test-astra": "env TEST_DOC_DB=astra nyc ts-mocha --paths -p tsconfig.json tests/**/*.test.ts",
