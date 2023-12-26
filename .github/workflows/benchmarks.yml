@@ -25,4 +25,4 @@ jobs:
       - name: setup project
         run: npm i   
       - name: benchmarks
-        run: npm run benchmark
+        run: npm run benchmarks
