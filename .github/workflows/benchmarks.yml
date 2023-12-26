@@ -5,12 +5,19 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    needs: tests
     steps:      
       - name: disable and stop mono-xsp4.service
         run: |
           sudo kill -9 $(sudo lsof -t -i:8084)
       - uses: actions/checkout@v3
+      - name: Set up JSON API
+        run: |
+          chmod +x bin/start_json_api.sh
+          bin/start_json_api.sh
+      - name: Wait for services
+        run: |
+          while ! nc -z localhost 8181; do sleep 1; done
+          while ! nc -z localhost 8081; do sleep 1; done
       - name: Setting up the node version
         uses: actions/setup-node@v3
         with:
