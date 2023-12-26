@@ -1,9 +1,9 @@
-name: Tests - stargate-mongoose
+name: Benchmarks - stargate-mongoose
 on:
   pull_request:
   push:
 jobs:
-  e2e:
+  benchmarks:
     runs-on: ubuntu-latest
     steps:      
       - name: disable and stop mono-xsp4.service
