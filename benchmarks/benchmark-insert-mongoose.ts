@@ -46,7 +46,7 @@ async function main() {
         });
     }
     const results = {
-        name: 'benchmark-insert-axios',
+        name: 'benchmark-insert-mongoose',
         totalTimeMS: Date.now() - start
     };
     console.log(JSON.stringify(results, null, '  '));

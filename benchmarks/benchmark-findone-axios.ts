@@ -16,7 +16,8 @@ main().then(
 );
 
 async function main() {
-    await mongoose.connect(process.env.JSON_API_URI ?? '', {
+    const uri = process.env.JSON_API_URI ?? '';
+    await mongoose.connect(uri, {
         username: process.env.JSON_API_USERNAME,
         password: process.env.JSON_API_PASSWORD,
         authUrl: process.env.JSON_API_AUTH_URL
@@ -50,12 +51,13 @@ async function main() {
     const start = Date.now();
     for (let i = 0; i < 10000; ++i) {
         await axios.post(
-            `${process.env.JSON_API_URI ?? ''}/tests`,
+            `${uri}/tests`,
             {
                 findOne: {
                     filter: {
                         name: 'John Smith'
-                    }
+                    },
+                    options: {}
                 }
             },
             {
