@@ -23,7 +23,7 @@ import http2 from 'http2';
 
 const REQUESTED_WITH = LIB_NAME + '/' + LIB_VERSION;
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
-// const DEFAULT_METHOD = 'get';
+const DEFAULT_METHOD = 'get';
 const DEFAULT_TIMEOUT = 30000;
 export const AUTH_API_PATH = '/v1/auth';
 const HTTP_METHODS = {
@@ -46,6 +46,7 @@ interface APIClientOptions {
   authUrl?: string;
   isAstra?: boolean;
   logSkippedOptions?: boolean;
+  useHTTP2?: boolean;
 }
 
 export interface APIResponse {
@@ -98,7 +99,7 @@ export class HTTPClient {
     authUrl: string;
     isAstra: boolean;
     logSkippedOptions: boolean;
-    session: http2.ClientHttp2Session;
+    http2Session?: http2.ClientHttp2Session;
     closed: boolean;
 
     constructor(options: APIClientOptions) {
@@ -124,15 +125,17 @@ export class HTTPClient {
             this.applicationToken = '';//We will set this by accessing the auth url when the first request is received
         }
 
-        this.origin = new URL(this.baseUrl).origin;
-        this.session = http2.connect(this.origin);
         this.closed = false;
-
-        // Without these handlers, any errors will end up as uncaught exceptions,
-        // even if they are handled in `_request()`.
-        // More info: https://github.com/nodejs/node/issues/16345
-        this.session.on('error', () => {});
-        this.session.on('socketError', () => {});
+        this.origin = new URL(this.baseUrl).origin;
+        if (options.useHTTP2) {
+            this.http2Session = http2.connect(this.origin);
+            
+            // Without these handlers, any errors will end up as uncaught exceptions,
+            // even if they are handled in `_request()`.
+            // More info: https://github.com/nodejs/node/issues/16345
+            this.http2Session.on('error', () => {});
+            this.http2Session.on('socketError', () => {});
+        }
 
         if (options.logLevel) {
             setLevel(options.logLevel);
@@ -146,7 +149,9 @@ export class HTTPClient {
     }
 
     close() {
-        this.session.close();
+        if (this.http2Session != null) {
+            this.http2Session.close();
+        }
         this.closed = true;
     }
 
@@ -185,11 +190,22 @@ export class HTTPClient {
                 };
             }
 
-            const response = await this.makeHTTP2Request(
-                requestInfo.url.replace(this.origin, ''),
-                this.applicationToken,
-                requestInfo.data
-            );
+            const response = this.http2Session != null
+                ? await this.makeHTTP2Request(
+                    requestInfo.url.replace(this.origin, ''),
+                    this.applicationToken,
+                    requestInfo.data
+                )
+                : await axiosAgent({
+                    url: requestInfo.url,
+                    data: requestInfo.data,
+                    params: requestInfo.params,
+                    method: requestInfo.method || DEFAULT_METHOD,
+                    timeout: requestInfo.timeout || DEFAULT_TIMEOUT,
+                    headers: {
+                        [this.authHeaderName]: this.applicationToken
+                    }
+                });
    
             if (response.status === 401 || (response.data?.errors?.length > 0 && response.data?.errors?.[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
                 logger.debug('@stargate-mongoose/rest: reconnecting');
@@ -245,7 +261,10 @@ export class HTTPClient {
         body: Record<string, any>
     ): Promise<{ status: number, data: Record<string, any> }> {
         return new Promise((resolve, reject) => {
-            const req: http2.ClientHttp2Stream = this.session.request({
+            if (this.http2Session == null) {
+                throw new Error('Cannot make http2 request without session');
+            }
+            const req: http2.ClientHttp2Stream = this.http2Session.request({
                 ':path': path,
                 ':method': 'POST',
                 token
