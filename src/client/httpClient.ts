@@ -19,6 +19,7 @@ import { inspect } from 'util';
 import { LIB_NAME, LIB_VERSION } from '../version';
 import { getStargateAccessToken } from '../collections/utils';
 import { EJSON } from 'bson';
+import http2 from 'http2';
 
 const REQUESTED_WITH = LIB_NAME + '/' + LIB_VERSION;
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
@@ -45,6 +46,7 @@ interface APIClientOptions {
   authUrl?: string;
   isAstra?: boolean;
   logSkippedOptions?: boolean;
+  useHTTP2?: boolean;
 }
 
 export interface APIResponse {
@@ -88,6 +90,7 @@ axiosAgent.interceptors.request.use(requestInterceptor);
 axiosAgent.interceptors.response.use(responseInterceptor);
 
 export class HTTPClient {
+    origin: string;
     baseUrl: string;
     applicationToken: string;
     authHeaderName: string;
@@ -96,9 +99,11 @@ export class HTTPClient {
     authUrl: string;
     isAstra: boolean;
     logSkippedOptions: boolean;
+    http2Session?: http2.ClientHttp2Session;
+    closed: boolean;
 
     constructor(options: APIClientOptions) {
-    // do not support usage in browsers
+        // do not support usage in browsers
         if (typeof window !== 'undefined') {
             throw new Error('not for use in a web browser');
         }
@@ -120,6 +125,18 @@ export class HTTPClient {
             this.applicationToken = '';//We will set this by accessing the auth url when the first request is received
         }
 
+        this.closed = false;
+        this.origin = new URL(this.baseUrl).origin;
+        if (options.useHTTP2) {
+            this.http2Session = http2.connect(this.origin);
+            
+            // Without these handlers, any errors will end up as uncaught exceptions,
+            // even if they are handled in `_request()`.
+            // More info: https://github.com/nodejs/node/issues/16345
+            this.http2Session.on('error', () => {});
+            this.http2Session.on('socketError', () => {});
+        }
+
         if (options.logLevel) {
             setLevel(options.logLevel);
         }
@@ -129,6 +146,13 @@ export class HTTPClient {
         this.authHeaderName = options.authHeaderName || DEFAULT_AUTH_HEADER;
         this.isAstra = options.isAstra || false;
         this.logSkippedOptions = options.logSkippedOptions || false;
+    }
+
+    close() {
+        if (this.http2Session != null) {
+            this.http2Session.close();
+        }
+        this.closed = true;
     }
 
     async _request(requestInfo: AxiosRequestConfig): Promise<APIResponse> {
@@ -156,17 +180,34 @@ export class HTTPClient {
                     ]
                 };
             }
-            const response = await axiosAgent({
-                url: requestInfo.url,
-                data: requestInfo.data,
-                params: requestInfo.params,
-                method: requestInfo.method || DEFAULT_METHOD,
-                timeout: requestInfo.timeout || DEFAULT_TIMEOUT,
-                headers: {
-                    [this.authHeaderName]: this.applicationToken
-                }
-            });           
-            if (response.status === 401 || (response.data?.errors?.length > 0 && response.data.errors[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
+            if (!requestInfo.url) {
+                return {
+                    errors: [
+                        {
+                            message: 'URL not specified'
+                        }
+                    ]
+                };
+            }
+
+            const response = this.http2Session != null
+                ? await this.makeHTTP2Request(
+                    requestInfo.url.replace(this.origin, ''),
+                    this.applicationToken,
+                    requestInfo.data
+                )
+                : await axiosAgent({
+                    url: requestInfo.url,
+                    data: requestInfo.data,
+                    params: requestInfo.params,
+                    method: requestInfo.method || DEFAULT_METHOD,
+                    timeout: requestInfo.timeout || DEFAULT_TIMEOUT,
+                    headers: {
+                        [this.authHeaderName]: this.applicationToken
+                    }
+                });
+   
+            if (response.status === 401 || (response.data?.errors?.length > 0 && response.data?.errors?.[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
                 logger.debug('@stargate-mongoose/rest: reconnecting');
                 try {
                     this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
@@ -183,9 +224,9 @@ export class HTTPClient {
             }
             if (response.status === 200) {
                 return {
-                    status: response.data.status,
-                    data: deserialize(response.data.data),
-                    errors: response.data.errors
+                    status: response.data?.status,
+                    data: deserialize(response.data?.data),
+                    errors: response.data?.errors
                 };
             } else {
                 logger.error(requestInfo.url + ': ' + response.status);
@@ -214,11 +255,55 @@ export class HTTPClient {
         }
     }
 
-    async executeCommand(data: Record<string, any>, optionsToRetain: Set<string> | null) {
+    makeHTTP2Request(
+        path: string,
+        token: string,
+        body: Record<string, any>
+    ): Promise<{ status: number, data: Record<string, any> }> {
+        return new Promise((resolve, reject) => {
+            if (this.http2Session == null) {
+                throw new Error('Cannot make http2 request without session');
+            }
+            const req: http2.ClientHttp2Stream = this.http2Session.request({
+                ':path': path,
+                ':method': 'POST',
+                token
+            });
+            req.write(serializeCommand(body), 'utf8');
+            req.end();
+
+            let status = 0;
+            req.on('response', (data: http2.IncomingHttpStatusHeader) => {
+                status = data[':status'] ?? 0;
+            });
+
+            req.on('error', (error: Error) => {
+                reject(error);
+            });
+
+            req.setEncoding('utf8');
+            let responseBody = '';
+            req.on('data', (chunk: string) => {
+                responseBody += chunk;
+            });
+            req.on('end', () => {
+                let data = {};
+                try {
+                    data = JSON.parse(responseBody);
+                    resolve({ status, data });
+                } catch (error) {
+                    reject(new Error('Unable to parse response as JSON, got: "' + data + '"'));
+                    return;
+                }
+            });
+        });
+    }
+
+    async executeCommandWithUrl(url: string, data: Record<string, any>, optionsToRetain: Set<string> | null) {
         const commandName = Object.keys(data)[0];
         cleanupOptions(commandName, data[commandName], optionsToRetain, this.logSkippedOptions);
         const response = await this._request({
-            url: this.baseUrl,
+            url: this.baseUrl + url,
             method: HTTP_METHODS.post,
             data
         });

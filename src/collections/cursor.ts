@@ -134,7 +134,11 @@ export class FindCursor {
         if (Object.keys(options).length > 0) {
             command.find.options = options;
         }
-        const resp = await this.collection.httpClient.executeCommand(command, findInternalOptionsKeys);
+        const resp = await this.collection.httpClient.executeCommandWithUrl(
+            this.collection.httpBasePath,
+            command,
+            findInternalOptionsKeys
+        );
         this.nextPageState = resp.data.nextPageState;
         if (this.nextPageState == null) {
             this.exhausted = true;
