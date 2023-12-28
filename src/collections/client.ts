@@ -29,6 +29,7 @@ export interface ClientOptions {
   authUrl?: string;
   isAstra?: boolean;
   logSkippedOptions?: boolean;
+  useHTTP2?: boolean;
 }
 
 export class Client {
@@ -54,7 +55,8 @@ export class Client {
             password: options.password,
             authUrl: options.authUrl,
             isAstra: options.isAstra,
-            logSkippedOptions: options.logSkippedOptions
+            logSkippedOptions: options.logSkippedOptions,
+            useHTTP2: options.useHTTP2
         });
         this.dbs = new Map<string, Db>();
     }
@@ -76,7 +78,8 @@ export class Client {
             password: options?.password,
             authUrl: options?.authUrl,
             isAstra: options?.isAstra,
-            logSkippedOptions: options?.logSkippedOptions
+            logSkippedOptions: options?.logSkippedOptions,
+            useHTTP2: options?.useHTTP2
         });
         await client.connect();
         return client;
