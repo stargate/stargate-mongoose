@@ -261,9 +261,14 @@ export class HTTPClient {
         body: Record<string, any>
     ): Promise<{ status: number, data: Record<string, any> }> {
         return new Promise((resolve, reject) => {
+            // Should never happen, but good to have a readable error just in case
             if (this.http2Session == null) {
                 throw new Error('Cannot make http2 request without session');
             }
+            if (this.closed) {
+                throw new Error('Cannot make http2 request when client is closed');
+            }
+  
             const req: http2.ClientHttp2Stream = this.http2Session.request({
                 ':path': path,
                 ':method': 'POST',
