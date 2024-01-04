@@ -210,7 +210,8 @@ describe('Options tests', async () => {
             //findOneAndReplace with rawResult option
             const findOneAndReplaceResp = await Product.findOneAndReplace({ name: 'Product 25' },
                 { price: 20, isCertified: false, name: 'Product 25'},
-                { rawResult: false, upsert: true, returnDocument: 'after' });
+                { rawResult: false, upsert: true, returnDocument: 'after' }
+            );
             assert.strictEqual(findOneAndReplaceResp.isCertified,false);
             assert.strictEqual(findOneAndReplaceResp.price,20);
             assert.ok(findOneAndReplaceResp._id);
