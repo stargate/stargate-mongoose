@@ -121,7 +121,9 @@ The current implementation of the JSON API uses DataStax Enterprise (DSE) as the
 CI tests are run using the Stargate and JSON API versions specified in the [api-compatibility.versions](api-compatibility.versions) file.
 
 ## Connecting to AstraDB
-Integration with [AstraDB](https://astra.datastax.com/) is experimental and is not usable/ fully ready at this time.
+Here's a quick start guide on how to connect to AstraDB using `stargate-mongoose` driver.
+
+https://docs.datastax.com/en/astra-serverless/docs/quickstart/qs-jsonapi.html
 
 ## Sample Applications
 
