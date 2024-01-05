@@ -270,10 +270,14 @@ describe('Mongoose Model API level tests', async () => {
             //Mode.$where()
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
-            const whereJSexpressionResp = await Product.$where('this.name === "Product 1"').exec();
-            //find command doesn't support   "filter": { "$where": "this.name === \"Product 1\"" }
-            assert.strictEqual(whereJSexpressionResp.length, 0);
-            //----------------//
+            let error: any = null;
+            try {
+                await Product.$where('this.name === "Product 1"').exec();
+            } catch (err: any) {
+                error = err;
+            }
+            assert.ok(error);
+            assert.strictEqual(error.errors[0].message, 'Invalid filter expression: filter clause path (\'$where\') contains character(s) not allowed');
         });
         it('API ops tests Model.aggregate()', async () => {
             //Model.aggregate()
