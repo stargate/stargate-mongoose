@@ -27,6 +27,10 @@ import {
 } from '@/src/collections/options';
 import { JSONAPIDeleteResult } from '../collections/collection';
 
+import { version } from 'mongoose';
+
+const IS_MONGOOSE_7 = version.startsWith('7.');
+
 type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null) => unknown;
 
 /**
@@ -120,11 +124,17 @@ export class Collection extends MongooseCollection {
      * @param update
      * @param options
      */
-    findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions) {
+    async findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions) {
         if (options != null) {
             processSortOption(options);
         }
-        return this.collection.findOneAndUpdate(filter, update, options);
+        const res = await this.collection.findOneAndUpdate(filter, update, options);
+        if (IS_MONGOOSE_7) {
+            return options?.includeResultMetadata === false ? res.value : res;
+        } else if (options?.includeResultMetadata !== false) {
+            return res.value;
+        }
+        return res;
     }
 
     /**
@@ -132,11 +142,17 @@ export class Collection extends MongooseCollection {
      * @param filter
      * @param options
      */
-    findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions) {
+    async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions) {
         if (options != null) {
             processSortOption(options);
         }
-        return this.collection.findOneAndDelete(filter, options);
+        const res = await this.collection.findOneAndDelete(filter, options);
+        if (IS_MONGOOSE_7) {
+            return options?.includeResultMetadata === false ? res.value : res;
+        } else if (options?.includeResultMetadata !== false) {
+            return res.value;
+        }
+        return res;
     }
 
     /**
@@ -145,11 +161,17 @@ export class Collection extends MongooseCollection {
      * @param newDoc
      * @param options
      */
-    findOneAndReplace(filter: Record<string, any>, newDoc: Record<string, any>, options?: FindOneAndReplaceOptions) {
+    async findOneAndReplace(filter: Record<string, any>, newDoc: Record<string, any>, options?: FindOneAndReplaceOptions) {
         if (options != null) {
             processSortOption(options);
         }
-        return this.collection.findOneAndReplace(filter, newDoc, options);
+        const res = await this.collection.findOneAndReplace(filter, newDoc, options);
+        if (IS_MONGOOSE_7) {
+            return options?.includeResultMetadata === false ? res.value : res;
+        } else if (options?.includeResultMetadata !== false) {
+            return res.value;
+        }
+        return res;
     }
 
     /**

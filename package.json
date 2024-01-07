@@ -1,6 +1,6 @@
 {
   "name": "stargate-mongoose",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Stargate's NodeJS Mongoose compatability client",
   "contributors": [
     "CRW (http://barnyrubble.tumblr.com/)",
@@ -81,7 +81,7 @@
     "eslint": "8.47.0",
     "jsdoc-babel": "^0.5.0",
     "jsdoc-to-markdown": "^7.1.1",
-    "mongoose": "^7.5.0",
+    "mongoose": "8.x",
     "nyc": "^15.1.0",
     "sinon": "15.2.0",
     "ts-mocha": "^10.0.0",
@@ -95,7 +95,7 @@
     "winston": "^3.7.2"
   },
   "peerDependencies": {
-    "mongoose": "^7.5.0"
+    "mongoose": "^7.5.0 || ^8.0.0"
   },
   "engines": {
     "node": ">=14.0.0"

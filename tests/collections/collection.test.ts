@@ -118,7 +118,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 error = e;
             }
             assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: Property name length (49) exceeds maximum allowed (48)');
+            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: Property name length (49) exceeds maximum allowed (48) (name \''+ fieldName +'\')');
         });
         it('Should fail if the string field value is > 16000', async () => {
             const _string16klength = new Array(16001).fill('a').join('');
@@ -130,7 +130,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 error = e;
             }
             assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: String value length (16001) exceeds maximum allowed (16000)');
+            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: String value length (16001 bytes) exceeds maximum allowed (8000 bytes)');
         });
         it('Should fail if an array field size is > 100', async () => {
             const docToInsert = { tags: new Array(101).fill('tag') };
