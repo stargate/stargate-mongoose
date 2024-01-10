@@ -16,6 +16,15 @@ import { Collection } from './collection';
 import { executeOperation } from './utils';
 import {findInternalOptionsKeys, FindOptions, FindOptionsInternal} from './options';
 
+interface FindCommand {
+  find: {
+    filter?: Record<string, any>,
+    options?: FindOptionsInternal,
+    sort?: Record<string, any>,
+    projection?: Record<string, any>
+  }
+}
+
 export class FindCursor {
     collection: Collection;
     filter: Record<string, any>;
@@ -100,18 +109,11 @@ export class FindCursor {
     }
 
     async _getMore() {
-        const command: {
-      find: {
-        filter?: Record<string, any>,
-        options?: FindOptionsInternal,
-        sort?: Record<string, any>,
-        projection?: Record<string, any>
-      }
-    } = {
-        find: {
-            filter: this.filter
-        }
-    };
+        const command: FindCommand = {
+            find: {
+                filter: this.filter
+            }
+        };
         if (this.options && this.options.sort) {
             command.find.sort = this.options.sort;
         }
