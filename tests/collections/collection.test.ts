@@ -1151,13 +1151,10 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.strictEqual(Object.keys(res.insertedIds).length, 5);
 
       const filter = { 'age': { '$lt': 3 } };
-      const expectedSet: Set<number> = new Set([1,2]);
-
       const findRespDocs = await collection.find(filter).toArray();
       assert.strictEqual(findRespDocs.length, 2);
-      findRespDocs.forEach((doc) => {
-          assert.ok(expectedSet.has(doc.age));
-      });
+      assert.deepStrictEqual(findRespDocs.map(doc => doc.age).sort(), [1, 2]);
+
         });
         it('should find & find doc $lte test', async () => {
       interface Doc {
@@ -1174,14 +1171,10 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.strictEqual(Object.keys(res.insertedIds).length, 5);
 
       const filter = { 'age': { '$lte': 3 } };
-      const expectedSet: Set<number> = new Set([1,2,3]);
-
       const findRespDocs = await collection.find(filter).toArray();
       assert.strictEqual(findRespDocs.length, 3);
-      findRespDocs.forEach((doc) => {
-          assert.ok(expectedSet.has(doc.age));
+      assert.deepStrictEqual(findRespDocs.map(doc => doc.age).sort(), [1,2,3]);
 
-      });
         });
         it('should find & find doc $gt test', async () => {
       interface Doc {
@@ -1198,14 +1191,9 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.strictEqual(Object.keys(res.insertedIds).length, 5);
 
       const filter = { 'age': { '$gt': 3 } };
-      const expectedSet: Set<number> = new Set([4,5]);
-
       const findRespDocs = await collection.find(filter).toArray();
       assert.strictEqual(findRespDocs.length, 2);
-      findRespDocs.forEach((doc) => {
-          assert.ok(expectedSet.has(doc.age));
-
-      });
+      assert.deepStrictEqual(findRespDocs.map(doc => doc.age).sort(), [4, 5]);
         });
 
         it('should find & find doc $gte test', async () => {
@@ -1223,14 +1211,10 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
       assert.strictEqual(Object.keys(res.insertedIds).length, 5);
 
       const filter = { 'age': { '$gte': 3 } };
-      const expectedSet: Set<number> = new Set([3,4,5]);
 
       const findRespDocs = await collection.find(filter).toArray();
       assert.strictEqual(findRespDocs.length, 3);
-      findRespDocs.forEach((doc) => {
-          assert.ok(expectedSet.has(doc.age));
-
-      });
+            assert.deepStrictEqual(findRespDocs.map(doc => doc.age).sort(), [3, 4,5]);
         });
     });
     describe('updateOne tests', () => {
