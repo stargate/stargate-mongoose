@@ -263,7 +263,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
     });
-    describe.only('findOne, findMany & filter tests', () => {
+    describe('findOne, findMany & filter tests', () => {
         it('should find & findOne document', async () => {
             const insertDocResp = await collection.insertOne(createSampleDocWithMultiLevel());
             const idToCheck = insertDocResp.insertedId;
@@ -298,6 +298,14 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             const findResDocs = await collection.find(filter).toArray();
             assert.strictEqual(findResDocs.length, 1);
             assert.strictEqual(findResDocs[0]._id, idToCheck2);
+
+            const filter1 = { '_id': { '$ne': idToCheck2 } };
+            const resDoc1 = await collection.findOne(filter1);
+            assert.ok(resDoc1);
+            assert.strictEqual(resDoc1._id, idToCheck1);
+            const findResDocs1 = await collection.find(filter1).toArray();
+            assert.strictEqual(findResDocs1.length, 1);
+            assert.strictEqual(findResDocs1[0]._id, idToCheck1);
         });
         it('should find & findOne L1 String EQ document', async () => {
             const doc = createSampleDocWithMultiLevel();
@@ -401,24 +409,24 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(findResDocs[0]._id, idToCheck);
         });
         it('should find & findOne L1 Boolean NE $ne document', async () => {
-            const doc1 = createSampleDocWithMultiLevel();
-            const doc2 = createSampleDoc2WithMultiLevel();
+            const doc1 = createSampleDoc2WithMultiLevel();
+            const doc2 = createSampleDoc3WithMultiLevel();
             const insertDocResp1 = await collection.insertOne(doc1);
             const insertDocResp2 = await collection.insertOne(doc2);
-            const idToCheck2 = insertDocResp2.insertedId;
-            const filter = { 'username': { '$ne': doc1.username } };
+            const idToCheck1 = insertDocResp1.insertedId;
+            const filter = { 'human': { '$ne': false } };
             const resDoc = await collection.findOne(filter);
             assert.ok(resDoc);
-            assert.strictEqual(resDoc._id, idToCheck2);
+            assert.strictEqual(resDoc._id, idToCheck1);
             const findResDocs = await collection.find(filter).toArray();
             assert.strictEqual(findResDocs.length, 1);
-            assert.strictEqual(findResDocs[0]._id, idToCheck2);
+            assert.strictEqual(findResDocs[0]._id, idToCheck1);
         });
         it('should find & findOne L1 Null EQ document', async () => {
             const doc = createSampleDocWithMultiLevel();
             const insertDocResp = await collection.insertOne(doc);
             const idToCheck = insertDocResp.insertedId;
-            const filter = { 'password': doc.password };
+            const filter = { 'password': null};
             const resDoc = await collection.findOne(filter);
             assert.ok(resDoc);
             assert.strictEqual(resDoc._id, idToCheck);
@@ -430,7 +438,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             const doc = createSampleDocWithMultiLevel();
             const insertDocResp = await collection.insertOne(doc);
             const idToCheck = insertDocResp.insertedId;
-            const filter = { 'password': { '$eq': doc.password } };
+            const filter = { 'password': { '$eq': null } };
             const resDoc = await collection.findOne(filter);
             assert.ok(resDoc);
             assert.strictEqual(resDoc._id, idToCheck);
@@ -481,14 +489,14 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             const doc2 = createSampleDoc2WithMultiLevel();
             const insertDocResp1 = await collection.insertOne(doc1);
             const insertDocResp2 = await collection.insertOne(doc2);
-            const idToCheck2 = insertDocResp2.insertedId;
-            const filter = { 'address.street': { '$ne': doc1.address?.street } };
+            const idToCheck1 = insertDocResp1.insertedId;
+            const filter = { 'address.street': { '$ne': doc2.address?.street } };
             const resDoc = await collection.findOne(filter);
             assert.ok(resDoc);
-            assert.strictEqual(resDoc._id, idToCheck2);
+            assert.strictEqual(resDoc._id, idToCheck1);
             const findResDocs = await collection.find(filter).toArray();
             assert.strictEqual(findResDocs.length, 1);
-            assert.strictEqual(findResDocs[0]._id, idToCheck2);
+            assert.strictEqual(findResDocs[0]._id, idToCheck1);
         });
         it('should find & findOne any level Number EQ document', async () => {
             const doc = createSampleDocWithMultiLevel();
