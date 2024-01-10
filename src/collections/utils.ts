@@ -65,29 +65,29 @@ function getBaseAPIPath(pathFromUrl?: string | null) {
 
 /**
  * Create an Astra connection URI while connecting to Astra JSON API
- * @param apiEndPoint the database API Endpoint of the Astra database
- * @param keyspace the keyspace to connect to
- * @param applicationToken an Astra application token
+ * @param apiEndpoint the database API Endpoint of the Astra database
+ * @param apiToken an Astra application token
+ * @param namespace the namespace to connect to
  * @param baseApiPath baseAPI path defaults to /api/json/v1
  * @param logLevel an winston log level (error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6)
  * @param authHeaderName
  * @returns URL as string
  */
 export function createAstraUri (
-    apiEndPoint: string,
-    keyspace?: string,
-    applicationToken?: string,
+    apiEndpoint: string,
+    apiToken: string,
+    namespace?: string,
     baseApiPath?: string,
     logLevel?: string,
     authHeaderName?: string,
 ) {
-    const uri = new url.URL(apiEndPoint);
+    const uri = new url.URL(apiEndpoint);
     let contextPath = '';
     contextPath += baseApiPath ? `/${baseApiPath}` : '/api/json/v1';
-    contextPath += `/${keyspace || 'default_keyspace'}`;
+    contextPath += `/${namespace ?? 'default_keyspace'}`;
     uri.pathname = contextPath;
-    if (applicationToken) {
-        uri.searchParams.append('applicationToken', applicationToken);
+    if (apiToken) {
+        uri.searchParams.append('applicationToken', apiToken);
     }
     if (logLevel) {
         uri.searchParams.append('logLevel', logLevel);
