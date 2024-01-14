@@ -18,7 +18,7 @@ import { createAstraUri } from '@/src/collections/utils';
 describe('Utils test', () => {
     it('createProdAstraUriDefaultKeyspace', () => {
         const apiEndpoint = 'https://a5cf1913-b80b-4f44-ab9f-a8b1c98469d0-ap-south-1.apps.astra.datastax.com';
-        const uri: string = createAstraUri(apiEndpoint,"myToken");
+        const uri: string = createAstraUri(apiEndpoint,'myToken');
         assert.strictEqual(uri, 'https://a5cf1913-b80b-4f44-ab9f-a8b1c98469d0-ap-south-1.apps.astra.datastax.com/api/json/v1/default_keyspace?applicationToken=myToken');
     });
     it('createProdAstraUriWithToken', () => {

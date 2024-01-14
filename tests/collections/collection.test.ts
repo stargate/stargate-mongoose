@@ -334,7 +334,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         it('should find & findOne L1 String NE $ne document', async () => {
             const doc1 = createSampleDocWithMultiLevel();
             const doc2 = createSampleDoc2WithMultiLevel();
-            const insertDocResp1 = await collection.insertOne(doc1);
+            await collection.insertOne(doc1);
             const insertDocResp2 = await collection.insertOne(doc2);
             const idToCheck2 = insertDocResp2.insertedId;
             const filter = { 'username': { '$ne': doc1.username } };
@@ -373,7 +373,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             console.log('123123');
             const doc1 = createSampleDocWithMultiLevel();
             const doc2 = createSampleDoc2WithMultiLevel();
-            const insertDocResp1 = await collection.insertOne(doc1);
+            await collection.insertOne(doc1);
             const insertDocResp2 = await collection.insertOne(doc2);
             const idToCheck2 = insertDocResp2.insertedId;
             const filter = { 'age': { '$ne': doc1.age } };
@@ -412,7 +412,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             const doc1 = createSampleDoc2WithMultiLevel();
             const doc2 = createSampleDoc3WithMultiLevel();
             const insertDocResp1 = await collection.insertOne(doc1);
-            const insertDocResp2 = await collection.insertOne(doc2);
+            await collection.insertOne(doc2);
             const idToCheck1 = insertDocResp1.insertedId;
             const filter = { 'human': { '$ne': false } };
             const resDoc = await collection.findOne(filter);
@@ -449,7 +449,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         it('should find & findOne L1 Null NE $ne document', async () => {
             const doc1 = createSampleDocWithMultiLevel();
             const doc2 = createSampleDoc2WithMultiLevel();
-            const insertDocResp1 = await collection.insertOne(doc1);
+            await collection.insertOne(doc1);
             const insertDocResp2 = await collection.insertOne(doc2);
             const idToCheck2 = insertDocResp2.insertedId;
             const filter = { 'password': { '$ne': doc1.password } };
@@ -488,7 +488,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             const doc1 = createSampleDocWithMultiLevel();
             const doc2 = createSampleDoc2WithMultiLevel();
             const insertDocResp1 = await collection.insertOne(doc1);
-            const insertDocResp2 = await collection.insertOne(doc2);
+            await collection.insertOne(doc2);
             const idToCheck1 = insertDocResp1.insertedId;
             const filter = { 'address.street': { '$ne': doc2.address?.street } };
             const resDoc = await collection.findOne(filter);
@@ -525,7 +525,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         it('should find & findOne any level Number NE $ne document', async () => {
             const doc1 = createSampleDocWithMultiLevel();
             const doc2 = createSampleDoc2WithMultiLevel();
-            const insertDocResp1 = await collection.insertOne(doc1);
+            await collection.insertOne(doc1);
             const insertDocResp2 = await collection.insertOne(doc2);
             const idToCheck2 = insertDocResp2.insertedId;
             const filter = { 'address.number': { '$ne': doc1.address?.number } };
@@ -563,7 +563,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         it('should find & findOne any level Boolean NE $ne document', async () => {
             const doc1 = createSampleDocWithMultiLevel();
             const doc2 = createSampleDoc2WithMultiLevel();
-            const insertDocResp1 = await collection.insertOne(doc1);
+            await collection.insertOne(doc1);
             const insertDocResp2 = await collection.insertOne(doc2);
             const idToCheck2 = insertDocResp2.insertedId;
             const filter = { 'address.is_office': { '$ne': doc1.address?.is_office } };
@@ -601,7 +601,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         it('should find & findOne any level Null EQ $ne document', async () => {
             const doc1 = createSampleDocWithMultiLevel();
             const doc2 = createSampleDoc2WithMultiLevel();
-            const insertDocResp1 = await collection.insertOne(doc1);
+            await collection.insertOne(doc1);
             const insertDocResp2 = await collection.insertOne(doc2);
             const idToCheck2 = insertDocResp2.insertedId;
             const filter = { 'address.suburb': { '$ne': doc1.address?.suburb } };
@@ -1192,7 +1192,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
           const findRespDocs = await collection.find(filter).toArray();
           assert.strictEqual(findRespDocs.length, 2);
           assert.deepStrictEqual(findRespDocs.map(doc => doc.age).sort(), [4, 5]);
-            });
+        });
 
         it('should find & find doc $gte test', async () => {
           interface Doc {
