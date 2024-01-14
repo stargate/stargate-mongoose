@@ -75,6 +75,15 @@ export class Connection extends MongooseConnection {
         });
     }
 
+    async listCollections() {
+        return executeOperation(async () => {
+            await this._waitForClient();
+            const db = this.client.db();
+            const res = await db.findCollections();
+            return res?.status?.collections ?? [];
+        });
+    }
+
     async openUri(uri: string, options: any) {
         let _fireAndForget = false;
         if (options && '_fireAndForget' in options) {

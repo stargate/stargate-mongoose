@@ -1192,7 +1192,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
           const findRespDocs = await collection.find(filter).toArray();
           assert.strictEqual(findRespDocs.length, 2);
           assert.deepStrictEqual(findRespDocs.map(doc => doc.age).sort(), [4, 5]);
-            });
+        });
 
         it('should find & find doc $gte test', async () => {
           interface Doc {
