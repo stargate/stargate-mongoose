@@ -127,7 +127,11 @@ export class Db {
             const command = {
                 findCollections: {}
             };
-            return await this.httpClient.executeCommand(command, null);
+            return await this.httpClient.executeCommandWithUrl(
+                '/' + this.name,
+                command,
+                null
+            );
         });
     }
 }
