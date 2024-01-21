@@ -20,6 +20,11 @@ export interface DeleteOneOptions {
     sort?: Record<string, 1 | -1>;
 }
 
+export interface VectorOptions {
+  distance?: number;
+  metric?: 'cosine' | 'euclidean' | 'dot_product';
+}
+
 export interface FindOptions {
     limit?: number;
     skip?: number;
@@ -57,6 +62,7 @@ export const findOneInternalOptionsKeys: Set<string> = new Set(
 
 export interface FindOneAndDeleteOptions {
     sort?: SortOption;
+    includeResultMetadata?: boolean;
 }
 
 
@@ -64,6 +70,7 @@ class _FindOneAndReplaceOptions {
     upsert?: boolean = undefined;
     returnDocument?: 'before' | 'after' = undefined;
     sort?: SortOption;
+    includeResultMetadata?: boolean;
 }
 
 export interface FindOneAndReplaceOptions extends _FindOneAndReplaceOptions {}
@@ -76,6 +83,7 @@ class _FindOneAndUpdateOptions {
     upsert?: boolean = undefined;
     returnDocument?: 'before' | 'after' = undefined;
     sort?: SortOption;
+    includeResultMetadata?: boolean;
 }
 
 export interface FindOneAndUpdateOptions extends _FindOneAndUpdateOptions {}
@@ -116,10 +124,7 @@ export const updateOneInternalOptionsKeys: Set<string> = new Set(
 );
 
 class _CreateCollectionOptions {
-    vector?: {
-        dimension: number,
-        metric?: 'cosine' | 'euclidean' | 'dot_product'
-    } = undefined;
+    vector?: VectorOptions = undefined;
 }
 
 export interface CreateCollectionOptions extends _CreateCollectionOptions {}

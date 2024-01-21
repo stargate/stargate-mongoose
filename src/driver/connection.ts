@@ -15,7 +15,7 @@
 import { Client } from '@/src/collections/client';
 import { Collection } from './collection';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
-import STATES from 'mongoose/lib/connectionstate';
+import { STATES } from 'mongoose';
 import { executeOperation } from '../collections/utils';
 
 export class Connection extends MongooseConnection {
@@ -72,6 +72,15 @@ export class Connection extends MongooseConnection {
             await this._waitForClient();
             const db = this.client.db();
             return db.dropDatabase();
+        });
+    }
+
+    async listCollections() {
+        return executeOperation(async () => {
+            await this._waitForClient();
+            const db = this.client.db();
+            const res = await db.findCollections();
+            return res?.status?.collections ?? [];
         });
     }
 

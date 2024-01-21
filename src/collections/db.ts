@@ -17,6 +17,13 @@ import { CreateCollectionOptions, createCollectionOptionsKeys } from './options'
 import { Collection } from './collection';
 import { executeOperation, createNamespace, dropNamespace } from './utils';
 
+interface CreateCollectionCommand {
+  createCollection: {
+    name: string,
+    options?: CreateCollectionOptions
+  }
+}
+
 export class Db {
     rootHttpClient: HTTPClient;
     httpClient: HTTPClient;
@@ -62,12 +69,6 @@ export class Db {
    */
     async createCollection(collectionName: string, options?: CreateCollectionOptions) {
         return executeOperation(async () => {
-            type CreateCollectionCommand = {
-              createCollection: {
-                name: string,
-                options?: CreateCollectionOptions
-              }
-            };
             const command: CreateCollectionCommand = {
                 createCollection: {
                     name: collectionName
@@ -119,6 +120,15 @@ export class Db {
    */
     async createDatabase() {
         return await createNamespace(this.rootHttpClient, this.name);
+    }
+
+    async findCollections() {
+        return executeOperation(async () => {
+            const command = {
+                findCollections: {}
+            };
+            return await this.httpClient.executeCommand(command, null);
+        });
     }
 }
 

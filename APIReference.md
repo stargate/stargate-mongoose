@@ -9,7 +9,7 @@
 ## Functions
 
 <dl>
-<dt><a href="#createAstraUri">createAstraUri(databaseId, region, keyspace, applicationToken, baseApiPath, logLevel, authHeaderName)</a> ⇒</dt>
+<dt><a href="#createAstraUri">createAstraUri(apiEndpoint, applicationToken, namespace, baseApiPath, logLevel, authHeaderName)</a> ⇒</dt>
 <dd><p>Create an Astra connection URI while connecting to Astra JSON API</p></dd>
 <dt><a href="#createStargateUri">createStargateUri(baseUrl, baseAuthUrl, keyspace, username, password, logLevel)</a> ⇒</dt>
 <dd><p>Create a JSON API connection URI while connecting to Open source JSON API</p></dd>
@@ -326,7 +326,7 @@
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 <a name="createAstraUri"></a>
 
-## createAstraUri(databaseId, region, keyspace, applicationToken, baseApiPath, logLevel, authHeaderName) ⇒
+## createAstraUri(apiEndpoint, applicationToken, namespace, baseApiPath, logLevel, authHeaderName) ⇒
 <p>Create an Astra connection URI while connecting to Astra JSON API</p>
 
 **Kind**: global function  

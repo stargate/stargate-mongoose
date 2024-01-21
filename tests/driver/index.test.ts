@@ -379,6 +379,17 @@ describe('Driver based tests', async () => {
 
             assert.ok(httpClient.closed);
         });
+          
+        it('handles listCollections()', async () => {
+            const personSchema = new mongooseInstance.Schema({
+                name: { type: String, required: true }
+            });
+            const Person = mongooseInstance.model('Person', personSchema);
+            await Person.init();
+            await Person.deleteMany({});
+            const collections = await mongooseInstance.connection.listCollections();
+            assert.ok(collections.includes('people'), collections);
+        });
 
         async function createMongooseInstance() {
             const mongooseInstance = new mongoose.Mongoose();

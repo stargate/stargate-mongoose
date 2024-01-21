@@ -89,6 +89,9 @@ describe('StargateMongoose - collections.Db', async () => {
             const res2 = await db.createCollection(collectionName);
             assert.ok(res2);
             assert.strictEqual(res2.status.ok, 1);
+
+            const { status } = await db.findCollections();
+            assert.deepStrictEqual(status.collections, ['collection1']);
         });
 
         it('should drop a Collection', async () => {
