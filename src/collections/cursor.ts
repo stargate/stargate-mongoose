@@ -16,15 +16,6 @@ import { Collection } from './collection';
 import { executeOperation } from './utils';
 import {findInternalOptionsKeys, FindOptions, FindOptionsInternal} from './options';
 
-interface FindCommand {
-  find: {
-    filter?: Record<string, any>,
-    options?: FindOptionsInternal,
-    sort?: Record<string, any>,
-    projection?: Record<string, any>
-  }
-}
-
 export class FindCursor {
     collection: Collection;
     filter: Record<string, any>;
@@ -109,14 +100,6 @@ export class FindCursor {
     }
 
     async _getMore() {
-        const command: FindCommand = {
-            find: {
-                filter: this.filter
-            }
-        };
-        if (this.options && this.options.sort) {
-            command.find.sort = this.options.sort;
-        }
         const options: FindOptionsInternal = {};
         if (this.limit != Infinity) {
             options.limit = this.limit;
@@ -130,12 +113,16 @@ export class FindCursor {
         if (this.options.includeSimilarity) {
             options.includeSimilarity = this.options.includeSimilarity;
         }
-        if (this.options?.projection && Object.keys(this.options.projection).length > 0) {
-            command.find.projection = this.options.projection;
-        }
-        if (Object.keys(options).length > 0) {
-            command.find.options = options;
-        }
+
+        const command = {
+            find: {
+                filter: this.filter,
+                ...(this.options?.sort != null ? { sort: this.options?.sort } : {}),
+                ...(this.options?.projection != null ? { projection: this.options?.projection } : {}),
+                ...(Object.keys(options).length > 0 ? { options } : {})
+            }
+        };
+        
         const resp = await this.collection.httpClient.executeCommand(command, findInternalOptionsKeys);
         this.nextPageState = resp.data.nextPageState;
         if (this.nextPageState == null) {
