@@ -815,7 +815,8 @@ describe('Mongoose Model API level tests', async () => {
         it('supports sort() and similarity score with $meta with findOne()', async function() {
             const doc2 = await Vector
                 .findOne({}, null, { includeSimilarity: true })
-                .sort({ $vector: { $meta: [1, 99] } });
+                .sort({ $vector: { $meta: [1, 99] } })
+                .orFail();
             assert.strictEqual(doc2.name, 'Test vector 1');
             assert.strictEqual(doc2.get('$similarity'), 1);
         });
