@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { VectorOptions } from './collections';
+import { IndexingOptions, VectorOptions } from './collections';
 
 export * as collections from './collections';
 export * as driver from './driver';
@@ -21,7 +21,8 @@ export * as logger from './logger';
 
 declare module 'mongodb' {
   interface CreateCollectionOptions {
-    vector?: VectorOptions
+    vector?: VectorOptions;
+    indexing?: IndexingOptions;
   }
 }
 
