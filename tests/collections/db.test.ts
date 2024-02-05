@@ -17,8 +17,10 @@ import { Db } from '@/src/collections/db';
 import { Client } from '@/src/collections/client';
 import { parseUri, createNamespace } from '@/src/collections/utils';
 import { testClient, TEST_COLLECTION_NAME } from '@/tests/fixtures';
-import { randAlphaNumeric } from '@ngneat/falso';
 import {HTTPClient} from '@/src/client';
+import { randomBytes } from 'crypto';
+
+const randString = (length: number) => randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length);
 
 describe('StargateMongoose - collections.Db', async () => {
     let astraClient: Client | null;
@@ -99,7 +101,7 @@ describe('StargateMongoose - collections.Db', async () => {
 
         it('should drop a Collection', async () => {
             const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
-            const suffix = randAlphaNumeric({ length: 4 }).join('');
+            const suffix = randString(4);
             await db.createCollection(`test_db_collection_${suffix}`);
             const res = await db.dropCollection(`test_db_collection_${suffix}`);
             assert.strictEqual(res.status?.ok, 1);
@@ -122,7 +124,7 @@ describe('StargateMongoose - collections.Db', async () => {
             }
             const keyspaceName = parseUri(dbUri).keyspaceName;
             const db = new Db(httpClient, keyspaceName);
-            const suffix = randAlphaNumeric({ length: 4 }).join('');
+            const suffix = randString(4);
             await db.createCollection(`test_db_collection_${suffix}`);
             const res = await db.dropDatabase();
             assert.strictEqual(res.status?.ok, 1);
@@ -156,7 +158,7 @@ describe('StargateMongoose - collections.Db', async () => {
             }
             const keyspaceName = parseUri(dbUri).keyspaceName;
             const db = new Db(httpClient, keyspaceName);
-            const suffix = randAlphaNumeric({ length: 4 }).join('');
+            const suffix = randString(4);
 
             await db.dropDatabase().catch(err => {
                 if (err.errors[0].exceptionClass === 'NotFoundException') {
