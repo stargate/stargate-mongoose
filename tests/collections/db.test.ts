@@ -99,6 +99,60 @@ describe('StargateMongoose - collections.Db', async () => {
             assert.ok(collections.includes(collectionName));
         });
 
+        it('should create a Collection with allow indexing options', async () => {
+            const collectionName = TEST_COLLECTION_NAME;
+            const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
+
+            let collections = await db.findCollections().then(res => res.status.collections);
+            assert.ok(!collections.includes(collectionName));
+
+            const res = await db.createCollection(
+                collectionName,
+                { indexing: { allow: ['name'] } }
+            );
+            assert.ok(res);
+            assert.strictEqual(res.status.ok, 1);
+
+            collections = await db.findCollections().then(res => res.status.collections);
+            assert.ok(collections.includes(collectionName));
+
+            await db.collection(collectionName).insertOne({ name: 'test', description: 'test' });
+            await assert.rejects(
+                () => db.collection(collectionName).findOne({ description: 'test' }),
+                /filter path 'description' is not indexed/
+            );
+
+            const doc = await db.collection(collectionName).findOne({ name: 'test' });
+            assert.equal(doc!.description, 'test');
+        });
+
+        it('should create a Collection with deny indexing options', async () => {
+            const collectionName = TEST_COLLECTION_NAME;
+            const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
+
+            let collections = await db.findCollections().then(res => res.status.collections);
+            assert.ok(!collections.includes(collectionName));
+
+            const res = await db.createCollection(
+                collectionName,
+                { indexing: { deny: ['description'] } }
+            );
+            assert.ok(res);
+            assert.strictEqual(res.status.ok, 1);
+
+            collections = await db.findCollections().then(res => res.status.collections);
+            assert.ok(collections.includes(collectionName));
+
+            await db.collection(collectionName).insertOne({ name: 'test', description: 'test' });
+            await assert.rejects(
+                () => db.collection(collectionName).findOne({ description: 'test' }),
+                /filter path 'description' is not indexed/
+            );
+
+            const doc = await db.collection(collectionName).findOne({ name: 'test' });
+            assert.equal(doc!.description, 'test');
+        });
+
         it('should drop a Collection', async () => {
             const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
             const suffix = randString(4);
