@@ -131,6 +131,7 @@ const { driver, createAstraUri } = require("stargate-mongoose");
 const uri = createAstraUri(
   process.env.ASTRA_DB_API_ENDPOINT,
   process.env.ASTRA_DB_APPLICATION_TOKEN,
+  process.env.ASTRA_DB_NAMESPACE // optoinal
 );
 
 mongoose.setDriver(driver);
