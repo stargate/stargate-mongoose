@@ -101,22 +101,11 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 //In Astra, it returns a 413 error prior to reaching the JSON API
                 assert.strictEqual(error.errors[0].message, 'Request failed with status code 413');
             } else {
-                assert.strictEqual(error.errors[0].message, 'Document size limitation violated: document size (1048636 chars) exceeds maximum allowed (1000000)');
+                assert.strictEqual(error.errors[0].message, 'Document size limitation violated: indexed String value length (1048576 bytes) exceeds maximum allowed (8000 bytes)');
             }
         });
-        it('Should fail if the number of levels in the doc is > 8', async () => {
-            const docToInsert = { l1: { l2: { l3: { l4: { l5: { l6: { l7: { l8: { l9: 'l9value' } } } } } } } } };
-            let error: any;
-            try {
-                await collection.insertOne(docToInsert);
-            } catch (e: any) {
-                error = e;
-            }
-            assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: document depth exceeds maximum allowed (8)');
-        });
-        it('Should fail if the field length is > 48', async () => {
-            const fieldName = 'a'.repeat(49);
+        it('Should fail if the field length is > 1000', async () => {
+            const fieldName = 'a'.repeat(1001);
             const docToInsert = { [fieldName]: 'value' };
             let error: any;
             try {
@@ -125,7 +114,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 error = e;
             }
             assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: Property name length (49) exceeds maximum allowed (48) (name \''+ fieldName +'\')');
+            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: property path length (1001) exceeds maximum allowed (1000) (path ends with \''+ fieldName +'\')');
         });
         it('Should fail if the string field value is > 16000', async () => {
             const _string16klength = new Array(16001).fill('a').join('');
@@ -137,10 +126,10 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 error = e;
             }
             assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: String value length (16001 bytes) exceeds maximum allowed (8000 bytes)');
+            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: indexed String value length (16001 bytes) exceeds maximum allowed (8000 bytes)');
         });
-        it('Should fail if an array field size is > 100', async () => {
-            const docToInsert = { tags: new Array(101).fill('tag') };
+        it('Should fail if an array field size is > 10000', async () => {
+            const docToInsert = { tags: new Array(10001).fill('tag') };
             let error: any;
             try {
                 await collection.insertOne(docToInsert);
@@ -148,7 +137,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 error = e;
             }
             assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: number of elements an Array has (101) exceeds maximum allowed (100)');
+            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: number of elements an indexable Array (\'tags\') has (10001) exceeds maximum allowed (1000)');
         });
         it('Should fail if a doc contains more than 64 properties', async () => {
             const docToInsert: any = { _id: '123' };
@@ -1108,11 +1097,9 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
               doc.username = doc.username + (index + 1);
               if (index == 4) {
                   doc.tags = ['tag1', 'tag2', 'tag3', 'tag4'];
-              }
-              if (index == 5) {
+              } else if (index == 5) {
                   doc.tags = ['tag1', 'tag2', 'tag3'];
-              }
-              if (index == 6) {
+              } else if (index == 6) {
                   doc.tags = [];
               }
           });
