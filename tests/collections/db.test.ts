@@ -100,7 +100,7 @@ describe('StargateMongoose - collections.Db', async () => {
         });
 
         it('should create a Collection with allow indexing options', async () => {
-            const collectionName = TEST_COLLECTION_NAME;
+            const collectionName = TEST_COLLECTION_NAME + '_allow';
             const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
 
             let collections = await db.findCollections().then(res => res.status.collections);
@@ -127,7 +127,7 @@ describe('StargateMongoose - collections.Db', async () => {
         });
 
         it('should create a Collection with deny indexing options', async () => {
-            const collectionName = TEST_COLLECTION_NAME;
+            const collectionName = TEST_COLLECTION_NAME + '_deny';
             const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
 
             let collections = await db.findCollections().then(res => res.status.collections);

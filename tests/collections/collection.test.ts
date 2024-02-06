@@ -139,9 +139,9 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.ok(error);
             assert.strictEqual(error.errors[0].message, 'Document size limitation violated: number of elements an indexable Array (\'tags\') has (10001) exceeds maximum allowed (1000)');
         });
-        it('Should fail if a doc contains more than 64 properties', async () => {
+        it('Should fail if a doc contains more than 1000 properties', async () => {
             const docToInsert: any = { _id: '123' };
-            for (let i = 1; i <= 64; i++) {
+            for (let i = 1; i <= 1001; i++) {
                 docToInsert[`prop${i}`] = `prop${i}value`;
             }
             let error: any;
@@ -151,7 +151,10 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 error = e;
             }
             assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: number of properties an Object has (65) exceeds maximum allowed (64)');
+            assert.strictEqual(
+                error.errors[0].message, 
+                'Document size limitation violated: number of properties an indexable Object (\'null\') has (1002) exceeds maximum allowed (1000)'
+            );
         });
     });
     describe('insertMany tests', () => {
