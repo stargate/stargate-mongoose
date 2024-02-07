@@ -59,7 +59,7 @@ describe('Mongoose Model API level tests', async () => {
         ({Product, Cart, astraMongoose, jsonAPIMongoose} = await createClientsAndModels(isAstra));
     });
     afterEach(async () => {
-      await Promise.all([Product.deleteMany({}), Cart.deleteMany({})]);
+        await Promise.all([Product.deleteMany({}), Cart.deleteMany({})]);
     });
     after(async () => {
         await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'products');
@@ -780,17 +780,21 @@ describe('Mongoose Model API level tests', async () => {
         });
 
         beforeEach(async function() {
-          await Vector.deleteMany({});
-          await Vector.create([
-              {
-                  name: 'Test vector 1',
-                  $vector: [1, 100]
-              },
-              {
-                  name: 'Test vector 2',
-                  $vector: [100, 1]
-              }
-          ]);
+            await Vector.deleteMany({});
+            await Vector.create([
+                {
+                    name: 'Test vector 1',
+                    $vector: [1, 100]
+                },
+                {
+                    name: 'Test vector 2',
+                    $vector: [100, 1]
+                }
+            ]);
+        });
+
+        after(async function() {
+          await mongooseInstance!.connection.dropCollection('vector');
         });
 
         it('supports updating $vector with save()', async function() {

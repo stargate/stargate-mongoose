@@ -40,11 +40,15 @@ describe('Options tests', async () => {
         isAstra = testClient.isAstra;
     });
 
-    beforeEach(async function () {
+    before(async function () {
         ({ Product, astraMongoose, jsonAPIMongoose } = await createClientsAndModels(isAstra));
     });
 
-    afterEach(async function () {
+    afterEach(async function() {
+        await Product.deleteMany({});
+    });
+
+    after(async function () {
         await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'products');
     });
 
