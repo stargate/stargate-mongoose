@@ -388,7 +388,11 @@ describe('Driver based tests', async () => {
             await Person.init();
             await Person.deleteMany({});
             const collections = await mongooseInstance.connection.listCollections();
-            assert.ok(collections.includes('people'), collections);
+            const collectionNames = collections.map(({ name }) => name);
+            assert.ok(
+                collectionNames.includes('people'),
+                collections
+            );
         });
 
         async function createMongooseInstance() {

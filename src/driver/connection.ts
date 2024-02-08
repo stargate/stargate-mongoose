@@ -75,12 +75,13 @@ export class Connection extends MongooseConnection {
         });
     }
 
-    async listCollections() {
+    async listCollections(): Promise<Array<{ name: string }>> {
         return executeOperation(async () => {
             await this._waitForClient();
             const db = this.client.db();
             const res = await db.findCollections();
-            return res?.status?.collections ?? [];
+            const collectionNames = res?.status?.collections ?? [];
+            return collectionNames.map((name: string) => ({ name }));
         });
     }
 
