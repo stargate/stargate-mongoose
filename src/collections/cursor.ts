@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Collection } from './collection';
-import { executeOperation } from './utils';
+import { executeOperation, omit } from './utils';
 import {findInternalOptionsKeys, FindOptions, FindOptionsInternal} from './options';
 
 export class FindCursor {
@@ -114,12 +114,14 @@ export class FindCursor {
             options.includeSimilarity = this.options.includeSimilarity;
         }
 
+        const cleanOptions = omit(options, ['sort', 'projection']) ?? {};
+
         const command = {
             find: {
                 filter: this.filter,
                 ...(this.options?.sort != null ? { sort: this.options?.sort } : {}),
                 ...(this.options?.projection != null ? { projection: this.options?.projection } : {}),
-                ...(Object.keys(options).length > 0 ? { options } : {})
+                ...(Object.keys(cleanOptions).length > 0 ? { options: cleanOptions } : {})
             }
         };
         

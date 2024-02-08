@@ -14,7 +14,7 @@
 
 import {FindCursor} from './cursor';
 import {HTTPClient} from '@/src/client';
-import {executeOperation, setDefaultIdForUpsert} from './utils';
+import {executeOperation, omit, setDefaultIdForUpsert} from './utils';
 import {InsertManyResult} from 'mongoose';
 import {
     DeleteOneOptions,
@@ -119,7 +119,7 @@ export class Collection {
                 updateOne: {
                     filter,
                     update,
-                    options,
+                    options: omit(options, ['sort']),
                     ...(options?.sort != null ? { sort: options?.sort } : {})
                 }
             };
@@ -225,7 +225,7 @@ export class Collection {
                 findOneAndReplace: {
                     filter,
                     replacement,
-                    options,
+                    options: omit(options, ['sort']),
                     ...(options?.sort != null ? { sort: options?.sort } : {})
                 }
             };
@@ -282,7 +282,7 @@ export class Collection {
                 findOneAndUpdate: {
                     filter,
                     update,
-                    options,
+                    options: omit(options, ['sort']),
                     ...(options?.sort != null ? { sort: options?.sort } : {})
                 }
             };
