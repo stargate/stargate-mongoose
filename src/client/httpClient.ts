@@ -127,7 +127,9 @@ export class HTTPClient {
 
         this.closed = false;
         this.origin = new URL(this.baseUrl).origin;
-        if (options.useHTTP2) {
+
+        const useHTTP2 = options.useHTTP2 == null ? true : !!options.useHTTP2;
+        if (useHTTP2) {
             this.http2Session = http2.connect(this.origin);
             
             // Without these handlers, any errors will end up as uncaught exceptions,
