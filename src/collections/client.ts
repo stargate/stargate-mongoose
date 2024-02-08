@@ -29,12 +29,14 @@ export interface ClientOptions {
   authUrl?: string;
   isAstra?: boolean;
   logSkippedOptions?: boolean;
+  useHTTP2?: boolean;
 }
 
 export class Client {
     httpClient: HTTPClient;
     keyspaceName?: string;
     createNamespaceOnConnect?: boolean;
+    dbs: Map<string, Db>;
 
     constructor(baseUrl: string, keyspaceName: string, options: ClientOptions) {
         this.keyspaceName = keyspaceName;
@@ -56,8 +58,10 @@ export class Client {
             password: options.password,
             authUrl: options.authUrl,
             isAstra: options.isAstra,
-            logSkippedOptions: options.logSkippedOptions
+            logSkippedOptions: options.logSkippedOptions,
+            useHTTP2: options.useHTTP2
         });
+        this.dbs = new Map<string, Db>();
     }
 
     /**
@@ -77,7 +81,8 @@ export class Client {
             password: options?.password,
             authUrl: options?.authUrl,
             isAstra: options?.isAstra,
-            logSkippedOptions: options?.logSkippedOptions
+            logSkippedOptions: options?.logSkippedOptions,
+            useHTTP2: options?.useHTTP2
         });
         await client.connect();
         return client;
@@ -104,10 +109,20 @@ export class Client {
    */
     db(dbName?: string) {
         if (dbName) {
-            return new Db(this.httpClient, dbName);
+            if (this.dbs.has(dbName)) {
+                return this.dbs.get(dbName);
+            }
+            const db = new Db(this.httpClient, dbName);
+            this.dbs.set(dbName, db);
+            return db;
         }
         if (this.keyspaceName) {
-            return new Db(this.httpClient, this.keyspaceName);
+            if (this.dbs.has(this.keyspaceName)) {
+                return this.dbs.get(this.keyspaceName);
+            }
+            const db = new Db(this.httpClient, this.keyspaceName);
+            this.dbs.set(this.keyspaceName, db);
+            return db;
         }
         throw new Error('Database name must be provided');
     }
@@ -126,6 +141,7 @@ export class Client {
    * @returns Client
    */
     close() {
+        this.httpClient.close();
         return this;
     }
 

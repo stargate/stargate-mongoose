@@ -28,6 +28,8 @@ export class Db {
     rootHttpClient: HTTPClient;
     httpClient: HTTPClient;
     name: string;
+    collections: Map<string, Collection>;
+    httpBasePath: string;
 
     constructor(httpClient: HTTPClient, name: string) {
         if (!name) {
@@ -35,17 +37,10 @@ export class Db {
         }
         this.rootHttpClient = httpClient;
         // use a clone of the underlying http client to support multiple db's from a single connection
-        this.httpClient = new HTTPClient({
-            baseUrl: httpClient.baseUrl + `/${name}`,
-            username: httpClient.username,
-            password: httpClient.password,
-            authUrl: httpClient.authUrl,
-            applicationToken: httpClient.applicationToken,
-            authHeaderName: httpClient.authHeaderName,
-            isAstra: httpClient.isAstra,
-            logSkippedOptions: httpClient.logSkippedOptions,
-        });
+        this.httpClient = httpClient;
         this.name = name;
+        this.collections = new Map<string, Collection>();
+        this.httpBasePath = `/${name}`;
     }
 
     /**
@@ -57,7 +52,13 @@ export class Db {
         if (!collectionName) {
             throw new Error('Db: collection name is required');
         }
-        return new Collection(this.httpClient, collectionName);
+        const collection = this.collections.get(collectionName);
+        if (collection != null) {
+            return collection;
+        }
+        const newCollection = new Collection(this, collectionName);
+        this.collections.set(collectionName, newCollection);
+        return newCollection;
     }
 
     /**
@@ -76,7 +77,11 @@ export class Db {
             if (options != null) {
                 command.createCollection.options = options;
             }
-            return await this.httpClient.executeCommand(command, createCollectionOptionsKeys);
+            return await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                createCollectionOptionsKeys
+            );
         });
     }
 
@@ -91,7 +96,11 @@ export class Db {
                 name: collectionName
             }
         };
-        return await this.httpClient.executeCommand(command, null);
+        return await this.httpClient.executeCommandWithUrl(
+            this.httpBasePath,
+            command,
+            null
+        );
     }
 
     /**
@@ -118,7 +127,11 @@ export class Db {
             const command = {
                 findCollections: {}
             };
-            return await this.httpClient.executeCommand(command, null);
+            return await this.httpClient.executeCommandWithUrl(
+                '/' + this.name,
+                command,
+                null
+            );
         });
     }
 }

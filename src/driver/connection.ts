@@ -151,6 +151,9 @@ export class Connection extends MongooseConnection {
      * @returns Client
      */
     doClose(_force?: boolean) {
+        if (this.client != null) {
+            this.client.close();
+        }
         return this;
     }
 }

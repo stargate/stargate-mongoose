@@ -18,6 +18,8 @@ import * as StargateMongooseDriver from '@/src/driver';
 import { testClient } from '@/tests/fixtures';
 import { logger } from '@/src/logger';
 import { parseUri } from '@/src/collections/utils';
+import { HTTPClient } from '@/src/client';
+import { Client } from '@/src/collections';
 
 describe('Driver based tests', async () => {
     let dbUri: string;
@@ -126,9 +128,11 @@ describe('Driver based tests', async () => {
                 if (isAstra) {
                     astraMongoose?.connection.dropCollection('carts');
                     astraMongoose?.connection.dropCollection('products');
+                    astraMongoose?.connection?.getClient()?.close();
                 } else {
                     jsonAPIMongoose?.connection.dropCollection('carts');
                     jsonAPIMongoose?.connection.dropCollection('products');
+                    jsonAPIMongoose?.connection?.getClient()?.close();
                 }
             }
         });
@@ -146,6 +150,7 @@ describe('Driver based tests', async () => {
             await mongooseInstance?.connection.dropCollection('grandchildren');
             await mongooseInstance?.connection.dropCollection('carts');
             await mongooseInstance?.connection.dropCollection('products');
+            mongooseInstance?.connection?.getClient()?.close();
         });
         it('handles find cursors', async () => {
             // @ts-ignore
@@ -355,6 +360,26 @@ describe('Driver based tests', async () => {
             );
         });
 
+        it('disconnect() closes all httpClients', async () => {
+            const mongooseInstance = await createMongooseInstance();
+            const client: Client = mongooseInstance.connection.getClient() as any as Client;
+            const httpClient: HTTPClient = client.httpClient;
+            assert.ok(!httpClient.closed);
+            await mongooseInstance.disconnect();
+
+            assert.ok(httpClient.closed);
+        });
+
+        it('close() close underlying httpClient', async () => {
+            const mongooseInstance = await createMongooseInstance();
+            const client: Client = mongooseInstance.connection.getClient() as any as Client;
+            const httpClient: HTTPClient = client.httpClient;
+            assert.ok(!httpClient.closed);
+            await client.close();
+
+            assert.ok(httpClient.closed);
+        });
+          
         it('handles listCollections()', async () => {
             const personSchema = new mongooseInstance.Schema({
                 name: { type: String, required: true }
@@ -405,6 +430,7 @@ describe('Driver based tests', async () => {
                 const resp = await connection.dropDatabase();
                 assert.strictEqual(resp.status?.ok, 1);
             }
+            mongooseInstance.connection.getClient().close();
         });
         it('should createDatabase if not exists in createCollection call for non-AstraDB', async () => {
             const mongooseInstance = new mongoose.Mongoose();
@@ -435,6 +461,7 @@ describe('Driver based tests', async () => {
                 const resp = await connection.createCollection('new_collection');
                 assert.strictEqual(resp.status?.ok, 1);
             }
+            mongooseInstance.connection.getClient().close();
         });
     });
 });
