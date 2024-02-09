@@ -251,20 +251,20 @@ function _updateHasKey(update: Record<string, any>, key: string) {
 
 export function omit<T extends Record<string, any>>(obj: T | null | undefined, keys: string[]): T | null | undefined {
     if (obj == null) {
-      return obj;
+        return obj;
     }
     const hasKeys: string[] = [];
     for (const key of keys) {
-      if (key in obj) {
-        hasKeys.push(key);
-      }
+        if (key in obj) {
+            hasKeys.push(key);
+        }
     }
     if (hasKeys.length === 0) {
-      return obj;
+        return obj;
     }
     obj = { ...obj };
     for (const key of hasKeys) {
-      delete obj[key];
+        delete obj[key];
     }
     return obj;
 }

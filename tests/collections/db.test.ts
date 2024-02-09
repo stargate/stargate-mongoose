@@ -69,8 +69,9 @@ describe('StargateMongoose - collections.Db', async () => {
         });
         it('should not initialize a Collection without a name', () => {
             let error: any;
+            let db: Db | null = null;
             try {
-                const db = new Db(httpClient, 'test-db');
+                db = new Db(httpClient, 'test-db');
                 // @ts-ignore - intentionally passing undefined for testing purposes
                 const collection = db.collection();
                 assert.ok(collection);
