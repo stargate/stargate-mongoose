@@ -113,10 +113,10 @@ docker compose -f bin/docker-compose.yml down -v
 The current implementation of the JSON API uses DataStax Enterprise (DSE) as the backend database.
 
 ## Version compatibility
-| Component/Library Name | Version          |
-|------------------------|------------------|
-| Mongoose               | ^7.5.0 || ^8.0.0 |
-| DataStax Enterprise    | 6.8.x            |
+| Component/Library Name | Version            |
+|------------------------|--------------------|
+| Mongoose               | ^7.5.0 \|\| ^8.0.0 |
+| DataStax Enterprise    | 6.8.x              |
 
 CI tests are run using the Stargate and JSON API versions specified in the [api-compatibility.versions](api-compatibility.versions) file.
 
