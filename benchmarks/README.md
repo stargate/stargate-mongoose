@@ -71,3 +71,25 @@ $ env ASTRA_CONNECTION_STRING="https://abc-us-east-2.apps.astra.datastax.com/...
   "totalTimeMS": 20436
 }
 ```
+
+## Pinecone Benchmarks
+
+First, install the Pinecone client:
+
+```
+npm install @pinecone-database/pinecone --no-save
+```
+
+Then set up sample data:
+
+```
+```
+env PINECONE_INDEX=your-index-here env PINECONE_API_KEY=your-api-key-here ./node_modules/.bin/ts-node benchmarks/setup-pinecone-vector-example.ts
+```
+```
+
+Then run Pinecone benchmarks:
+
+```
+env PINECONE_INDEX=your-index-here env PINECONE_API_KEY=your-api-key-here ./node_modules/.bin/ts-node benchmarks/benchmark-findone-pinecone.ts
+```

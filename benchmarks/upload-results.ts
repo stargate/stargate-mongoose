@@ -31,15 +31,15 @@ async function main() {
         'BenchmarkResult',
         new mongoose.Schema({
             githash: {
-              type: String,
-              required: true
+                type: String,
+                required: true
             },
             name: {
-              type: String,
-              required: true
+                type: String,
+                required: true
             },
             totalTimeMS: {
-              type: Number
+                type: Number
             }
         }, { autoCreate: true, timestamps: true })
     );
@@ -53,12 +53,12 @@ async function main() {
             fs.readFileSync(path.join('.', 'benchmarks', file), 'utf8')
         );
         if (totalTimeMS == null) {
-          continue;
+            continue;
         }
         const doc = await BenchmarkResult.findOneAndUpdate(
-          { githash, name },
-          { totalTimeMS },
-          { upsert: true, returnDocument: 'after' }
+            { githash, name },
+            { totalTimeMS },
+            { upsert: true, returnDocument: 'after' }
         );
         console.log(doc);
     }
