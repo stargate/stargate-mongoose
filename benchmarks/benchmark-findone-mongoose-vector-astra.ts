@@ -38,14 +38,6 @@ async function main() {
         process.env.ASTRA_COLLECTION_NAME
     );
 
-    const collections = await mongoose.connection.listCollections();
-    if (!collections.find(({ name }) => name === process.env.ASTRA_COLLECTION_NAME)) {
-        console.log(`Collection ${process.env.ASTRA_COLLECTION_NAME} not found, creating...`);
-        await Vector.createCollection({
-            vector: { dimension: 1536, metric: 'cosine' }
-        });
-    }
-
     const $meta = [1, ...Array(1535).fill(0)];
     const start = Date.now();
     for (let i = 0; i < 100; ++i) {

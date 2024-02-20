@@ -36,7 +36,7 @@ async function main() {
               required: true
           }
       }, {
-          collectionOptions: { vector: { size: 1536, function: 'cosine' } },
+          collectionOptions: { vector: { dimension: 1536, metric: 'cosine' } },
           autoCreate: false
       }),
       process.env.ASTRA_COLLECTION_NAME
