@@ -62,20 +62,12 @@ export class Db {
    */
     async createCollection(collectionName: string, options?: CreateCollectionOptions) {
         return executeOperation(async () => {
-            type CreateCollectionCommand = {
-              createCollection: {
-                name: string,
-                options?: CreateCollectionOptions
-              }
-            };
-            const command: CreateCollectionCommand = {
+            const command = {
                 createCollection: {
-                    name: collectionName
+                    name: collectionName,
+                    ...(options == null ? {} : { options })
                 }
             };
-            if (options != null) {
-                command.createCollection.options = options;
-            }
             return await this.httpClient.executeCommandWithUrl(
                 this.httpBasePath,
                 command,
@@ -119,6 +111,19 @@ export class Db {
    */
     async createDatabase() {
         return await createNamespace(this.rootHttpClient, this.name);
+    }
+
+    async findCollections() {
+        return executeOperation(async () => {
+            const command = {
+                findCollections: {}
+            };
+            return await this.httpClient.executeCommandWithUrl(
+                '/' + this.name,
+                command,
+                null
+            );
+        });
     }
 }
 

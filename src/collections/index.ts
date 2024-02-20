@@ -24,7 +24,8 @@ export {
     InsertManyOptions,
     UpdateManyOptions,
     UpdateOneOptions,
-    DeleteOneOptions
+    DeleteOneOptions,
+    VectorOptions
 } from './options';
 
 // alias for MongoClient shimming

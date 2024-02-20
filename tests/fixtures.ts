@@ -97,7 +97,7 @@ export const createSampleDoc2WithMultiLevel = () => ({
     address: {
         number: 45,
         street: 'main street',
-        suburb: null,
+        suburb: 'not null',
         city: 'nyc',
         is_office: true,
         country: 'usa'

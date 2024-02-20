@@ -43,6 +43,9 @@ export class Client {
         this.createNamespaceOnConnect = options?.createNamespaceOnConnect ?? true;
         //If the client is connecting to Astra, we don't want to create the namespace
         if (options?.isAstra) {
+            if (options?.createNamespaceOnConnect) {
+                throw new Error('Cannot set createNamespaceOnConnect when connecting to Astra');
+            }
             this.createNamespaceOnConnect = false;
         }
         this.httpClient = new HTTPClient({

@@ -313,7 +313,8 @@ describe('StargateMongoose clients test', () => {
         it('close() should close HTTP client', async () => {
             const client = new Client(baseUrl, 'keyspace1', {
                 applicationToken: '123',
-                createNamespaceOnConnect: false
+                createNamespaceOnConnect: false,
+                useHTTP2: true
             });
             await client.connect();
             assert.ok(!client.httpClient.closed);
@@ -322,6 +323,18 @@ describe('StargateMongoose clients test', () => {
 
             await client.close();
             assert.ok(client.httpClient.closed);
+
+            let error: any;
+            try {
+                await client.db('test')!.collection('test')!.findOne({
+                    url: '/test'
+                });
+                assert.ok(false);
+            } catch (e) {
+                error = e;
+            }
+            assert.ok(error);
+            assert.ok(error.message.includes('Cannot make http2 request when client is closed'), error.message);
         });
     });
     describe('Client noops', () => {

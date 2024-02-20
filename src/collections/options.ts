@@ -20,6 +20,11 @@ export interface DeleteOneOptions {
     sort?: Record<string, 1 | -1>;
 }
 
+export interface VectorOptions {
+  distance?: number;
+  metric?: 'cosine' | 'euclidean' | 'dot_product';
+}
+
 export interface FindOptions {
     limit?: number;
     skip?: number;
@@ -119,10 +124,7 @@ export const updateOneInternalOptionsKeys: Set<string> = new Set(
 );
 
 class _CreateCollectionOptions {
-    vector?: {
-        dimension: number,
-        metric?: 'cosine' | 'euclidean' | 'dot_product'
-    } = undefined;
+    vector?: VectorOptions = undefined;
 }
 
 export interface CreateCollectionOptions extends _CreateCollectionOptions {}

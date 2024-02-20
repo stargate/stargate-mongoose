@@ -82,13 +82,21 @@ describe('StargateMongoose - collections.Db', async () => {
         });
         it('should create a Collection', async () => {
             const collectionName = TEST_COLLECTION_NAME;
+
             const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
+
+            let collections = await db.findCollections().then(res => res.status.collections);
+            assert.ok(!collections.includes(collectionName));
+
             const res = await db.createCollection(collectionName);
             assert.ok(res);
             assert.strictEqual(res.status.ok, 1);
             const res2 = await db.createCollection(collectionName);
             assert.ok(res2);
             assert.strictEqual(res2.status.ok, 1);
+
+            collections = await db.findCollections().then(res => res.status.collections);
+            assert.ok(collections.includes(collectionName));
         });
 
         it('should drop a Collection', async () => {

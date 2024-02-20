@@ -113,15 +113,37 @@ docker compose -f bin/docker-compose.yml down -v
 The current implementation of the JSON API uses DataStax Enterprise (DSE) as the backend database.
 
 ## Version compatibility
-| Component/Library Name | Version |
-|------------------------|---------|
-| Mongoose               | 7.x     |
-| DataStax Enterprise    | 6.8.x   |
+| Component/Library Name | Version            |
+|------------------------|--------------------|
+| Mongoose               | ^7.5.0 \|\| ^8.0.0 |
+| DataStax Enterprise    | 6.8.x              |
 
 CI tests are run using the Stargate and JSON API versions specified in the [api-compatibility.versions](api-compatibility.versions) file.
 
 ## Connecting to AstraDB
-Integration with [AstraDB](https://astra.datastax.com/) is experimental and is not usable/ fully ready at this time.
+
+Here's a quick way to connect to AstraDB using `stargate-mongoose` driver.
+
+```typescript
+const mongoose = require("mongoose");
+const { driver, createAstraUri } = require("stargate-mongoose");
+
+const uri = createAstraUri(
+  process.env.ASTRA_DB_API_ENDPOINT,
+  process.env.ASTRA_DB_APPLICATION_TOKEN,
+  process.env.ASTRA_DB_NAMESPACE // optional
+);
+
+mongoose.setDriver(driver);
+
+await mongoose.connect(uri, {
+  isAstra: true,
+});
+```
+
+And the step-by-step instructions with a sample application can be found here in below guide.
+
+https://docs.datastax.com/en/astra-serverless/docs/quickstart/qs-jsonapi.html
 
 ## Sample Applications
 
