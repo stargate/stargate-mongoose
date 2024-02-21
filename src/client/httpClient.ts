@@ -130,13 +130,7 @@ export class HTTPClient {
 
         const useHTTP2 = options.useHTTP2 == null ? true : !!options.useHTTP2;
         if (useHTTP2) {
-            this.http2Session = http2.connect(this.origin);
-            
-            // Without these handlers, any errors will end up as uncaught exceptions,
-            // even if they are handled in `_request()`.
-            // More info: https://github.com/nodejs/node/issues/16345
-            this.http2Session.on('error', () => {});
-            this.http2Session.on('socketError', () => {});
+            this._createHTTP2Session();
         }
 
         if (options.logLevel) {
@@ -155,6 +149,16 @@ export class HTTPClient {
             this.http2Session.close();
         }
         this.closed = true;
+    }
+
+    _createHTTP2Session() {
+        this.http2Session = http2.connect(this.origin);
+            
+        // Without these handlers, any errors will end up as uncaught exceptions,
+        // even if they are handled in `_request()`.
+        // More info: https://github.com/nodejs/node/issues/16345
+        this.http2Session.on('error', () => {});
+        this.http2Session.on('socketError', () => {});
     }
 
     async _request(requestInfo: AxiosRequestConfig): Promise<APIResponse> {
@@ -269,6 +273,12 @@ export class HTTPClient {
             }
             if (this.closed) {
                 throw new Error('Cannot make http2 request when client is closed');
+            }
+
+            // Recreate session if session was closed except via an explicit `close()`
+            // call. This happens when nginx sends a GOAWAY packet after 1000 requests.
+            if (this.http2Session.closed) {
+                this._createHTTP2Session();
             }
   
             const req: http2.ClientHttp2Stream = this.http2Session.request({
