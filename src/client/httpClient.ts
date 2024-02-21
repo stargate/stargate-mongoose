@@ -20,6 +20,7 @@ import { LIB_NAME, LIB_VERSION } from '../version';
 import { getStargateAccessToken } from '../collections/utils';
 import { EJSON } from 'bson';
 import http2 from 'http2';
+import { StargateMongooseError } from '../collections/collection';
 
 const REQUESTED_WITH = LIB_NAME + '/' + LIB_VERSION;
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
@@ -200,7 +201,8 @@ export class HTTPClient {
                 ? await this.makeHTTP2Request(
                     requestInfo.url.replace(this.origin, ''),
                     this.applicationToken,
-                    requestInfo.data
+                    requestInfo.data,
+                    requestInfo.timeout || DEFAULT_TIMEOUT
                 )
                 : await axiosAgent({
                     url: requestInfo.url,
@@ -264,7 +266,8 @@ export class HTTPClient {
     makeHTTP2Request(
         path: string,
         token: string,
-        body: Record<string, any>
+        body: Record<string, any>,
+        timeout: number
     ): Promise<{ status: number, data: Record<string, any> }> {
         return new Promise((resolve, reject) => {
             // Should never happen, but good to have a readable error just in case
@@ -280,6 +283,11 @@ export class HTTPClient {
             if (this.http2Session.closed) {
                 this._createHTTP2Session();
             }
+
+            const timer = setTimeout(
+                () => reject(new StargateMongooseError('Request timed out', body)),
+                timeout
+            );
   
             const req: http2.ClientHttp2Stream = this.http2Session.request({
                 ':path': path,
@@ -291,10 +299,12 @@ export class HTTPClient {
 
             let status = 0;
             req.on('response', (data: http2.IncomingHttpStatusHeader) => {
+                clearTimeout(timer);
                 status = data[':status'] ?? 0;
             });
 
             req.on('error', (error: Error) => {
+                clearTimeout(timer);
                 reject(error);
             });
 
@@ -304,6 +314,7 @@ export class HTTPClient {
                 responseBody += chunk;
             });
             req.on('end', () => {
+                clearTimeout(timer);
                 let data = {};
                 try {
                     data = JSON.parse(responseBody);
