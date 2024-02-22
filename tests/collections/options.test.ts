@@ -52,6 +52,11 @@ describe('Options tests', async () => {
         await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'products');
     });
 
+    after(function() {
+        jsonAPIMongoose?.connection?.getClient()?.close();
+        astraMongoose?.connection?.getClient()?.close();
+    });
+
     async function createClientsAndModels(isAstra: boolean) {
         let Product, astraMongoose, jsonAPIMongoose;
         const productSchema = new mongoose.Schema({
