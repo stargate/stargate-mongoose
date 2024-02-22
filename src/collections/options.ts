@@ -123,8 +123,11 @@ export const updateOneInternalOptionsKeys: Set<string> = new Set(
     Object.keys(new _UpdateOneOptions)
 );
 
+export type IndexingOptions = { deny: string[], allow?: never } | { allow: string[], deny?: never };
+
 class _CreateCollectionOptions {
     vector?: VectorOptions = undefined;
+    indexing?: IndexingOptions = undefined;
 }
 
 export interface CreateCollectionOptions extends _CreateCollectionOptions {}

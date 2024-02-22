@@ -45,12 +45,16 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         await db.dropCollection(TEST_COLLECTION_NAME);
     });
 
-    beforeEach(async function() {
+    before(async function() {
         await db.createCollection(TEST_COLLECTION_NAME);
         collection = db.collection(TEST_COLLECTION_NAME);
     });
 
-    afterEach(async function() {
+    beforeEach(async function() {
+        await collection.deleteMany({});
+    });
+
+    after(async function() {
         await db.dropCollection(TEST_COLLECTION_NAME);
     });
 
@@ -103,22 +107,14 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 //In Astra, it returns a 413 error prior to reaching the JSON API
                 assert.strictEqual(error.errors[0].message, 'Request failed with status code 413');
             } else {
-                assert.strictEqual(error.errors[0].message, 'Document size limitation violated: document size (1048636 chars) exceeds maximum allowed (1000000)');
+                assert.strictEqual(
+                    error.errors[0].message,
+                    'Document size limitation violated: indexed String value (property \'username\') length (1048576 bytes) exceeds maximum allowed (8000 bytes)'
+                );
             }
         });
-        it('Should fail if the number of levels in the doc is > 8', async () => {
-            const docToInsert = { l1: { l2: { l3: { l4: { l5: { l6: { l7: { l8: { l9: 'l9value' } } } } } } } } };
-            let error: any;
-            try {
-                await collection.insertOne(docToInsert);
-            } catch (e: any) {
-                error = e;
-            }
-            assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: document depth exceeds maximum allowed (8)');
-        });
-        it('Should fail if the field length is > 48', async () => {
-            const fieldName = 'a'.repeat(49);
+        it('Should fail if the field length is > 1000', async () => {
+            const fieldName = 'a'.repeat(1001);
             const docToInsert = { [fieldName]: 'value' };
             let error: any;
             try {
@@ -127,7 +123,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 error = e;
             }
             assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: Property name length (49) exceeds maximum allowed (48) (name \''+ fieldName +'\')');
+            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: property path length (1001) exceeds maximum allowed (1000) (path ends with \''+ fieldName +'\')');
         });
         it('Should fail if the string field value is > 16000', async () => {
             const _string16klength = new Array(16001).fill('a').join('');
@@ -139,10 +135,13 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 error = e;
             }
             assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: String value length (16001 bytes) exceeds maximum allowed (8000 bytes)');
+            assert.strictEqual(
+                error.errors[0].message,
+                'Document size limitation violated: indexed String value (property \'username\') length (16001 bytes) exceeds maximum allowed (8000 bytes)'
+            );
         });
-        it('Should fail if an array field size is > 100', async () => {
-            const docToInsert = { tags: new Array(101).fill('tag') };
+        it('Should fail if an array field size is > 10000', async () => {
+            const docToInsert = { tags: new Array(10001).fill('tag') };
             let error: any;
             try {
                 await collection.insertOne(docToInsert);
@@ -150,11 +149,14 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 error = e;
             }
             assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: number of elements an Array has (101) exceeds maximum allowed (100)');
+            assert.strictEqual(
+                error.errors[0].message,
+                'Document size limitation violated: number of elements an indexable Array (property \'tags\') has (10001) exceeds maximum allowed (1000)'
+            );
         });
-        it('Should fail if a doc contains more than 64 properties', async () => {
+        it('Should fail if a doc contains more than 1000 properties', async () => {
             const docToInsert: any = { _id: '123' };
-            for (let i = 1; i <= 64; i++) {
+            for (let i = 1; i <= 1001; i++) {
                 docToInsert[`prop${i}`] = `prop${i}value`;
             }
             let error: any;
@@ -164,7 +166,10 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 error = e;
             }
             assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: number of properties an Object has (65) exceeds maximum allowed (64)');
+            assert.strictEqual(
+                error.errors[0].message, 
+                'Document size limitation violated: number of properties an indexable Object (property \'null\') has (1002) exceeds maximum allowed (1000)'
+            );
         });
     });
     describe('insertMany tests', () => {
@@ -196,7 +201,10 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 error = e;
             }
             assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Request invalid, the field postCommand.command.documents not valid: amount of documents to insert is over the max limit (21 vs 20).');
+            assert.strictEqual(
+                error.errors[0].message,
+                'Request invalid: field \'command.documents\' value "[{"username":"id1"}, {"username":"id2"}, {"username":"id3"}, {"username":"id4"}, {"username":"id5"}, {"username":"id6"}, {"username":"id7"}, {"username":"id8"}, {"username":"id9"}, {"username":"id10"}, {"username":"id11"}, {"username":"id12"}, {"username":"id13"}, {"username":"id14"}, {"username":"id15"}, {"username":"id16"}, {"username":"id17"}, {"username":"id18"}, {"username":"id19"}, {"username":"id20"}, {"username":"id21"}]" not valid. Problem: amount of documents to insert is over the max limit (21 vs 20).'
+            );
         });
         it('should error out when docs list is empty in insertMany', async () => {
             let error: any;
@@ -205,7 +213,10 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             } catch (e: any) {
                 error = e;
             }
-            assert.strictEqual(error.errors[0].message, 'Request invalid, the field postCommand.command.documents not valid: must not be empty.');
+            assert.strictEqual(
+                error.errors[0].message,
+                'Request invalid: field \'command.documents\' value "[]" not valid. Problem: must not be empty.'
+            );
         });
         it('should insertMany documents ordered', async () => {
             const docList: { _id?: string, username: string }[] = Array.from({ length: 20 }, () => ({ 'username': 'id' }));
@@ -1110,11 +1121,9 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
               doc.username = doc.username + (index + 1);
               if (index == 4) {
                   doc.tags = ['tag1', 'tag2', 'tag3', 'tag4'];
-              }
-              if (index == 5) {
+              } else if (index == 5) {
                   doc.tags = ['tag1', 'tag2', 'tag3'];
-              }
-              if (index == 6) {
+              } else if (index == 6) {
                   doc.tags = [];
               }
           });

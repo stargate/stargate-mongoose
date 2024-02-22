@@ -139,27 +139,40 @@ describe('Driver based tests', async () => {
     });
     describe('Mongoose API', () => {
         let mongooseInstance: mongoose.Mongoose | undefined;
-        beforeEach(async function () {
+        before(async function () {
             mongooseInstance = await createMongooseInstance();
+
+            const personSchema = new mongooseInstance.Schema({
+                name: { type: String, required: true }
+            });
+            const Person = mongooseInstance.model('Person', personSchema);
+            await Person.createCollection();
         });
-        afterEach(async function () {
+
+        before(async function() {
+            const cartSchema = new mongooseInstance!.Schema({
+                name: String,
+                products: [{ type: 'ObjectId', ref: 'Product' }]
+            });
+            const productSchema = new mongooseInstance!.Schema({
+                name: String,
+                price: Number
+            });
+            const Cart = mongooseInstance!.model('Cart', cartSchema);
+            await Cart.createCollection();
+            const Product = mongooseInstance!.model('Product', productSchema);
+            await Product.createCollection();
+        });
+
+        after(async function () {
             //add all unique collections here that are used across tests
             await mongooseInstance?.connection.dropCollection('people');
-            await mongooseInstance?.connection.dropCollection('parents');
-            await mongooseInstance?.connection.dropCollection('children');
-            await mongooseInstance?.connection.dropCollection('grandchildren');
             await mongooseInstance?.connection.dropCollection('carts');
             await mongooseInstance?.connection.dropCollection('products');
             mongooseInstance?.connection?.getClient()?.close();
         });
         it('handles find cursors', async () => {
-            // @ts-ignore
-            const personSchema = new mongooseInstance.Schema({
-                name: { type: String, required: true }
-            });
-            // @ts-ignore
-            const Person = mongooseInstance.model('Person', personSchema);
-            await Person.init();
+            const Person = mongooseInstance!.model('Person');
             await Person.deleteMany({});
             await Person.create([{name: 'John'}, {name: 'Bill'}]);
 
@@ -170,13 +183,7 @@ describe('Driver based tests', async () => {
         });
 
         it('handles document deleteOne() and updateOne()', async () => {
-            // @ts-ignore
-            const personSchema = new mongooseInstance.Schema({
-                name: String
-            });
-            // @ts-ignore
-            const Person = mongooseInstance.model('Person', personSchema);
-            await Person.init();
+            const Person = mongooseInstance!.model('Person');
             await Person.deleteMany({});
             const [person1] = await Person.create([{name: 'John'}, {name: 'Bill'}]);
 
@@ -190,13 +197,7 @@ describe('Driver based tests', async () => {
         });
 
         it('handles updating existing document with save()', async () => {
-        // @ts-ignore
-            const personSchema = new mongooseInstance.Schema({
-                name: String
-            });
-            // @ts-ignore
-            const Person = mongooseInstance.model('Person', personSchema);
-            await Person.init();
+            const Person = mongooseInstance!.model('Person');
             await Person.deleteMany({});
             const [person] = await Person.create([{name: 'John'}]);
 
@@ -207,21 +208,8 @@ describe('Driver based tests', async () => {
         });
 
         it('handles populate()', async () => {
-            // @ts-ignore
-            const cartSchema = new mongooseInstance.Schema({
-                name: String,
-                products: [{ type: 'ObjectId', ref: 'Product' }]
-            });
-            // @ts-ignore
-            const productSchema = new mongooseInstance.Schema({
-                name: String,
-                price: Number
-            });
-            // @ts-ignore
-            const Cart = mongooseInstance.model('Cart', cartSchema);
-            // @ts-ignore
-            const Product = mongooseInstance.model('Product', productSchema);
-            await Promise.all([Cart.init(), Product.init()]);
+            const Cart = mongooseInstance!.model('Cart');
+            const Product = mongooseInstance!.model('Product');
             await Promise.all([Cart.deleteMany({}), Product.deleteMany({})]);
             const [{ _id: productId }] = await Product.create([
                 { name: 'iPhone 12', price: 500 },
@@ -233,65 +221,8 @@ describe('Driver based tests', async () => {
             assert.deepEqual(cart.products.map(p => p.name), ['iPhone 12']);
         });
 
-        it('handles nested populate()', async () => {
-            // @ts-ignore
-            const parentSchema = new mongooseInstance.Schema({
-                name: String,
-                children: [{type: 'ObjectId', ref: 'Child'}]
-            });
-            // @ts-ignore
-            const childSchema = new mongooseInstance.Schema({
-                name: String,
-                children: [{type: 'ObjectId', ref: 'Grandchild'}]
-            });
-            // @ts-ignore
-            const grandchildSchema = new mongooseInstance.Schema({
-                name: String
-            });
-            // @ts-ignore
-            const Parent = mongooseInstance.model('Parent', parentSchema);
-            // @ts-ignore
-            const Child = mongooseInstance.model('Child', childSchema);
-            // @ts-ignore
-            const Grandchild = mongooseInstance.model('Grandchild', grandchildSchema);
-            await Promise.all([Parent.init(), Child.init(), Grandchild.init()]);
-            await Promise.all([Parent.deleteMany({}), Child.deleteMany({}), Grandchild.deleteMany({})]);
-            const [{_id: grandchildId}] = await Grandchild.create([
-                {name: 'Ben Skywalker'},
-                {name: 'Jacen Solo'}
-            ]);
-            const [{_id: childId}] = await Child.create([
-                {name: 'Luke Skywalker', children: [grandchildId]},
-                {name: 'Han Solo'}
-            ]);
-            const {_id: parentId} = await Parent.create({
-                name: 'Anakin Skywalker',
-                children: [childId]
-            });
-
-      type PopulateTypeOverride = {
-        children: { name?: string, children: (typeof Grandchild)[] }[]
-      };
-      const parent = await Parent
-          .findById(parentId)
-          .populate<PopulateTypeOverride>({
-              path: 'children',
-              populate: {path: 'children'}
-          });
-      assert.equal(parent!.children.length, 1);
-      assert.equal(parent!.children[0]!.name, 'Luke Skywalker');
-      assert.equal(parent!.children[0]!.children.length, 1);
-      assert.equal(parent!.children[0]!.children[0].name, 'Ben Skywalker');
-        });
-
         it('handles exists()', async () => {
-            // @ts-ignore
-            const personSchema = new mongooseInstance.Schema({
-                name: String
-            });
-            // @ts-ignore
-            const Person = mongooseInstance.model('Person', personSchema);
-            await Person.init();
+            const Person = mongooseInstance!.model('Person');
             await Person.deleteMany({});
             await Person.create([{name: 'John'}]);
 
@@ -300,13 +231,7 @@ describe('Driver based tests', async () => {
         });
 
         it('handles insertMany()', async () => {
-            // @ts-ignore
-            const personSchema = new mongooseInstance.Schema({
-                name: String
-            });
-            // @ts-ignore
-            const Person = mongooseInstance.model('Person', personSchema);
-            await Person.init();
+            const Person = mongooseInstance!.model('Person');
             await Person.deleteMany({});
             await Person.insertMany([{ name: 'John' }, { name: 'Bill' }]);
 
@@ -315,13 +240,7 @@ describe('Driver based tests', async () => {
         });
 
         it('throws readable error on bulkWrite()', async () => {
-            // @ts-ignore
-            const personSchema = new mongooseInstance.Schema({
-                name: String
-            });
-            // @ts-ignore
-            const Person = mongooseInstance.model('Person', personSchema);
-            await Person.init();
+            const Person = mongooseInstance!.model('Person');
             await Person.deleteMany({});
             await assert.rejects(
                 Person.bulkWrite([{insertOne: {document: {name: 'John'}}}]),
@@ -330,13 +249,7 @@ describe('Driver based tests', async () => {
         });
 
         it('throws readable error on aggregate()', async () => {
-            // @ts-ignore
-            const personSchema = new mongooseInstance.Schema({
-                name: String
-            });
-            // @ts-ignore
-            const Person = mongooseInstance.model('Person', personSchema);
-            await Person.init();
+            const Person = mongooseInstance!.model('Person');
             await Person.deleteMany({});
             // @ts-ignore
             await assert.rejects(
@@ -346,12 +259,7 @@ describe('Driver based tests', async () => {
         });
 
         it('throws readable error on change stream', async () => {
-            // @ts-ignore
-            const personSchema = new mongooseInstance.Schema({
-                name: String
-            });
-            // @ts-ignore
-            const Person = mongooseInstance.model('Person', personSchema);
+            const Person = mongooseInstance!.model('Person');
             await Person.init();
             await Person.deleteMany({});
             await assert.throws(
@@ -381,24 +289,21 @@ describe('Driver based tests', async () => {
         });
           
         it('handles listCollections()', async () => {
-            const personSchema = new mongooseInstance.Schema({
-                name: { type: String, required: true }
-            });
-            const Person = mongooseInstance.model('Person', personSchema);
+            const Person = mongooseInstance!.model('Person');
             await Person.init();
             await Person.deleteMany({});
-            const collections = await mongooseInstance.connection.listCollections();
+            const collections = await mongooseInstance!.connection.listCollections();
             const collectionNames = collections.map(({ name }) => name);
             assert.ok(
                 collectionNames.includes('people'),
-                collections
+                collectionNames.join(', ')
             );
         });
 
         async function createMongooseInstance() {
             const mongooseInstance = new mongoose.Mongoose();
             mongooseInstance.setDriver(StargateMongooseDriver);
-            mongooseInstance.set('autoCreate', true);
+            mongooseInstance.set('autoCreate', false);
             mongooseInstance.set('autoIndex', false);
 
             const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };

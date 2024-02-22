@@ -55,16 +55,15 @@ describe('Mongoose Model API level tests', async () => {
     });
     let mongooseInstance: Mongoose | null = null;
     let Product: Model<any>, Cart: Model<any>, astraMongoose: Mongoose | null, jsonAPIMongoose: Mongoose | null;
-    beforeEach(async () => {
+    before(async () => {
         ({Product, Cart, astraMongoose, jsonAPIMongoose} = await createClientsAndModels(isAstra));
     });
     afterEach(async () => {
+        await Promise.all([Product.deleteMany({}), Cart.deleteMany({})]);
+    });
+    after(async () => {
         await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'products');
         await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'carts');
-    });
-    afterEach(function() {
-        jsonAPIMongoose?.connection?.getClient()?.close();
-        astraMongoose?.connection?.getClient()?.close();
     });
 
     function getInstance() {
@@ -381,22 +380,11 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(findDeletedDoc, null);
         });
         it('API ops tests Model.diffIndexes()', async () => {
-            const modelName = 'User';
             let error: OperationNotSupportedError | null = null;
             try {
-                const userSchema = new mongoose.Schema({
-                    name: String,
-                    age: Number,
-                    dob: Date
-                });
-                userSchema.index({name: 1});
-                const User = mongooseInstance!.model(modelName, userSchema);
-                await Promise.all(Object.values(mongooseInstance!.connection.models).map(Model => Model.init()));
-                await User.diffIndexes();
+                await Product.diffIndexes();
             } catch (err: any) {
                 error = err;
-            } finally {
-                await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'users');
             }
             assert.ok(error);
             assert.strictEqual(error?.message, 'listIndexes() Not Implemented');
@@ -784,14 +772,14 @@ describe('Mongoose Model API level tests', async () => {
                 await mongooseInstance.connect(dbUri, options);
             }
         });
-        
-        after(function() {
-            mongooseInstance.connection.getClient().close();
+
+        before(async function() {
+            await mongooseInstance!.connection.dropCollection('vector');
+            await Vector.createCollection();
         });
 
         beforeEach(async function() {
-            await mongooseInstance!.connection.dropCollection('vector');
-            await Vector.createCollection();
+            await Vector.deleteMany({});
             await Vector.create([
                 {
                     name: 'Test vector 1',
@@ -802,6 +790,14 @@ describe('Mongoose Model API level tests', async () => {
                     $vector: [100, 1]
                 }
             ]);
+        });
+
+        after(async function() {
+            await mongooseInstance!.connection.dropCollection('vector');
+        });
+
+        after(function() {
+            mongooseInstance.connection.getClient().close();
         });
 
         it('supports updating $vector with save()', async function() {
@@ -822,7 +818,8 @@ describe('Mongoose Model API level tests', async () => {
         it('supports sort() and similarity score with $meta with findOne()', async function() {
             const doc2 = await Vector
                 .findOne({}, null, { includeSimilarity: true })
-                .sort({ $vector: { $meta: [1, 99] } });
+                .sort({ $vector: { $meta: [1, 99] } })
+                .orFail();
             assert.strictEqual(doc2.name, 'Test vector 1');
             assert.strictEqual(doc2.get('$similarity'), 1);
         });

@@ -17,8 +17,10 @@ import { Db } from '@/src/collections/db';
 import { Client } from '@/src/collections/client';
 import { parseUri, createNamespace } from '@/src/collections/utils';
 import { testClient, TEST_COLLECTION_NAME } from '@/tests/fixtures';
-import { randAlphaNumeric } from '@ngneat/falso';
 import {HTTPClient} from '@/src/client';
+import { randomBytes } from 'crypto';
+
+const randString = (length: number) => randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length);
 
 describe('StargateMongoose - collections.Db', async () => {
     let astraClient: Client | null;
@@ -99,9 +101,71 @@ describe('StargateMongoose - collections.Db', async () => {
             assert.ok(collections.includes(collectionName));
         });
 
+        it('should create a Collection with allow indexing options', async () => {
+            const collectionName = TEST_COLLECTION_NAME + '_allow';
+            const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
+
+            try {
+                let collections = await db.findCollections().then(res => res.status.collections);
+                assert.ok(!collections.includes(collectionName));
+
+                const res = await db.createCollection(
+                    collectionName,
+                    { indexing: { allow: ['name'] } }
+                );
+                assert.ok(res);
+                assert.strictEqual(res.status.ok, 1);
+
+                collections = await db.findCollections().then(res => res.status.collections);
+                assert.ok(collections.includes(collectionName));
+
+                await db.collection(collectionName).insertOne({ name: 'test', description: 'test' });
+                await assert.rejects(
+                    () => db.collection(collectionName).findOne({ description: 'test' }),
+                    /filter path 'description' is not indexed/
+                );
+
+                const doc = await db.collection(collectionName).findOne({ name: 'test' });
+                assert.equal(doc!.description, 'test');
+            } finally {
+                await db.dropCollection(collectionName);
+            }
+        });
+
+        it('should create a Collection with deny indexing options', async () => {
+            const collectionName = TEST_COLLECTION_NAME + '_deny';
+            const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
+
+            try {
+                let collections = await db.findCollections().then(res => res.status.collections);
+                assert.ok(!collections.includes(collectionName));
+    
+                const res = await db.createCollection(
+                    collectionName,
+                    { indexing: { deny: ['description'] } }
+                );
+                assert.ok(res);
+                assert.strictEqual(res.status.ok, 1);
+    
+                collections = await db.findCollections().then(res => res.status.collections);
+                assert.ok(collections.includes(collectionName));
+    
+                await db.collection(collectionName).insertOne({ name: 'test', description: 'test' });
+                await assert.rejects(
+                    () => db.collection(collectionName).findOne({ description: 'test' }),
+                    /filter path 'description' is not indexed/
+                );
+    
+                const doc = await db.collection(collectionName).findOne({ name: 'test' });
+                assert.equal(doc!.description, 'test');
+            } finally {
+                await db.dropCollection(collectionName);
+            }
+        });
+
         it('should drop a Collection', async () => {
             const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
-            const suffix = randAlphaNumeric({ length: 4 }).join('');
+            const suffix = randString(4);
             await db.createCollection(`test_db_collection_${suffix}`);
             const res = await db.dropCollection(`test_db_collection_${suffix}`);
             assert.strictEqual(res.status?.ok, 1);
@@ -124,7 +188,7 @@ describe('StargateMongoose - collections.Db', async () => {
             }
             const keyspaceName = parseUri(dbUri).keyspaceName;
             const db = new Db(httpClient, keyspaceName);
-            const suffix = randAlphaNumeric({ length: 4 }).join('');
+            const suffix = randString(4);
             await db.createCollection(`test_db_collection_${suffix}`);
             const res = await db.dropDatabase();
             assert.strictEqual(res.status?.ok, 1);
@@ -158,7 +222,7 @@ describe('StargateMongoose - collections.Db', async () => {
             }
             const keyspaceName = parseUri(dbUri).keyspaceName;
             const db = new Db(httpClient, keyspaceName);
-            const suffix = randAlphaNumeric({ length: 4 }).join('');
+            const suffix = randString(4);
 
             await db.dropDatabase().catch(err => {
                 if (err.errors[0].exceptionClass === 'NotFoundException') {

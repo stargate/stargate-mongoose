@@ -39,13 +39,16 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
         await collection?.deleteMany({});
     });
 
-    beforeEach(async function () {
+    before(async function () {
         await db.createCollection(TEST_COLLECTION_NAME);
         collection = db.collection(TEST_COLLECTION_NAME);
     });
 
-    afterEach(async () => {
-    // run drop collection async to save time
+    afterEach(async function() {
+        await collection.deleteMany({});
+    });
+
+    after(async () => {
         await db?.dropCollection(TEST_COLLECTION_NAME);
     });
 

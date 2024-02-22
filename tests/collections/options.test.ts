@@ -40,17 +40,16 @@ describe('Options tests', async () => {
         isAstra = testClient.isAstra;
     });
 
-    beforeEach(async function () {
+    before(async function () {
         ({ Product, astraMongoose, jsonAPIMongoose } = await createClientsAndModels(isAstra));
     });
 
-    afterEach(async function () {
-        await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'products');
+    afterEach(async function() {
+        await Product.deleteMany({});
     });
 
-    afterEach(function() {
-        jsonAPIMongoose?.connection?.getClient()?.close();
-        astraMongoose?.connection?.getClient()?.close();
+    after(async function () {
+        await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'products');
     });
 
     async function createClientsAndModels(isAstra: boolean) {
@@ -133,7 +132,7 @@ describe('Options tests', async () => {
             //rawResult options should be cleaned up by stargate-mongoose, but 'upsert' should be preserved
             const updateOneResp = await Product.updateOne({ name: 'Product 4' },
                 { $set : { isCertified : true }, $inc: { price: 5 } },
-                { upsert: true, rawResult: false, sort: { name : 1 } }
+                { upsert: true, rawResult: false, sort: { name : 1 } } as unknown as Record<string, never>
             );
             assert.ok(updateOneResp.acknowledged);
             assert.strictEqual(updateOneResp.matchedCount, 0);
@@ -157,7 +156,7 @@ describe('Options tests', async () => {
             //rawResult options should be cleaned up by stargate-mongoose, but 'upsert' should be preserved
             const updateManyResp = await Product.updateMany({ category: 'cat1' },
                 { $set : { isCertified : true }, $inc: { price: 5 } },
-                { upsert: true, rawResult: false, sort: { name : 1 } }
+                { upsert: true, rawResult: false, sort: { name : 1 } } as unknown as Record<string, never>
             );
             assert.ok(updateManyResp.acknowledged);
             assert.strictEqual(updateManyResp.matchedCount, 2);
@@ -177,7 +176,7 @@ describe('Options tests', async () => {
             const product1 = new Product({ name: 'Product 1', price: 10, isCertified: true });
             await product1.save();
             //runValidations is not a flag supported by JSON API, so it should be removed by stargate-mongoose
-            await Product.deleteOne({ name: 'Product 1' }, { runValidations: true });
+            await Product.deleteOne({ name: 'Product 1' }, { runValidations: true } as unknown as Record<string, never>);
             const product1Deleted = await Product.findOne({ name: 'Product 1' });
             assert.strictEqual(product1Deleted, null);
         });

@@ -21,6 +21,7 @@ export {
     FindOneAndUpdateOptions,
     FindOneOptions,
     FindOptions,
+    IndexingOptions,
     InsertManyOptions,
     UpdateManyOptions,
     UpdateOneOptions,
