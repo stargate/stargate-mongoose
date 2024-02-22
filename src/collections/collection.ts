@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {Db} from './db';
 import {FindCursor} from './cursor';
-import {HTTPClient} from '@/src/client';
-import {executeOperation, setDefaultIdForUpsert} from './utils';
+import {executeOperation, omit, setDefaultIdForUpsert} from './utils';
 import {InsertManyResult} from 'mongoose';
 import {
     DeleteOneOptions,
@@ -31,7 +31,6 @@ import {
     updateOneInternalOptionsKeys,
     UpdateOneOptions,
     FindOptions,
-    SortOption,
     findOneInternalOptionsKeys
 } from './options';
 
@@ -58,69 +57,21 @@ export interface JSONAPIModifyResult {
   value: Record<string, any> | null;
 }
 
-export type FindOneAndUpdateCommand = {
-  findOneAndUpdate: {
-    filter?: Record<string, any>,
-    update?: Record<string, any>,
-    options?: FindOneAndUpdateOptions,
-    sort?: SortOption
-  }
-};
-
-export type FindOneAndDeleteCommand = {
-  findOneAndDelete: {
-    filter?: Record<string, any>,
-    sort?: SortOption
-  }
-};
-
-export type FindOneCommand = {
-  findOne: {
-    filter?: Record<string, any>,
-    options?: FindOneOptions,
-    sort?: SortOption,
-    projection?: Record<string, any>
-  }
-};
-
-export type DeleteOneCommand = {
-  deleteOne: {
-    filter?: Record<string, any>,
-    sort?: SortOption
-  }
-};
-
-export type UpdateOneCommand = {
-  updateOne: {
-    filter?: Record<string, any>,
-    sort?: SortOption,
-    update?: Record<string, any>,
-    options?: UpdateOneOptions
-  }
-};
-
 export class Collection {
     httpClient: any;
     name: string;
+    httpBasePath: string;
     collectionName: string;
 
-    constructor(httpClient: HTTPClient, name: string) {
+    constructor(db: Db, name: string) {
         if (!name) {
             throw new Error('Collection name is required');
         }
         // use a clone of the underlying http client to support multiple collections from a single db
-        this.httpClient = new HTTPClient({
-            baseUrl: httpClient.baseUrl + `/${name}`,
-            username: httpClient.username,
-            password: httpClient.password,
-            authUrl: httpClient.authUrl,
-            applicationToken: httpClient.applicationToken,
-            authHeaderName: httpClient.authHeaderName,
-            isAstra: httpClient.isAstra,
-            logSkippedOptions: httpClient.logSkippedOptions
-        });
+        this.httpClient = db.httpClient;
         this.name = name;
         this.collectionName = name;
+        this.httpBasePath = `/${db.name}/${name}`;
     }
 
     async insertOne(document: Record<string, any>) {
@@ -130,7 +81,11 @@ export class Collection {
                     document
                 }
             };
-            const resp = await this.httpClient.executeCommand(command, null);
+            const resp = await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                null
+            );
             return {
                 acknowledged: true,
                 insertedId: resp.status.insertedIds[0]
@@ -146,7 +101,11 @@ export class Collection {
                     options
                 }
             };
-            const resp = await this.httpClient.executeCommand(command, insertManyInternalOptionsKeys);
+            const resp = await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                insertManyInternalOptionsKeys
+            );
             return {
                 acknowledged: true,
                 insertedCount: resp.status.insertedIds?.length || 0,
@@ -157,18 +116,20 @@ export class Collection {
 
     async updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
         return executeOperation(async (): Promise<JSONAPIUpdateResult> => {
-            const command: UpdateOneCommand = {
+            const command = {
                 updateOne: {
                     filter,
                     update,
-                    options
+                    options: omit(options, ['sort']),
+                    ...(options?.sort != null ? { sort: options?.sort } : {})
                 }
             };
-            if (options?.sort != null) {
-                command.updateOne.sort = options?.sort;
-            }
             setDefaultIdForUpsert(command.updateOne);
-            const updateOneResp = await this.httpClient.executeCommand(command, updateOneInternalOptionsKeys);
+            const updateOneResp = await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                updateOneInternalOptionsKeys
+            );
             const resp = {
                 modifiedCount: updateOneResp.status.modifiedCount,
                 matchedCount: updateOneResp.status.matchedCount,
@@ -192,7 +153,11 @@ export class Collection {
                 }
             };
             setDefaultIdForUpsert(command.updateMany);
-            const updateManyResp = await this.httpClient.executeCommand(command, updateManyInternalOptionsKeys);
+            const updateManyResp = await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                updateManyInternalOptionsKeys
+            );
             if (updateManyResp.status.moreData) {
                 throw new StargateMongooseError(`More than ${updateManyResp.status.modifiedCount} records found for update by the server`, command);
             }
@@ -211,15 +176,17 @@ export class Collection {
 
     async deleteOne(filter: Record<string, any>, options?: DeleteOneOptions): Promise<JSONAPIDeleteResult> {
         return executeOperation(async (): Promise<JSONAPIDeleteResult> => {
-            const command: DeleteOneCommand = {
+            const command = {
                 deleteOne: {
-                    filter
+                    filter,
+                    ...(options?.sort != null ? { sort: options.sort } : {})
                 }
             };
-            if (options?.sort) {
-                command.deleteOne.sort = options.sort;
-            }
-            const deleteOneResp = await this.httpClient.executeCommand(command, null);
+            const deleteOneResp = await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                null
+            );
             return {
                 acknowledged: true,
                 deletedCount: deleteOneResp.status.deletedCount
@@ -234,7 +201,11 @@ export class Collection {
                     filter
                 }
             };
-            const deleteManyResp = await this.httpClient.executeCommand(command, null);
+            const deleteManyResp = await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                null
+            );
             if (deleteManyResp.status.moreData) {
                 throw new StargateMongooseError(`More records found to be deleted even after deleting ${deleteManyResp.status.deletedCount} records`, command);
             }
@@ -251,52 +222,40 @@ export class Collection {
 
     async findOne(filter: Record<string, any>, options?: FindOneOptions): Promise<Record<string, any> | null> {
         return executeOperation(async (): Promise<Record<string, any> | null> => {
-            const command: FindOneCommand = {
+            const command = {
                 findOne: {
                     filter,
-                    options
+                    options,
+                    ...(options?.sort != null ? { sort: options?.sort } : {}),
+                    ...(options?.projection != null ? { sort: options?.projection } : {}),
                 }
             };
 
-            if (options?.sort) {
-                command.findOne.sort = options.sort;
-                delete options.sort;
-            }
-
-            if (options?.projection && Object.keys(options.projection).length > 0) {
-                command.findOne.projection = options.projection;
-            }
-
-            const resp = await this.httpClient.executeCommand(command, findOneInternalOptionsKeys);
+            const resp = await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                findOneInternalOptionsKeys
+            );
             return resp.data.document;
         });
     }
 
     async findOneAndReplace(filter: Record<string, any>, replacement: Record<string, any>, options?: FindOneAndReplaceOptions): Promise<JSONAPIModifyResult> {
         return executeOperation(async (): Promise<JSONAPIModifyResult> => {
-            type FindOneAndReplaceCommand = {
-              findOneAndReplace: {
-                filter?: Record<string, any>,
-                replacement?: Record<string, any>,
-                options?: FindOneAndReplaceOptions,
-                sort?: SortOption
-              }
-            };
-            const command: FindOneAndReplaceCommand = {
+            const command = {
                 findOneAndReplace: {
                     filter,
                     replacement,
-                    options
+                    options: omit(options, ['sort']),
+                    ...(options?.sort != null ? { sort: options?.sort } : {})
                 }
             };
             setDefaultIdForUpsert(command.findOneAndReplace, true);
-            if (options?.sort) {
-                command.findOneAndReplace.sort = options.sort;
-                if (options.sort != null) {
-                    delete options.sort;
-                }
-            }
-            const resp = await this.httpClient.executeCommand(command, findOneAndReplaceInternalOptionsKeys);
+            const resp = await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                findOneAndReplaceInternalOptionsKeys
+            );
             return {
                 value : resp.data?.document,
                 ok : 1
@@ -315,22 +274,28 @@ export class Collection {
                     filter
                 }
             };
-            const resp = await this.httpClient.executeCommand(command, null);
+            const resp = await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                null
+            );
             return resp.status.count;
         });
     }
 
     async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions): Promise<JSONAPIModifyResult> {
-        const command: FindOneAndDeleteCommand = {
+        const command = {
             findOneAndDelete: {
-                filter
+                filter,
+                ...(options?.sort != null ? { sort: options?.sort } : {})
             }
         };
-        if (options?.sort) {
-            command.findOneAndDelete.sort = options.sort;
-        }
 
-        const resp = await this.httpClient.executeCommand(command, null);
+        const resp = await this.httpClient.executeCommandWithUrl(
+            this.httpBasePath,
+            command,
+            null
+        );
         return {
             value : resp.data?.document,
             ok : 1
@@ -346,19 +311,20 @@ export class Collection {
 
     async findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions): Promise<JSONAPIModifyResult> {
         return executeOperation(async (): Promise<JSONAPIModifyResult> => {
-            const command: FindOneAndUpdateCommand = {
+            const command = {
                 findOneAndUpdate: {
                     filter,
                     update,
-                    options
+                    options: omit(options, ['sort']),
+                    ...(options?.sort != null ? { sort: options?.sort } : {})
                 }
             };
             setDefaultIdForUpsert(command.findOneAndUpdate);
-            if (options?.sort) {
-                command.findOneAndUpdate.sort = options.sort;
-                delete options.sort;
-            }
-            const resp = await this.httpClient.executeCommand(command, findOneAndUpdateInternalOptionsKeys);
+            const resp = await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                findOneAndUpdateInternalOptionsKeys
+            );
             return {
                 value : resp.data?.document,
                 ok : 1

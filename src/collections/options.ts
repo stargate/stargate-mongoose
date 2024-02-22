@@ -21,7 +21,7 @@ export interface DeleteOneOptions {
 }
 
 export interface VectorOptions {
-  distance?: number;
+  dimension?: number;
   metric?: 'cosine' | 'euclidean' | 'dot_product';
 }
 

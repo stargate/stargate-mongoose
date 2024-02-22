@@ -65,6 +65,10 @@ describe('Mongoose Model API level tests', async () => {
         await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'products');
         await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'carts');
     });
+    afterEach(function() {
+        jsonAPIMongoose?.connection?.getClient()?.close();
+        astraMongoose?.connection?.getClient()?.close();
+    });
 
     function getInstance() {
         const mongooseInstance = new mongoose.Mongoose();
@@ -773,6 +777,9 @@ describe('Mongoose Model API level tests', async () => {
             }
         });
         
+        after(function() {
+            mongooseInstance.connection.getClient().close();
+        });
 
         before(async function() {
             await mongooseInstance!.connection.dropCollection('vector');
