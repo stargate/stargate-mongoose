@@ -39,10 +39,12 @@ type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null
 export class Collection extends MongooseCollection {
     debugType = 'StargateMongooseCollection';
 
-    constructor(name: string, conn: any, options: any) {
+    constructor(name: string, conn: any, options?: any) {
         super(name, conn, options);
-        this.modelName = options.modelName;
-        delete options.modelName;
+        if (options?.modelName != null) {
+            this.modelName = options.modelName;
+            delete options.modelName;
+        }
         this._closed = false;
     }
 
