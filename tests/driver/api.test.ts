@@ -742,6 +742,12 @@ describe('Mongoose Model API level tests', async () => {
             }
             assert.equal(await cursor.next(), null);
         });
+        it('API ops tests Model.db.collection()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
+            await product1.save();
+            const res = await Product.db.collection('products').findOne();
+            assert.equal(res!.name, 'Product 1');
+        });
     });
 
     describe('vector search', function() {
