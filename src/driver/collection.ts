@@ -42,8 +42,8 @@ export class Collection extends MongooseCollection {
     constructor(name: string, conn: any, options?: any) {
         super(name, conn, options);
         if (options?.modelName != null) {
-          this.modelName = options.modelName;
-          delete options.modelName;
+            this.modelName = options.modelName;
+            delete options.modelName;
         }
         this._closed = false;
     }
