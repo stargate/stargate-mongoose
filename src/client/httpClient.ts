@@ -34,6 +34,7 @@ const HTTP_METHODS = {
     patch: 'PATCH',
     delete: 'DELETE'
 };
+const MAX_HTTP2_REQUESTS_PER_SESSION = 1000;
 
 interface APIClientOptions {
   //applicationToken is optional, since adding username and password eventually will be an alternate option for this.
@@ -90,6 +91,111 @@ const responseInterceptor = (response: AxiosResponse) => {
 axiosAgent.interceptors.request.use(requestInterceptor);
 axiosAgent.interceptors.response.use(responseInterceptor);
 
+class HTTP2Session {
+    session: http2.ClientHttp2Session;
+    numInFlightRequests: number;
+    numRequests: number;
+    gracefulCloseInProgress: boolean;
+
+    constructor(origin: string) {
+        this.session = http2.connect(origin);
+        this.numInFlightRequests = 0;
+        this.numRequests = 0;
+        this.gracefulCloseInProgress = false;
+
+        // Without these handlers, any errors will end up as uncaught exceptions,
+        // even if they are handled in `_request()`.
+        // More info: https://github.com/nodejs/node/issues/16345
+        this.session.on('error', () => {});
+        this.session.on('socketError', () => {});
+    }
+
+    close() {
+        this.session.close();
+    }
+
+    gracefulClose() {
+        this.gracefulCloseInProgress = true;
+        if (this.numInFlightRequests <= 0) {
+            this.close();
+        }
+    }
+
+    completeHTTP2Request() {
+        --this.numInFlightRequests;
+        if (this.numInFlightRequests <= 0 && this.gracefulCloseInProgress) {
+            this.close();
+        }
+    }
+
+    request(path: string, token: string, body: Record<string, any>, timeout: number): Promise<{ status: number, data: Record<string, any> }> {
+        return new Promise((resolve, reject) => {
+            ++this.numInFlightRequests;
+            ++this.numRequests;
+            let done = false;
+            const timer = setTimeout(
+                () => {
+                    if (!done) {
+                        done = true;
+                        this.completeHTTP2Request();
+                    }
+                    reject(new StargateMongooseError('Request timed out', body));
+                },
+                timeout
+            );
+
+            const req: http2.ClientHttp2Stream = this.session.request({
+                ':path': path,
+                ':method': 'POST',
+                token
+            });
+            req.write(serializeCommand(body), 'utf8');
+            req.end();
+
+            let status = 0;
+            req.on('response', (data: http2.IncomingHttpStatusHeader) => {
+                if (!done) {
+                    done = true;
+                    clearTimeout(timer);
+                    this.completeHTTP2Request();
+                }
+                status = data[':status'] ?? 0;
+            });
+
+            req.on('error', (error: Error) => {
+                if (!done) {
+                    done = true;
+                    clearTimeout(timer);
+                    this.completeHTTP2Request();
+                }
+                reject(error);
+            });
+
+            req.setEncoding('utf8');
+            let responseBody = '';
+            req.on('data', (chunk: string) => {
+                responseBody += chunk;
+            });
+            req.on('end', () => {
+                if (!done) {
+                    done = true;
+                    clearTimeout(timer);
+                    this.completeHTTP2Request();
+                }
+                let data = {};
+                try {
+                    data = JSON.parse(responseBody);
+
+                    resolve({ status, data });
+                } catch (error) {
+                    reject(new Error('Unable to parse response as JSON, got: "' + data + '"'));
+                    return;
+                }
+            });
+        });
+    }
+}
+
 export class HTTPClient {
     origin: string;
     baseUrl: string;
@@ -100,7 +206,7 @@ export class HTTPClient {
     authUrl: string;
     isAstra: boolean;
     logSkippedOptions: boolean;
-    http2Session?: http2.ClientHttp2Session;
+    http2Session?: HTTP2Session;
     closed: boolean;
 
     constructor(options: APIClientOptions) {
@@ -153,13 +259,7 @@ export class HTTPClient {
     }
 
     _createHTTP2Session() {
-        this.http2Session = http2.connect(this.origin);
-            
-        // Without these handlers, any errors will end up as uncaught exceptions,
-        // even if they are handled in `_request()`.
-        // More info: https://github.com/nodejs/node/issues/16345
-        this.http2Session.on('error', () => {});
-        this.http2Session.on('socketError', () => {});
+        this.http2Session = new HTTP2Session(this.origin);
     }
 
     async _request(requestInfo: AxiosRequestConfig): Promise<APIResponse> {
@@ -263,68 +363,26 @@ export class HTTPClient {
         }
     }
 
-    makeHTTP2Request(
+    async makeHTTP2Request(
         path: string,
         token: string,
         body: Record<string, any>,
         timeout: number
     ): Promise<{ status: number, data: Record<string, any> }> {
-        return new Promise((resolve, reject) => {
-            // Should never happen, but good to have a readable error just in case
-            if (this.http2Session == null) {
-                throw new Error('Cannot make http2 request without session');
-            }
-            if (this.closed) {
-                throw new Error('Cannot make http2 request when client is closed');
-            }
+        // Should never happen, but good to have a readable error just in case
+        if (this.http2Session == null) {
+            throw new Error('Cannot make http2 request without session');
+        }
+        if (this.closed) {
+            throw new Error('Cannot make http2 request when client is closed');
+        }
 
-            // Recreate session if session was closed except via an explicit `close()`
-            // call. This happens when nginx sends a GOAWAY packet after 1000 requests.
-            if (this.http2Session.closed) {
-                this._createHTTP2Session();
-            }
+        if (this.http2Session.numRequests >= MAX_HTTP2_REQUESTS_PER_SESSION) {
+            this.http2Session.gracefulClose();
+            this._createHTTP2Session();
+        }
 
-            const timer = setTimeout(
-                () => reject(new StargateMongooseError('Request timed out', body)),
-                timeout
-            );
-  
-            const req: http2.ClientHttp2Stream = this.http2Session.request({
-                ':path': path,
-                ':method': 'POST',
-                token
-            });
-            req.write(serializeCommand(body), 'utf8');
-            req.end();
-
-            let status = 0;
-            req.on('response', (data: http2.IncomingHttpStatusHeader) => {
-                clearTimeout(timer);
-                status = data[':status'] ?? 0;
-            });
-
-            req.on('error', (error: Error) => {
-                clearTimeout(timer);
-                reject(error);
-            });
-
-            req.setEncoding('utf8');
-            let responseBody = '';
-            req.on('data', (chunk: string) => {
-                responseBody += chunk;
-            });
-            req.on('end', () => {
-                clearTimeout(timer);
-                let data = {};
-                try {
-                    data = JSON.parse(responseBody);
-                    resolve({ status, data });
-                } catch (error) {
-                    reject(new Error('Unable to parse response as JSON, got: "' + data + '"'));
-                    return;
-                }
-            });
-        });
+        return await this.http2Session.request(path, token, body, timeout);
     }
 
     async executeCommandWithUrl(url: string, data: Record<string, any>, optionsToRetain: Set<string> | null) {
