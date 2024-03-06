@@ -17,6 +17,7 @@ import { Collection } from './collection';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
 import { executeOperation } from '../collections/utils';
+import { CreateCollectionOptions } from '../collections/options';
 
 export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
@@ -75,13 +76,20 @@ export class Connection extends MongooseConnection {
         });
     }
 
-    async listCollections(): Promise<Array<{ name: string }>> {
+    async listCollections(options: { explain: true }): Promise<Array<{ name: string, options?: CreateCollectionOptions }>>;
+
+    async listCollections(options?: { explain?: boolean }): Promise<Array<{ name: string }>> {
         return executeOperation(async () => {
             await this._waitForClient();
             const db = this.client.db();
-            const res = await db.findCollections();
-            const collectionNames = res?.status?.collections ?? [];
-            return collectionNames.map((name: string) => ({ name }));
+            const res = await db.findCollections(options);
+            const collections = res?.status?.collections ?? [];
+            return collections.map((collection: string | Record<string, any>) => {
+                if (typeof collection === 'string') {
+                    return { name: collection };
+                }
+                return collection;
+            });
         });
     }
 
