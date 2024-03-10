@@ -32,6 +32,8 @@ declare module 'mongoose' {
     logSkippedOptions?: boolean;
     authUrl?: string;
   }
+
+  function setDriver<T = Mongoose>(driver: any): T;
 }
 
 import { createStargateUri, createAstraUri } from './collections';

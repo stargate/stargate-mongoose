@@ -107,20 +107,22 @@ export class Client {
    * @param dbName the JSON API keyspace to connect to
    * @returns Db
    */
-    db(dbName?: string) {
+    db(dbName?: string): Db {
         if (dbName) {
-            if (this.dbs.has(dbName)) {
-                return this.dbs.get(dbName);
+            let db = this.dbs.get(dbName);
+            if (db != null) {
+                return db;
             }
-            const db = new Db(this.httpClient, dbName);
+            db = new Db(this.httpClient, dbName);
             this.dbs.set(dbName, db);
             return db;
         }
         if (this.keyspaceName) {
-            if (this.dbs.has(this.keyspaceName)) {
-                return this.dbs.get(this.keyspaceName);
+            let db = this.dbs.get(this.keyspaceName);
+            if (db != null) {
+                return db;
             }
-            const db = new Db(this.httpClient, this.keyspaceName);
+            db = new Db(this.httpClient, this.keyspaceName);
             this.dbs.set(this.keyspaceName, db);
             return db;
         }
