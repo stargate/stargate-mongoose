@@ -315,7 +315,7 @@ export class HTTPClient {
                     }
                 });
    
-            if (response.status === 401 || (response.data?.errors?.length > 0 && response.data?.errors?.[0]?.message === 'UNAUTHENTICATED: Invalid token')) {
+            if (!this.isAstra && (response.status === 401 || (response.data?.errors?.length > 0 && response.data?.errors?.[0]?.message === 'UNAUTHENTICATED: Invalid token'))) {
                 logger.debug('@stargate-mongoose/rest: reconnecting');
                 try {
                     this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
@@ -337,15 +337,7 @@ export class HTTPClient {
                     errors: response.data?.errors
                 };
             } else {
-                logger.error(requestInfo.url + ': ' + response.status);
-                logger.error('Data: ' + inspect(requestInfo.data));
-                return {
-                    errors: [
-                        {
-                            message: 'Server response received : ' + response.status + '!'
-                        }
-                    ]
-                };
+                return response;
             }
         } catch (e: any) {
             logger.error(requestInfo.url + ': ' + e.message);
