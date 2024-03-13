@@ -159,13 +159,12 @@ export class Collection {
                 acknowledged: true,
             } as JSONAPIUpdateResult;
             if (options != null && options.usePagination) {
-                let nextPageState = null;
-                command.updateMany.options = omit(options, ['usePagination']) ?? {};
+                let nextPageState: string | null = null;
+                options = { ...options };
+                delete options.usePagination;
+                command.updateMany.options = options;
                 while (true) {
                     if (nextPageState != null) {
-                        if (command.updateMany.options == null) {
-                            command.updateMany.options = {};
-                        }
                         command.updateMany.options.pageState = nextPageState;
                     }
                     const updateManyResp = await this.httpClient.executeCommandWithUrl(
@@ -181,11 +180,8 @@ export class Collection {
                         resp.upsertedId = status.upsertedId;
                         resp.upsertedCount = 1;
                     }
-                    if (!status.moreData && !status.nextPageState) {
+                    if (status.nextPageState == null) {
                         break;
-                    }
-                    if (status.moreData && !status.nextPageState) {
-                        throw new StargateMongooseError(`More than ${updateManyResp.status.modifiedCount} records found for update by the server`, command);
                     }
                     nextPageState = status.nextPageState;
                 }

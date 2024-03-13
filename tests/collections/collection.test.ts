@@ -1417,6 +1417,28 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updateManyResp.upsertedCount, undefined);
             assert.strictEqual(updateManyResp.upsertedId, undefined);
         });
+        it('handles usePagination option with upsert', async () => {
+            await collection.deleteMany({});
+            const docList = Array.from({ length: 2 }, () => ({ username: 'id', city: 'nyc' }));
+            docList.forEach((doc, index) => {
+                doc.username = doc.username + (index + 1);
+            });
+            const res = await collection.insertMany(docList);
+            assert.strictEqual(res.insertedCount, docList.length);
+            assert.strictEqual(res.acknowledged, true);
+            assert.strictEqual(Object.keys(res.insertedIds).length, 2);
+
+            const updateManyResp = await collection.updateMany(
+                { 'city': 'miami' },
+                { '$set': { 'state': 'fl' } },
+                { usePagination: true, upsert: true }
+            );
+            assert.strictEqual(updateManyResp.matchedCount, 0);
+            assert.strictEqual(updateManyResp.modifiedCount, 0);
+            assert.strictEqual(updateManyResp.acknowledged, true);
+            assert.strictEqual(updateManyResp.upsertedCount, 1);
+            assert.ok(updateManyResp.upsertedId);
+        });
         it('should upsert with upsert flag set to false/not set when not found', async () => {
             const docList = Array.from({ length: 20 }, () => ({ username: 'id', city: 'nyc' }));
             docList.forEach((doc, index) => {
@@ -1591,8 +1613,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should rename a field when $rename is used in update and updateMany', async () => {
-          const numDocs = 19;  
-          const docList = Array.from({ length: numDocs }, () => ({
+            const numDocs = 19;  
+            const docList = Array.from({ length: numDocs }, () => ({
                 _id: 'id',
                 username: 'username',
                 city: 'trichy',
