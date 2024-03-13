@@ -1375,6 +1375,48 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updateManyResp.upsertedCount, undefined);
             assert.strictEqual(updateManyResp.upsertedId, undefined);
         });
+        it('supports usePagination option to update more than 20 documents at a time', async () => {
+            await collection.deleteMany({});
+            const docList = Array.from({ length: 20 }, () => ({ username: 'id', city: 'nyc' }));
+            docList.forEach((doc, index) => {
+                doc.username = doc.username + (index + 1);
+            });
+            const res = await collection.insertMany(docList);
+            assert.strictEqual(res.insertedCount, docList.length);
+            assert.strictEqual(res.acknowledged, true);
+            assert.strictEqual(Object.keys(res.insertedIds).length, 20);
+
+            const updateManyResp = await collection.updateMany({ 'city': 'nyc' },
+                {
+                    '$set': { 'state': 'ny' }
+                }, { usePagination: true });
+            assert.strictEqual(updateManyResp.matchedCount, 20);
+            assert.strictEqual(updateManyResp.modifiedCount, 20);
+            assert.strictEqual(updateManyResp.acknowledged, true);
+            assert.strictEqual(updateManyResp.upsertedCount, undefined);
+            assert.strictEqual(updateManyResp.upsertedId, undefined);
+        });
+        it('supports usePagination option when less than 20 documents', async () => {
+            await collection.deleteMany({});
+            const docList = Array.from({ length: 10 }, () => ({ username: 'id', city: 'nyc' }));
+            docList.forEach((doc, index) => {
+                doc.username = doc.username + (index + 1);
+            });
+            const res = await collection.insertMany(docList);
+            assert.strictEqual(res.insertedCount, docList.length);
+            assert.strictEqual(res.acknowledged, true);
+            assert.strictEqual(Object.keys(res.insertedIds).length, 10);
+
+            const updateManyResp = await collection.updateMany({ 'city': 'nyc' },
+                {
+                    '$set': { 'state': 'ny' }
+                });
+            assert.strictEqual(updateManyResp.matchedCount, 10);
+            assert.strictEqual(updateManyResp.modifiedCount, 10);
+            assert.strictEqual(updateManyResp.acknowledged, true);
+            assert.strictEqual(updateManyResp.upsertedCount, undefined);
+            assert.strictEqual(updateManyResp.upsertedId, undefined);
+        });
         it('should upsert with upsert flag set to false/not set when not found', async () => {
             const docList = Array.from({ length: 20 }, () => ({ username: 'id', city: 'nyc' }));
             docList.forEach((doc, index) => {

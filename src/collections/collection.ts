@@ -153,23 +153,59 @@ export class Collection {
                 }
             };
             setDefaultIdForUpsert(command.updateMany);
-            const updateManyResp = await this.httpClient.executeCommandWithUrl(
-                this.httpBasePath,
-                command,
-                updateManyInternalOptionsKeys
-            );
-            if (updateManyResp.status.moreData) {
-                throw new StargateMongooseError(`More than ${updateManyResp.status.modifiedCount} records found for update by the server`, command);
-            }
             const resp = {
-                modifiedCount: updateManyResp.status.modifiedCount,
-                matchedCount: updateManyResp.status.matchedCount,
+                modifiedCount: 0,
+                matchedCount: 0,
                 acknowledged: true,
             } as JSONAPIUpdateResult;
-            if (updateManyResp.status.upsertedId) {
-                resp.upsertedId = updateManyResp.status.upsertedId;
-                resp.upsertedCount = 1;
+            if (options != null && options.usePagination) {
+                let nextPageState = null;
+                command.updateMany.options = omit(options, ['usePagination']) ?? {};
+                while (true) {
+                    if (nextPageState != null) {
+                        if (command.updateMany.options == null) {
+                            command.updateMany.options = {};
+                        }
+                        command.updateMany.options.pageState = nextPageState;
+                    }
+                    const updateManyResp = await this.httpClient.executeCommandWithUrl(
+                        this.httpBasePath,
+                        command,
+                        updateManyInternalOptionsKeys
+                    );
+                    const { status } = updateManyResp;
+
+                    resp.modifiedCount += status.modifiedCount;
+                    resp.matchedCount += status.matchedCount;
+                    if (status.upsertedId) {
+                        resp.upsertedId = status.upsertedId;
+                        resp.upsertedCount = 1;
+                    }
+                    if (!status.moreData && !status.nextPageState) {
+                        break;
+                    }
+                    if (status.moreData && !status.nextPageState) {
+                        throw new StargateMongooseError(`More than ${updateManyResp.status.modifiedCount} records found for update by the server`, command);
+                    }
+                    nextPageState = status.nextPageState;
+                }
+            } else {
+                const updateManyResp = await this.httpClient.executeCommandWithUrl(
+                    this.httpBasePath,
+                    command,
+                    updateManyInternalOptionsKeys
+                );
+                if (updateManyResp.status.moreData) {
+                    throw new StargateMongooseError(`More than ${updateManyResp.status.modifiedCount} records found for update by the server`, command);
+                }
+                resp.modifiedCount = updateManyResp.status.modifiedCount;
+                resp.matchedCount = updateManyResp.status.matchedCount;
+                if (updateManyResp.status.upsertedId) {
+                    resp.upsertedId = updateManyResp.status.upsertedId;
+                    resp.upsertedCount = 1;
+                }
             }
+            
             return resp;
         });
     }
