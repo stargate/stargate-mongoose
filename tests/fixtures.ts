@@ -129,17 +129,19 @@ export const sleep = async (ms = 100) => new Promise(resolve => setTimeout(resol
 export const testClientName = process.env.TEST_DOC_DB;
 assert.ok(testClientName === 'astra' || testClientName === 'jsonapi');
 
+export const isAstra = process.env.TEST_DOC_DB === 'astra' && !!process.env.ASTRA_URI;
+
 export const testClient = process.env.TEST_DOC_DB === 'astra' ?
     (process.env.ASTRA_URI ?
         {
             client: getAstraClient(),
-            isAstra: true,
+            isAstra,
             uri: process.env.ASTRA_URI
         } : null)
     : (process.env.TEST_DOC_DB === 'jsonapi' ? (process.env.JSON_API_URI ?
         {
             client: getJSONAPIClient(),
-            isAstra: false,
+            isAstra,
             uri: process.env.JSON_API_URI
         } : null
     ) : null);

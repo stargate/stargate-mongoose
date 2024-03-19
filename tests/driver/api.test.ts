@@ -19,10 +19,11 @@ import {
     testClient,
     TEST_COLLECTION_NAME
 } from '@/tests/fixtures';
-import mongoose, {Model, Mongoose, Schema, InferSchemaType} from 'mongoose';
+import mongoose, {Schema, InferSchemaType} from 'mongoose';
 import * as StargateMongooseDriver from '@/src/driver';
 import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '@/src/driver';
+import { Product, Cart, mongooseInstance } from '@/tests/mongooseFixtures';
 
 const productSchema = new mongoose.Schema({
     name: String,
@@ -35,10 +36,6 @@ const productSchema = new mongoose.Schema({
 describe('Mongoose Model API level tests', async () => {
     let astraClient: Client | null;
     let db: Db;
-    //let collection: Collection;
-    //const sampleDoc = createSampleDoc();
-    let dbUri: string;
-    let isAstra: boolean;
     before(async function () {
         if (testClient == null) {
             return this.skip();
@@ -49,82 +46,10 @@ describe('Mongoose Model API level tests', async () => {
         }
 
         db = astraClient.db();
-        await db.dropCollection(TEST_COLLECTION_NAME);
-        dbUri = testClient.uri;
-        isAstra = testClient.isAstra;
-    });
-    let mongooseInstance: Mongoose | null = null;
-    let Product: Model<any>, Cart: Model<any>, astraMongoose: Mongoose | null, jsonAPIMongoose: Mongoose | null;
-    before(async () => {
-        ({Product, Cart, astraMongoose, jsonAPIMongoose} = await createClientsAndModels(isAstra));
     });
     afterEach(async () => {
         await Promise.all([Product.deleteMany({}), Cart.deleteMany({})]);
     });
-    after(async () => {
-        await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'products');
-        await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'carts');
-    });
-    after(function() {
-        jsonAPIMongoose?.connection?.getClient()?.close();
-        astraMongoose?.connection?.getClient()?.close();
-    });
-
-    function getInstance() {
-        const mongooseInstance = new mongoose.Mongoose();
-        mongooseInstance.setDriver(StargateMongooseDriver);
-        mongooseInstance.set('autoCreate', true);
-        mongooseInstance.set('autoIndex', false);
-        mongooseInstance.set('strictQuery', false);
-        return mongooseInstance;
-    }
-
-    async function createClientsAndModels(isAstra: boolean) {
-        let Product: Model<any>, Cart: Model<any>, astraMongoose: Mongoose | null = null, jsonAPIMongoose: Mongoose | null = null;
-        const productSchema = new mongoose.Schema({
-            name: String,
-            price: Number,
-            expiryDate: Date,
-            isCertified: Boolean,
-            category: String
-        });
-        const cartSchema = new mongoose.Schema({
-            name: String,
-            products: [{ type: Schema.Types.ObjectId, ref: 'Product' }]
-        });
-        if (isAstra) {
-            astraMongoose = getInstance();
-            Product = astraMongoose.model('Product', productSchema);
-            Cart = astraMongoose.model('Cart', cartSchema);
-            
-            await astraMongoose.connect(dbUri, {isAstra: true, logSkippedOptions: true});
-            await Promise.all(Object.values(astraMongoose.connection.models).map(Model => Model.init()));
-        } else {
-            // @ts-ignore
-            jsonAPIMongoose = getInstance();
-            Product = jsonAPIMongoose.model('Product', productSchema);
-            Cart = jsonAPIMongoose.model('Cart', cartSchema);
-            const options = {
-                username: process.env.STARGATE_USERNAME,
-                password: process.env.STARGATE_PASSWORD,
-                authUrl: process.env.STARGATE_AUTH_URL,
-                logSkippedOptions: true
-            };
-            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
-            await jsonAPIMongoose.connect(dbUri, options);
-            await Promise.all(Object.values(jsonAPIMongoose.connection.models).map(Model => Model.init()));
-        }
-        mongooseInstance = isAstra ? astraMongoose : jsonAPIMongoose;
-        return {Product, Cart, astraMongoose, jsonAPIMongoose};
-    }
-
-    async function dropCollections(isAstra: boolean, astraMongoose: mongoose.Mongoose | null, jsonAPIMongoose: mongoose.Mongoose | null, collectionName: string) {
-        if (isAstra) {
-            await astraMongoose?.connection.dropCollection(collectionName);
-        } else {
-            await jsonAPIMongoose?.connection.dropCollection(collectionName);
-        }
-    }
 
     describe('Options & Data type tests', () => {
         it('test strict and strictQuery options', async () => {
@@ -177,94 +102,93 @@ describe('Mongoose Model API level tests', async () => {
         });
         it('Data type tests', async () => {
             const modelName = 'User';
-            try {
-                const userSchema = new mongoose.Schema({
-                    name: String,
-                    age: Number,
-                    dob: Date,
-                    encData: Buffer,
-                    isCertified: Boolean,
-                    mixedData: mongoose.Schema.Types.Mixed,
-                    employee: mongoose.Schema.Types.ObjectId,
-                    friends: [String],
-                    salary: mongoose.Schema.Types.Decimal128,
-                    favorites: Map,
-                    nestedSchema: {
-                        address: {
-                            street: String,
-                            city: String,
-                            state: String
-                        }
-                    },
-                    uniqueId: Schema.Types.UUID,
-                    category: BigInt
-                });
-                const User = mongooseInstance!.model(modelName, userSchema);
-                await Promise.all(Object.values(mongooseInstance!.connection.models).map(Model => Model.init()));
-                const employeeIdVal = new mongoose.Types.ObjectId();
-                //generate a random uuid
-                const uniqueIdVal = randomUUID();
-                const dobVal = new Date();
-                const saveResponse = await new User({
-                    name: 'User 1',
-                    age: 10,
-                    dob: dobVal,
-                    //encData: Buffer.from('test'),
-                    isCertified: true,
-                    mixedData: {a: 1, b: 'test'},
-                    employee: employeeIdVal,
-                    friends: ['friend 1', 'friend 2'],
-                    salary: mongoose.Types.Decimal128.fromString('100.25'),
-                    favorites: new Map([['food', 'pizza'], ['drink', 'cola']]),
-                    nestedSchema: {
-                        address: {
-                            street: 'street 1',
-                            city: 'city 1',
-                            state: 'state 1'
-                        }
-                    },
-                    uniqueId: uniqueIdVal,
-                    category: BigInt(100)
-                }).save();
-                assert.strictEqual(saveResponse.name, 'User 1');
-                assert.strictEqual(saveResponse.age, 10);
-                assert.strictEqual(saveResponse.dob!.toISOString(), dobVal.toISOString());
-                assert.strictEqual(saveResponse.isCertified, true);
-                assert.strictEqual(saveResponse.mixedData.a, 1);
-                assert.strictEqual(saveResponse.mixedData.b, 'test');
-                assert.strictEqual(saveResponse.employee!.toString(), employeeIdVal.toString());
-                assert.strictEqual(saveResponse.friends[0], 'friend 1');
-                assert.strictEqual(saveResponse.friends[1], 'friend 2');
-                assert.strictEqual(saveResponse.salary!.toString(), '100.25');
-                assert.strictEqual(saveResponse.favorites!.get('food'), 'pizza');
-                assert.strictEqual(saveResponse.favorites!.get('drink'), 'cola');
-                assert.strictEqual(saveResponse.nestedSchema!.address!.street, 'street 1');
-                assert.strictEqual(saveResponse.nestedSchema!.address!.city, 'city 1');
-                assert.strictEqual(saveResponse.nestedSchema!.address!.state, 'state 1');
-                assert.strictEqual(saveResponse.uniqueId!.toString(), uniqueIdVal.toString());
-                assert.strictEqual(saveResponse.category!.toString(), '100');
-                //get record using findOne and verify results
-                const findOneResponse = await User.findOne({name: 'User 1'});
-                assert.strictEqual(findOneResponse!.name, 'User 1');
-                assert.strictEqual(findOneResponse!.age, 10);
-                assert.strictEqual(findOneResponse!.dob!.toISOString(), dobVal.toISOString());
-                assert.strictEqual(findOneResponse!.isCertified, true);
-                assert.strictEqual(findOneResponse!.mixedData.a, 1);
-                assert.strictEqual(findOneResponse!.mixedData.b, 'test');
-                assert.strictEqual(findOneResponse!.employee!.toString(), employeeIdVal.toString());
-                assert.strictEqual(findOneResponse!.friends[0], 'friend 1');
-                assert.strictEqual(findOneResponse!.friends[1], 'friend 2');
-                assert.strictEqual(findOneResponse!.salary!.toString(), '100.25');
-                assert.strictEqual(findOneResponse!.favorites!.get('food'), 'pizza');
-                assert.strictEqual(findOneResponse!.favorites!.get('drink'), 'cola');
-                assert.strictEqual(findOneResponse!.nestedSchema!.address!.street, 'street 1');
-                assert.strictEqual(findOneResponse!.nestedSchema!.address!.city, 'city 1');
-                assert.strictEqual(findOneResponse!.nestedSchema!.address!.state, 'state 1');
-                assert.strictEqual(findOneResponse!.uniqueId!.toString(), uniqueIdVal.toString());
-                assert.strictEqual(findOneResponse!.category!.toString(), '100');
-            } finally {
-                await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'users');
+            const userSchema = new mongoose.Schema({
+                name: String,
+                age: Number,
+                dob: Date,
+                encData: Buffer,
+                isCertified: Boolean,
+                mixedData: mongoose.Schema.Types.Mixed,
+                employee: mongoose.Schema.Types.ObjectId,
+                friends: [String],
+                salary: mongoose.Schema.Types.Decimal128,
+                favorites: Map,
+                nestedSchema: {
+                    address: {
+                        street: String,
+                        city: String,
+                        state: String
+                    }
+                },
+                uniqueId: Schema.Types.UUID,
+                category: BigInt
+            });
+            const User = mongooseInstance.model(modelName, userSchema, TEST_COLLECTION_NAME);
+            const collectionNames = await User.db.listCollections().then(collections => collections.map(c => c.name));
+            if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
+                await User.createCollection();
             }
+            const employeeIdVal = new mongoose.Types.ObjectId();
+            //generate a random uuid
+            const uniqueIdVal = randomUUID();
+            const dobVal = new Date();
+            const saveResponse = await new User({
+                name: 'User 1',
+                age: 10,
+                dob: dobVal,
+                //encData: Buffer.from('test'),
+                isCertified: true,
+                mixedData: {a: 1, b: 'test'},
+                employee: employeeIdVal,
+                friends: ['friend 1', 'friend 2'],
+                salary: mongoose.Types.Decimal128.fromString('100.25'),
+                favorites: new Map([['food', 'pizza'], ['drink', 'cola']]),
+                nestedSchema: {
+                    address: {
+                        street: 'street 1',
+                        city: 'city 1',
+                        state: 'state 1'
+                    }
+                },
+                uniqueId: uniqueIdVal,
+                category: BigInt(100)
+            }).save();
+            assert.strictEqual(saveResponse.name, 'User 1');
+            assert.strictEqual(saveResponse.age, 10);
+            assert.strictEqual(saveResponse.dob!.toISOString(), dobVal.toISOString());
+            assert.strictEqual(saveResponse.isCertified, true);
+            assert.strictEqual(saveResponse.mixedData.a, 1);
+            assert.strictEqual(saveResponse.mixedData.b, 'test');
+            assert.strictEqual(saveResponse.employee!.toString(), employeeIdVal.toString());
+            assert.strictEqual(saveResponse.friends[0], 'friend 1');
+            assert.strictEqual(saveResponse.friends[1], 'friend 2');
+            assert.strictEqual(saveResponse.salary!.toString(), '100.25');
+            assert.strictEqual(saveResponse.favorites!.get('food'), 'pizza');
+            assert.strictEqual(saveResponse.favorites!.get('drink'), 'cola');
+            assert.strictEqual(saveResponse.nestedSchema!.address!.street, 'street 1');
+            assert.strictEqual(saveResponse.nestedSchema!.address!.city, 'city 1');
+            assert.strictEqual(saveResponse.nestedSchema!.address!.state, 'state 1');
+            assert.strictEqual(saveResponse.uniqueId!.toString(), uniqueIdVal.toString());
+            assert.strictEqual(saveResponse.category!.toString(), '100');
+            //get record using findOne and verify results
+            const findOneResponse = await User.findOne({name: 'User 1'});
+            assert.strictEqual(findOneResponse!.name, 'User 1');
+            assert.strictEqual(findOneResponse!.age, 10);
+            assert.strictEqual(findOneResponse!.dob!.toISOString(), dobVal.toISOString());
+            assert.strictEqual(findOneResponse!.isCertified, true);
+            assert.strictEqual(findOneResponse!.mixedData.a, 1);
+            assert.strictEqual(findOneResponse!.mixedData.b, 'test');
+            assert.strictEqual(findOneResponse!.employee!.toString(), employeeIdVal.toString());
+            assert.strictEqual(findOneResponse!.friends[0], 'friend 1');
+            assert.strictEqual(findOneResponse!.friends[1], 'friend 2');
+            assert.strictEqual(findOneResponse!.salary!.toString(), '100.25');
+            assert.strictEqual(findOneResponse!.favorites!.get('food'), 'pizza');
+            assert.strictEqual(findOneResponse!.favorites!.get('drink'), 'cola');
+            assert.strictEqual(findOneResponse!.nestedSchema!.address!.street, 'street 1');
+            assert.strictEqual(findOneResponse!.nestedSchema!.address!.city, 'city 1');
+            assert.strictEqual(findOneResponse!.nestedSchema!.address!.state, 'state 1');
+            assert.strictEqual(findOneResponse!.uniqueId!.toString(), uniqueIdVal.toString());
+            assert.strictEqual(findOneResponse!.category!.toString(), '100');
         });
     });
     describe('API tests', () => {
@@ -441,28 +365,7 @@ describe('Mongoose Model API level tests', async () => {
             assert.ok(err);
             assert.strictEqual(err?.message, 'distinct() Not Implemented');
         });
-        //TODO - Check getting 'Uncaught OperationNotSupportedError: createIndex() Not Implemented'
-        it.skip('API ops tests Model.ensureIndexes()', async () => {
-            const modelName = 'User';
-            let error: OperationNotSupportedError | null = null;
-            try {
-                const userSchema = new mongoose.Schema({
-                    name: String,
-                    age: Number,
-                    dob: Date
-                });
-                userSchema.index({name: 1});
-                const User = mongooseInstance!.model(modelName, userSchema);
-                await Promise.all(Object.values(mongooseInstance!.connection.models).map(Model => Model.init()));
-                await User.ensureIndexes();
-            } catch (err: any) {
-                error = err;
-            } finally {
-                await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'users');
-            }
-            assert.ok(error);
-            assert.strictEqual(error?.message, 'createIndex() Not Implemented');
-        });
+        
         it('API ops tests Model.estimatedDocumentCount()', async () => {
             let error: OperationNotSupportedError | null = null;
             try {
@@ -548,33 +451,6 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(updateResp?.category, 'cat 1');
             const findOneResp = await Product.findOne({category: 'cat 1'});
             assert.strictEqual(findOneResp?.name, 'Product 4');
-        });
-        //hydrate tests removed since it doesn't make any database calls
-        //TODO - Getting Uncaught OperationNotSupportedError: createIndex() Not Implemented
-        it.skip('API ops tests Model.init()', async () => {
-            const modelName = 'User';
-            let error: OperationNotSupportedError | null = null;
-            let autoIndexStatus: boolean | undefined;
-            try {
-                autoIndexStatus = mongooseInstance!.get('autoIndex');
-                mongooseInstance!.set('autoIndex', true);
-                const userSchema = new mongoose.Schema({
-                    name: {type: String, index: true},
-                    age: Number,
-                    dob: Date
-                });
-                const User = mongooseInstance!.model(modelName, userSchema);
-                await User.init();
-            } catch(err: OperationNotSupportedError | any) {
-                error = err;
-            } finally {
-                if(autoIndexStatus != undefined) {
-                    mongooseInstance!.set('autoIndex', autoIndexStatus);
-                }
-                await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'users');
-            }
-            assert.ok(error);
-            assert.strictEqual(error?.message, 'createIndex() Not Implemented');
         });
         it('API ops tests Model.insertMany()', async () => {
             const product1 = {name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'};
@@ -761,7 +637,6 @@ describe('Mongoose Model API level tests', async () => {
                 autoCreate: true
             }
         );
-        const mongooseInstance = getInstance();
         const Vector = mongooseInstance.model(
             'Vector',
             vectorSchema,
@@ -769,22 +644,7 @@ describe('Mongoose Model API level tests', async () => {
         );
 
         before(async function() {
-            if (isAstra) {
-                await mongooseInstance.connect(dbUri, {isAstra: true, logSkippedOptions: true});
-            } else {
-                const options = {
-                    username: process.env.STARGATE_USERNAME,
-                    password: process.env.STARGATE_PASSWORD,
-                    authUrl: process.env.STARGATE_AUTH_URL,
-                    logSkippedOptions: true
-                };
-                // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
-                await mongooseInstance.connect(dbUri, options);
-            }
-        });
-
-        before(async function() {
-            await mongooseInstance!.connection.dropCollection('vector');
+            await mongooseInstance.connection.dropCollection('vector');
             await Vector.createCollection();
         });
 
@@ -803,11 +663,7 @@ describe('Mongoose Model API level tests', async () => {
         });
 
         after(async function() {
-            await mongooseInstance!.connection.dropCollection('vector');
-        });
-
-        after(function() {
-            mongooseInstance.connection.getClient().close();
+            await mongooseInstance.connection.dropCollection('vector');
         });
 
         it('supports updating $vector with save()', async function() {

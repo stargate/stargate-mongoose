@@ -33,23 +33,17 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
             return this.skip();
         }
         db = astraClient.db();
-        const collectionName: string = TEST_COLLECTION_NAME;
-        await db.createCollection(collectionName);
-        collection = db.collection(collectionName);
-        await collection?.deleteMany({});
-    });
-
-    before(async function () {
-        await db.createCollection(TEST_COLLECTION_NAME);
+        const collections = await db.findCollections().then(res => {
+            return res.status.collections;
+        });
+        if (!collections.includes(TEST_COLLECTION_NAME)) {
+            await db.createCollection(TEST_COLLECTION_NAME);
+        }
         collection = db.collection(TEST_COLLECTION_NAME);
     });
 
-    afterEach(async function() {
+    beforeEach(async function() {
         await collection.deleteMany({});
-    });
-
-    after(async () => {
-        await db?.dropCollection(TEST_COLLECTION_NAME);
     });
 
     describe('Cursor initialization', () => {
