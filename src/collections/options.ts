@@ -135,3 +135,13 @@ export interface CreateCollectionOptions extends _CreateCollectionOptions {}
 export const createCollectionOptionsKeys: Set<string> = new Set(
     Object.keys(new _CreateCollectionOptions)
 );
+
+class _ListCollectionOptions {
+    explain?: boolean = undefined;
+}
+
+export interface ListCollectionOptions extends _ListCollectionOptions {}
+
+export const listCollectionOptionsKeys: Set<string> = new Set(
+    Object.keys(new _ListCollectionOptions)
+);

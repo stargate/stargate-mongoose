@@ -13,7 +13,12 @@
 // limitations under the License.
 
 import { HTTPClient } from '@/src/client';
-import { CreateCollectionOptions, createCollectionOptionsKeys } from './options';
+import {
+    CreateCollectionOptions,
+    createCollectionOptionsKeys,
+    ListCollectionOptions,
+    listCollectionOptionsKeys
+} from './options';
 import { Collection } from './collection';
 import { executeOperation, createNamespace, dropNamespace } from './utils';
 
@@ -113,15 +118,15 @@ export class Db {
         return await createNamespace(this.rootHttpClient, this.name);
     }
 
-    async findCollections() {
+    async findCollections(options?: ListCollectionOptions) {
         return executeOperation(async () => {
             const command = {
-                findCollections: {}
+                findCollections: options != null ? { options } : {}
             };
             return await this.httpClient.executeCommandWithUrl(
                 '/' + this.name,
                 command,
-                null
+                listCollectionOptionsKeys
             );
         });
     }

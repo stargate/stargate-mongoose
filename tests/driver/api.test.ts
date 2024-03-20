@@ -19,7 +19,7 @@ import {
     testClient,
     TEST_COLLECTION_NAME
 } from '@/tests/fixtures';
-import mongoose, {Model, Mongoose, Schema, InferSchemaType} from 'mongoose';
+import mongoose, {Model, Schema, InferSchemaType} from 'mongoose';
 import * as StargateMongooseDriver from '@/src/driver';
 import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '@/src/driver';
@@ -53,8 +53,11 @@ describe('Mongoose Model API level tests', async () => {
         dbUri = testClient.uri;
         isAstra = testClient.isAstra;
     });
-    let mongooseInstance: Mongoose | null = null;
-    let Product: Model<any>, Cart: Model<any>, astraMongoose: Mongoose | null, jsonAPIMongoose: Mongoose | null;
+    let mongooseInstance: StargateMongooseDriver.StargateMongoose | null = null;
+    let Product: Model<any>;
+    let Cart: Model<any>;
+    let astraMongoose: StargateMongooseDriver.StargateMongoose | null;
+    let jsonAPIMongoose: StargateMongooseDriver.StargateMongoose | null;
     before(async () => {
         ({Product, Cart, astraMongoose, jsonAPIMongoose} = await createClientsAndModels(isAstra));
     });
@@ -71,8 +74,7 @@ describe('Mongoose Model API level tests', async () => {
     });
 
     function getInstance() {
-        const mongooseInstance = new mongoose.Mongoose();
-        mongooseInstance.setDriver(StargateMongooseDriver);
+        const mongooseInstance = new mongoose.Mongoose().setDriver<StargateMongooseDriver.StargateMongoose>(StargateMongooseDriver);
         mongooseInstance.set('autoCreate', true);
         mongooseInstance.set('autoIndex', false);
         mongooseInstance.set('strictQuery', false);
@@ -80,7 +82,10 @@ describe('Mongoose Model API level tests', async () => {
     }
 
     async function createClientsAndModels(isAstra: boolean) {
-        let Product: Model<any>, Cart: Model<any>, astraMongoose: Mongoose | null = null, jsonAPIMongoose: Mongoose | null = null;
+        let Product: Model<any>;
+        let Cart: Model<any>;
+        let astraMongoose: StargateMongooseDriver.StargateMongoose | null = null;
+        let jsonAPIMongoose: StargateMongooseDriver.StargateMongoose | null = null;
         const productSchema = new mongoose.Schema({
             name: String,
             price: Number,
@@ -966,6 +971,17 @@ describe('Mongoose Model API level tests', async () => {
 
             const fromDb = await Vector.findOne({ name: 'Test vector 1' });
             assert.equal(fromDb, null);
+        });
+
+        it('contains vector options in listCollections() output with `explain`', async function() {
+            const connection = mongooseInstance.connection;
+            const collections = await connection.listCollections({ explain: true });
+            
+            const collection = collections.find(collection => collection.name === 'vector');
+            assert.ok(collection, 'Collection named "vector" not found');
+            assert.deepStrictEqual(collection.options, {
+                vector: { dimension: 2, metric: 'cosine' }
+            });
         });
     });
 });

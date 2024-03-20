@@ -139,6 +139,11 @@ describe('Driver based tests', async () => {
     });
     describe('Mongoose API', () => {
         let mongooseInstance: mongoose.Mongoose | undefined;
+        const cartSchema = new mongoose.Schema({
+            name: String,
+            products: [{ type: 'ObjectId', ref: 'Product' }]
+        });
+        let Cart: mongoose.Model<mongoose.InferSchemaType<typeof cartSchema>> | undefined;
         before(async function () {
             mongooseInstance = await createMongooseInstance();
 
@@ -150,15 +155,11 @@ describe('Driver based tests', async () => {
         });
 
         before(async function() {
-            const cartSchema = new mongooseInstance!.Schema({
-                name: String,
-                products: [{ type: 'ObjectId', ref: 'Product' }]
-            });
             const productSchema = new mongooseInstance!.Schema({
                 name: String,
                 price: Number
             });
-            const Cart = mongooseInstance!.model('Cart', cartSchema);
+            Cart = mongooseInstance!.model('Cart', cartSchema);
             await Cart.createCollection();
             const Product = mongooseInstance!.model('Product', productSchema);
             await Product.createCollection();
@@ -208,16 +209,15 @@ describe('Driver based tests', async () => {
         });
 
         it('handles populate()', async () => {
-            const Cart = mongooseInstance!.model('Cart');
             const Product = mongooseInstance!.model('Product');
-            await Promise.all([Cart.deleteMany({}), Product.deleteMany({})]);
+            await Promise.all([Cart!.deleteMany({}), Product.deleteMany({})]);
             const [{ _id: productId }] = await Product.create([
                 { name: 'iPhone 12', price: 500 },
                 { name: 'MacBook Air', price: 1400 }
             ]);
-            const { _id: cartId } = await Cart.create({ name: 'test', products: [productId] });
+            const { _id: cartId } = await Cart!.create({ name: 'test', products: [productId] });
 
-            const cart = await Cart.findById(cartId).populate<{ products: (typeof Product)[] }>('products').orFail();
+            const cart = await Cart!.findById(cartId).populate<{ products: (typeof Product)[] }>('products').orFail();
             assert.deepEqual(cart.products.map(p => p.name), ['iPhone 12']);
         });
 
