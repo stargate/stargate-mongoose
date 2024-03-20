@@ -104,12 +104,15 @@ export const insertManyInternalOptionsKeys: Set<string> = new Set(
 
 class _UpdateManyOptions {
     upsert?: boolean = undefined;
+    usePagination?: boolean = undefined;
+    pageState?: string = undefined;
 }
 
 export interface UpdateManyOptions extends _UpdateManyOptions {}
 
+// `usePagination` is supported as user-specified option, but not passed to JSON API
 export const updateManyInternalOptionsKeys: Set<string> = new Set(
-    Object.keys(new _UpdateManyOptions)
+    Object.keys(new _UpdateManyOptions).filter(key => key !== 'usePagination')
 );
 
 class _UpdateOneOptions {
