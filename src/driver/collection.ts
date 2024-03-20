@@ -313,14 +313,6 @@ export class Collection extends MongooseCollection {
     replaceOne() {
         throw new OperationNotSupportedError('replaceOne() Not Implemented');
     }
-
-    /**
-     * Sync indexes operation not supported.
-     */
-    syncIndexes() {
-        throw new OperationNotSupportedError('syncIndexes() Not Implemented');
-    }
-
 }
 
 function processSortOption(options: { sort?: SortOption }) {
