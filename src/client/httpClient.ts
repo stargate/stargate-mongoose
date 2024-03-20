@@ -96,8 +96,10 @@ class HTTP2Session {
     numInFlightRequests: number;
     numRequests: number;
     gracefulCloseInProgress: boolean;
+    origin: string;
 
     constructor(origin: string) {
+        this.origin = origin;
         this.session = http2.connect(origin);
         this.numInFlightRequests = 0;
         this.numRequests = 0;
@@ -133,6 +135,11 @@ class HTTP2Session {
             ++this.numInFlightRequests;
             ++this.numRequests;
             let done = false;
+
+            if (logger.isLevelEnabled('http')) {
+                logger.http(`--- request POST ${this.origin}${path} ${serializeCommand(body, true)}`);
+            }
+            
             const timer = setTimeout(
                 () => {
                     if (!done) {
@@ -185,6 +192,9 @@ class HTTP2Session {
                 let data = {};
                 try {
                     data = JSON.parse(responseBody);
+                    if (logger.isLevelEnabled('http')) {
+                        logger.http(`--- response ${status} POST ${this.origin}${path} ${JSON.stringify(data, null, 2)}`);
+                    }
 
                     resolve({ status, data });
                 } catch (error) {

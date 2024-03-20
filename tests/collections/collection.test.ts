@@ -1353,7 +1353,30 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updatedDoc!.username, 'aaronm');
             assert.strictEqual(updatedDoc!.address.city, undefined);
         });
-        it('should update when updateMany is invoked with updates for records <= 20', async () => {
+        it('should update when updateMany is invoked with updates for records < 20', async () => {
+            await collection.deleteMany({});
+            const docList = Array.from({ length: 19 }, () => ({ username: 'id', city: 'nyc' }));
+            docList.forEach((doc, index) => {
+                doc.username = doc.username + (index + 1);
+            });
+            const res = await collection.insertMany(docList);
+            assert.strictEqual(res.insertedCount, docList.length);
+            assert.strictEqual(res.acknowledged, true);
+            assert.strictEqual(Object.keys(res.insertedIds).length, 19);
+
+            //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
+            const updateManyResp = await collection.updateMany({ 'city': 'nyc' },
+                {
+                    '$set': { 'state': 'ny' }
+                });
+            assert.strictEqual(updateManyResp.matchedCount, 19);
+            assert.strictEqual(updateManyResp.modifiedCount, 19);
+            assert.strictEqual(updateManyResp.acknowledged, true);
+            assert.strictEqual(updateManyResp.upsertedCount, undefined);
+            assert.strictEqual(updateManyResp.upsertedId, undefined);
+        });
+        it('supports usePagination option to update more than 20 documents at a time', async () => {
+            await collection.deleteMany({});
             const docList = Array.from({ length: 20 }, () => ({ username: 'id', city: 'nyc' }));
             docList.forEach((doc, index) => {
                 doc.username = doc.username + (index + 1);
@@ -1363,16 +1386,58 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(res.acknowledged, true);
             assert.strictEqual(Object.keys(res.insertedIds).length, 20);
 
-            //const idToUpdateAndCheck = sampleDocsWithIdList[0]._id;
             const updateManyResp = await collection.updateMany({ 'city': 'nyc' },
                 {
                     '$set': { 'state': 'ny' }
-                });
+                }, { usePagination: true });
             assert.strictEqual(updateManyResp.matchedCount, 20);
             assert.strictEqual(updateManyResp.modifiedCount, 20);
             assert.strictEqual(updateManyResp.acknowledged, true);
             assert.strictEqual(updateManyResp.upsertedCount, undefined);
             assert.strictEqual(updateManyResp.upsertedId, undefined);
+        });
+        it('supports usePagination option when less than 20 documents', async () => {
+            await collection.deleteMany({});
+            const docList = Array.from({ length: 10 }, () => ({ username: 'id', city: 'nyc' }));
+            docList.forEach((doc, index) => {
+                doc.username = doc.username + (index + 1);
+            });
+            const res = await collection.insertMany(docList);
+            assert.strictEqual(res.insertedCount, docList.length);
+            assert.strictEqual(res.acknowledged, true);
+            assert.strictEqual(Object.keys(res.insertedIds).length, 10);
+
+            const updateManyResp = await collection.updateMany({ 'city': 'nyc' },
+                {
+                    '$set': { 'state': 'ny' }
+                });
+            assert.strictEqual(updateManyResp.matchedCount, 10);
+            assert.strictEqual(updateManyResp.modifiedCount, 10);
+            assert.strictEqual(updateManyResp.acknowledged, true);
+            assert.strictEqual(updateManyResp.upsertedCount, undefined);
+            assert.strictEqual(updateManyResp.upsertedId, undefined);
+        });
+        it('handles usePagination option with upsert', async () => {
+            await collection.deleteMany({});
+            const docList = Array.from({ length: 2 }, () => ({ username: 'id', city: 'nyc' }));
+            docList.forEach((doc, index) => {
+                doc.username = doc.username + (index + 1);
+            });
+            const res = await collection.insertMany(docList);
+            assert.strictEqual(res.insertedCount, docList.length);
+            assert.strictEqual(res.acknowledged, true);
+            assert.strictEqual(Object.keys(res.insertedIds).length, 2);
+
+            const updateManyResp = await collection.updateMany(
+                { 'city': 'miami' },
+                { '$set': { 'state': 'fl' } },
+                { usePagination: true, upsert: true }
+            );
+            assert.strictEqual(updateManyResp.matchedCount, 0);
+            assert.strictEqual(updateManyResp.modifiedCount, 0);
+            assert.strictEqual(updateManyResp.acknowledged, true);
+            assert.strictEqual(updateManyResp.upsertedCount, 1);
+            assert.ok(updateManyResp.upsertedId);
         });
         it('should upsert with upsert flag set to false/not set when not found', async () => {
             const docList = Array.from({ length: 20 }, () => ({ username: 'id', city: 'nyc' }));
@@ -1456,7 +1521,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.deepStrictEqual(error.command.updateMany.update, update);
         });
         it('should increment number when $inc is used', async () => {
-            const docList = Array.from({ length: 20 }, () => ({
+            const numDocs = 19;
+            const docList = Array.from({ length: numDocs }, () => ({
                 _id: 'id',
                 username: 'username',
                 city: 'trichy',
@@ -1468,9 +1534,9 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 doc.count = index === 5 ? 5 : (index === 8 ? 8 : index);
             });
             const res = await collection.insertMany(docList);
-            assert.strictEqual(res.insertedCount, docList.length);
+            assert.strictEqual(res.insertedCount, numDocs);
             assert.strictEqual(res.acknowledged, true);
-            assert.strictEqual(Object.keys(res.insertedIds).length, docList.length);
+            assert.strictEqual(Object.keys(res.insertedIds).length, numDocs);
             //update count of 5th doc by $inc using updateOne API
             const updateOneResp = await collection.updateOne({ '_id': 'id5' }, { '$inc': { 'count': 1 } });
             assert.strictEqual(updateOneResp.matchedCount, 1);
@@ -1482,13 +1548,13 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updatedDoc!.count, 6);
             //update count of 5th doc by $inc using updateMany API
             const updateManyResp = await collection.updateMany({}, { '$inc': { 'count': 1 } });
-            assert.strictEqual(updateManyResp.matchedCount, 20);
-            assert.strictEqual(updateManyResp.modifiedCount, 20);
+            assert.strictEqual(updateManyResp.matchedCount, numDocs);
+            assert.strictEqual(updateManyResp.modifiedCount, numDocs);
             assert.strictEqual(updateManyResp.acknowledged, true);
             assert.strictEqual(updateManyResp.upsertedCount, undefined);
             assert.strictEqual(updateManyResp.upsertedId, undefined);
             const allDocs = await collection.find({}).toArray();
-            assert.strictEqual(allDocs.length, 20);
+            assert.strictEqual(allDocs.length, numDocs);
             allDocs.forEach((doc) => {
                 const docIdNum = parseInt(doc._id.substring(2));
                 if (docIdNum === 5) {
@@ -1501,7 +1567,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should increment decimal when $inc is used', async () => {
-            const docList = Array.from({ length: 20 }, () => ({
+            const numDocs = 19;
+            const docList = Array.from({ length: numDocs }, () => ({
                 _id: 'id',
                 username: 'username',
                 city: 'trichy',
@@ -1513,9 +1580,9 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 doc.count = index === 5 ? 5.5 : (index === 8 ? 8.5 : index + 0.5);
             });
             const res = await collection.insertMany(docList);
-            assert.strictEqual(res.insertedCount, docList.length);
+            assert.strictEqual(res.insertedCount, numDocs);
             assert.strictEqual(res.acknowledged, true);
-            assert.strictEqual(Object.keys(res.insertedIds).length, docList.length);
+            assert.strictEqual(Object.keys(res.insertedIds).length, numDocs);
             //update count of 5th doc by $inc using updateOne API
             const updateOneResp = await collection.updateOne({ '_id': 'id5' }, { '$inc': { 'count': 1 } });
             assert.strictEqual(updateOneResp.matchedCount, 1);
@@ -1527,13 +1594,13 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updatedDoc!.count, 6.5);
             //update count of 5th doc by $inc using updateMany API
             const updateManyResp = await collection.updateMany({}, { '$inc': { 'count': 1 } });
-            assert.strictEqual(updateManyResp.matchedCount, 20);
-            assert.strictEqual(updateManyResp.modifiedCount, 20);
+            assert.strictEqual(updateManyResp.matchedCount, numDocs);
+            assert.strictEqual(updateManyResp.modifiedCount, numDocs);
             assert.strictEqual(updateManyResp.acknowledged, true);
             assert.strictEqual(updateManyResp.upsertedCount, undefined);
             assert.strictEqual(updateManyResp.upsertedId, undefined);
             const allDocs = await collection.find({}).toArray();
-            assert.strictEqual(allDocs.length, 20);
+            assert.strictEqual(allDocs.length, numDocs);
             allDocs.forEach((doc) => {
                 const docIdNum = parseInt(doc._id.substring(2));
                 if (docIdNum === 5) {
@@ -1546,7 +1613,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should rename a field when $rename is used in update and updateMany', async () => {
-            const docList = Array.from({ length: 20 }, () => ({
+            const numDocs = 19;  
+            const docList = Array.from({ length: numDocs }, () => ({
                 _id: 'id',
                 username: 'username',
                 city: 'trichy',
@@ -1572,20 +1640,21 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updatedDoc!.zip, undefined);
             //update the doc by changing the zip field to pincode in all docs using updateMany API
             const updateManyResp = await collection.updateMany({}, { '$rename': { 'zip': 'pincode' } });
-            assert.strictEqual(updateManyResp.matchedCount, 20);
-            assert.strictEqual(updateManyResp.modifiedCount, 19);
+            assert.strictEqual(updateManyResp.matchedCount, numDocs);
+            assert.strictEqual(updateManyResp.modifiedCount, numDocs - 1);
             assert.strictEqual(updateManyResp.acknowledged, true);
             assert.strictEqual(updateManyResp.upsertedCount, undefined);
             assert.strictEqual(updateManyResp.upsertedId, undefined);
             const allDocs = await collection.find({}).toArray();
-            assert.strictEqual(allDocs.length, 20);
+            assert.strictEqual(allDocs.length, numDocs);
             allDocs.forEach((doc) => {
                 assert.strictEqual(doc.pincode, 620020);
                 assert.strictEqual(doc.zip, undefined);
             });
         });
         it('should rename a sub doc field when $rename is used in update and updateMany', async () => {
-            const docList = Array.from({ length: 20 }, () => ({
+            const numDocs = 19;
+            const docList = Array.from({ length: numDocs }, () => ({
                 _id: 'id',
                 username: 'username',
                 address: { zip: 620020, city: 'trichy' }
@@ -1610,20 +1679,21 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updatedDoc!.address.zip, undefined);
             //update the doc by changing the zip field to pincode in all docs using updateMany API
             const updateManyResp = await collection.updateMany({}, { '$rename': { 'address.zip': 'address.pincode' } });
-            assert.strictEqual(updateManyResp.matchedCount, 20);
-            assert.strictEqual(updateManyResp.modifiedCount, 19);
+            assert.strictEqual(updateManyResp.matchedCount, numDocs);
+            assert.strictEqual(updateManyResp.modifiedCount, numDocs - 1);
             assert.strictEqual(updateManyResp.acknowledged, true);
             assert.strictEqual(updateManyResp.upsertedCount, undefined);
             assert.strictEqual(updateManyResp.upsertedId, undefined);
             const allDocs = await collection.find({}).toArray();
-            assert.strictEqual(allDocs.length, 20);
+            assert.strictEqual(allDocs.length, numDocs);
             allDocs.forEach((doc) => {
                 assert.strictEqual(doc.address.pincode, 620020);
                 assert.strictEqual(doc.address.zip, undefined);
             });
         });
         it('should set date to current date in the fields inside $currentDate in update and updateMany', async () => {
-            const docList = Array.from({ length: 20 }, () => ({ _id: 'id', username: 'username' }));
+            const numDocs = 19;
+            const docList = Array.from({ length: numDocs }, () => ({ _id: 'id', username: 'username' }));
             docList.forEach((doc, index) => {
                 doc._id += index;
                 doc.username = doc.username + index;
@@ -1643,13 +1713,13 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.ok(updatedDoc!.createdAt);
             //update the doc by setting the date field to current date in all docs using updateMany API
             const updateManyResp = await collection.updateMany({}, { '$currentDate': { 'createdAt': true } });
-            assert.strictEqual(updateManyResp.matchedCount, 20);
-            assert.strictEqual(updateManyResp.modifiedCount, 20);
+            assert.strictEqual(updateManyResp.matchedCount, numDocs);
+            assert.strictEqual(updateManyResp.modifiedCount, numDocs);
             assert.strictEqual(updateManyResp.acknowledged, true);
             assert.strictEqual(updateManyResp.upsertedCount, undefined);
             assert.strictEqual(updateManyResp.upsertedId, undefined);
             const allDocs = await collection.find({}).toArray();
-            assert.strictEqual(allDocs.length, 20);
+            assert.strictEqual(allDocs.length, numDocs);
             allDocs.forEach((doc) => {
                 assert.ok(doc.createdAt);
             });
@@ -1735,7 +1805,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updatedDoc1!.country, 'India');
         });
         it('should set a field value to new value when the new value is < existing value with $min in updateOne and updateMany', async () => {
-            const docList = Array.from({ length: 20 }, () => ({
+            const numDocs = 19;
+            const docList = Array.from({ length: numDocs }, () => ({
                 _id: 'id',
                 departmentName: 'dept',
                 minScore: 50,
@@ -1775,8 +1846,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updatedDoc1!.minScore, 5);
             //update all docs using updateMany API with $min operator to set the minScore to 15
             const updateManyResp = await collection.updateMany({}, { '$min': { 'minScore': 15 } });
-            assert.strictEqual(updateManyResp.matchedCount, 20);
-            assert.strictEqual(updateManyResp.modifiedCount, 19);
+            assert.strictEqual(updateManyResp.matchedCount, numDocs);
+            assert.strictEqual(updateManyResp.modifiedCount, numDocs - 1);
             assert.strictEqual(updateManyResp.acknowledged, true);
             assert.strictEqual(updateManyResp.upsertedCount, undefined);
             assert.strictEqual(updateManyResp.upsertedId, undefined);
@@ -1791,7 +1862,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
             //update all docs using updateMany API with $min operator to set the minScore to 50
             const updateManyResp1 = await collection.updateMany({}, { '$min': { 'minScore': 50 } });
-            assert.strictEqual(updateManyResp1.matchedCount, 20);
+            assert.strictEqual(updateManyResp1.matchedCount, numDocs);
             assert.strictEqual(updateManyResp1.modifiedCount, 0);
             assert.strictEqual(updateManyResp1.acknowledged, true);
             assert.strictEqual(updateManyResp1.upsertedCount, undefined);
@@ -1807,7 +1878,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should set a field value to new value when the new value is > existing value with $max in updateOne and updateMany', async () => {
-            const docList = Array.from({ length: 20 }, () => ({
+            const numDocs = 19;
+            const docList = Array.from({ length: numDocs }, () => ({
                 _id: 'id',
                 departmentName: 'dept',
                 minScore: 50,
@@ -1847,8 +1919,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(updatedDoc1!.maxScore, 950);
             //update all docs using updateMany API with $max operator to set the maxScore to 15
             const updateManyResp = await collection.updateMany({}, { '$max': { 'maxScore': 900 } });
-            assert.strictEqual(updateManyResp.matchedCount, 20);
-            assert.strictEqual(updateManyResp.modifiedCount, 19);
+            assert.strictEqual(updateManyResp.matchedCount, numDocs);
+            assert.strictEqual(updateManyResp.modifiedCount, numDocs - 1);
             assert.strictEqual(updateManyResp.acknowledged, true);
             assert.strictEqual(updateManyResp.upsertedCount, undefined);
             assert.strictEqual(updateManyResp.upsertedId, undefined);
@@ -1863,7 +1935,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
             //update all docs using updateMany API with $max operator to set the maxScore to 50
             const updateManyResp1 = await collection.updateMany({}, { '$max': { 'maxScore': 50 } });
-            assert.strictEqual(updateManyResp1.matchedCount, 20);
+            assert.strictEqual(updateManyResp1.matchedCount, numDocs);
             assert.strictEqual(updateManyResp1.modifiedCount, 0);
             assert.strictEqual(updateManyResp1.acknowledged, true);
             assert.strictEqual(updateManyResp1.upsertedCount, undefined);

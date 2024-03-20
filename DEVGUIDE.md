@@ -1,9 +1,11 @@
 
 # Contents
 1. [Build & Run tests locally](#build--test)
-2. [Build API Reference Documentation](#build-api-reference-documentation)
-3. [Contributing](CONTRIBUTING.md)
-4. [Creating a release](#publishing-to-npm-registry)
+2. [Debug Mode](#debug-mode)
+3. [Update Stargate and JSON API versions](#update-stargate-and-json-api-versions)
+4. [Build API Reference Documentation](#build-api-reference-documentation)
+5. [Contributing](CONTRIBUTING.md)
+6. [Creating a release](#publishing-to-npm-registry)
 
 ## Build & Test
 
@@ -40,6 +42,41 @@ Run `npm run lint` to run ESLint.
 ESLint will point out any formatting and code quality issues it finds.
 ESLint can automatically fix some issues: run `npm run lint -- --fix` to tell ESLint to automatically fix what issues it can.
 You should try to run `npm run lint` before committing to minimize risk of regressions.
+
+## Debug Mode
+
+You can make stargate-mongoose print all HTTP requests to the console using the `logger` option as follows.
+
+```ts
+import { logger } from 'stargate-mongoose';
+
+logger.setLevel('http');
+```
+
+Once you've enabled the `http` logging level, you should see every HTTP request and response logged to the console in a format similar to the following:
+
+```
+http: --- request POST http://localhost:8181/v1/testks1 {
+  "deleteCollection": {
+    "name": "collection1"
+  }
+}
+http: --- response 200 POST http://localhost:8181/v1/testks1 {
+  "status": {
+    "ok": 1
+  }
+}
+```
+
+When running tests, you can turn on the `http` logging level by setting the `D` environment variable as follows:
+
+```
+env D=1 npm test
+```
+
+[Stargate-mongoose's tests automatically enable `http` logging level if the `D` environment variable is set](https://github.com/stargate/stargate-mongoose/blob/913a6c6934d40848fb89eb5d8763492ee6445ddf/tests/setup.ts#L20-L25).
+Otherwise, all console output is suppressed using `logger.silent = true`.
+This means there's no way to enable console output without setting the `D` environment variable when running `npm test`.
 
 ## Update Stargate and JSON API versions
 

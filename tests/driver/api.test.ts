@@ -19,7 +19,7 @@ import {
     testClient,
     TEST_COLLECTION_NAME
 } from '@/tests/fixtures';
-import mongoose, {Model, Mongoose, Schema, InferSchemaType} from 'mongoose';
+import mongoose, {Model, Schema, InferSchemaType} from 'mongoose';
 import * as StargateMongooseDriver from '@/src/driver';
 import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '@/src/driver';
