@@ -20,6 +20,7 @@ import { logger } from '@/src/logger';
 import { parseUri } from '@/src/collections/utils';
 import { HTTPClient } from '@/src/client';
 import { Client } from '@/src/collections';
+import { Product, Cart, mongooseInstance } from '@/tests/mongooseFixtures';
 
 describe('Driver based tests', async () => {
     let dbUri: string;
@@ -38,140 +39,62 @@ describe('Driver based tests', async () => {
     });
     describe('StargateMongoose - index', () => {
         it('should leverage astradb', async function () {
-            let Cart, Product;
-            let astraMongoose, jsonAPIMongoose;
-            try {
-                const cartSchema = new mongoose.Schema({
-                    name: String,
-                    cartName: {type: String, lowercase: true, unique: true, index: true},
-                    products: [{type: mongoose.Schema.Types.ObjectId, ref: 'Product'}]
-                });
+            await Promise.all([Product.deleteMany({}), Cart.deleteMany({})]);
+            const product1 = new Product({
+                name: 'Product 1',
+                price: 10,
+                expiryDate: new Date('2024-04-20T00:00:00.000Z'),
+                isCertified: true
+            });
+            await product1.save();
 
-                const productSchema = new mongoose.Schema({
-                    name: String,
-                    price: Number,
-                    expiryDate: Date,
-                    isCertified: Boolean
-                });
-                if (isAstra) {
-                    astraMongoose = new mongoose.Mongoose();
-                    astraMongoose.setDriver(StargateMongooseDriver);
-                    astraMongoose.set('autoCreate', true);
-                    astraMongoose.set('autoIndex', false);
-                    Cart = astraMongoose.model('Cart', cartSchema);
-                    Product = astraMongoose.model('Product', productSchema);
+            const product2 = new Product({
+                name: 'Product 2',
+                price: 10,
+                expiryDate: new Date('2024-11-20T00:00:00.000Z'),
+                isCertified: false
+            });
+            await product2.save();
 
-                    // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
-                    await astraMongoose.connect(dbUri, {isAstra: true});
-                    await Promise.all(Object.values(astraMongoose.connection.models).map(Model => Model.init()));
-                } else {
-                    // @ts-ignore
-                    jsonAPIMongoose = new mongoose.Mongoose();
-                    jsonAPIMongoose.setDriver(StargateMongooseDriver);
-                    jsonAPIMongoose.set('autoCreate', true);
-                    jsonAPIMongoose.set('autoIndex', false);
-                    Cart = jsonAPIMongoose.model('Cart', cartSchema);
-                    Product = jsonAPIMongoose.model('Product', productSchema);
+            const cart = new Cart({
+                name: 'My Cart',
+                cartName: 'wewson',
+                products: [product1._id, product2._id]
+            });
+            await cart.save();
+            assert.strictEqual(await Cart.findOne({cartName: 'wewson'}).select('name').exec().then((doc: any) => doc.name), cart.name);
+            //compare if product expiryDate is same as saved
+            assert.strictEqual(await Product.findOne({name: 'Product 1'}).select('expiryDate').exec().then((doc: any) => doc.expiryDate.toISOString()), product1.expiryDate!.toISOString());
 
-                    const options = {
-                        username: process.env.STARGATE_USERNAME,
-                        password: process.env.STARGATE_PASSWORD,
-                        authUrl: process.env.STARGATE_AUTH_URL,
-                        logSkippedOptions: true
-                    };
-                    // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
-                    await jsonAPIMongoose.connect(dbUri, options);
-                    await Promise.all(Object.values(jsonAPIMongoose.connection.models).map(Model => Model.init()));
-                }
-                await Promise.all([Product.deleteMany({}), Cart.deleteMany({})]);
-                const product1 = new Product({
-                    name: 'Product 1',
-                    price: 10,
-                    expiryDate: new Date('2024-04-20T00:00:00.000Z'),
-                    isCertified: true
-                });
-                await product1.save();
+            const findOneAndReplaceResp = await Cart.findOneAndReplace({cartName: 'wewson'}, {
+                name: 'My Cart 2',
+                cartName: 'wewson1'
+            }, {returnDocument: 'after'}).exec();
+            assert.strictEqual(findOneAndReplaceResp!.name, 'My Cart 2');
+            assert.strictEqual(findOneAndReplaceResp!.cartName, 'wewson1');
 
-                const product2 = new Product({
-                    name: 'Product 2',
-                    price: 10,
-                    expiryDate: new Date('2024-11-20T00:00:00.000Z'),
-                    isCertified: false
-                });
-                await product2.save();
+            const productNames: string[] = [];
+            const cursor = await Product.find().cursor();
+            await cursor.eachAsync(p => productNames.push(p.name!));
+            assert.deepEqual(productNames.sort(), ['Product 1', 'Product 2']);
 
-                const cart = new Cart({
-                    name: 'My Cart',
-                    cartName: 'wewson',
-                    products: [product1._id, product2._id]
-                });
-                await cart.save();
-                assert.strictEqual(await Cart.findOne({cartName: 'wewson'}).select('name').exec().then((doc: any) => doc.name), cart.name);
-                //compare if product expiryDate is same as saved
-                assert.strictEqual(await Product.findOne({name: 'Product 1'}).select('expiryDate').exec().then((doc: any) => doc.expiryDate.toISOString()), product1.expiryDate!.toISOString());
-
-                const findOneAndReplaceResp = await Cart.findOneAndReplace({cartName: 'wewson'}, {
-                    name: 'My Cart 2',
-                    cartName: 'wewson1'
-                }, {returnDocument: 'after'}).exec();
-                assert.strictEqual(findOneAndReplaceResp!.name, 'My Cart 2');
-                assert.strictEqual(findOneAndReplaceResp!.cartName, 'wewson1');
-
-                const productNames: string[] = [];
-                const cursor = await Product.find().cursor();
-                await cursor.eachAsync(p => productNames.push(p.name!));
-                assert.deepEqual(productNames.sort(), ['Product 1', 'Product 2']);
-
-                await cart.deleteOne();
-                assert.strictEqual(await Cart.findOne({cartName: 'wewson'}), null);
-            } finally {
-                if (isAstra) {
-                    astraMongoose?.connection.dropCollection('carts');
-                    astraMongoose?.connection.dropCollection('products');
-                    astraMongoose?.connection?.getClient()?.close();
-                } else {
-                    jsonAPIMongoose?.connection.dropCollection('carts');
-                    jsonAPIMongoose?.connection.dropCollection('products');
-                    jsonAPIMongoose?.connection?.getClient()?.close();
-                }
-            }
+            await cart.deleteOne();
+            assert.strictEqual(await Cart.findOne({cartName: 'wewson'}), null);
         });
     });
     describe('Mongoose API', () => {
-        let mongooseInstance: mongoose.Mongoose | undefined;
-        const cartSchema = new mongoose.Schema({
-            name: String,
-            products: [{ type: 'ObjectId', ref: 'Product' }]
+        const personSchema = new mongooseInstance.Schema({
+            name: { type: String, required: true }
         });
-        let Cart: mongoose.Model<mongoose.InferSchemaType<typeof cartSchema>> | undefined;
+        const Person = mongooseInstance.model('Person', personSchema);
         before(async function () {
-            mongooseInstance = await createMongooseInstance();
-
-            const personSchema = new mongooseInstance.Schema({
-                name: { type: String, required: true }
-            });
-            const Person = mongooseInstance.model('Person', personSchema);
             await Person.createCollection();
         });
 
-        before(async function() {
-            const productSchema = new mongooseInstance!.Schema({
-                name: String,
-                price: Number
-            });
-            Cart = mongooseInstance!.model('Cart', cartSchema);
-            await Cart.createCollection();
-            const Product = mongooseInstance!.model('Product', productSchema);
-            await Product.createCollection();
+        after(async () => {
+            await Person.db.dropCollection(Person.collection.collectionName);
         });
 
-        after(async function () {
-            //add all unique collections here that are used across tests
-            await mongooseInstance?.connection.dropCollection('people');
-            await mongooseInstance?.connection.dropCollection('carts');
-            await mongooseInstance?.connection.dropCollection('products');
-            mongooseInstance?.connection?.getClient()?.close();
-        });
         it('handles find cursors', async () => {
             const Person = mongooseInstance!.model('Person');
             await Person.deleteMany({});

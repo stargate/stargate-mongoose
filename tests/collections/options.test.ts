@@ -13,95 +13,13 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { Db } from '@/src/collections/db';
-import { Client } from '@/src/collections/client';
-import { testClient, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 import mongoose from 'mongoose';
-import * as StargateMongooseDriver from '@/src/driver';
+import { Product } from '@/tests/mongooseFixtures';
 
 describe('Options tests', async () => {
-    let astraClient: Client | null;
-    let db: Db;
-    let dbUri: string;
-    let isAstra: boolean;
-    let Product:mongoose.Model<any>, astraMongoose:mongoose.Mongoose | undefined, jsonAPIMongoose:mongoose.Mongoose | undefined;
-    before(async function () {
-        if (testClient == null) {
-            return this.skip();
-        }
-        astraClient = await testClient?.client;
-        if (astraClient === null) {
-            return this.skip();
-        }
-
-        db = astraClient.db();
-        await db.dropCollection(TEST_COLLECTION_NAME);
-        dbUri = testClient.uri;
-        isAstra = testClient.isAstra;
-    });
-
-    before(async function () {
-        ({ Product, astraMongoose, jsonAPIMongoose } = await createClientsAndModels(isAstra));
-    });
-
     afterEach(async function() {
         await Product.deleteMany({});
     });
-
-    after(async function () {
-        await dropCollections(isAstra, astraMongoose, jsonAPIMongoose, 'products');
-    });
-
-    after(function() {
-        jsonAPIMongoose?.connection?.getClient()?.close();
-        astraMongoose?.connection?.getClient()?.close();
-    });
-
-    async function createClientsAndModels(isAstra: boolean) {
-        let Product, astraMongoose, jsonAPIMongoose;
-        const productSchema = new mongoose.Schema({
-            name: String,
-            price: Number,
-            expiryDate: Date,
-            isCertified: Boolean,
-            category: String
-        });
-        if(isAstra){
-            astraMongoose = new mongoose.Mongoose();
-            astraMongoose.setDriver(StargateMongooseDriver);
-            astraMongoose.set('autoCreate', true);
-            astraMongoose.set('autoIndex', false);
-            Product = astraMongoose.model('Product', productSchema);
-            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
-            await astraMongoose.connect(dbUri, { isAstra: true, logSkippedOptions: true });
-            await Promise.all(Object.values(astraMongoose.connection.models).map(Model => Model.init()));
-        } else{
-            // @ts-ignore
-            jsonAPIMongoose = new mongoose.Mongoose();
-            jsonAPIMongoose.setDriver(StargateMongooseDriver);
-            jsonAPIMongoose.set('autoCreate', true);
-            jsonAPIMongoose.set('autoIndex', false);
-            Product = jsonAPIMongoose.model('Product', productSchema);
-            const options = {
-                username: process.env.STARGATE_USERNAME,
-                password: process.env.STARGATE_PASSWORD,
-                authUrl: process.env.STARGATE_AUTH_URL,
-                logSkippedOptions: true
-            };
-            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
-            await jsonAPIMongoose.connect(dbUri, options);
-            await Promise.all(Object.values(jsonAPIMongoose.connection.models).map(Model => Model.init()));
-        }
-        return { Product, astraMongoose, jsonAPIMongoose };
-    }
-
-    async function dropCollections(isAstra: boolean, astraMongoose: mongoose.Mongoose | undefined, jsonAPIMongoose: mongoose.Mongoose | undefined, collectionName: string) {
-        if (isAstra) {
-            await astraMongoose?.connection.dropCollection(collectionName);
-        } else {
-            await jsonAPIMongoose?.connection.dropCollection(collectionName);
-        }
-    }
 
     describe('options cleanup tests', () => {
         it('should cleanup insertManyOptions', async () => {
@@ -159,7 +77,8 @@ describe('Options tests', async () => {
             assert.strictEqual(insertManyResp[1].name, 'Product 1');
             assert.strictEqual(insertManyResp[2].name, 'Product 3');
             //rawResult options should be cleaned up by stargate-mongoose, but 'upsert' should be preserved
-            const updateManyResp = await Product.updateMany({ category: 'cat1' },
+            const updateManyResp = await Product.updateMany(
+                { category: 'cat1' },
                 { $set : { isCertified : true }, $inc: { price: 5 } },
                 { upsert: true, rawResult: false, sort: { name : 1 } } as unknown as Record<string, never>
             );

@@ -17,6 +17,7 @@ import { Db } from '@/src/collections/db';
 import { Client } from '@/src/collections/client';
 import { parseUri, createNamespace } from '@/src/collections/utils';
 import { testClient, TEST_COLLECTION_NAME } from '@/tests/fixtures';
+import { createMongooseCollections } from '@/tests/mongooseFixtures';
 import {HTTPClient} from '@/src/client';
 import { randomBytes } from 'crypto';
 
@@ -39,11 +40,6 @@ describe('StargateMongoose - collections.Db', async () => {
         isAstra = testClient.isAstra;
         httpClient = astraClient.httpClient;
     });
-    afterEach(async () => {
-        const db = astraClient?.db();
-        // run drop collection async to save time
-        await db?.dropCollection(TEST_COLLECTION_NAME);
-    });
 
     describe('Db initialization', () => {
         it('should initialize a Db', () => {
@@ -64,6 +60,14 @@ describe('StargateMongoose - collections.Db', async () => {
     });
 
     describe('Db collection operations', () => {
+        before(async () => {
+            const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
+            const collections = await db.findCollections().then(res => res.status.collections);
+            if (collections.includes(TEST_COLLECTION_NAME)) {
+                await db.dropCollection(TEST_COLLECTION_NAME);
+            }
+        });
+
         it('should initialize a Collection', () => {
             const db = new Db(httpClient, 'test-db');
             const collection = db.collection('test-collection');
@@ -87,18 +91,22 @@ describe('StargateMongoose - collections.Db', async () => {
 
             const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
 
-            let collections = await db.findCollections().then(res => res.status.collections);
-            assert.ok(!collections.includes(collectionName));
+            try {
+                let collections = await db.findCollections().then(res => res.status.collections);
+                assert.ok(!collections.includes(collectionName));
 
-            const res = await db.createCollection(collectionName);
-            assert.ok(res);
-            assert.strictEqual(res.status.ok, 1);
-            const res2 = await db.createCollection(collectionName);
-            assert.ok(res2);
-            assert.strictEqual(res2.status.ok, 1);
+                const res = await db.createCollection(collectionName);
+                assert.ok(res);
+                assert.strictEqual(res.status.ok, 1);
+                const res2 = await db.createCollection(collectionName);
+                assert.ok(res2);
+                assert.strictEqual(res2.status.ok, 1);
 
-            collections = await db.findCollections().then(res => res.status.collections);
-            assert.ok(collections.includes(collectionName));
+                collections = await db.findCollections().then(res => res.status.collections);
+                assert.ok(collections.includes(collectionName));
+            } finally {
+                await db.dropCollection(collectionName);
+            }
         });
 
         it('should create a Collection with allow indexing options', async () => {
@@ -175,20 +183,20 @@ describe('StargateMongoose - collections.Db', async () => {
 
     describe('dropDatabase', function (this: Mocha.Suite) {
         const suite = this;
-        after(async () => {
+        const suffix = randString(4);
+        const keyspaceName = parseUri(dbUri).keyspaceName + '_' + suffix;
+        before(async () => {
             if (isAstra) {
                 return;
             }
-            const keyspaceName = parseUri(dbUri).keyspaceName;
             await createNamespace(httpClient, keyspaceName);
         });
         it('should drop the underlying database (AKA namespace)', async () => {
             if (isAstra) {
                 suite.ctx.skip();
             }
-            const keyspaceName = parseUri(dbUri).keyspaceName;
             const db = new Db(httpClient, keyspaceName);
-            const suffix = randString(4);
+            
             await db.createCollection(`test_db_collection_${suffix}`);
             const res = await db.dropDatabase();
             assert.strictEqual(res.status?.ok, 1);
@@ -214,6 +222,7 @@ describe('StargateMongoose - collections.Db', async () => {
             }
             const keyspaceName = parseUri(dbUri).keyspaceName;
             await createNamespace(httpClient, keyspaceName);
+            await createMongooseCollections();
         });
 
         it('should create the underlying database (AKA namespace)', async () => {
@@ -224,29 +233,33 @@ describe('StargateMongoose - collections.Db', async () => {
             const db = new Db(httpClient, keyspaceName);
             const suffix = randString(4);
 
-            await db.dropDatabase().catch(err => {
-                if (err.errors[0].exceptionClass === 'NotFoundException') {
-                    return;
+            try {
+                await db.dropDatabase().catch(err => {
+                    if (err.errors[0].exceptionClass === 'NotFoundException') {
+                        return;
+                    }
+
+                    throw err;
+                });
+
+                try {
+                    await db.createCollection(`test_db_collection_${suffix}`);
+                    assert.ok(false);
+                } catch (err: any) {
+                    assert.strictEqual(err.errors.length, 1);
+                    assert.strictEqual(
+                        err.errors[0].message,
+                        'INVALID_ARGUMENT: Unknown namespace \'' + keyspaceName + '\', you must create it first.'
+                    );
                 }
 
-                throw err;
-            });
+                const res = await db.createDatabase();
+                assert.strictEqual(res.status?.ok, 1);
 
-            try {
                 await db.createCollection(`test_db_collection_${suffix}`);
-                assert.ok(false);
-            } catch (err: any) {
-                assert.strictEqual(err.errors.length, 1);
-                assert.strictEqual(
-                    err.errors[0].message,
-                    'INVALID_ARGUMENT: Unknown namespace \'' + keyspaceName + '\', you must create it first.'
-                );
+            } finally {
+                await db.dropCollection(`test_db_collection_${suffix}`);
             }
-
-            const res = await db.createDatabase();
-            assert.strictEqual(res.status?.ok, 1);
-
-            await db.createCollection(`test_db_collection_${suffix}`);
         });
     });
 });
