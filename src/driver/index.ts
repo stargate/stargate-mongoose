@@ -14,3 +14,8 @@
 
 export { Connection } from './connection';
 export { Collection, OperationNotSupportedError } from './collection';
+
+import { Connection } from './connection';
+import { Mongoose } from 'mongoose';
+
+export type StargateMongoose = Mongoose & { connection: Connection, connections: Connection[] };

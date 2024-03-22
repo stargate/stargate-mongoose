@@ -132,16 +132,15 @@ describe('Driver based tests', async () => {
         });
 
         it('handles populate()', async () => {
-            const Cart = mongooseInstance!.model('Cart');
             const Product = mongooseInstance!.model('Product');
-            await Promise.all([Cart.deleteMany({}), Product.deleteMany({})]);
+            await Promise.all([Cart!.deleteMany({}), Product.deleteMany({})]);
             const [{ _id: productId }] = await Product.create([
                 { name: 'iPhone 12', price: 500 },
                 { name: 'MacBook Air', price: 1400 }
             ]);
-            const { _id: cartId } = await Cart.create({ name: 'test', products: [productId] });
+            const { _id: cartId } = await Cart!.create({ name: 'test', products: [productId] });
 
-            const cart = await Cart.findById(cartId).populate<{ products: (typeof Product)[] }>('products').orFail();
+            const cart = await Cart!.findById(cartId).populate<{ products: (typeof Product)[] }>('products').orFail();
             assert.deepEqual(cart.products.map(p => p.name), ['iPhone 12']);
         });
 

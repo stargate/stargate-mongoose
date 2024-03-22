@@ -823,5 +823,16 @@ describe('Mongoose Model API level tests', async () => {
             const fromDb = await Vector.findOne({ name: 'Test vector 1' });
             assert.equal(fromDb, null);
         });
+
+        it('contains vector options in listCollections() output with `explain`', async function() {
+            const connection = mongooseInstance.connection;
+            const collections = await connection.listCollections({ explain: true });
+            
+            const collection = collections.find(collection => collection.name === 'vector');
+            assert.ok(collection, 'Collection named "vector" not found');
+            assert.deepStrictEqual(collection.options, {
+                vector: { dimension: 2, metric: 'cosine' }
+            });
+        });
     });
 });
