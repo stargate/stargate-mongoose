@@ -21,6 +21,7 @@ import { getStargateAccessToken } from '../collections/utils';
 import { EJSON } from 'bson';
 import http2 from 'http2';
 import { StargateMongooseError } from '../collections/collection';
+import { deserialize } from './deserialize'; 
 
 const REQUESTED_WITH = LIB_NAME + '/' + LIB_VERSION;
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
@@ -421,21 +422,17 @@ export const handleIfErrorResponse = (response: any, data: Record<string, any>) 
 };
 
 function serializeCommand(data: Record<string, any>, pretty?: boolean): string {
-    return EJSON.stringify(data, (key, value) => handleValues(key, value), pretty ? '  ' : '');
+    return EJSON.stringify(data, (key, value) => serializeValue(value), pretty ? '  ' : '');
 }
 
-function deserialize(data: Record<string, any>): Record<string, any> {
-    return data != null ? EJSON.deserialize(data) : data;
-}
-
-function handleValues(key: any, value: any): any {
+function serializeValue(value: any): any {
     if (value != null && typeof value === 'bigint') {
-    //BigInt handling
+        //BigInt handling
         return Number(value);
     } else if (value != null && typeof value === 'object') {
-    // ObjectId to strings
+        // ObjectId to strings
         if (value.$oid) {
-            return value.$oid;
+            return { $objectId: value.$oid };
         } else if (value.$numberDecimal) {
             //Decimal128 handling
             return Number(value.$numberDecimal);
