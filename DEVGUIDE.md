@@ -20,9 +20,9 @@ npm run build
 
 ### Test
 - Start Docker
-- Start JSON API
+- Start Data API
 ```shell
-bin/start_json_api.sh
+bin/start_data_api.sh
 ```
 - Copy the `.env.example` file and create a new `.env` file that should have all the connection details as shown below.
 

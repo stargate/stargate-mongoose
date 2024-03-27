@@ -15,7 +15,7 @@ then
 fi
 
 SGTAG=$stargate_version
-JSONTAG=$json_api_version
+JSONTAG=$data_api_version
 
 
 while getopts "qr:t:j:" opt; do

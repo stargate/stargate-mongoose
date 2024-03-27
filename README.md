@@ -25,11 +25,11 @@ cd stargate-mongoose
 
 For macOS/Linux
 ```shell
-bin/start_json_api.sh
+bin/start_data_api.sh
 ```
 For Windows
 ```shell
-bin\start_json_api.cmd
+bin\start_data_api.cmd
 ```
 - Create a sample project called 'sample-app'
 ```shell
