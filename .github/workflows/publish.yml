@@ -19,8 +19,8 @@ jobs:
       - uses: actions/checkout@v3
       - name: Set up JSON API
         run: |
-          chmod +x bin/start_json_api.sh
-          bin/start_json_api.sh
+          chmod +x bin/start_data_api.sh
+          bin/start_data_api.sh
       - name: Wait for services
         run: |
           while ! nc -z localhost 8181; do sleep 1; done
