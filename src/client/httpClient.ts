@@ -432,7 +432,7 @@ function serializeValue(value: any): any {
     } else if (value != null && typeof value === 'object') {
         // ObjectId to strings
         if (value.$oid) {
-            return { $objectId: value.$oid };
+            return value.$oid;
         } else if (value.$numberDecimal) {
             //Decimal128 handling
             return Number(value.$numberDecimal);
