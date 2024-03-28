@@ -2,7 +2,7 @@
 # Contents
 1. [Build & Run tests locally](#build--test)
 2. [Debug Mode](#debug-mode)
-3. [Update Stargate and JSON API versions](#update-stargate-and-json-api-versions)
+3. [Update Stargate and Data API versions](#update-stargate-and-data-api-versions)
 4. [Build API Reference Documentation](#build-api-reference-documentation)
 5. [Contributing](CONTRIBUTING.md)
 6. [Creating a release](#publishing-to-npm-registry)
@@ -10,7 +10,7 @@
 ## Build & Test
 
 Prerequisites:
-- [Docker](https://docker.com/) / [JSON API](https://github.com/stargate/jsonapi)
+- [Docker](https://docker.com/) / [Data API](https://github.com/stargate/data-api)
 
 ### Build
 ```shell
@@ -27,7 +27,7 @@ bin/start_data_api.sh
 - Copy the `.env.example` file and create a new `.env` file that should have all the connection details as shown below.
 
 ```env
-JSON_API_URI=http://localhost:8181/v1/testks1
+DATA_API_URI=http://localhost:8181/v1/testks1
 STARGATE_AUTH_URL=http://localhost:8081/v1/auth
 STARGATE_USERNAME=cassandra
 STARGATE_PASSWORD=cassandra
@@ -78,9 +78,9 @@ env D=1 npm test
 Otherwise, all console output is suppressed using `logger.silent = true`.
 This means there's no way to enable console output without setting the `D` environment variable when running `npm test`.
 
-## Update Stargate and JSON API versions
+## Update Stargate and Data API versions
 
-Stargate and the JSON API versions are maintained in the file `api-compatibility.versions`. Update the versions accordingly, submit a PR and make sure that the GitHub Actions that verify the new versions run fine.
+Stargate and the Data API versions are maintained in the file `api-compatibility.versions`. Update the versions accordingly, submit a PR and make sure that the GitHub Actions that verify the new versions run fine.
 
 
 ## Build API Reference Documentation

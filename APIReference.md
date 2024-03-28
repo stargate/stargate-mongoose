@@ -10,11 +10,11 @@
 
 <dl>
 <dt><a href="#createAstraUri">createAstraUri(apiEndpoint, applicationToken, namespace, baseApiPath, logLevel, authHeaderName)</a> ⇒</dt>
-<dd><p>Create an Astra connection URI while connecting to Astra JSON API</p></dd>
+<dd><p>Create an Astra connection URI while connecting to Astra Data API</p></dd>
 <dt><a href="#createStargateUri">createStargateUri(baseUrl, baseAuthUrl, keyspace, username, password, logLevel)</a> ⇒</dt>
-<dd><p>Create a JSON API connection URI while connecting to Open source JSON API</p></dd>
+<dd><p>Create a Data API connection URI while connecting to Open source Data API</p></dd>
 <dt><a href="#getStargateAccessToken">getStargateAccessToken(authUrl, username, password)</a> ⇒</dt>
-<dd><p>Get an access token from Stargate (this is useful while connecting to open source JSON API)</p></dd>
+<dd><p>Get an access token from Stargate (this is useful while connecting to open source Data API)</p></dd>
 </dl>
 
 <a name="Collection"></a>
@@ -327,7 +327,7 @@
 <a name="createAstraUri"></a>
 
 ## createAstraUri(apiEndpoint, applicationToken, namespace, baseApiPath, logLevel, authHeaderName) ⇒
-<p>Create an Astra connection URI while connecting to Astra JSON API</p>
+<p>Create an Astra connection URI while connecting to Astra Data API</p>
 
 **Kind**: global function  
 **Returns**: <p>URL as string</p>  
@@ -345,15 +345,15 @@
 <a name="createStargateUri"></a>
 
 ## createStargateUri(baseUrl, baseAuthUrl, keyspace, username, password, logLevel) ⇒
-<p>Create a JSON API connection URI while connecting to Open source JSON API</p>
+<p>Create a Data API connection URI while connecting to Open source Data API</p>
 
 **Kind**: global function  
 **Returns**: <p>URL as string</p>  
 
 | Param | Description |
 | --- | --- |
-| baseUrl | <p>the base URL of the JSON API</p> |
-| baseAuthUrl | <p>the base URL of the JSON API auth (this is generally the Stargate Coordinator auth URL)</p> |
+| baseUrl | <p>the base URL of the Data API</p> |
+| baseAuthUrl | <p>the base URL of the Data API auth (this is generally the Stargate Coordinator auth URL)</p> |
 | keyspace | <p>the keyspace to connect to</p> |
 | username | <p>the username to connect with</p> |
 | password | <p>the password to connect with</p> |
@@ -362,14 +362,14 @@
 <a name="getStargateAccessToken"></a>
 
 ## getStargateAccessToken(authUrl, username, password) ⇒
-<p>Get an access token from Stargate (this is useful while connecting to open source JSON API)</p>
+<p>Get an access token from Stargate (this is useful while connecting to open source Data API)</p>
 
 **Kind**: global function  
 **Returns**: <p>access token as string</p>  
 
 | Param | Description |
 | --- | --- |
-| authUrl | <p>the base URL of the JSON API auth (this is generally the Stargate Coordinator auth URL)</p> |
+| authUrl | <p>the base URL of the Data API auth (this is generally the Stargate Coordinator auth URL)</p> |
 | username | <p>Username</p> |
 | password | <p>Password</p> |
 

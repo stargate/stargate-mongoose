@@ -1,6 +1,6 @@
 # stargate-mongoose ![ci-tests](https://github.com/stargate/stargate-mongoose/actions/workflows/ci-tests.yml/badge.svg)
 
-`stargate-mongoose` is a Mongoose driver for [JSON API](https://github.com/stargate/jsonapi) which runs on top of Apache Cassandra / DataStax Enterprise.
+`stargate-mongoose` is a Mongoose driver for [Data API](https://github.com/stargate/data-api) which runs on top of Apache Cassandra / DataStax Enterprise.
 
 1. [Quickstart](#quickstart)
 2. [Architecture](#architecture)
@@ -21,7 +21,7 @@ node (>=14.0.0), npm/yarn, Docker (for testing the sample app locally using dock
 git clone https://github.com/stargate/stargate-mongoose.git
 cd stargate-mongoose
 ```
-- Execute below script and wait for it to complete, which starts a simple JSON API on local with a DSE 6.8 (DataStax Enterprise) as database backend.
+- Execute below script and wait for it to complete, which starts a simple Data API on local with a DSE 6.8 (DataStax Enterprise) as database backend.
 
 For macOS/Linux
 ```shell
@@ -95,7 +95,7 @@ app.listen(PORT, HOST, () => {
 node index.js
 ```
 
-- Stop the JSON API once the test is complete
+- Stop the Data API once the test is complete
 ```shell
 docker compose -f bin/docker-compose.yml down -v
 ```
@@ -107,10 +107,10 @@ docker compose -f bin/docker-compose.yml down -v
 ### Components
 - Cassandra Cluster - Apache Cassandra / DataStax Enterprise Cluster as backend database.
 - Stargate Coordinator Nodes - [Stargate](https://stargate.io/) is an open source Data API Gateway for Cassandra. Coordinator is one of the primary components of Stargate which connects the API layer to the backend database. More details can be found [here](https://stargate.io/docs/latest/concepts/concepts.html#stargate-v2-0).
-- Stargate JSON API - [JSON API](https://github.com/stargate/jsonapi) is an open source JSON API that runs on top of Stargate's coordinator.
-- JavaScript Clients that use Mongoose - Mongoose is an elegant mongodb object modeling library for node.js applications. By implementing a driver required by the Mongoose interface to connect to the JSON API instead of native mongodb access layer, now a JavaScript client can store/retrieve documents on an Apache Cassandra/DSE backend.
+- Stargate Data API - [Data API](https://github.com/stargate/data-api) is an open source Data API that runs on top of Stargate's coordinator.
+- JavaScript Clients that use Mongoose - Mongoose is an elegant mongodb object modeling library for node.js applications. By implementing a driver required by the Mongoose interface to connect to the Data API instead of native mongodb access layer, now a JavaScript client can store/retrieve documents on an Apache Cassandra/DSE backend.
 
-The current implementation of the JSON API uses DataStax Enterprise (DSE) as the backend database.
+The current implementation of the Data API uses DataStax Enterprise (DSE) as the backend database.
 
 ## Version compatibility
 | Component/Library Name | Version            |
@@ -118,7 +118,7 @@ The current implementation of the JSON API uses DataStax Enterprise (DSE) as the
 | Mongoose               | ^7.5.0 \|\| ^8.0.0 |
 | DataStax Enterprise    | 6.8.x              |
 
-CI tests are run using the Stargate and JSON API versions specified in the [api-compatibility.versions](api-compatibility.versions) file.
+CI tests are run using the Stargate and Data API versions specified in the [api-compatibility.versions](api-compatibility.versions) file.
 
 ## Connecting to AstraDB
 
@@ -143,7 +143,7 @@ await mongoose.connect(uri, {
 
 And the step-by-step instructions with a sample application can be found here in below guide.
 
-https://docs.datastax.com/en/astra-serverless/docs/quickstart/qs-jsonapi.html
+https://docs.datastax.com/en/astra/astra-db-vector/api-reference/data-api-with-mongoosejs.html
 
 ## Sample Applications
 
@@ -235,8 +235,8 @@ Index operations are not supported. There is one caveat for `ttl` indexes: When 
 
 ```javascript
 import { Client } from 'stargate-mongoose';
-// connect to JSON API
-const client = await Client.connect(process.env.JSON_API_URI);
+// connect to Data API
+const client = await Client.connect(process.env.DATA_API_URI);
 // get a collection
 const collection = client.db().collection('docs');
 // insert and expire this document in 10 seconds
@@ -253,7 +253,7 @@ Transaction operations are not supported.
 
 ## NodeJS MongoDB Driver Overriding (experimental)
 
-If you have an application that uses the NodeJS MongoDB driver, or a dependency that uses the NodeJS MongoDB driver, it is possible to override its use with the collections package of `stargate-mongoose`. This makes your application use JSON API documents instead of MongoDB documents. Doing so requires code changes in your application that address the features section of this README, and a change in how you set up your client connection.
+If you have an application that uses the NodeJS MongoDB driver, or a dependency that uses the NodeJS MongoDB driver, it is possible to override its use with the collections package of `stargate-mongoose`. This makes your application use Data API documents instead of MongoDB documents. Doing so requires code changes in your application that address the features section of this README, and a change in how you set up your client connection.
 
 If your application uses `mongodb` you can override its usage like so:
 
@@ -269,13 +269,13 @@ Then, re-install your dependencies
 npm i
 ```
 
-Finally, modify your connection so that your driver connects to JSON API
+Finally, modify your connection so that your driver connects to Data API
 
 ```javascript
 import { MongoClient } from 'stargate-mongoose';
 
-// connect to JSON API
-const client = await MongoClient.connect(process.env.JSON_API_URI);
+// connect to Data API
+const client = await MongoClient.connect(process.env.DATA_API_URI);
 ```
 
 If you have an application dependency that uses `mongodb`, you can override its usage like so (this example uses `mongoose`):
@@ -299,11 +299,11 @@ Then, re-install your dependencies
 npm i
 ```
 
-Finally, modify your dependencies connection so that your driver connects to JSON API
+Finally, modify your dependencies connection so that your driver connects to Data API
 
 ```javascript
 import mongoose from 'mongoose';
 
-// connect to JSON API
-await mongoose.connect(process.env.JSON_API_URI);
+// connect to Data API
+await mongoose.connect(process.env.DATA_API_URI);
 ```

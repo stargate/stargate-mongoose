@@ -2690,7 +2690,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.deepStrictEqual(docs.map(doc => doc.username), ['b', 'c']);
         });
         it.skip('should updateOne with sort', async () => {
-            // jsonapi currently doesn't support updateOne with sort
+            // data api currently doesn't support updateOne with sort
             await collection.deleteMany({});
             await collection.insertMany([
                 { username: 'a' },

@@ -34,7 +34,7 @@ import {
     findOneInternalOptionsKeys
 } from './options';
 
-export interface JSONAPIUpdateResult {
+export interface DataAPIUpdateResult {
   matchedCount: number;
   modifiedCount: number;
   acknowledged: boolean;
@@ -42,17 +42,17 @@ export interface JSONAPIUpdateResult {
   upsertedCount?: number
 }
 
-export interface JSONAPIDeleteResult {
+export interface DataAPIDeleteResult {
   acknowledged: boolean;
   deletedCount: number;
 }
 
-export interface JSONAPIInsertOneResult {
+export interface DataAPIInsertOneResult {
   acknowledged: boolean;
   insertedId: any;
 }
 
-export interface JSONAPIModifyResult {
+export interface DataAPIModifyResult {
   ok: number;
   value: Record<string, any> | null;
 }
@@ -75,7 +75,7 @@ export class Collection {
     }
 
     async insertOne(document: Record<string, any>) {
-        return executeOperation(async (): Promise<JSONAPIInsertOneResult> => {
+        return executeOperation(async (): Promise<DataAPIInsertOneResult> => {
             const command = {
                 insertOne: {
                     document
@@ -115,7 +115,7 @@ export class Collection {
     }
 
     async updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
-        return executeOperation(async (): Promise<JSONAPIUpdateResult> => {
+        return executeOperation(async (): Promise<DataAPIUpdateResult> => {
             const command = {
                 updateOne: {
                     filter,
@@ -134,7 +134,7 @@ export class Collection {
                 modifiedCount: updateOneResp.status.modifiedCount,
                 matchedCount: updateOneResp.status.matchedCount,
                 acknowledged: true
-            } as JSONAPIUpdateResult;
+            } as DataAPIUpdateResult;
             if (updateOneResp.status.upsertedId) {
                 resp.upsertedId = updateOneResp.status.upsertedId;
                 resp.upsertedCount = 1;
@@ -144,7 +144,7 @@ export class Collection {
     }
 
     async updateMany(filter: Record<string, any>, update: Record<string, any>, options?: UpdateManyOptions) {
-        return executeOperation(async (): Promise<JSONAPIUpdateResult> => {
+        return executeOperation(async (): Promise<DataAPIUpdateResult> => {
             const command = {
                 updateMany: {
                     filter,
@@ -157,7 +157,7 @@ export class Collection {
                 modifiedCount: 0,
                 matchedCount: 0,
                 acknowledged: true,
-            } as JSONAPIUpdateResult;
+            } as DataAPIUpdateResult;
             if (options != null && options.usePagination) {
                 let nextPageState: string | null = null;
                 options = { ...options };
@@ -206,8 +206,8 @@ export class Collection {
         });
     }
 
-    async deleteOne(filter: Record<string, any>, options?: DeleteOneOptions): Promise<JSONAPIDeleteResult> {
-        return executeOperation(async (): Promise<JSONAPIDeleteResult> => {
+    async deleteOne(filter: Record<string, any>, options?: DeleteOneOptions): Promise<DataAPIDeleteResult> {
+        return executeOperation(async (): Promise<DataAPIDeleteResult> => {
             const command = {
                 deleteOne: {
                     filter,
@@ -226,8 +226,8 @@ export class Collection {
         });
     }
 
-    async deleteMany(filter: Record<string, any>): Promise<JSONAPIDeleteResult> {
-        return executeOperation(async (): Promise<JSONAPIDeleteResult> => {
+    async deleteMany(filter: Record<string, any>): Promise<DataAPIDeleteResult> {
+        return executeOperation(async (): Promise<DataAPIDeleteResult> => {
             const command = {
                 deleteMany: {
                     filter
@@ -272,8 +272,8 @@ export class Collection {
         });
     }
 
-    async findOneAndReplace(filter: Record<string, any>, replacement: Record<string, any>, options?: FindOneAndReplaceOptions): Promise<JSONAPIModifyResult> {
-        return executeOperation(async (): Promise<JSONAPIModifyResult> => {
+    async findOneAndReplace(filter: Record<string, any>, replacement: Record<string, any>, options?: FindOneAndReplaceOptions): Promise<DataAPIModifyResult> {
+        return executeOperation(async (): Promise<DataAPIModifyResult> => {
             const command = {
                 findOneAndReplace: {
                     filter,
@@ -315,7 +315,7 @@ export class Collection {
         });
     }
 
-    async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions): Promise<JSONAPIModifyResult> {
+    async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions): Promise<DataAPIModifyResult> {
         const command = {
             findOneAndDelete: {
                 filter,
@@ -341,8 +341,8 @@ export class Collection {
         return this.countDocuments(filter);
     }
 
-    async findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions): Promise<JSONAPIModifyResult> {
-        return executeOperation(async (): Promise<JSONAPIModifyResult> => {
+    async findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions): Promise<DataAPIModifyResult> {
+        return executeOperation(async (): Promise<DataAPIModifyResult> => {
             const command = {
                 findOneAndUpdate: {
                     filter,

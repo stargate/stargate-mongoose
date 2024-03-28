@@ -10,7 +10,7 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     env:
-      JSON_API_URI: http://localhost:8181/v1/testks1
+      DATA_API_URI: http://localhost:8181/v1/testks1
       STARGATE_AUTH_URL: http://localhost:8081/v1/auth
       STARGATE_USERNAME: cassandra
       STARGATE_PASSWORD: cassandra
