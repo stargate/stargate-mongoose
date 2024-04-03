@@ -210,6 +210,24 @@ describe('Driver based tests', async () => {
 
             assert.ok(httpClient.closed);
         });
+
+        it('handles reconnecting after disconnecting', async () => {
+            const mongooseInstance = await createMongooseInstance();
+            const TestModel = mongooseInstance.model('Person', Person.schema);
+            await TestModel.init();
+            await TestModel.findOne();
+
+            await mongooseInstance.disconnect();
+
+            const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, authUrl: process.env.STARGATE_AUTH_URL };
+            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+            await mongooseInstance.connect(dbUri, options);
+
+            // Should be able to execute query after reconnecting
+            await TestModel.findOne();
+
+            await mongooseInstance.disconnect();
+        });
           
         it('handles listCollections()', async () => {
             const Person = mongooseInstance!.model('Person');
