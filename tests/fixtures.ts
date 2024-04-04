@@ -17,8 +17,8 @@ import { Client, ClientOptions } from '@/src/collections/client';
 
 export const TEST_COLLECTION_NAME = 'collection1';
 
-export const getJSONAPIClient = async () => {
-    if (!process.env.JSON_API_URI) {
+export const getDataAPIClient = async () => {
+    if (!process.env.DATA_API_URI) {
         return null;
     }
     const options: ClientOptions = { authHeaderName: process.env.AUTH_HEADER_NAME };
@@ -28,7 +28,7 @@ export const getJSONAPIClient = async () => {
         options.password = process.env.STARGATE_PASSWORD;
     }
     //options.logLevel = 'debug';
-    return await Client.connect(process.env.JSON_API_URI, options);
+    return await Client.connect(process.env.DATA_API_URI, options);
 };
 
 export const getAstraClient = async () => {
@@ -127,7 +127,7 @@ export const getSampleDocs = (numUsers: number) =>
 export const sleep = async (ms = 100) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const testClientName = process.env.TEST_DOC_DB;
-assert.ok(testClientName === 'astra' || testClientName === 'jsonapi');
+assert.ok(testClientName === 'astra' || testClientName === 'dataapi');
 
 export const isAstra = process.env.TEST_DOC_DB === 'astra' && !!process.env.ASTRA_URI;
 
@@ -138,11 +138,11 @@ export const testClient = process.env.TEST_DOC_DB === 'astra' ?
             isAstra,
             uri: process.env.ASTRA_URI
         } : null)
-    : (process.env.TEST_DOC_DB === 'jsonapi' ? (process.env.JSON_API_URI ?
+    : (process.env.TEST_DOC_DB === 'dataapi' ? (process.env.DATA_API_URI ?
         {
-            client: getJSONAPIClient(),
+            client: getDataAPIClient(),
             isAstra,
-            uri: process.env.JSON_API_URI
+            uri: process.env.DATA_API_URI
         } : null
     ) : null);
 

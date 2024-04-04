@@ -25,7 +25,7 @@ import {
     UpdateManyOptions,
     UpdateOneOptions
 } from '@/src/collections/options';
-import { JSONAPIDeleteResult } from '../collections/collection';
+import { DataAPIDeleteResult } from '../collections/collection';
 
 import { version } from 'mongoose';
 
@@ -186,7 +186,7 @@ export class Collection extends MongooseCollection {
      * @param options
      * @param callback
      */
-    deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<JSONAPIDeleteResult>) {
+    deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<DataAPIDeleteResult>) {
         if (options != null) {
             processSortOption(options);
         }
@@ -194,7 +194,7 @@ export class Collection extends MongooseCollection {
         const promise = this.collection.deleteOne(filter, options);
 
         if (callback != null) {
-            promise.then((res: JSONAPIDeleteResult) => callback(null, res), (err: Error) => callback(err, null));
+            promise.then((res: DataAPIDeleteResult) => callback(null, res), (err: Error) => callback(err, null));
         }
 
         return promise;

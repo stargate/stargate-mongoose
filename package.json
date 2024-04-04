@@ -51,9 +51,9 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "test": "env TEST_DOC_DB=jsonapi ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts",
+    "test": "env TEST_DOC_DB=dataapi ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts",
     "test-astra": "env TEST_DOC_DB=astra nyc ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts",
-    "test-jsonapi": "env TEST_DOC_DB=jsonapi nyc ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts",
+    "test-dataapi": "env TEST_DOC_DB=dataapi nyc ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts",
     "preinstall": "npm run update-version-file",
     "build": "npm run update-version-file && tsc --project tsconfig.build.json && tscpaths -p tsconfig.build.json -s ./src -o ./dist",
     "build:docs": "jsdoc2md -t APIReference.hbs --files src/**/*.ts --configure ./jsdoc2md.json > APIReference.md",
