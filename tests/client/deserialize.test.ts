@@ -50,12 +50,12 @@ describe('StargateMongoose - client.deserialize', () => {
         });
 
         it('throws error on invalid ObjectId string', () => {
-          const $objectId = '0'.repeat(4);
-          const obj = {
-              test: 42,
-              topLevelObjectId: { $objectId }
-          };
-          assert.throws(() => deserialize(obj), /Invalid \$objectId "0000"/);
-      });
+            const $objectId = '0'.repeat(4);
+            const obj = {
+                test: 42,
+                topLevelObjectId: { $objectId }
+            };
+            assert.throws(() => deserialize(obj), /Invalid \$objectId "0000"/);
+        });
     });
 });

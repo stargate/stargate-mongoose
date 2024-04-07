@@ -116,6 +116,7 @@ The current implementation of the Data API uses DataStax Enterprise (DSE) as the
 | Component/Library Name | Version            |
 |------------------------|--------------------|
 | Mongoose               | ^7.5.0 \|\| ^8.0.0 |
+| data-api               | 1.x                |
 | DataStax Enterprise    | 6.8.x              |
 
 CI tests are run using the Stargate and Data API versions specified in the [api-compatibility.versions](api-compatibility.versions) file.
