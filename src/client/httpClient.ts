@@ -237,7 +237,7 @@ export class HTTPClient {
             this.applicationToken = options.applicationToken;
         } else {
             if (this.username === '' || this.password === '') {
-                throw new Error('applicationToken/auth info required for initialization');
+                throw new Error('stargate-mongoose: must set `username` and `password` option when connecting if `applicationToken` not set');
             }
             this.applicationToken = '';//We will set this by accessing the auth url when the first request is received
         }
