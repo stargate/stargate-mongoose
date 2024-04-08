@@ -2600,7 +2600,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 }
             );
             // @ts-ignore
-            assert.ok(value!._id!.match(/^[a-f\d]{24}$/i), value!._id);
+            assert.ok(value!._id!.toString().match(/^[a-f\d]{24}$/i), value!._id);
         });
         it('should findOneAndUpdate without any updates to apply', async () => {
             await collection.deleteMany({});
