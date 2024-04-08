@@ -253,7 +253,7 @@ describe('StargateMongoose clients test', () => {
                 error = e;
             }
             assert.ok(error);
-            assert.strictEqual(error.message, 'applicationToken/auth info required for initialization');
+            assert.strictEqual(error.message, 'stargate-mongoose: must set `username` and `password` option when connecting if `applicationToken` not set');
         });
         it('should set the auth url based on options when provided', async () => {
             const TEST_AUTH_URL = 'authurl1';
