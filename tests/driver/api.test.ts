@@ -624,6 +624,14 @@ describe('Mongoose Model API level tests', async () => {
             const res = await Product.db.collection('products').findOne();
             assert.equal(res!.name, 'Product 1');
         });
+        it('API ops tests connection.listDatabases()', async () => {
+            const { databases } = await mongooseInstance!.connection.listDatabases();
+            assert.ok(Array.isArray(databases));
+            // @ts-ignore
+            assert.ok(mongooseInstance.connection.db.name);
+            // @ts-ignore
+            assert.ok(databases.includes(mongooseInstance.connection.db.name));
+        });
     });
 
     describe('vector search', function() {

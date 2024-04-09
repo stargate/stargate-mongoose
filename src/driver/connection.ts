@@ -91,6 +91,14 @@ export class Connection extends MongooseConnection {
         });
     }
 
+    async listDatabases(): Promise<{ databases: string[] }> {
+      return executeOperation(async () => {
+          await this._waitForClient();
+          const { status } = await this.client.findNamespaces();
+          return { databases: status.namespaces };
+      });
+  }
+
     async openUri(uri: string, options: any) {
         let _fireAndForget = false;
         if (options && '_fireAndForget' in options) {
