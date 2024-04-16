@@ -93,8 +93,8 @@ axiosAgent.interceptors.request.use(requestInterceptor);
 axiosAgent.interceptors.response.use(responseInterceptor);
 
 class HTTP2Session {
-    session: http2.ClientHttp2Session;
-    numInFlightRequests: number;
+    session!: http2.ClientHttp2Session;
+    numInFlightRequests!: number;
     numRequests: number;
     gracefulCloseInProgress: boolean;
     closed: boolean;
