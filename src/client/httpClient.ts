@@ -93,19 +93,24 @@ axiosAgent.interceptors.request.use(requestInterceptor);
 axiosAgent.interceptors.response.use(responseInterceptor);
 
 class HTTP2Session {
-    session: http2.ClientHttp2Session;
-    numInFlightRequests: number;
+    session!: http2.ClientHttp2Session;
+    numInFlightRequests!: number;
     numRequests: number;
     gracefulCloseInProgress: boolean;
+    closed: boolean;
     origin: string;
 
     constructor(origin: string) {
         this.origin = origin;
-        this.session = http2.connect(origin);
-        this.numInFlightRequests = 0;
         this.numRequests = 0;
+        this.closed = false;
         this.gracefulCloseInProgress = false;
+        this._createSession();
+    }
 
+    _createSession() {
+        this.numInFlightRequests = 0;
+        this.session = http2.connect(this.origin);
         // Without these handlers, any errors will end up as uncaught exceptions,
         // even if they are handled in `_request()`.
         // More info: https://github.com/nodejs/node/issues/16345
@@ -115,6 +120,7 @@ class HTTP2Session {
 
     close() {
         this.session.close();
+        this.closed = true;
     }
 
     gracefulClose() {
@@ -133,6 +139,9 @@ class HTTP2Session {
 
     request(path: string, token: string, body: Record<string, any>, timeout: number): Promise<{ status: number, data: Record<string, any> }> {
         return new Promise((resolve, reject) => {
+            if (!this.closed && this.session.closed) {
+                this._createSession();
+            }
             ++this.numInFlightRequests;
             ++this.numRequests;
             let done = false;
