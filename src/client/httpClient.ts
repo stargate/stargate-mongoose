@@ -137,7 +137,7 @@ class HTTP2Session {
         }
     }
 
-    request(path: string, token: string, body: Record<string, any>, timeout: number): Promise<{ status: number, data: Record<string, any> }> {
+    request(path: string, token: string, body: Record<string, any>, timeout: number): Promise<{ status: number, data: Record<string, any> }> { 
         return new Promise((resolve, reject) => {
             if (!this.closed && this.session.closed) {
                 this._createSession();
@@ -352,7 +352,7 @@ export class HTTPClient {
             }
             if (response.status === 200) {
                 return {
-                    status: response.data?.status,
+                    status: deserialize(response.data?.status),
                     data: deserialize(response.data?.data),
                     errors: response.data?.errors
                 };
