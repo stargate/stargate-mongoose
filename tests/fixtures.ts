@@ -22,8 +22,7 @@ export const getDataAPIClient = async () => {
         return null;
     }
     const options: ClientOptions = { authHeaderName: process.env.AUTH_HEADER_NAME };
-    if (process.env.STARGATE_AUTH_URL && process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD) {
-        options.authUrl = process.env.STARGATE_AUTH_URL;
+    if (process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD) {
         options.username = process.env.STARGATE_USERNAME;
         options.password = process.env.STARGATE_PASSWORD;
     }
@@ -36,8 +35,7 @@ export const getAstraClient = async () => {
         return null;
     }
     const options: ClientOptions = { authHeaderName: process.env.AUTH_HEADER_NAME };
-    if (process.env.STARGATE_AUTH_URL && process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD) {
-        options.authUrl = process.env.STARGATE_AUTH_URL;
+    if (process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD) {
         options.username = process.env.STARGATE_USERNAME;
         options.password = process.env.STARGATE_PASSWORD;
     }

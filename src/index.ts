@@ -30,7 +30,6 @@ declare module 'mongoose' {
   interface ConnectOptions {
     isAstra?: boolean;
     logSkippedOptions?: boolean;
-    authUrl?: string;
   }
 
   function setDriver<T = Mongoose>(driver: any): T;
