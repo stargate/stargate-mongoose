@@ -287,7 +287,7 @@ export class HTTPClient {
             if (this.applicationToken === '') {
                 logger.debug('@stargate-mongoose/rest: getting token');
                 try {
-                    this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
+                    this.applicationToken = await getStargateAccessToken(this.username, this.password);
                 } catch (authError: any) {
                     return {
                         errors: [
@@ -334,22 +334,7 @@ export class HTTPClient {
                         [this.authHeaderName]: this.applicationToken
                     }
                 });
-   
-            if (!this.isAstra && (response.status === 401 || (response.data?.errors?.length > 0 && response.data?.errors?.[0]?.message === 'UNAUTHENTICATED: Invalid token'))) {
-                logger.debug('@stargate-mongoose/rest: reconnecting');
-                try {
-                    this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
-                } catch (authError: any) {
-                    return {
-                        errors: [
-                            {
-                                message: authError.message ? authError.message : 'Authentication failed, please retry!'
-                            }
-                        ]
-                    };
-                }
-                return this._request(requestInfo);
-            }
+
             if (response.status === 200) {
                 return {
                     status: response.data?.status,

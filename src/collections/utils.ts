@@ -121,7 +121,7 @@ export async function createStargateUri (
     if (logLevel) {
         uri.searchParams.append('logLevel', logLevel);
     }
-    const accessToken = await getStargateAccessToken(baseAuthUrl, username, password);
+    const accessToken = await getStargateAccessToken(username, password);
     uri.searchParams.append('applicationToken', accessToken);
     return uri.toString();
 }
@@ -134,29 +134,9 @@ export async function createStargateUri (
  * @returns access token as string
  */
 export async function getStargateAccessToken(
-    authUrl: string,
     username: string,
     password: string) {
-    try {
-        const response = await axios({
-            url: authUrl,
-            data: { username, password },
-            method: 'POST',
-            headers: {
-                Accepts: 'application/json',
-                'Content-Type': 'application/json'
-            }
-        });
-        if (response.status === 401) {
-            throw new StargateAuthError(response.data?.description || 'Invalid credentials provided');
-        }
-        return response.data?.authToken;
-    } catch (e: any) {
-        if (e.response?.data?.description) {
-            e.message = e.response?.data?.description;
-        }
-        throw e;
-    }
+    return 'Cassandra:' + Buffer.from(username).toString('base64') + ':' + Buffer.from(password).toString('base64');
 }
 
 export class StargateAuthError extends Error {
