@@ -27,7 +27,6 @@ const REQUESTED_WITH = LIB_NAME + '/' + LIB_VERSION;
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
 const DEFAULT_METHOD = 'get';
 const DEFAULT_TIMEOUT = 30000;
-export const AUTH_API_PATH = '/v1/auth';
 const HTTP_METHODS = {
     get: 'GET',
     post: 'POST',
@@ -46,7 +45,6 @@ interface APIClientOptions {
   logLevel?: string;
   username?: string;
   password?: string;
-  authUrl?: string;
   isAstra?: boolean;
   logSkippedOptions?: boolean;
   useHTTP2?: boolean;
@@ -223,7 +221,6 @@ export class HTTPClient {
     authHeaderName: string;
     username: string;
     password: string;
-    authUrl: string;
     isAstra: boolean;
     logSkippedOptions: boolean;
     http2Session?: HTTP2Session;
@@ -242,7 +239,6 @@ export class HTTPClient {
         }
         this.username = options.username || '';
         this.password = options.password || '';
-        this.authUrl = options.authUrl || this.baseUrl + AUTH_API_PATH;
         if (options.applicationToken) {
             this.applicationToken = options.applicationToken;
         } else {
@@ -287,7 +283,7 @@ export class HTTPClient {
             if (this.applicationToken === '') {
                 logger.debug('@stargate-mongoose/rest: getting token');
                 try {
-                    this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
+                    this.applicationToken = getStargateAccessToken(this.username, this.password);
                 } catch (authError: any) {
                     return {
                         errors: [
@@ -334,22 +330,7 @@ export class HTTPClient {
                         [this.authHeaderName]: this.applicationToken
                     }
                 });
-   
-            if (!this.isAstra && (response.status === 401 || (response.data?.errors?.length > 0 && response.data?.errors?.[0]?.message === 'UNAUTHENTICATED: Invalid token'))) {
-                logger.debug('@stargate-mongoose/rest: reconnecting');
-                try {
-                    this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
-                } catch (authError: any) {
-                    return {
-                        errors: [
-                            {
-                                message: authError.message ? authError.message : 'Authentication failed, please retry!'
-                            }
-                        ]
-                    };
-                }
-                return this._request(requestInfo);
-            }
+
             if (response.status === 200) {
                 return {
                     status: response.data?.status,

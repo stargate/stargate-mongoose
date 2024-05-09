@@ -16,7 +16,6 @@ import assert from 'assert';
 import { Client } from '@/src/collections/client';
 import { testClient } from '@/tests/fixtures';
 import { parseUri } from '@/src/collections/utils';
-import { AUTH_API_PATH } from '@/src/client/httpClient';
 
 const localBaseUrl = 'http://localhost:8181';
 
@@ -254,32 +253,6 @@ describe('StargateMongoose clients test', () => {
             }
             assert.ok(error);
             assert.strictEqual(error.message, 'stargate-mongoose: must set `username` and `password` option when connecting if `applicationToken` not set');
-        });
-        it('should set the auth url based on options when provided', async () => {
-            const TEST_AUTH_URL = 'authurl1';
-            const client = new Client(baseUrl, 'keyspace1', {
-                username: 'user1',
-                password: 'pass1',
-                authUrl: TEST_AUTH_URL,
-                createNamespaceOnConnect: false
-            });
-            const connectedClient = client.connect();
-            assert.ok(connectedClient);
-            assert.strictEqual((await connectedClient).httpClient.authUrl, TEST_AUTH_URL);
-        
-            await client.close();
-        });
-        it('should construct the auth url with baseUrl when not provided', async () => {
-            const client = new Client(baseUrl, 'keyspace1', {
-                username: 'user1',
-                password: 'pass1',
-                createNamespaceOnConnect: false
-            });
-            const connectedClient = client.connect();
-            assert.ok(connectedClient);
-            assert.strictEqual((await connectedClient).httpClient.authUrl, baseUrl + AUTH_API_PATH);
-            
-            await client.close();
         });
     });
     describe('Client Db operations', () => {

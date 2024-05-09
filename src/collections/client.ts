@@ -26,7 +26,6 @@ export interface ClientOptions {
   createNamespaceOnConnect?: boolean;
   username?: string;
   password?: string;
-  authUrl?: string;
   isAstra?: boolean;
   logSkippedOptions?: boolean;
   useHTTP2?: boolean;
@@ -56,7 +55,6 @@ export class Client {
             authHeaderName: options.authHeaderName,
             username: options.username,
             password: options.password,
-            authUrl: options.authUrl,
             isAstra: options.isAstra,
             logSkippedOptions: options.logSkippedOptions,
             useHTTP2: options.useHTTP2
@@ -79,7 +77,6 @@ export class Client {
             createNamespaceOnConnect: options?.createNamespaceOnConnect,
             username: options?.username,
             password: options?.password,
-            authUrl: options?.authUrl,
             isAstra: options?.isAstra,
             logSkippedOptions: options?.logSkippedOptions,
             useHTTP2: options?.useHTTP2
