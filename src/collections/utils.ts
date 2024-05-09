@@ -107,7 +107,7 @@ export function createAstraUri (
  * @param logLevel an winston log level (error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6)
 * @returns URL as string
  */
-export async function createStargateUri (
+export function createStargateUri(
     baseUrl: string,
     keyspace: string,
     username: string,
@@ -119,7 +119,7 @@ export async function createStargateUri (
     if (logLevel) {
         uri.searchParams.append('logLevel', logLevel);
     }
-    const accessToken = await getStargateAccessToken(username, password);
+    const accessToken = getStargateAccessToken(username, password);
     uri.searchParams.append('applicationToken', accessToken);
     return uri.toString();
 }
@@ -130,7 +130,7 @@ export async function createStargateUri (
  * @param password Password
  * @returns access token as string
  */
-export async function getStargateAccessToken(
+export function getStargateAccessToken(
     username: string,
     password: string) {
     return 'Cassandra:' + Buffer.from(username).toString('base64') + ':' + Buffer.from(password).toString('base64');

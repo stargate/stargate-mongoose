@@ -283,7 +283,7 @@ export class HTTPClient {
             if (this.applicationToken === '') {
                 logger.debug('@stargate-mongoose/rest: getting token');
                 try {
-                    this.applicationToken = await getStargateAccessToken(this.username, this.password);
+                    this.applicationToken = getStargateAccessToken(this.username, this.password);
                 } catch (authError: any) {
                     return {
                         errors: [
