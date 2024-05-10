@@ -461,6 +461,13 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(insertResp[0].name, 'Product 1');
             assert.strictEqual(insertResp[1].name, 'Product 2');
             assert.strictEqual(insertResp[2].name, 'Product 3');
+
+            const docs = [];
+            for (let i = 0; i < 21; ++i) {
+                docs.push({ name: 'Test product ' + i, price: 10, isCertified: true });
+            }
+            const resp = await Product.insertMany(docs, { usePagination: true });
+            assert.strictEqual(resp.length, 21);
         });
         //Model.inspect can not be tested since it is a helper for console logging. More info here: https://mongoosejs.com/docs/api/model.html#Model.inspect()
         it('API ops tests Model.listIndexes()', async () => {

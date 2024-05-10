@@ -15,7 +15,6 @@
 import { Types } from 'mongoose';
 import url from 'url';
 import { logger } from '@/src/logger';
-import axios from 'axios';
 import { HTTPClient, handleIfErrorResponse } from '@/src/client/httpClient';
 
 interface ParsedUri {
