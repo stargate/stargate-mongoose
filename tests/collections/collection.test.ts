@@ -192,8 +192,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 doc.username = doc.username + (index + 1);
             });
             await assert.rejects(
-              () => collection.insertMany(docList),
-              /Problem: amount of documents to insert is over the max limit \(101 vs 100\)/
+                () => collection.insertMany(docList),
+                /Problem: amount of documents to insert is over the max limit \(101 vs 100\)/
             );
         });
         it('should error out when docs list is empty in insertMany', async () => {
