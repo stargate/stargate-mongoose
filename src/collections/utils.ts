@@ -15,7 +15,6 @@
 import { Types } from 'mongoose';
 import url from 'url';
 import { logger } from '@/src/logger';
-import axios from 'axios';
 import { HTTPClient, handleIfErrorResponse } from '@/src/client/httpClient';
 
 interface ParsedUri {
@@ -50,9 +49,9 @@ export const parseUri = (uri: string): ParsedUri => {
 };
 
 // Removes the last part of the api path (which is assumed as the keyspace name). for example below are the sample input => output from this function
-// /v1/testks1 => v1
-// /apis/v1/testks1 => apis/v1
-// /testks1 => '' (empty string)
+//  /v1/testks1 => v1
+//  /apis/v1/testks1 => apis/v1
+//  /testks1 => '' (empty string)
 function getBaseAPIPath(pathFromUrl?: string | null) {
     if (!pathFromUrl) {
         return '';
