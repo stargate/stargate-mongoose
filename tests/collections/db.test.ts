@@ -20,6 +20,7 @@ import { testClient, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 import { createMongooseCollections } from '@/tests/mongooseFixtures';
 import {HTTPClient} from '@/src/client';
 import { randomBytes } from 'crypto';
+import mongoose from 'mongoose';
 
 const randString = (length: number) => randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length);
 
@@ -166,6 +167,38 @@ describe('StargateMongoose - collections.Db', async () => {
     
                 const doc = await db.collection(collectionName).findOne({ name: 'test' });
                 assert.equal(doc!.description, 'test');
+            } finally {
+                await db.dropCollection(collectionName);
+            }
+        });
+
+        it('should create a collection with default id type', async () => {
+            const collectionName = TEST_COLLECTION_NAME + '_objectid';
+            const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
+
+            try {
+                let collections = await db.findCollections().then(res => res.status.collections);
+                assert.ok(!collections.includes(collectionName));
+  
+                const res = await db.createCollection(
+                    collectionName,
+                    { defaultId: { type: 'objectId' } }
+                );
+                assert.ok(res);
+                assert.strictEqual(res.status.ok, 1);
+  
+                collections = await db.findCollections().then(res => res.status.collections);
+                assert.ok(collections.includes(collectionName));
+  
+                const { insertedId } = await db.collection(collectionName).insertOne({ name: 'test' });
+                assert.ok(insertedId instanceof mongoose.Types.ObjectId);
+
+                const doc = await db.collection(collectionName).findOne({ _id: insertedId });
+                assert.equal(doc!.name, 'test');
+
+                // The following currently fails:
+                // doc = await db.collection(collectionName).findOne({ _id: insertedId.toString() });
+                // assert.ok(!doc);
             } finally {
                 await db.dropCollection(collectionName);
             }
