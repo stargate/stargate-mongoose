@@ -140,7 +140,7 @@ export class Collection extends MongooseCollection {
                     ops.push(this.collection.insertMany(batch, options));
                 }
             }
-            if (ordered) {
+            if (!ordered) {
                 const results = await Promise.all(ops);
                 for (const { acknowledged, insertedCount, insertedIds } of results) {
                     ret.acknowledged = ret.acknowledged && acknowledged;
