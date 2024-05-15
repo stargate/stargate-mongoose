@@ -205,10 +205,6 @@ describe('StargateMongoose - collections.Db', async () => {
 
                 const doc = await db.collection(collectionName).findOne({ _id: insertedId });
                 assert.equal(doc!.name, 'test');
-
-                // The following currently fails:
-                // doc = await db.collection(collectionName).findOne({ _id: insertedId.toString() });
-                // assert.ok(!doc);
             } finally {
                 await db.dropCollection(collectionName);
             }
