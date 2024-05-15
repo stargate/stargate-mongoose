@@ -66,6 +66,9 @@ export class Db {
    * @returns Promise
    */
     async createCollection(collectionName: string, options?: CreateCollectionOptions) {
+        if (collectionName == null) {
+            throw new TypeError(`Must specify a collection name when calling createCollection, got ${collectionName}`);
+        }
         return executeOperation(async () => {
             const command = {
                 createCollection: {
@@ -87,6 +90,9 @@ export class Db {
    * @returns APIResponse
    */
     async dropCollection(collectionName: string) {
+        if (collectionName == null) {
+            throw new TypeError(`Must specify a collection name when calling dropCollection, got ${collectionName}`);
+        }
         const command = {
             deleteCollection: {
                 name: collectionName

@@ -110,6 +110,16 @@ describe('StargateMongoose - collections.Db', async () => {
             }
         });
 
+        it('throws helpful error if calling createCollection with no args', async () => {
+            const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
+
+            await assert.rejects(
+                // @ts-ignore
+                () => db.createCollection(),
+                /Must specify a collection name when calling createCollection/
+            );
+        });
+
         it('should create a Collection with allow indexing options', async () => {
             const collectionName = TEST_COLLECTION_NAME + '_allow';
             const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
@@ -211,6 +221,16 @@ describe('StargateMongoose - collections.Db', async () => {
             const res = await db.dropCollection(`test_db_collection_${suffix}`);
             assert.strictEqual(res.status?.ok, 1);
             assert.strictEqual(res.errors, undefined);
+        });
+
+        it('throws helpful error if calling dropCollection with no args', async () => {
+            const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
+
+            await assert.rejects(
+                // @ts-ignore
+                () => db.dropCollection(),
+                /Must specify a collection name when calling dropCollection/
+            );
         });
     });
 
