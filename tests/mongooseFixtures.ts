@@ -6,7 +6,10 @@ import { parseUri, createNamespace } from '@/src/collections/utils';
 const cartSchema = new Schema({
     name: String,
     cartName: {type: String, lowercase: true, unique: true, index: true},
-    products: [{type: Schema.Types.ObjectId, ref: 'Product'}]
+    products: [{type: Schema.Types.ObjectId, ref: 'Product'}],
+    user: new Schema({
+      name: String
+    }, { _id: false })
 });
 
 const productSchema = new Schema({
@@ -14,7 +17,8 @@ const productSchema = new Schema({
     price: Number,
     expiryDate: Date,
     isCertified: Boolean,
-    category: String
+    category: String,
+    tags: [{ _id: false, name: String }]
 });
 
 export const mongooseInstance = new Mongoose();

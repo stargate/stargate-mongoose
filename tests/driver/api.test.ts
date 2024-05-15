@@ -121,7 +121,8 @@ describe('Mongoose Model API level tests', async () => {
                     }
                 },
                 uniqueId: Schema.Types.UUID,
-                category: BigInt
+                category: BigInt,
+                documentArray: [{ name: String }]
             });
             const User = mongooseInstance.model(modelName, userSchema, TEST_COLLECTION_NAME);
             const collectionNames = await User.db.listCollections().then(collections => collections.map(c => c.name));
@@ -151,7 +152,8 @@ describe('Mongoose Model API level tests', async () => {
                     }
                 },
                 uniqueId: uniqueIdVal,
-                category: BigInt(100)
+                category: BigInt(100),
+                documentArray: [{ name: 'test document array' }]
             }).save();
             assert.strictEqual(saveResponse.name, 'User 1');
             assert.strictEqual(saveResponse.age, 10);
@@ -170,25 +172,27 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(saveResponse.nestedSchema!.address!.state, 'state 1');
             assert.strictEqual(saveResponse.uniqueId!.toString(), uniqueIdVal.toString());
             assert.strictEqual(saveResponse.category!.toString(), '100');
+            assert.strictEqual(saveResponse.documentArray[0].name, 'test document array');
             //get record using findOne and verify results
-            const findOneResponse = await User.findOne({name: 'User 1'});
-            assert.strictEqual(findOneResponse!.name, 'User 1');
-            assert.strictEqual(findOneResponse!.age, 10);
-            assert.strictEqual(findOneResponse!.dob!.toISOString(), dobVal.toISOString());
-            assert.strictEqual(findOneResponse!.isCertified, true);
-            assert.strictEqual(findOneResponse!.mixedData.a, 1);
-            assert.strictEqual(findOneResponse!.mixedData.b, 'test');
-            assert.strictEqual(findOneResponse!.employee!.toString(), employeeIdVal.toString());
-            assert.strictEqual(findOneResponse!.friends[0], 'friend 1');
-            assert.strictEqual(findOneResponse!.friends[1], 'friend 2');
-            assert.strictEqual(findOneResponse!.salary!.toString(), '100.25');
-            assert.strictEqual(findOneResponse!.favorites!.get('food'), 'pizza');
-            assert.strictEqual(findOneResponse!.favorites!.get('drink'), 'cola');
-            assert.strictEqual(findOneResponse!.nestedSchema!.address!.street, 'street 1');
-            assert.strictEqual(findOneResponse!.nestedSchema!.address!.city, 'city 1');
-            assert.strictEqual(findOneResponse!.nestedSchema!.address!.state, 'state 1');
-            assert.strictEqual(findOneResponse!.uniqueId!.toString(), uniqueIdVal.toString());
-            assert.strictEqual(findOneResponse!.category!.toString(), '100');
+            const findOneResponse = await User.findOne({name: 'User 1'}).orFail();
+            assert.strictEqual(findOneResponse.name, 'User 1');
+            assert.strictEqual(findOneResponse.age, 10);
+            assert.strictEqual(findOneResponse.dob!.toISOString(), dobVal.toISOString());
+            assert.strictEqual(findOneResponse.isCertified, true);
+            assert.strictEqual(findOneResponse.mixedData.a, 1);
+            assert.strictEqual(findOneResponse.mixedData.b, 'test');
+            assert.strictEqual(findOneResponse.employee!.toString(), employeeIdVal.toString());
+            assert.strictEqual(findOneResponse.friends[0], 'friend 1');
+            assert.strictEqual(findOneResponse.friends[1], 'friend 2');
+            assert.strictEqual(findOneResponse.salary!.toString(), '100.25');
+            assert.strictEqual(findOneResponse.favorites!.get('food'), 'pizza');
+            assert.strictEqual(findOneResponse.favorites!.get('drink'), 'cola');
+            assert.strictEqual(findOneResponse.nestedSchema!.address!.street, 'street 1');
+            assert.strictEqual(findOneResponse.nestedSchema!.address!.city, 'city 1');
+            assert.strictEqual(findOneResponse.nestedSchema!.address!.state, 'state 1');
+            assert.strictEqual(findOneResponse.uniqueId!.toString(), uniqueIdVal.toString());
+            assert.strictEqual(findOneResponse.category!.toString(), '100');
+            assert.strictEqual(findOneResponse.documentArray[0].name, 'test document array');
         });
     });
     describe('API tests', () => {
@@ -573,6 +577,34 @@ describe('Mongoose Model API level tests', async () => {
             const findUpdatedDoc = await Product.findOne({category: 'cat 3'});
             assert.strictEqual(findUpdatedDoc?.name, 'Product 3');
         });
+        it('API ops tests Model.updateOne() $push document array', async () => {
+            const product1 = new Product({
+                name: 'Product 1',
+                price: 10,
+                isCertified: true,
+                category: 'cat 2',
+                tags: [{ name: 'Electronics' }]
+            });
+            await Product.create(product1);
+            //UpdateOne
+            await Product.updateOne({ _id: product1._id }, { $push: { tags: { name: 'Home & Garden' } } });
+            
+            const { tags } = await Product.findById(product1._id).orFail();
+            assert.deepStrictEqual(tags.toObject(), [{ name: 'Electronics' }, { name: 'Home & Garden' }]);
+        });
+        it('API ops tests Model.updateOne() $set subdocument', async () => {
+          const cart = new Cart({
+              user: {
+                  name: 'test set subdocument'
+              }
+          });
+          await cart.save();
+          //UpdateOne
+          await Cart.updateOne({ _id: cart._id }, { $set: { user: { name: 'test updated subdoc' } } });
+          
+          const { user } = await Cart.findById(cart._id).orFail();
+          assert.deepStrictEqual(user.toObject(), { name: 'test updated subdoc' });
+      });
         //Model.validate is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.validate
         it('API ops tests Model.watch()', async () => {
             let error: OperationNotSupportedError | null = null;
