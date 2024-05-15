@@ -187,20 +187,13 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(Object.keys(res.insertedIds).length, 3);
         });
         it('should not insert more than allowed number of documents in one insertMany call', async () => {
-            const docList = Array.from({ length: 21 }, () => ({ 'username': 'id' }));
+            const docList = Array.from({ length: 101 }, () => ({ 'username': 'id' }));
             docList.forEach((doc, index) => {
                 doc.username = doc.username + (index + 1);
             });
-            let error: any;
-            try {
-                await collection.insertMany(docList);
-            } catch (e: any) {
-                error = e;
-            }
-            assert.ok(error);
-            assert.strictEqual(
-                error.errors[0].message,
-                'Request invalid: field \'command.documents\' value "[{"username":"id1"}, {"username":"id2"}, {"username":"id3"}, {"username":"id4"}, {"username":"id5"}, {"username":"id6"}, {"username":"id7"}, {"username":"id8"}, {"username":"id9"}, {"username":"id10"}, {"username":"id11"}, {"username":"id12"}, {"username":"id13"}, {"username":"id14"}, {"username":"id15"}, {"username":"id16"}, {"username":"id17"}, {"username":"id18"}, {"username":"id19"}, {"username":"id20"}, {"username":"id21"}]" not valid. Problem: amount of documents to insert is over the max limit (21 vs 20).'
+            await assert.rejects(
+                () => collection.insertMany(docList),
+                /Problem: amount of documents to insert is over the max limit \(101 vs 100\)/
             );
         });
         it('should error out when docs list is empty in insertMany', async () => {

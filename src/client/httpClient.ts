@@ -27,7 +27,6 @@ const REQUESTED_WITH = LIB_NAME + '/' + LIB_VERSION;
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
 const DEFAULT_METHOD = 'get';
 const DEFAULT_TIMEOUT = 30000;
-export const AUTH_API_PATH = '/v1/auth';
 const HTTP_METHODS = {
     get: 'GET',
     post: 'POST',
@@ -46,7 +45,6 @@ interface APIClientOptions {
   logLevel?: string;
   username?: string;
   password?: string;
-  authUrl?: string;
   isAstra?: boolean;
   logSkippedOptions?: boolean;
   useHTTP2?: boolean;
@@ -93,19 +91,24 @@ axiosAgent.interceptors.request.use(requestInterceptor);
 axiosAgent.interceptors.response.use(responseInterceptor);
 
 class HTTP2Session {
-    session: http2.ClientHttp2Session;
-    numInFlightRequests: number;
+    session!: http2.ClientHttp2Session;
+    numInFlightRequests!: number;
     numRequests: number;
     gracefulCloseInProgress: boolean;
+    closed: boolean;
     origin: string;
 
     constructor(origin: string) {
         this.origin = origin;
-        this.session = http2.connect(origin);
-        this.numInFlightRequests = 0;
         this.numRequests = 0;
+        this.closed = false;
         this.gracefulCloseInProgress = false;
+        this._createSession();
+    }
 
+    _createSession() {
+        this.numInFlightRequests = 0;
+        this.session = http2.connect(this.origin);
         // Without these handlers, any errors will end up as uncaught exceptions,
         // even if they are handled in `_request()`.
         // More info: https://github.com/nodejs/node/issues/16345
@@ -115,6 +118,7 @@ class HTTP2Session {
 
     close() {
         this.session.close();
+        this.closed = true;
     }
 
     gracefulClose() {
@@ -131,8 +135,11 @@ class HTTP2Session {
         }
     }
 
-    request(path: string, token: string, body: Record<string, any>, timeout: number): Promise<{ status: number, data: Record<string, any> }> {
+    request(path: string, token: string, body: Record<string, any>, timeout: number): Promise<{ status: number, data: Record<string, any> }> { 
         return new Promise((resolve, reject) => {
+            if (!this.closed && this.session.closed) {
+                this._createSession();
+            }
             ++this.numInFlightRequests;
             ++this.numRequests;
             let done = false;
@@ -214,7 +221,6 @@ export class HTTPClient {
     authHeaderName: string;
     username: string;
     password: string;
-    authUrl: string;
     isAstra: boolean;
     logSkippedOptions: boolean;
     http2Session?: HTTP2Session;
@@ -233,7 +239,6 @@ export class HTTPClient {
         }
         this.username = options.username || '';
         this.password = options.password || '';
-        this.authUrl = options.authUrl || this.baseUrl + AUTH_API_PATH;
         if (options.applicationToken) {
             this.applicationToken = options.applicationToken;
         } else {
@@ -278,7 +283,7 @@ export class HTTPClient {
             if (this.applicationToken === '') {
                 logger.debug('@stargate-mongoose/rest: getting token');
                 try {
-                    this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
+                    this.applicationToken = getStargateAccessToken(this.username, this.password);
                 } catch (authError: any) {
                     return {
                         errors: [
@@ -325,25 +330,10 @@ export class HTTPClient {
                         [this.authHeaderName]: this.applicationToken
                     }
                 });
-   
-            if (!this.isAstra && (response.status === 401 || (response.data?.errors?.length > 0 && response.data?.errors?.[0]?.message === 'UNAUTHENTICATED: Invalid token'))) {
-                logger.debug('@stargate-mongoose/rest: reconnecting');
-                try {
-                    this.applicationToken = await getStargateAccessToken(this.authUrl, this.username, this.password);
-                } catch (authError: any) {
-                    return {
-                        errors: [
-                            {
-                                message: authError.message ? authError.message : 'Authentication failed, please retry!'
-                            }
-                        ]
-                    };
-                }
-                return this._request(requestInfo);
-            }
+
             if (response.status === 200) {
                 return {
-                    status: response.data?.status,
+                    status: deserialize(response.data?.status),
                     data: deserialize(response.data?.data),
                     errors: response.data?.errors
                 };

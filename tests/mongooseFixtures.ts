@@ -43,7 +43,6 @@ before(async function connectMongooseFixtures() {
         const options = {
             username: process.env.STARGATE_USERNAME,
             password: process.env.STARGATE_PASSWORD,
-            authUrl: process.env.STARGATE_AUTH_URL,
             logSkippedOptions: true
         };
         // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose

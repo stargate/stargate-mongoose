@@ -15,7 +15,6 @@
 import { Types } from 'mongoose';
 import url from 'url';
 import { logger } from '@/src/logger';
-import axios from 'axios';
 import { HTTPClient, handleIfErrorResponse } from '@/src/client/httpClient';
 
 interface ParsedUri {
@@ -50,9 +49,9 @@ export const parseUri = (uri: string): ParsedUri => {
 };
 
 // Removes the last part of the api path (which is assumed as the keyspace name). for example below are the sample input => output from this function
-// /v1/testks1 => v1
-// /apis/v1/testks1 => apis/v1
-// /testks1 => '' (empty string)
+//  /v1/testks1 => v1
+//  /apis/v1/testks1 => apis/v1
+//  /testks1 => '' (empty string)
 function getBaseAPIPath(pathFromUrl?: string | null) {
     if (!pathFromUrl) {
         return '';
@@ -101,16 +100,14 @@ export function createAstraUri (
 /**
  * Create a JSON API connection URI while connecting to Open source JSON API
  * @param baseUrl the base URL of the JSON API
- * @param baseAuthUrl the base URL of the JSON API auth (this is generally the Stargate Coordinator auth URL)
  * @param keyspace the keyspace to connect to
  * @param username the username to connect with
  * @param password the password to connect with
  * @param logLevel an winston log level (error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6)
 * @returns URL as string
  */
-export async function createStargateUri (
+export function createStargateUri(
     baseUrl: string,
-    baseAuthUrl: string,
     keyspace: string,
     username: string,
     password: string,
@@ -121,42 +118,21 @@ export async function createStargateUri (
     if (logLevel) {
         uri.searchParams.append('logLevel', logLevel);
     }
-    const accessToken = await getStargateAccessToken(baseAuthUrl, username, password);
+    const accessToken = getStargateAccessToken(username, password);
     uri.searchParams.append('applicationToken', accessToken);
     return uri.toString();
 }
 
 /**
  * Get an access token from Stargate (this is useful while connecting to open source JSON API)
- * @param authUrl the base URL of the JSON API auth (this is generally the Stargate Coordinator auth URL)
  * @param username Username
  * @param password Password
  * @returns access token as string
  */
-export async function getStargateAccessToken(
-    authUrl: string,
+export function getStargateAccessToken(
     username: string,
     password: string) {
-    try {
-        const response = await axios({
-            url: authUrl,
-            data: { username, password },
-            method: 'POST',
-            headers: {
-                Accepts: 'application/json',
-                'Content-Type': 'application/json'
-            }
-        });
-        if (response.status === 401) {
-            throw new StargateAuthError(response.data?.description || 'Invalid credentials provided');
-        }
-        return response.data?.authToken;
-    } catch (e: any) {
-        if (e.response?.data?.description) {
-            e.message = e.response?.data?.description;
-        }
-        throw e;
-    }
+    return 'Cassandra:' + Buffer.from(username).toString('base64') + ':' + Buffer.from(password).toString('base64');
 }
 
 export class StargateAuthError extends Error {

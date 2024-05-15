@@ -62,8 +62,7 @@ mongoose.setDriver(driver);
 const Product = mongoose.model('Product', new Schema({ name: String, price: Number }));
 mongoose.connect('http://localhost:8181/v1/inventory', {
     username: 'cassandra',
-    password: 'cassandra',
-    authUrl: 'http://localhost:8081/v1/auth'
+    password: 'cassandra'
 });
 Object.values(mongoose.connection.models).map(Model => Model.init());
 const app = express();
