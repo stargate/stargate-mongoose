@@ -489,7 +489,7 @@ describe('Mongoose Model API level tests', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
             const docSaved = await Product.findOne({name: 'Product 1'});
-            assert.strictEqual(docSaved.name, 'Product 1');
+            assert.strictEqual(docSaved!.name, 'Product 1');
             await product1.deleteOne();
             const findDeletedDoc = await Product.findOne({name: 'Product 1'});
             assert.strictEqual(findDeletedDoc, null);
