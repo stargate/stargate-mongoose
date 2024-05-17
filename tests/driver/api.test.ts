@@ -19,7 +19,7 @@ import {
     testClient,
     TEST_COLLECTION_NAME
 } from '@/tests/fixtures';
-import mongoose, {Schema, InferSchemaType} from 'mongoose';
+import mongoose, { Schema, InferSchemaType, InsertManyResult } from 'mongoose';
 import * as StargateMongooseDriver from '@/src/driver';
 import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '@/src/driver';
@@ -456,11 +456,25 @@ describe('Mongoose Model API level tests', async () => {
             const product1 = {name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'};
             const product2 = {name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'};
             const product3 = {name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'};
-            const insertResp = await Product.insertMany([product1, product2, product3] , {ordered: true});
-            assert.strictEqual(insertResp.length, 3);
-            assert.strictEqual(insertResp[0].name, 'Product 1');
-            assert.strictEqual(insertResp[1].name, 'Product 2');
-            assert.strictEqual(insertResp[2].name, 'Product 3');
+            const insertResp: InsertManyResult<any> = await Product.insertMany([product1, product2, product3] , {ordered: true, rawResult: true});
+            assert.ok(insertResp.acknowledged);
+            assert.strictEqual(insertResp.insertedCount, 3);
+
+            let docs = [];
+            for (let i = 0; i < 21; ++i) {
+                docs.push({ name: 'Test product ' + i, price: 10, isCertified: true });
+            }
+            const respOrdered: InsertManyResult<any> = await Product.insertMany(docs, { usePagination: true, rawResult: true  });
+            assert.ok(respOrdered.acknowledged);
+            assert.strictEqual(respOrdered.insertedCount, 21);
+
+            docs = [];
+            for (let i = 0; i < 21; ++i) {
+                docs.push({ name: 'Test product ' + i, price: 10, isCertified: true });
+            }
+            const respUnordered: InsertManyResult<any> = await Product.insertMany(docs, { usePagination: true, ordered: false, rawResult: true });
+            assert.ok(respUnordered.acknowledged);
+            assert.strictEqual(respUnordered.insertedCount, 21);
         });
         //Model.inspect can not be tested since it is a helper for console logging. More info here: https://mongoosejs.com/docs/api/model.html#Model.inspect()
         it('API ops tests Model.listIndexes()', async () => {

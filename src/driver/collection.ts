@@ -112,8 +112,47 @@ export class Collection extends MongooseCollection {
      * @param documents
      * @param options
      */
-    insertMany(documents: Record<string, any>[], options?: InsertManyOptions) {
-        return this.collection.insertMany(documents, options);
+    async insertMany(documents: Record<string, any>[], options?: InsertManyOptions) {
+        const usePagination = options?.usePagination ?? false;
+        if (options != null && 'usePagination' in options) {
+            options = { ...options };
+            delete options.usePagination;
+        }
+
+        const ordered = options?.ordered ?? true;
+
+        if (usePagination) {
+            const batchSize = 20;
+            const ops = [];
+            const ret = { acknowledged: true, insertedCount: 0, insertedIds: [] };
+            for (let i = 0; i < documents.length; i += batchSize) {
+                const batch = documents.slice(i, i + batchSize);
+                if (ordered) {
+                    const {
+                        acknowledged,
+                        insertedCount,
+                        insertedIds
+                    } = await this.collection.insertMany(batch, options);
+                    ret.acknowledged = ret.acknowledged && acknowledged;
+                    ret.insertedCount += insertedCount;
+                    ret.insertedIds = ret.insertedIds.concat(insertedIds);
+                } else {
+                    ops.push(this.collection.insertMany(batch, options));
+                }
+            }
+            if (!ordered) {
+                const results = await Promise.all(ops);
+                for (const { acknowledged, insertedCount, insertedIds } of results) {
+                    ret.acknowledged = ret.acknowledged && acknowledged;
+                    ret.insertedCount += insertedCount;
+                    ret.insertedIds = ret.insertedIds.concat(insertedIds);
+                }
+            }
+
+            return ret;
+        } else {
+            return this.collection.insertMany(documents, options);
+        }
     }
 
     /**
