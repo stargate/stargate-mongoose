@@ -78,7 +78,7 @@
     "eslint": "8.47.0",
     "jsdoc-babel": "^0.5.0",
     "jsdoc-to-markdown": "^7.1.1",
-    "mongoose": "8.x",
+    "mongoose": "^8.4.0",
     "nyc": "^15.1.0",
     "sinon": "15.2.0",
     "ts-mocha": "^10.0.0",
