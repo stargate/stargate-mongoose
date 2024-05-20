@@ -29,10 +29,8 @@ export class Connection extends MongooseConnection {
 
     _waitForClient() {
         return new Promise<void>((resolve, reject) => {
-            if (
-                (this.readyState === STATES.connecting || this.readyState === STATES.disconnected) &&
-        this._shouldBufferCommands()
-            ) {
+            const shouldWaitForClient = (this.readyState === STATES.connecting || this.readyState === STATES.disconnected) && this._shouldBufferCommands();
+            if (shouldWaitForClient) {
                 this._queue.push({ fn: resolve });
             } else if (this.readyState === STATES.disconnected && this.db == null) {
                 reject(new Error('Connection is disconnected'));
@@ -90,6 +88,14 @@ export class Connection extends MongooseConnection {
                 }
                 return collection;
             });
+        });
+    }
+
+    async listDatabases(): Promise<{ databases: string[] }> {
+        return executeOperation(async () => {
+            await this._waitForClient();
+            const { status } = await this.client.findNamespaces();
+            return { databases: status.namespaces };
         });
     }
 

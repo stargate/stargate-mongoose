@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Db } from './db';
-import { createNamespace, parseUri } from './utils';
+import { createNamespace, executeOperation, parseUri } from './utils';
 import { HTTPClient } from '@/src/client';
 import { logger } from '@/src/logger';
 import {OperationNotSupportedError} from '@/src/driver';
@@ -124,6 +124,19 @@ export class Client {
             return db;
         }
         throw new Error('Database name must be provided');
+    }
+
+    async findNamespaces() {
+        return executeOperation(async () => {
+            const command = {
+                findNamespaces: {}
+            };
+            return await this.httpClient.executeCommandWithUrl(
+                '/',
+                command,
+                null
+            );
+        });
     }
 
     /**

@@ -309,6 +309,13 @@ describe('StargateMongoose clients test', () => {
             assert.ok(error);
             assert.ok(error.message.includes('Cannot make http2 request when client is closed'), error.message);
         });
+        it('findNamespaces should list all namespaces', async () => {
+            const parsedUri = parseUri(clientURI);
+            const { status } = await appClient!.findNamespaces();
+            assert.ok(Array.isArray(status.namespaces));
+            assert.ok(parsedUri.keyspaceName);
+            assert.ok(status.namespaces.includes(parsedUri.keyspaceName));
+        });
     });
     describe('Client noops', () => {
         it('should handle noop: setMaxListeners', async () => {
