@@ -361,7 +361,7 @@
 
 <a name="getStargateAccessToken"></a>
 
-## getStargateAccessToken(authUrl, username, password) ⇒
+## getStargateAccessToken(username, password) ⇒
 <p>Get an access token from Stargate (this is useful while connecting to open source Data API)</p>
 
 **Kind**: global function  
@@ -369,7 +369,6 @@
 
 | Param | Description |
 | --- | --- |
-| authUrl | <p>the base URL of the Data API auth (this is generally the Stargate Coordinator auth URL)</p> |
 | username | <p>Username</p> |
 | password | <p>Password</p> |
 

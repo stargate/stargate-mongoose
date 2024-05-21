@@ -338,7 +338,7 @@ export class HTTPClient {
                     errors: response.data?.errors
                 };
             } else {
-                return response;
+                return { errors: response.data?.errors };
             }
         } catch (e: any) {
             logger.error(requestInfo.url + ': ' + e.message);

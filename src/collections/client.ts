@@ -81,7 +81,13 @@ export class Client {
             logSkippedOptions: options?.logSkippedOptions,
             useHTTP2: options?.useHTTP2
         });
-        await client.connect();
+        await client.connect().catch(err => {
+            // If `connect()` throws an error, there's no way for the calling code to
+            // get a reference to `client()`. So make sure to close client in case we
+            // have an open HTTP2 socket, otherwise there's no way to close the socket.
+            client.close();
+            throw err;
+        });
         return client;
     }
 
