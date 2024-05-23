@@ -22,6 +22,7 @@ import { EJSON } from 'bson';
 import http2 from 'http2';
 import { StargateMongooseError } from '../collections/collection';
 import { deserialize } from './deserialize'; 
+import { serialize } from './serialize';
 
 const REQUESTED_WITH = LIB_NAME + '/' + LIB_VERSION;
 const DEFAULT_AUTH_HEADER = 'X-Cassandra-Token';
@@ -74,9 +75,9 @@ const axiosAgent = axios.create({
 const requestInterceptor = (config: InternalAxiosRequestConfig) => {
     const { method, url } = config;
     if (logger.isLevelEnabled('http')) {
-        logger.http(`--- request ${method?.toUpperCase()} ${url} ${serializeCommand(config.data, true)}`);
+        logger.http(`--- request ${method?.toUpperCase()} ${url} ${serialize(config.data, true)}`);
     }
-    config.data = serializeCommand(config.data);
+    config.data = serialize(config.data);
     return config;
 };
 
@@ -145,7 +146,7 @@ class HTTP2Session {
             let done = false;
 
             if (logger.isLevelEnabled('http')) {
-                logger.http(`--- request POST ${this.origin}${path} ${serializeCommand(body, true)}`);
+                logger.http(`--- request POST ${this.origin}${path} ${serialize(body, true)}`);
             }
             
             const timer = setTimeout(
@@ -164,7 +165,7 @@ class HTTP2Session {
                 ':method': 'POST',
                 token
             });
-            req.write(serializeCommand(body), 'utf8');
+            req.write(serialize(body), 'utf8');
             req.end();
 
             let status = 0;
@@ -410,36 +411,6 @@ export const handleIfErrorResponse = (response: any, data: Record<string, any>) 
         throw new StargateServerError(response, data);
     }
 };
-
-function serializeCommand(data: Record<string, any>, pretty?: boolean): string {
-    return EJSON.stringify(data, (key, value) => serializeValue(value), pretty ? '  ' : '');
-}
-
-function serializeValue(value: any): any {
-    if (value != null && typeof value === 'bigint') {
-        //BigInt handling
-        return Number(value);
-    } else if (value != null && typeof value === 'object') {
-        // ObjectId to strings
-        if (value.$oid) {
-            return value.$oid;
-        } else if (value.$numberDecimal) {
-            //Decimal128 handling
-            return Number(value.$numberDecimal);
-        } else if (value.$binary && (value.$binary.subType === '03' || value.$binary.subType === '04')) {
-            //UUID handling. Subtype 03 or 04 is UUID. Refer spec : https://bsonspec.org/spec.html
-            return Buffer.from(value.$binary.base64, 'base64').toString('hex')
-                .replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
-        }
-        //Date handling
-        else if (value.$date) {
-            // Use numbers instead of strings for dates
-            value.$date = new Date(value.$date).valueOf();
-        }
-    }
-    //all other values
-    return value;
-}
 
 function cleanupOptions(commandName: string, command: Record<string, any>, optionsToRetain: Set<string> | null, logSkippedOptions: boolean) {
     if (command.options) {
