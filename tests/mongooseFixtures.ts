@@ -8,7 +8,7 @@ const cartSchema = new Schema({
     cartName: {type: String, lowercase: true, unique: true, index: true},
     products: [{type: Schema.Types.ObjectId, ref: 'Product'}],
     user: new Schema({
-      name: String
+        name: String
     }, { _id: false })
 });
 

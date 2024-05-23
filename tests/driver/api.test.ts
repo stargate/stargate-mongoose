@@ -593,18 +593,18 @@ describe('Mongoose Model API level tests', async () => {
             assert.deepStrictEqual(tags.toObject(), [{ name: 'Electronics' }, { name: 'Home & Garden' }]);
         });
         it('API ops tests Model.updateOne() $set subdocument', async () => {
-          const cart = new Cart({
-              user: {
-                  name: 'test set subdocument'
-              }
-          });
-          await cart.save();
-          //UpdateOne
-          await Cart.updateOne({ _id: cart._id }, { $set: { user: { name: 'test updated subdoc' } } });
+            const cart = new Cart({
+                user: {
+                    name: 'test set subdocument'
+                }
+            });
+            await cart.save();
+            //UpdateOne
+            await Cart.updateOne({ _id: cart._id }, { $set: { user: { name: 'test updated subdoc' } } });
           
-          const { user } = await Cart.findById(cart._id).orFail();
-          assert.deepStrictEqual(user.toObject(), { name: 'test updated subdoc' });
-      });
+            const { user } = await Cart.findById(cart._id).orFail();
+            assert.deepStrictEqual(user.toObject(), { name: 'test updated subdoc' });
+        });
         //Model.validate is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.validate
         it('API ops tests Model.watch()', async () => {
             let error: OperationNotSupportedError | null = null;
