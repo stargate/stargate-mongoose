@@ -354,10 +354,16 @@ function processSortOption(options: { sort?: SortOption }) {
     if (options.sort == null) {
         return;
     }
-    if (typeof options.sort.$vector !== 'object' || Array.isArray(options.sort.$vector)) {
-        return;
+    if ('$vector' in options.sort &&
+        typeof options.sort.$vector === 'object' &&
+        !Array.isArray(options.sort.$vector)) {
+        options.sort.$vector = options.sort.$vector.$meta;
     }
-    options.sort.$vector = options.sort.$vector.$meta;
+    if ('$vectorize' in options.sort &&
+        typeof options.sort.$vectorize === 'object' &&
+        !Array.isArray(options.sort.$vectorize)) {
+        options.sort.$vectorize = options.sort.$vectorize.$meta;
+    }
 }
 
 export class OperationNotSupportedError extends Error {

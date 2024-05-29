@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export type SortOption = Record<string, 1 | -1> | { $vector: { $meta: Array<number> } } | { $vector: Array<number> };
+export type SortOption = Record<string, 1 | -1> |
+  { $vector: { $meta: Array<number> } } |
+  { $vector: Array<number> } |
+  { $vectorize: { $meta: string } } |
+  { $vectorize: string };
 
 export type ProjectionOption = Record<string, 1 | 0 | true | false | { $slice: number }>;
 
