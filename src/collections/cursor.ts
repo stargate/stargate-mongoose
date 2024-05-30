@@ -36,6 +36,7 @@ export class FindCursor {
 
         const isOverPageSizeLimit = this.options.sort &&
             !('$vector' in this.options.sort) &&
+            !('$vectorize' in this.options.sort) &&
             (this.options.limit == null || this.options.limit > 20);
         if (isOverPageSizeLimit) {
             throw new Error('Cannot set sort option without limit <= 20, JSON API can currently only return 20 documents with sort');
