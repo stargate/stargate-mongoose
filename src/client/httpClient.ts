@@ -18,7 +18,6 @@ import { logger, setLevel } from '@/src/logger';
 import { inspect } from 'util';
 import { LIB_NAME, LIB_VERSION } from '../version';
 import { getStargateAccessToken } from '../collections/utils';
-import { EJSON } from 'bson';
 import http2 from 'http2';
 import { StargateMongooseError } from '../collections/collection';
 import { deserialize } from './deserialize'; 
