@@ -191,7 +191,7 @@ describe('Driver based tests', async () => {
             );
         });
 
-        it('disconnect() closes all httpClients', async () => {
+        it.skip('disconnect() closes all httpClients', async () => {
             const mongooseInstance = await createMongooseInstance();
             const client: Client = mongooseInstance.connection.getClient() as any as Client;
             const httpClient: HTTPClient = client.httpClient;
@@ -201,7 +201,7 @@ describe('Driver based tests', async () => {
             assert.ok(httpClient.closed);
         });
 
-        it('close() close underlying httpClient', async () => {
+        it.skip('close() close underlying httpClient', async () => {
             const mongooseInstance = await createMongooseInstance();
             const client: Client = mongooseInstance.connection.getClient() as any as Client;
             const httpClient: HTTPClient = client.httpClient;

@@ -202,7 +202,8 @@ export class Collection extends MongooseCollection {
         if (options != null) {
             processSortOption(options);
         }
-        const res = await this.collection.findOneAndReplace(filter, newDoc, options);
+        const res = await this.collection.findOneAndReplace(filter, newDoc, { ...options, includeResultMetadata: true });
+
         if (IS_MONGOOSE_7) {
             return options?.includeResultMetadata === false ? res.value : res;
         } else if (options?.includeResultMetadata !== false) {
@@ -216,6 +217,9 @@ export class Collection extends MongooseCollection {
      * @param filter
      */
     deleteMany(filter: Record<string, any>) {
+        if (filter == null || Object.keys(filter).length === 0) {
+            return this.collection.deleteAll();
+        }
         return this.collection.deleteMany(filter);
     }
 

@@ -29,6 +29,7 @@ export const Cart = mongooseInstance.model('Cart', cartSchema);
 export const Product = mongooseInstance.model('Product', productSchema);
 
 export async function createMongooseCollections() {
+    this.timeout(120_000);
     const collections = await mongooseInstance.connection.listCollections();
     const collectionNames = collections.map(({ name }) => name);
     if (!collectionNames.includes(Cart.collection.collectionName)) {

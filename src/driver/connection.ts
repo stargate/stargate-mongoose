@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Client } from '@/src/collections/client';
 import { Collection } from './collection';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
-import { executeOperation } from '../collections/utils';
+import { executeOperation, parseUri } from '../collections/utils';
 import { CreateCollectionOptions } from '../collections/options';
+
+import { DataAPIClient } from '@datastax/astra-db-ts';
 
 export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
@@ -50,10 +51,7 @@ export class Connection extends MongooseConnection {
     async createCollection(name: string, options?: Record<string, any>) {
         return executeOperation(async () => {
             await this._waitForClient();
-            const db = this.client.db();
-            if (!this.client.httpClient.isAstra) {
-                db.createDatabase();
-            }
+            const db = this.db;
             return db.createCollection(name, options);
         });
     }
@@ -61,17 +59,13 @@ export class Connection extends MongooseConnection {
     async dropCollection(name: string) {
         return executeOperation(async () => {
             await this._waitForClient();
-            const db = this.client.db();
+            const db = this.db;
             return db.dropCollection(name);
         });
     }
 
     async dropDatabase() {
-        return executeOperation(async () => {
-            await this._waitForClient();
-            const db = this.client.db();
-            return db.dropDatabase();
-        });
+        throw new Error('Cannot drop database in Astra. Please use the Astra UI to drop the database.');
     }
 
     async listCollections(options: { explain: true }): Promise<Array<{ name: string, options?: CreateCollectionOptions }>>;
@@ -79,15 +73,9 @@ export class Connection extends MongooseConnection {
     async listCollections(options?: { explain?: boolean }): Promise<Array<{ name: string }>> {
         return executeOperation(async () => {
             await this._waitForClient();
-            const db = this.client.db();
-            const res = await db.findCollections(options);
-            const collections = res?.status?.collections ?? [];
-            return collections.map((collection: string | Record<string, any>) => {
-                if (typeof collection === 'string') {
-                    return { name: collection };
-                }
-                return collection;
-            });
+            const db = this.db;
+            const res = await db.listCollections(options);
+            return res;
         });
     }
 
@@ -142,18 +130,19 @@ export class Connection extends MongooseConnection {
         this._closeCalled = false;
         this.readyState = STATES.connecting;
 
-        const client = await Client.connect(uri, options);
+        const { baseUrl, keyspaceName, applicationToken } = parseUri(uri);
+
+        const client = new DataAPIClient(applicationToken);
         this.client = client;
-        this.db = client.db();
+        this.db = client.db(baseUrl, { namespace: keyspaceName });
 
         this.readyState = STATES.connected;
         this.onOpen();
         return this;
     }
 
-    setClient(client: Client) {
-        this.client = client;
-        this.db = client.db();
+    setClient(client: DataAPIClient) {
+        throw new Error('SetClient not supported');
     }
 
     asPromise() {
