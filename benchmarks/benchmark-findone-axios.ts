@@ -1,0 +1,75 @@
+import axios from 'axios';
+import { driver } from '../';
+import mongoose from 'mongoose';
+
+mongoose.set('autoCreate', false);
+mongoose.set('autoIndex', false);
+
+mongoose.setDriver(driver);
+
+main().then(
+    () => { process.exit(0); },
+    err => {
+        console.error(err);
+        process.exit(-1);
+    }
+);
+
+async function main() {
+    const uri = process.env.JSON_API_URI ?? '';
+    await mongoose.connect(uri, {
+        username: process.env.JSON_API_USERNAME,
+        password: process.env.JSON_API_PASSWORD,
+        authUrl: process.env.JSON_API_AUTH_URL
+    } as mongoose.ConnectOptions);
+    const Test = mongoose.model('Test', new mongoose.Schema({
+        name: {
+            type: String,
+            required: true
+        },
+        email: {
+            type: String,
+            required: true
+        },
+        age: {
+            type: Number
+        }
+    }));
+
+    await Test.db.dropCollection('tests').catch(() => {});
+    await Test.createCollection();
+
+    await Test.create({
+        name: 'John Smith',
+        email: 'john@gmail.com',
+        age: 30
+    });
+
+    // @ts-ignore
+    const token = mongoose.connection.getClient().httpClient.applicationToken;
+
+    const start = Date.now();
+    for (let i = 0; i < 10000; ++i) {
+        await axios.post(
+            `${uri}/tests`,
+            {
+                findOne: {
+                    filter: {
+                        name: 'John Smith'
+                    },
+                    options: {}
+                }
+            },
+            {
+                headers: {
+                    Token: token
+                }
+            }
+        );
+    }
+    const results = {
+        name: 'benchmark-findone-axios',
+        totalTimeMS: Date.now() - start
+    };
+    console.log(JSON.stringify(results, null, '  '));
+}
