@@ -34,9 +34,13 @@ export async function createMongooseCollections() {
     const collectionNames = collections.map(({ name }) => name);
     if (!collectionNames.includes(Cart.collection.collectionName)) {
         await Cart.createCollection();
+    } else {
+        await Cart.deleteMany({});
     }
     if (!collectionNames.includes(Product.collection.collectionName)) {
         await Product.createCollection();
+    } else {
+        await Product.deleteMany({});
     }
 }
 

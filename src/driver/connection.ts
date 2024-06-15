@@ -18,7 +18,7 @@ import { STATES } from 'mongoose';
 import { executeOperation, parseUri } from '../collections/utils';
 import { CreateCollectionOptions } from '../collections/options';
 
-import { DataAPIClient } from '@datastax/astra-db-ts';
+import { DataAPIClient, DSEUsernamePasswordTokenProvider } from '@datastax/astra-db-ts';
 
 export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
@@ -49,11 +49,9 @@ export class Connection extends MongooseConnection {
     }
 
     async createCollection(name: string, options?: Record<string, any>) {
-        return executeOperation(async () => {
-            await this._waitForClient();
-            const db = this.db;
-            return db.createCollection(name, options);
-        });
+      await this._waitForClient();
+      const db = this.db;
+      return db.createCollection(name, options);
     }
 
     async dropCollection(name: string) {
@@ -132,13 +130,34 @@ export class Connection extends MongooseConnection {
 
         const { baseUrl, keyspaceName, applicationToken } = parseUri(uri);
 
-        const client = new DataAPIClient(applicationToken);
+        const client = options?.isAstra
+          ? new DataAPIClient(applicationToken)
+          : new DataAPIClient(
+            new DSEUsernamePasswordTokenProvider(options?.username, options?.password)
+          );
         this.client = client;
-        this.db = client.db(baseUrl, { namespace: keyspaceName });
+
+        const dbOptions = { namespace: keyspaceName };
+        if (!options?.isAstra) {
+          dbOptions.dataApiPath = 'v1';
+        }
+        this.db = client.db(baseUrl, dbOptions);
+
+        this.baseUrl = baseUrl;
+        this.keyspaceName = keyspaceName;
 
         this.readyState = STATES.connected;
         this.onOpen();
         return this;
+    }
+
+    async createDatabase() {
+      return await this.db._httpClient._request({
+        url: this.baseUrl,
+        method: 'POST',
+        data: JSON.stringify({ createNamespace: { name: this.keyspaceName } }),
+        timeoutManager: this.db._httpClient.timeoutManager(120_000)
+      });
     }
 
     setClient(client: DataAPIClient) {
