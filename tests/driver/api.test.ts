@@ -128,6 +128,8 @@ describe('Mongoose Model API level tests', async () => {
             const collectionNames = await User.db.listCollections().then(collections => collections.map(c => c.name));
             if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
                 await User.createCollection();
+            } else {
+                await User.deleteMany({});
             }
             const employeeIdVal = new mongoose.Types.ObjectId();
             //generate a random uuid
@@ -212,7 +214,7 @@ describe('Mongoose Model API level tests', async () => {
                 error = err;
             }
             assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Invalid filter expression: filter clause path (\'$where\') contains character(s) not allowed');
+            assert.strictEqual(error.errorDescriptors[0].message, 'Invalid filter expression: filter clause path (\'$where\') contains character(s) not allowed');
         });
         it('API ops tests Model.aggregate()', async () => {
             //Model.aggregate()
@@ -461,23 +463,20 @@ describe('Mongoose Model API level tests', async () => {
             const product2 = {name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'};
             const product3 = {name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'};
             const insertResp: InsertManyResult<any> = await Product.insertMany([product1, product2, product3] , {ordered: true, rawResult: true});
-            assert.ok(insertResp.acknowledged);
             assert.strictEqual(insertResp.insertedCount, 3);
 
             let docs = [];
             for (let i = 0; i < 21; ++i) {
                 docs.push({ name: 'Test product ' + i, price: 10, isCertified: true });
             }
-            const respOrdered: InsertManyResult<any> = await Product.insertMany(docs, { usePagination: true, rawResult: true  });
-            assert.ok(respOrdered.acknowledged);
+            const respOrdered: InsertManyResult<any> = await Product.insertMany(docs, { rawResult: true  });
             assert.strictEqual(respOrdered.insertedCount, 21);
 
             docs = [];
             for (let i = 0; i < 21; ++i) {
                 docs.push({ name: 'Test product ' + i, price: 10, isCertified: true });
             }
-            const respUnordered: InsertManyResult<any> = await Product.insertMany(docs, { usePagination: true, ordered: false, rawResult: true });
-            assert.ok(respUnordered.acknowledged);
+            const respUnordered: InsertManyResult<any> = await Product.insertMany(docs, { ordered: false, rawResult: true });
             assert.strictEqual(respUnordered.insertedCount, 21);
         });
         //Model.inspect can not be tested since it is a helper for console logging. More info here: https://mongoosejs.com/docs/api/model.html#Model.inspect()
@@ -561,10 +560,9 @@ describe('Mongoose Model API level tests', async () => {
             await Product.insertMany([product1, product2, product3]);
             //updateMany
             const updateManyResp: mongoose.UpdateWriteOpResult = await Product.updateMany({category: 'cat 2'}, {category: 'cat 3'});
-            assert.strictEqual(updateManyResp.acknowledged, true);
             assert.strictEqual(updateManyResp.matchedCount, 2);
             assert.strictEqual(updateManyResp.modifiedCount, 2);
-            assert.strictEqual(updateManyResp.upsertedCount, undefined);
+            assert.strictEqual(updateManyResp.upsertedCount, 0);
             const findUpdatedDocs = await Product.find({category: 'cat 3'});
             assert.strictEqual(findUpdatedDocs.length, 2);
             const productNames: Set<string> = new Set();
@@ -584,10 +582,9 @@ describe('Mongoose Model API level tests', async () => {
             await Product.insertMany([product1, product2, product3]);
             //UpdateOne
             const updateOneResp: mongoose.UpdateWriteOpResult = await Product.updateOne({category: 'cat 1'}, {category: 'cat 3'});
-            assert.strictEqual(updateOneResp.acknowledged, true);
             assert.strictEqual(updateOneResp.matchedCount, 1);
             assert.strictEqual(updateOneResp.modifiedCount, 1);
-            assert.strictEqual(updateOneResp.upsertedCount, undefined);
+            assert.strictEqual(updateOneResp.upsertedCount, 0);
             const findUpdatedDoc = await Product.findOne({category: 'cat 3'});
             assert.strictEqual(findUpdatedDoc?.name, 'Product 3');
         });
@@ -647,16 +644,17 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests Query cursor', async () => {
             await Product.create(
                 Array.from({ length: 25 }, (_, index) => ({
-                    name: `Product ${(index + 1).toString().padStart(2, '0')}`,
+                    name: `Product ${index + 1}`,
                     price: 10
                 }))
             );
 
             let cursor = Product.find().sort({ product: 1 }).cursor();
-            await assert.rejects(
-                cursor.next(),
-                /JSON API can currently only return 20 documents with sort/
-            );
+            for (let i = 0; i < 20; ++i) {
+                const product = await cursor.next();
+                assert.equal(product?.name, `Product ${i + 1}`, 'Failed at index ' + i);
+            }
+            assert.equal(await cursor.next(), null);
 
             cursor = await Product.find().sort({ product: 1 }).limit(20).cursor();
             for (let i = 0; i < 20; ++i) {

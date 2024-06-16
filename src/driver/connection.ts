@@ -51,7 +51,7 @@ export class Connection extends MongooseConnection {
     async createCollection(name: string, options?: Record<string, any>) {
       await this._waitForClient();
       const db = this.db;
-      return db.createCollection(name, options);
+      return db.createCollection(name, { checkExists: false, ...options });
     }
 
     async dropCollection(name: string) {
@@ -137,12 +137,13 @@ export class Connection extends MongooseConnection {
           );
         this.client = client;
 
-        const dbOptions = { namespace: keyspaceName };
-        if (!options?.isAstra) {
-          dbOptions.dataApiPath = 'v1';
-        }
+        const dbOptions = {
+          namespace: keyspaceName,
+          ...(options?.isAstra ? {} : { dataApiPath: 'v1' })
+        };
         this.db = client.db(baseUrl, dbOptions);
 
+        this.db.name = keyspaceName;
         this.baseUrl = baseUrl;
         this.keyspaceName = keyspaceName;
 
@@ -166,6 +167,10 @@ export class Connection extends MongooseConnection {
 
     asPromise() {
         return this.initialConnection;
+    }
+
+    startSession() {
+        throw new Error('startSession() Not Implemented');
     }
 
     /**

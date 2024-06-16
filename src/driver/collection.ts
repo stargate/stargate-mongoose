@@ -60,7 +60,8 @@ export class Collection extends MongooseCollection {
     * @deprecated
     */
     count(filter: Record<string, any>) {
-        return this.collection.count(JSON.parse(serialize(filter)));
+        filter = filter ? JSON.parse(serialize(filter)) : filter;
+        return this.collection.count(filter);
     }
 
     /**
@@ -68,7 +69,8 @@ export class Collection extends MongooseCollection {
      * @param filter
      */
     countDocuments(filter: Record<string, any>) {
-        return this.collection.countDocuments(JSON.parse(serialize(filter)));
+        filter = filter ? JSON.parse(serialize(filter)) : filter;
+        return this.collection.countDocuments(filter, { limit: 1000 });
     }
 
     /**
@@ -81,7 +83,8 @@ export class Collection extends MongooseCollection {
         if (options != null) {
             processSortOption(options);
         }
-        const cursor = this.collection.find(JSON.parse(serialize(filter)), options);
+        filter = filter ? JSON.parse(serialize(filter)) : filter;
+        const cursor = this.collection.find(filter, options);
         if (callback != null) {
             return callback(null, cursor);
         }
@@ -97,7 +100,8 @@ export class Collection extends MongooseCollection {
         if (options != null) {
             processSortOption(options);
         }
-        return this.collection.findOne(JSON.parse(serialize(filter)), options);
+        filter = filter ? JSON.parse(serialize(filter)) : filter;
+        return this.collection.findOne(filter, options);
     }
 
     /**
@@ -105,7 +109,7 @@ export class Collection extends MongooseCollection {
      * @param doc
      */
     insertOne(doc: Record<string, any>) {
-        return this.collection.insertOne(JSON.parse(serialize(doc)));
+        return this.collection.insertOne(doc ? JSON.parse(serialize(doc)) : doc);
     }
 
     /**
@@ -121,7 +125,7 @@ export class Collection extends MongooseCollection {
         }
 
         const ordered = options?.ordered ?? true;
-        documents = documents.map(doc => JSON.parse(serialize(doc)));
+        documents = documents.map(doc => doc ? JSON.parse(serialize(doc)) : doc);
 
         if (usePagination) {
             const batchSize = 20;
@@ -167,15 +171,9 @@ export class Collection extends MongooseCollection {
         if (options != null) {
             processSortOption(options);
         }
-        filter = JSON.parse(serialize(filter));
-        update = JSON.parse(serialize(update));
-        const res = await this.collection.findOneAndUpdate(filter, update, options);
-        if (IS_MONGOOSE_7) {
-            return options?.includeResultMetadata === false ? res.value : res;
-        } else if (options?.includeResultMetadata !== false) {
-            return res.value;
-        }
-        return res;
+        filter = filter ? JSON.parse(serialize(filter)) : filter;
+        update = update ? JSON.parse(serialize(update)) : update;
+        return this.collection.findOneAndUpdate(filter, update, options);
     }
 
     /**
@@ -187,14 +185,8 @@ export class Collection extends MongooseCollection {
         if (options != null) {
             processSortOption(options);
         }
-        filter = JSON.parse(serialize(filter));
-        const res = await this.collection.findOneAndDelete(filter, options);
-        if (IS_MONGOOSE_7) {
-            return options?.includeResultMetadata === false ? res.value : res;
-        } else if (options?.includeResultMetadata !== false) {
-            return res.value;
-        }
-        return res;
+        filter = filter ? JSON.parse(serialize(filter)) : filter;
+        return this.collection.findOneAndDelete(filter, options);
     }
 
     /**
@@ -207,16 +199,9 @@ export class Collection extends MongooseCollection {
         if (options != null) {
             processSortOption(options);
         }
-        filter = JSON.parse(serialize(filter));
-        newDoc = JSON.parse(serialize(newDoc));
-        const res = await this.collection.findOneAndReplace(filter, newDoc, { ...options, includeResultMetadata: true });
-
-        if (IS_MONGOOSE_7) {
-            return options?.includeResultMetadata === false ? res.value : res;
-        } else if (options?.includeResultMetadata !== false) {
-            return res.value;
-        }
-        return res;
+        filter = filter ? JSON.parse(serialize(filter)) : filter;
+        newDoc = newDoc ? JSON.parse(serialize(newDoc)) : newDoc;
+        return this.collection.findOneAndReplace(filter, newDoc, options);
     }
 
     /**
@@ -242,7 +227,7 @@ export class Collection extends MongooseCollection {
             processSortOption(options);
         }
     
-        filter = JSON.parse(serialize(filter));
+        filter = filter ? JSON.parse(serialize(filter)) : filter;
         const promise = this.collection.deleteOne(filter, options);
 
         if (callback != null) {
@@ -262,8 +247,8 @@ export class Collection extends MongooseCollection {
         if (options != null) {
             processSortOption(options);
         }
-        filter = JSON.parse(serialize(filter));
-        update = JSON.parse(serialize(update));
+        filter = filter ? JSON.parse(serialize(filter)) : filter;
+        update = update ? JSON.parse(serialize(update)) : update;
         return this.collection.updateOne(filter, update, options);
     }
 
@@ -274,8 +259,8 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     updateMany(filter: Record<string, any>, update: Record<string, any>, options?: UpdateManyOptions) {
-        filter = JSON.parse(serialize(filter));
-        update = JSON.parse(serialize(update));
+        filter = filter ? JSON.parse(serialize(filter)) : filter;
+        update = update ? JSON.parse(serialize(update)) : update;
         return this.collection.updateMany(filter, update, options);
     }
 
