@@ -78,11 +78,14 @@ export class Connection extends MongooseConnection {
     }
 
     async listDatabases(): Promise<{ databases: string[] }> {
-        return executeOperation(async () => {
-            await this._waitForClient();
-            const { status } = await this.client.findNamespaces();
-            return { databases: status.namespaces };
-        });
+      return this.db._httpClient._request({
+        url: this.baseUrl + '/' + this.baseApiPath,
+        method: 'POST',
+        data: JSON.stringify({ findNamespaces: {} }),
+        timeoutManager: this.db._httpClient.timeoutManager(120_000)
+      }).then((res: any) => {
+        return { databases: JSON.parse(res.body ?? '{}').status?.namespaces ?? [] };
+      });
     }
 
     async openUri(uri: string, options: any) {
@@ -128,7 +131,7 @@ export class Connection extends MongooseConnection {
         this._closeCalled = false;
         this.readyState = STATES.connecting;
 
-        const { baseUrl, keyspaceName, applicationToken } = parseUri(uri);
+        const { baseUrl, keyspaceName, applicationToken, baseApiPath } = parseUri(uri);
 
         const client = options?.isAstra
           ? new DataAPIClient(applicationToken)
@@ -139,13 +142,18 @@ export class Connection extends MongooseConnection {
 
         const dbOptions = {
           namespace: keyspaceName,
-          ...(options?.isAstra ? {} : { dataApiPath: 'v1' })
+          dataApiPath: baseApiPath
         };
         this.db = client.db(baseUrl, dbOptions);
+        this.admin = this.client.admin(options?.isAstra
+          ? applicationToken
+          : new DSEUsernamePasswordTokenProvider(options?.username, options?.password)
+        );
 
         this.db.name = keyspaceName;
         this.baseUrl = baseUrl;
         this.keyspaceName = keyspaceName;
+        this.baseApiPath = baseApiPath;
 
         this.readyState = STATES.connected;
         this.onOpen();
@@ -153,8 +161,8 @@ export class Connection extends MongooseConnection {
     }
 
     async createDatabase() {
-      return await this.db._httpClient._request({
-        url: this.baseUrl,
+      return this.db._httpClient._request({
+        url: this.baseUrl + '/' + this.baseApiPath,
         method: 'POST',
         data: JSON.stringify({ createNamespace: { name: this.keyspaceName } }),
         timeoutManager: this.db._httpClient.timeoutManager(120_000)
