@@ -28,8 +28,23 @@ mongooseInstance.set('autoIndex', false);
 export const Cart = mongooseInstance.model('Cart', cartSchema);
 export const Product = mongooseInstance.model('Product', productSchema);
 
+async function createNamespace() {
+  return mongooseInstance.connection.db._httpClient._request({
+    url: mongooseInstance.connection.baseUrl + '/' + mongooseInstance.connection.baseApiPath,
+    method: 'POST',
+    data: JSON.stringify({
+      createNamespace: {
+        name: mongooseInstance.connection.keyspaceName
+      }
+    }),
+    timeoutManager: mongooseInstance.connection.db._httpClient.timeoutManager(120_000)
+  });
+}
+
 export async function createMongooseCollections() {
     this.timeout(120_000);
+    await createNamespace();
+
     const collections = await mongooseInstance.connection.listCollections();
     const collectionNames = collections.map(({ name }) => name);
     if (!collectionNames.includes(Cart.collection.collectionName)) {

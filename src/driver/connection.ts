@@ -63,7 +63,7 @@ export class Connection extends MongooseConnection {
     }
 
     async dropDatabase() {
-        throw new Error('Cannot drop database in Astra. Please use the Astra UI to drop the database.');
+        throw new Error('dropDatabase() Not Implemented');
     }
 
     async listCollections(options: { explain: true }): Promise<Array<{ name: string, options?: CreateCollectionOptions }>>;
@@ -138,18 +138,19 @@ export class Connection extends MongooseConnection {
           : new DataAPIClient(
             new DSEUsernamePasswordTokenProvider(options?.username, options?.password)
           );
-        this.client = client;
-
         const dbOptions = {
           namespace: keyspaceName,
           dataApiPath: baseApiPath
         };
-        this.db = client.db(baseUrl, dbOptions);
-        this.admin = this.client.admin(options?.isAstra
+        const db = client.db(baseUrl, dbOptions);
+        const admin = client.admin(options?.isAstra
           ? applicationToken
           : new DSEUsernamePasswordTokenProvider(options?.username, options?.password)
         );
 
+        this.client = client;
+        this.db = db;
+        this.admin = admin;
         this.db.name = keyspaceName;
         this.baseUrl = baseUrl;
         this.keyspaceName = keyspaceName;

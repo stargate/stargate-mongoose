@@ -255,7 +255,7 @@ describe('Driver based tests', async () => {
         }
     });
     describe('namespace management tests', () => {
-        it('should fail when dropDatabase is called for AstraDB', async () => {
+        it('should fail when dropDatabase is called', async () => {
             const mongooseInstance = new mongoose.Mongoose();
             mongooseInstance.setDriver(StargateMongooseDriver);
             mongooseInstance.set('autoCreate', true);
@@ -263,50 +263,11 @@ describe('Driver based tests', async () => {
             const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
             // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
             await mongooseInstance.connect(dbUri, options);
-            if (isAstra) {
-                let error: any;
-                try {
-                    await mongooseInstance.connection.dropDatabase();
-                } catch (e: any) {
-                    error = e;
-                }
-                assert.strictEqual(error.message, 'Cannot drop database in Astra. Please use the Astra UI to drop the database.');
-            } else {
-                const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
-                const resp = await connection.dropDatabase();
-                assert.strictEqual(resp.status?.ok, 1);
-            }
-            mongooseInstance.connection.getClient().close();
-        });
-        it('should createDatabase if not exists in createCollection call for non-AstraDB', async () => {
-            const mongooseInstance = new mongoose.Mongoose();
-            mongooseInstance.setDriver(StargateMongooseDriver);
-            mongooseInstance.set('autoCreate', true);
-            mongooseInstance.set('autoIndex', false);
-            const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
-            //split dbUri by / and replace last element with newKeyspaceName
-            const dbUriSplit = dbUri.split('/');
-            const token = parseUri(dbUri).applicationToken;
-            const newKeyspaceName = 'new_keyspace';
-            dbUriSplit[dbUriSplit.length - 1] = newKeyspaceName;
-            let newDbUri = dbUriSplit.join('/');
-            //if token is not null, append it to the new dbUri
-            newDbUri = token ? newDbUri + '?applicationToken=' + token : newDbUri;
-            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
-            await mongooseInstance.connect(newDbUri, options);
-            if (isAstra) {
-                let error: any;
-                try {
-                    await mongooseInstance.connection.createCollection('new_collection');
-                } catch (e: any) {
-                    error = e;
-                }
-                assert.strictEqual(error.errors[0].message, 'INVALID_ARGUMENT: Unknown keyspace ' + newKeyspaceName);
-            } else {
-                const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
-                const resp = await connection.createCollection('new_collection');
-                assert.strictEqual(resp.status?.ok, 1);
-            }
+
+            await assert.rejects(
+              () => mongooseInstance.connection.dropDatabase(),
+              { message: 'dropDatabase() Not Implemented' }
+            );
             mongooseInstance.connection.getClient().close();
         });
     });
