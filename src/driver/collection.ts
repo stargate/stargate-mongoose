@@ -27,6 +27,7 @@ import {
 } from '@/src/collections/options';
 import { DataAPIDeleteResult } from '../collections/collection';
 import { serialize } from '../client/serialize';
+import { setDefaultIdForUpsertv2 } from '../collections/utils';
 
 import { version } from 'mongoose';
 
@@ -173,6 +174,7 @@ export class Collection extends MongooseCollection {
         }
         filter = filter ? JSON.parse(serialize(filter)) : filter;
         update = update ? JSON.parse(serialize(update)) : update;
+        setDefaultIdForUpsertv2(filter, update, options, false);
         return this.collection.findOneAndUpdate(filter, update, options);
     }
 
@@ -201,6 +203,7 @@ export class Collection extends MongooseCollection {
         }
         filter = filter ? JSON.parse(serialize(filter)) : filter;
         newDoc = newDoc ? JSON.parse(serialize(newDoc)) : newDoc;
+        setDefaultIdForUpsertv2(filter, newDoc, options, true);
         return this.collection.findOneAndReplace(filter, newDoc, options);
     }
 
@@ -249,6 +252,7 @@ export class Collection extends MongooseCollection {
         }
         filter = filter ? JSON.parse(serialize(filter)) : filter;
         update = update ? JSON.parse(serialize(update)) : update;
+        setDefaultIdForUpsertv2(filter, update, options, false);
         return this.collection.updateOne(filter, update, options);
     }
 
@@ -261,6 +265,7 @@ export class Collection extends MongooseCollection {
     updateMany(filter: Record<string, any>, update: Record<string, any>, options?: UpdateManyOptions) {
         filter = filter ? JSON.parse(serialize(filter)) : filter;
         update = update ? JSON.parse(serialize(update)) : update;
+        setDefaultIdForUpsertv2(filter, update, options, false);
         return this.collection.updateMany(filter, update, options);
     }
 

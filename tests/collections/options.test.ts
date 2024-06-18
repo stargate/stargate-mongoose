@@ -83,7 +83,7 @@ describe('Options tests', async () => {
             );
             assert.strictEqual(updateManyResp.matchedCount, 2);
             assert.strictEqual(updateManyResp.modifiedCount, 2);
-            assert.strictEqual(updateManyResp.upsertedCount, undefined);
+            assert.strictEqual(updateManyResp.upsertedCount, 0);
             assert.strictEqual(updateManyResp.upsertedId, undefined);
             //find product 4
             const cat1Products = await Product.find({ category : 'cat1' });
