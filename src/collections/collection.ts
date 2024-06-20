@@ -259,7 +259,7 @@ export class Collection {
                     filter,
                     options,
                     ...(options?.sort != null ? { sort: options?.sort } : {}),
-                    ...(options?.projection != null ? { sort: options?.projection } : {}),
+                    ...(options?.projection != null ? { projection: options?.projection } : {}),
                 }
             };
 
@@ -279,7 +279,8 @@ export class Collection {
                     filter,
                     replacement,
                     options: omit(options, ['sort']),
-                    ...(options?.sort != null ? { sort: options?.sort } : {})
+                    ...(options?.sort != null ? { sort: options?.sort } : {}),
+                    ...(options?.projection != null ? { projection: options?.projection } : {}),
                 }
             };
             setDefaultIdForUpsert(command.findOneAndReplace, true);
@@ -331,7 +332,8 @@ export class Collection {
         const command = {
             findOneAndDelete: {
                 filter,
-                ...(options?.sort != null ? { sort: options?.sort } : {})
+                ...(options?.sort != null ? { sort: options?.sort } : {}),
+                ...(options?.projection != null ? { projection: options?.projection } : {}),
             }
         };
 
@@ -360,7 +362,8 @@ export class Collection {
                     filter,
                     update,
                     options: omit(options, ['sort']),
-                    ...(options?.sort != null ? { sort: options?.sort } : {})
+                    ...(options?.sort != null ? { sort: options?.sort } : {}),
+                    ...(options?.projection != null ? { projection: options?.projection } : {}),
                 }
             };
             setDefaultIdForUpsert(command.findOneAndUpdate);

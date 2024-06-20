@@ -66,6 +66,7 @@ export const findOneInternalOptionsKeys: Set<string> = new Set(
 
 export interface FindOneAndDeleteOptions {
     sort?: SortOption;
+    projection?: ProjectionOption;
     includeResultMetadata?: boolean;
 }
 
@@ -74,6 +75,7 @@ class _FindOneAndReplaceOptions {
     upsert?: boolean = undefined;
     returnDocument?: 'before' | 'after' = undefined;
     sort?: SortOption;
+    projection?: ProjectionOption;
     includeResultMetadata?: boolean;
 }
 
@@ -87,6 +89,7 @@ class _FindOneAndUpdateOptions {
     upsert?: boolean = undefined;
     returnDocument?: 'before' | 'after' = undefined;
     sort?: SortOption;
+    projection?: ProjectionOption;
     includeResultMetadata?: boolean;
 }
 
