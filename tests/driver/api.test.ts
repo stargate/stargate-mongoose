@@ -370,19 +370,15 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(err?.message, 'distinct() Not Implemented');
         });
         
-        it('API ops tests Model.estimatedDocumentCount()', async () => {
-            let error: OperationNotSupportedError | null = null;
-            try {
-                const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
-                const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
-                const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
-                await Product.insertMany([product1, product2, product3]);
-                await Product.estimatedDocumentCount();
-            } catch (err: any) {
-                error = err;
-            }
-            assert.ok(error);
-            assert.strictEqual(error?.message, 'estimatedDocumentCount() Not Implemented');
+        it('API ops tests Model.estimatedDocumentCount()', async function() {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
+            const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+            const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+            await Product.create([product1, product2, product3]);
+            
+            const count = await Product.estimatedDocumentCount();
+            assert.equal(typeof count, 'number');
+            assert.ok(count >= 0);
         });
         //skipping Model.events() as it is not making any database calls
         it('API ops tests Model.exists()', async () => {

@@ -263,6 +263,13 @@ export class Collection extends MongooseCollection {
     }
 
     /**
+     * Get the estimated number of documents in a collection based on collection metadata
+     */
+    estimatedDocumentCount() {
+        return this.collection.estimatedDocumentCount();
+    }
+
+    /**
      * Bulk write not supported.
      * @param ops
      * @param options
@@ -333,13 +340,6 @@ export class Collection extends MongooseCollection {
      */
     distinct() {
         throw new OperationNotSupportedError('distinct() Not Implemented');
-    }
-
-    /**
-     * Estimated document count operation not supported.
-     */
-    estimatedDocumentCount() {
-        throw new OperationNotSupportedError('estimatedDocumentCount() Not Implemented');
     }
 
     /**

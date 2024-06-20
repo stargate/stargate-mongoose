@@ -315,6 +315,18 @@ export class Collection {
         });
     }
 
+    async estimatedDocumentCount(): Promise<number> {
+        return executeOperation(async (): Promise<number> => {
+            const command = { estimatedDocumentCount: {} };
+            const resp = await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                null
+            );
+            return resp.status.count;
+        });
+    }
+
     async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions): Promise<DataAPIModifyResult> {
         const command = {
             findOneAndDelete: {
