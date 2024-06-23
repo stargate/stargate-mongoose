@@ -28,7 +28,7 @@ mongooseInstance.set('autoCreate', false);
 mongooseInstance.set('autoIndex', false);
 
 for (const plugin of plugins) {
-  mongooseInstance.plugin(plugin);
+    mongooseInstance.plugin(plugin);
 }
 
 export const Cart = mongooseInstance.model('Cart', cartSchema);

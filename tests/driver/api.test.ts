@@ -726,7 +726,14 @@ describe('Mongoose Model API level tests', async () => {
                 .orFail();
             assert.deepStrictEqual($vector, [1, 101]);
 
-            const doc = await Vector
+            let doc = await Vector
+                .findOne({ name: 'Test vector 1' })
+                .select({ name: 0 })
+                .orFail();
+            assert.deepStrictEqual(doc.$vector, [1, 101]);
+            assert.strictEqual(doc.name, undefined);
+
+            doc = await Vector
                 .findOne({ name: 'Test vector 1' })
                 .select({ $vector: 0 })
                 .orFail();
