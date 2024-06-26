@@ -114,6 +114,9 @@ export class FindCursor {
         if (this.options.includeSimilarity) {
             options.includeSimilarity = this.options.includeSimilarity;
         }
+        if (this.options?.includeSortVector) {
+            options.includeSortVector = this.options.includeSortVector;
+        }
 
         const cleanOptions = omit(options, ['sort', 'projection']) ?? {};
 
@@ -135,7 +138,12 @@ export class FindCursor {
         if (this.nextPageState == null) {
             this.exhausted = true;
         }
-        this.page = Object.keys(resp.data.documents).map(i => resp.data.documents[i]);
+        this.page = resp.data.documents;
+        if (options != null && options.includeSortVector) {
+            this.page.forEach(doc => {
+                doc.$sortVector = resp.status.sortVector;
+            });
+        }
         this.pageIndex = 0;    
     }
 
