@@ -17,8 +17,8 @@ export { Collection, OperationNotSupportedError } from './collection';
 
 import { Connection } from './connection';
 import { Mongoose } from 'mongoose';
-import { handle$vectorProjection } from './plugins';
+import { handleVectorFieldsProjection } from './plugins';
 
-export const plugins = [handle$vectorProjection];
+export const plugins = [handleVectorFieldsProjection];
 
 export type StargateMongoose = Mongoose & { connection: Connection, connections: Connection[] };

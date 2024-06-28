@@ -1,6 +1,6 @@
 import type { Schema, Query } from 'mongoose';
 
-export function handle$vectorProjection(this: Query<unknown, unknown>, schema: Schema) {
+export function handleVectorFieldsProjection(this: Query<unknown, unknown>, schema: Schema) {
     schema.pre(['find', 'findOne', 'findOneAndUpdate', 'findOneAndReplace', 'findOneAndDelete'], function() {
         const projection = this.projection();
         if (projection != null) {
