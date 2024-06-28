@@ -2,6 +2,7 @@ import { isAstra, testClient } from './fixtures';
 import { Schema, Mongoose } from 'mongoose';
 import * as StargateMongooseDriver from '@/src/driver';
 import { parseUri, createNamespace } from '@/src/collections/utils';
+import { plugins } from '@/src/driver';
 
 const cartSchema = new Schema({
     name: String,
@@ -25,6 +26,11 @@ export const mongooseInstance = new Mongoose();
 mongooseInstance.setDriver(StargateMongooseDriver);
 mongooseInstance.set('autoCreate', false);
 mongooseInstance.set('autoIndex', false);
+
+for (const plugin of plugins) {
+    mongooseInstance.plugin(plugin);
+}
+
 export const Cart = mongooseInstance.model('Cart', cartSchema);
 export const Product = mongooseInstance.model('Product', productSchema);
 
