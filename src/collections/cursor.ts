@@ -24,10 +24,12 @@ export class FindCursor {
     status = 'uninitialized';
     nextPageState?: string;
     limit: number;
+    includeSortVector?: boolean;
 
     page: Record<string, any>[] = [];
     pageIndex: number;
     exhausted: boolean;
+    sortVector?: number[];
 
     constructor(collection: Collection, filter: Record<string, any>, options?: FindOptions) {
         this.collection = collection;
@@ -45,6 +47,7 @@ export class FindCursor {
         this.limit = options?.limit || Infinity;
         this.status = 'initialized';
         this.exhausted = false;
+        this.includeSortVector = options?.includeSortVector;
 
         // Current position in batch
         this.pageIndex = 0;
@@ -64,6 +67,16 @@ export class FindCursor {
         }
 
         return this.documents;
+    }
+
+    async getSortVector(): Promise<number[] | undefined> {
+        if (!this.includeSortVector) {
+            return undefined;
+        }
+        if (this.status === 'initialized') {
+            await this._getMore();
+        }
+        return this.sortVector;
     }
 
     /**
@@ -114,6 +127,9 @@ export class FindCursor {
         if (this.options.includeSimilarity) {
             options.includeSimilarity = this.options.includeSimilarity;
         }
+        if (this.includeSortVector) {
+            options.includeSortVector = this.includeSortVector;
+        }
 
         const cleanOptions = omit(options, ['sort', 'projection']) ?? {};
 
@@ -135,7 +151,10 @@ export class FindCursor {
         if (this.nextPageState == null) {
             this.exhausted = true;
         }
-        this.page = Object.keys(resp.data.documents).map(i => resp.data.documents[i]);
+        this.page = resp.data.documents;
+        if (this.includeSortVector) {
+            this.sortVector = resp.status.sortVector;
+        }
         this.pageIndex = 0;    
     }
 
