@@ -20,6 +20,7 @@ import {
     TEST_COLLECTION_NAME
 } from '@/tests/fixtures';
 import mongoose, { Schema, InferSchemaType, InsertManyResult } from 'mongoose';
+import { once } from 'events';
 import * as StargateMongooseDriver from '@/src/driver';
 import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '@/src/driver';
@@ -747,13 +748,13 @@ describe('Mongoose Model API level tests', async () => {
         });
 
         it('supports sort() with includeSortVector in find()', async function() {
-            const docs = await Vector
+            const cursor = await Vector
                 .find({}, null, { includeSortVector: true })
-                .sort({ $vector: { $meta: [1, 99] } });
-            const doc = docs[0];
-            assert.deepStrictEqual(doc.name, 'Test vector 1');
-            assert.deepStrictEqual(doc.$sortVector, [1, 99]);
-            assert.deepStrictEqual(doc.get('$sortVector'), [1, 99]);
+                .sort({ $vector: { $meta: [1, 99] } })
+                .cursor();
+            
+            await once(cursor, 'cursor');
+            assert.deepStrictEqual(await cursor.cursor.getSortVector(), [1, 99]);            
         });
 
         it('supports sort() and similarity score with $meta with findOne()', async function() {
