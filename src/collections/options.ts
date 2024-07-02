@@ -102,6 +102,7 @@ export const findOneAndUpdateInternalOptionsKeys: Set<string> = new Set(
 class _InsertManyOptions {
     ordered?: boolean = undefined;
     usePagination?: boolean = undefined;
+    returnDocumentResponses?: boolean = undefined;
 }
 
 export interface InsertManyOptions extends _InsertManyOptions {}
