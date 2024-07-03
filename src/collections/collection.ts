@@ -35,26 +35,30 @@ import {
 } from './options';
 
 export interface DataAPIUpdateResult {
-  matchedCount: number;
-  modifiedCount: number;
-  acknowledged: boolean;
-  upsertedId?: any,
-  upsertedCount?: number
+    matchedCount: number;
+    modifiedCount: number;
+    acknowledged: boolean;
+    upsertedId?: any;
+    upsertedCount?: number;
 }
 
 export interface DataAPIDeleteResult {
-  acknowledged: boolean;
-  deletedCount: number;
+    acknowledged: boolean;
+    deletedCount: number;
 }
 
 export interface DataAPIInsertOneResult {
-  acknowledged: boolean;
-  insertedId: any;
+    acknowledged: boolean;
+    insertedId: any;
 }
 
 export interface DataAPIModifyResult {
-  ok: number;
-  value: Record<string, any> | null;
+    ok: number;
+    value: Record<string, any> | null;
+}
+
+export type DataAPIInsertManyResult = InsertManyResult<any> & {
+    documentResponses?: { _id: unknown, status: string, errorsIdx?: number }
 }
 
 export class Collection {
@@ -94,7 +98,7 @@ export class Collection {
     }
 
     async insertMany(documents: Record<string, any>[], options?: InsertManyOptions) {
-        return executeOperation(async (): Promise<InsertManyResult<any>> => {
+        return executeOperation(async (): Promise<DataAPIInsertManyResult> => {
             const command = {
                 insertMany: {
                     documents,
@@ -109,7 +113,8 @@ export class Collection {
             return {
                 acknowledged: true,
                 insertedCount: resp.status.insertedIds?.length || 0,
-                insertedIds: resp.status.insertedIds
+                insertedIds: resp.status.insertedIds,
+                documentResponses: resp.status.documentResponses
             };
         });
     }

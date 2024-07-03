@@ -124,28 +124,39 @@ export class Collection extends MongooseCollection {
         if (usePagination) {
             const batchSize = 20;
             const ops = [];
-            const ret = { acknowledged: true, insertedCount: 0, insertedIds: [] };
+            const ret = options?.returnDocumentResponses
+                ? { acknowledged: true, documentResponses: [] }
+                : { acknowledged: true, insertedCount: 0, insertedIds: [] };
             for (let i = 0; i < documents.length; i += batchSize) {
                 const batch = documents.slice(i, i + batchSize);
                 if (ordered) {
                     const {
                         acknowledged,
                         insertedCount,
-                        insertedIds
+                        insertedIds,
+                        documentResponses
                     } = await this.collection.insertMany(batch, options);
                     ret.acknowledged = ret.acknowledged && acknowledged;
-                    ret.insertedCount += insertedCount;
-                    ret.insertedIds = ret.insertedIds.concat(insertedIds);
+                    if (options?.returnDocumentResponses) {
+                        ret.documentResponses = ret.documentResponses?.concat(documentResponses ?? []);
+                    } else {
+                        ret.insertedCount += insertedCount;
+                        ret.insertedIds = ret!.insertedIds.concat(insertedIds);
+                    }
                 } else {
                     ops.push(this.collection.insertMany(batch, options));
                 }
             }
             if (!ordered) {
                 const results = await Promise.all(ops);
-                for (const { acknowledged, insertedCount, insertedIds } of results) {
+                for (const { acknowledged, insertedCount, insertedIds, documentResponses } of results) {
                     ret.acknowledged = ret.acknowledged && acknowledged;
-                    ret.insertedCount += insertedCount;
-                    ret.insertedIds = ret.insertedIds.concat(insertedIds);
+                    if (options?.returnDocumentResponses) {
+                        ret.documentResponses = ret.documentResponses?.concat(documentResponses ?? []);
+                    } else {
+                        ret.insertedCount += insertedCount;
+                        ret.insertedIds = ret!.insertedIds.concat(insertedIds);
+                    }
                 }
             }
 
