@@ -141,7 +141,7 @@ export class Collection extends MongooseCollection {
                         ret.documentResponses = ret.documentResponses?.concat(documentResponses ?? []);
                     } else {
                         ret.insertedCount += insertedCount;
-                        ret.insertedIds = ret!.insertedIds.concat(insertedIds);
+                        ret.insertedIds = ret.insertedIds!.concat(insertedIds);
                     }
                 } else {
                     ops.push(this.collection.insertMany(batch, options));
@@ -155,7 +155,7 @@ export class Collection extends MongooseCollection {
                         ret.documentResponses = ret.documentResponses?.concat(documentResponses ?? []);
                     } else {
                         ret.insertedCount += insertedCount;
-                        ret.insertedIds = ret!.insertedIds.concat(insertedIds);
+                        ret.insertedIds = ret.insertedIds!.concat(insertedIds);
                     }
                 }
             }

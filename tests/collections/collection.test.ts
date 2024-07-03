@@ -281,7 +281,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 { _id: 'docml20', status: 'SKIPPED' }
             ]);
         });
-        it('should error out when one of the docs in insertMany is invalid with ordered false', async () => {
+        it('should error out when one of the docs in insertMany is invalid with ordered false and returnDocumentResponses', async () => {
             const docList: { _id?: string, username: string }[] = Array.from({ length: 20 }, () => ({ 'username': 'id' }));
             docList.forEach((doc, index) => {
                 doc._id = 'docml' + (index + 1);
@@ -290,7 +290,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             docList[10] = docList[9];
             let error: any;
             try {
-                await collection.insertMany(docList, { ordered: false });
+                await collection.insertMany(docList, { ordered: false, returnDocumentResponses: true });
             } catch (e: any) {
                 error = e;
             }
@@ -307,20 +307,20 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 { _id: 'docml7', status: 'OK' },
                 { _id: 'docml8', status: 'OK' },
                 { _id: 'docml9', status: 'OK' },
-                { _id: 'docml10', status: 'OK' },
                 { _id: 'docml10', status: 'ERROR', errorsIdx: 0 },
-                { _id: 'docml12', status: 'SKIPPED' },
-                { _id: 'docml13', status: 'SKIPPED' },
-                { _id: 'docml14', status: 'SKIPPED' },
-                { _id: 'docml15', status: 'SKIPPED' },
-                { _id: 'docml16', status: 'SKIPPED' },
-                { _id: 'docml17', status: 'SKIPPED' },
-                { _id: 'docml18', status: 'SKIPPED' },
-                { _id: 'docml19', status: 'SKIPPED' },
-                { _id: 'docml20', status: 'SKIPPED' }
+                { _id: 'docml10', status: 'OK' },
+                { _id: 'docml12', status: 'OK' },
+                { _id: 'docml13', status: 'OK' },
+                { _id: 'docml14', status: 'OK' },
+                { _id: 'docml15', status: 'OK' },
+                { _id: 'docml16', status: 'OK' },
+                { _id: 'docml17', status: 'OK' },
+                { _id: 'docml18', status: 'OK' },
+                { _id: 'docml19', status: 'OK' },
+                { _id: 'docml20', status: 'OK' }
             ]);
         });
-        it('should error out when one of the docs in insertMany is invalid with ordered false and returnDocumentResponses', async () => {
+        it('should error out when one of the docs in insertMany is invalid with ordered false', async () => {
             const docList: { _id?: string, username: string }[] = Array.from({ length: 20 }, () => ({ 'username': 'id' }));
             docList.forEach((doc, index) => {
                 doc._id = 'docml' + (index + 1);
