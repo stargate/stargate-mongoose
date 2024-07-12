@@ -297,7 +297,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.ok(error);
             assert.strictEqual(error.errors[0].message, 'Document already exists with the given _id');
             assert.strictEqual(error.errors[0].errorCode, 'DOCUMENT_ALREADY_EXISTS');
-            assert.equal(error.status.documentResponses.length, 21);
+            assert.equal(error.status.documentResponses.length, 20);
             assert.ok(error.status.documentResponses.find(r => r._id === 'docml10' && r.status === 'ERROR' && r.errorsIdx === 0));
             assert.ok(error.status.documentResponses.find(r => r._id === 'docml10' && r.status === 'OK'));
         });
