@@ -453,9 +453,12 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(findOneResp?.name, 'Product 4');
         });
         it('API ops tests Model.insertMany()', async () => {
-            const product1 = {name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'};
-            const product2 = {name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'};
-            const product3 = {name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'};
+            const product1Id = new mongoose.Types.ObjectId('0'.repeat(24));
+            const product2Id = new mongoose.Types.ObjectId('1'.repeat(24));
+            const product3Id = new mongoose.Types.ObjectId('2'.repeat(24));
+            const product1 = {_id: product1Id, name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'};
+            const product2 = {_id: product2Id, name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'};
+            const product3 = {_id: product3Id, name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'};
             const insertResp: InsertManyResult<any> = await Product.insertMany([product1, product2, product3] , {ordered: true, rawResult: true});
             assert.ok(insertResp.acknowledged);
             assert.strictEqual(insertResp.insertedCount, 3);
@@ -475,6 +478,34 @@ describe('Mongoose Model API level tests', async () => {
             const respUnordered: InsertManyResult<any> = await Product.insertMany(docs, { usePagination: true, ordered: false, rawResult: true });
             assert.ok(respUnordered.acknowledged);
             assert.strictEqual(respUnordered.insertedCount, 21);
+        });
+        it('API ops tests Model.insertMany() with returnDocumentResponses', async () => {
+            const product1Id = new mongoose.Types.ObjectId('0'.repeat(24));
+            const product2Id = new mongoose.Types.ObjectId('1'.repeat(24));
+            const product3Id = new mongoose.Types.ObjectId('2'.repeat(24));
+            const product1 = {_id: product1Id, name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'};
+            const product2 = {_id: product2Id, name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'};
+            const product3 = {_id: product3Id, name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'};
+            const respWithResponses = await Product.insertMany(
+                [product1, product2, product3],
+                {returnDocumentResponses: true, rawResult: true}
+            );
+            assert.ok(respWithResponses.acknowledged);
+            assert.deepStrictEqual(respWithResponses.documentResponses, [
+                { _id: '0'.repeat(24), status: 'OK' },
+                { _id: '1'.repeat(24), status: 'OK' },
+                { _id: '2'.repeat(24), status: 'OK' }
+            ]);
+
+            const err = await Product.insertMany(
+                [product1, product2, product3],
+                {returnDocumentResponses: true}
+            ).then(() => null, err => err);
+            assert.deepStrictEqual(err.status.documentResponses, [
+                { _id: '0'.repeat(24), status: 'ERROR', errorsIdx: 0 },
+                { _id: '1'.repeat(24), status: 'ERROR', errorsIdx: 0 },
+                { _id: '2'.repeat(24), status: 'ERROR', errorsIdx: 0 }
+            ]);
         });
         //Model.inspect can not be tested since it is a helper for console logging. More info here: https://mongoosejs.com/docs/api/model.html#Model.inspect()
         it('API ops tests Model.listIndexes()', async () => {
