@@ -20,6 +20,7 @@ import {
     TEST_COLLECTION_NAME
 } from '@/tests/fixtures';
 import mongoose, { Schema, InferSchemaType, InsertManyResult } from 'mongoose';
+import { once } from 'events';
 import * as StargateMongooseDriver from '@/src/driver';
 import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '@/src/driver';
@@ -718,6 +719,9 @@ describe('Mongoose Model API level tests', async () => {
                 autoCreate: true
             }
         );
+        vectorSchema.virtual('$sortVector').get(function() {
+            return this._doc.$sortVector;
+        });
         const Vector = mongooseInstance.model(
             'Vector',
             vectorSchema,
@@ -779,6 +783,26 @@ describe('Mongoose Model API level tests', async () => {
             const res = await Vector.find({}, null, { includeSimilarity: true }).sort({ $vector: { $meta: [1, 99] } });
             assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 1', 'Test vector 2']);
             assert.deepStrictEqual(res.map(doc => doc.get('$similarity')), [1, 0.51004946]);
+        });
+
+        it('supports sort() with includeSortVector in findOne()', async function() {
+            const doc = await Vector
+                .findOne({}, null, { includeSortVector: true })
+                .sort({ $vector: { $meta: [1, 99] } })
+                .orFail();
+            assert.deepStrictEqual(doc.name, 'Test vector 1');
+            assert.deepStrictEqual(doc.$sortVector, [ 1, 99 ]);
+            assert.deepStrictEqual(doc.get('$sortVector'), [1, 99]);
+        });
+
+        it('supports sort() with includeSortVector in find()', async function() {
+            const cursor = await Vector
+                .find({}, null, { includeSortVector: true })
+                .sort({ $vector: { $meta: [1, 99] } })
+                .cursor();
+            
+            await once(cursor, 'cursor');
+            assert.deepStrictEqual(await cursor.cursor.getSortVector(), [1, 99]);            
         });
 
         it('supports sort() and similarity score with $meta with findOne()', async function() {
