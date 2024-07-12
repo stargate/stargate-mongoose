@@ -65,11 +65,6 @@ before(async function connectMongooseFixtures() {
 
 before(createMongooseCollections);
 
-after(async function cleanupMongooseCollections() {
-    await Cart.db.dropCollection(Cart.collection.collectionName);
-    await Product.db.dropCollection(Product.collection.collectionName);
-});
-
 after(async function disconnectMongooseFixtures() {
     await mongooseInstance.disconnect();
 });

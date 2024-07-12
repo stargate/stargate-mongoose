@@ -694,8 +694,15 @@ describe('Mongoose Model API level tests', async () => {
         );
 
         before(async function() {
-            await mongooseInstance.connection.dropCollection('vector');
-            await Vector.createCollection();
+            const collections = await mongooseInstance.connection.listCollections({ explain: true });
+            const vectorCollection = collections.find(coll => coll.name === 'vector');
+            if (!vectorCollection) {
+                await mongooseInstance.connection.dropCollection('vector');
+                await Vector.createCollection();
+            } else if (vectorCollection.options?.vector?.dimension !== 2 || vectorCollection.options?.vector?.metric !== 'cosine') {
+                await mongooseInstance.connection.dropCollection('vector');
+                await Vector.createCollection();
+            }
         });
 
         beforeEach(async function() {
@@ -710,10 +717,6 @@ describe('Mongoose Model API level tests', async () => {
                     $vector: [100, 1]
                 }
             ]);
-        });
-
-        after(async function() {
-            await mongooseInstance.connection.dropCollection('vector');
         });
 
         it('supports updating $vector with save()', async function() {
@@ -895,7 +898,6 @@ describe('Mongoose Model API level tests', async () => {
         it('contains vector options in listCollections() output with `explain`', async function() {
             const connection = mongooseInstance.connection;
             const collections = await connection.listCollections({ explain: true });
-            
             const collection = collections.find(collection => collection.name === 'vector');
             assert.ok(collection, 'Collection named "vector" not found');
             assert.deepStrictEqual(collection.options, {
