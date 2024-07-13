@@ -145,7 +145,8 @@ export class FindCursor {
         const resp = await this.collection.httpClient.executeCommandWithUrl(
             this.collection.httpBasePath,
             command,
-            findInternalOptionsKeys
+            findInternalOptionsKeys,
+            true // retry
         );
         this.nextPageState = resp.data.nextPageState;
         if (this.nextPageState == null) {

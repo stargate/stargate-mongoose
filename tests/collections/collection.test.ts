@@ -26,6 +26,7 @@ import {
     createSampleDocWithMultiLevelWithId,
     TEST_COLLECTION_NAME
 } from '@/tests/fixtures';
+import sinon from 'sinon';
 
 describe(`StargateMongoose - ${testClientName} Connection - collections.collection`, async () => {
     const isAstra: boolean = testClientName === 'astra';
@@ -326,6 +327,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         });
     });
     describe('findOne, findMany & filter tests', () => {
+        afterEach(() => sinon.restore());
+
         it('should find & findOne document', async () => {
             const insertDocResp = await collection.insertOne(createSampleDocWithMultiLevel());
             const idToCheck = insertDocResp.insertedId;
@@ -336,6 +339,70 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             const findResDocs = await collection.find(filter).toArray();
             assert.strictEqual(findResDocs.length, 1);
             assert.strictEqual(findResDocs[0]._id, idToCheck);
+        });
+        it('should retry findOne on SERVER_DRIVER_TIMEOUT', async () => {
+            let retries = 0;
+            sinon.stub(collection.httpClient, '_request').callsFake(async () => {
+                ++retries;
+                if (retries <= 1) {
+                    return {
+                        errors: [
+                            {
+                                code: 'SERVER_DRIVER_TIMEOUT',
+                                message: 'Server driver timeout'
+                            }
+                        ]
+                    };
+                } else {
+                    return {
+                        data: {
+                            document: {
+                                _id: 'sampleId',
+                                username: 'sampleUser',
+                                email: 'sampleUser@example.com'
+                            }
+                        }
+                    };
+                }
+            });
+
+            const filter = { '_id': 'sampleId' };
+            const resDoc = await collection.findOne(filter);
+            assert.equal(resDoc!._id, 'sampleId');
+            assert.equal(retries, 2);
+        });
+        it('should retry find on SERVER_DRIVER_TIMEOUT', async () => {
+            let retries = 0;
+            sinon.stub(collection.httpClient, '_request').callsFake(async () => {
+                ++retries;
+                if (retries <= 1) {
+                    return {
+                        errors: [
+                            {
+                                code: 'SERVER_DRIVER_TIMEOUT',
+                                message: 'Server driver timeout'
+                            }
+                        ]
+                    };
+                } else {
+                    return {
+                        data: {
+                            documents: [{
+                                _id: 'sampleId',
+                                username: 'sampleUser',
+                                email: 'sampleUser@example.com'
+                            }]
+                        }
+                    };
+                }
+            });
+
+            const filter = { '_id': 'sampleId' };
+            const docs = await collection.find(filter).toArray();
+            assert.equal(docs.length, 1);
+            const [doc] = docs;
+            assert.equal(doc!._id, 'sampleId');
+            assert.equal(retries, 2);
         });
         it('should find & findOne eq document', async () => {
             const insertDocResp = await collection.insertOne(createSampleDocWithMultiLevel());

@@ -378,16 +378,40 @@ export class HTTPClient {
         return await this.http2Session.request(path, token, body, timeout);
     }
 
-    async executeCommandWithUrl(url: string, data: Record<string, any>, optionsToRetain: Set<string> | null) {
+    async executeCommandWithUrl(url: string, data: Record<string, any>, optionsToRetain: Set<string> | null, retry?: boolean) {
         const commandName = Object.keys(data)[0];
         cleanupOptions(commandName, data[commandName], optionsToRetain, this.logSkippedOptions);
-        const response = await this._request({
-            url: this.baseUrl + url,
-            method: HTTP_METHODS.post,
-            data
-        });
-        handleIfErrorResponse(response, data);
-        return response;
+        
+        if (retry) {
+            const maxRetries = 3;
+            let attempts = 0;
+            while (attempts < maxRetries) {
+                const response = await this._request({
+                    url: this.baseUrl + url,
+                    method: HTTP_METHODS.post,
+                    data
+                });
+                if (attempts + 1 < maxRetries && response.errors && response.errors?.[0]?.code === 'SERVER_DRIVER_TIMEOUT') {
+                    attempts++;
+                    logger.warn(`Retry attempt ${attempts} for command ${commandName} due to SERVER_DRIVER_TIMEOUT`);
+                    await new Promise(resolve => setTimeout(resolve, attempts * 100));
+                } else {
+                    handleIfErrorResponse(response, data);
+                    return response;
+                }
+            }
+            // This error shouldn't happen, `handleIfErrorResponse` above should throw if there's still an error
+            // after `maxRetries`. But need the following to appease TypeScript compiler.
+            throw new Error(`Command ${commandName} failed after ${maxRetries} attempts due to SERVER_DRIVER_TIMEOUT`);
+        } else {
+            const response = await this._request({
+                url: this.baseUrl + url,
+                method: HTTP_METHODS.post,
+                data
+            });
+            handleIfErrorResponse(response, data);
+            return response;
+        }
     }
 }
 

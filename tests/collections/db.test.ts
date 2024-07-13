@@ -24,10 +24,10 @@ import mongoose from 'mongoose';
 
 const randString = (length: number) => randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length);
 
-describe('StargateMongoose - collections.Db', async () => {
+describe('StargateMongoose - collections.Db', () => {
     let astraClient: Client | null;
-    let dbUri: string;
-    let isAstra: boolean;
+    const dbUri = testClient!.uri;
+    const isAstra = testClient!.isAstra;
     let httpClient: HTTPClient;
     before(async function () {
         if (testClient == null) {
@@ -37,8 +37,6 @@ describe('StargateMongoose - collections.Db', async () => {
         if (astraClient === null) {
             return this.skip();
         }
-        dbUri = testClient.uri;
-        isAstra = testClient.isAstra;
         httpClient = astraClient.httpClient;
     });
 
