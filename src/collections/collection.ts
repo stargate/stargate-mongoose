@@ -271,7 +271,8 @@ export class Collection {
             const resp = await this.httpClient.executeCommandWithUrl(
                 this.httpBasePath,
                 command,
-                findOneInternalOptionsKeys
+                findOneInternalOptionsKeys,
+                true // retry
             );
             if (options != null && options.includeSortVector) {
                 resp.data.document.$sortVector = resp.status.sortVector;
