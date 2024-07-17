@@ -26,8 +26,8 @@ const randString = (length: number) => randomBytes(Math.ceil(length / 2)).toStri
 
 describe('StargateMongoose - collections.Db', async () => {
     let astraClient: Client | null;
-    let dbUri: string;
-    let isAstra: boolean;
+    const dbUri: string = testClient.uri;
+    const isAstra: boolean = testClient.isAstra;
     let httpClient: HTTPClient;
     before(async function () {
         if (testClient == null) {
@@ -37,8 +37,6 @@ describe('StargateMongoose - collections.Db', async () => {
         if (astraClient === null) {
             return this.skip();
         }
-        dbUri = testClient.uri;
-        isAstra = testClient.isAstra;
         httpClient = astraClient.httpClient;
     });
 
