@@ -56,12 +56,10 @@ export interface FindOneOptions {
     sort?: Record<string, 1 | -1>;
     projection?: ProjectionOption;
     includeSimilarity?: boolean;
-    includeSortVector?: boolean;
 }
 
 class _FindOneOptionsInternal {
     includeSimilarity?: boolean = undefined;
-    includeSortVector?: boolean = undefined;
 }
 
 export const findOneInternalOptionsKeys: Set<string> = new Set(
