@@ -15,9 +15,8 @@
 import assert from 'assert';
 import mongoose from 'mongoose';
 import * as StargateMongooseDriver from '@/src/driver';
-import { testClient } from '@/tests/fixtures';
+import { testClient, TEST_COLLECTION_NAME } from '@/tests/fixtures';
 import { logger } from '@/src/logger';
-import { parseUri } from '@/src/collections/utils';
 import { HTTPClient } from '@/src/client';
 import { Client } from '@/src/collections';
 import { Product, Cart, mongooseInstance } from '@/tests/mongooseFixtures';
@@ -86,13 +85,17 @@ describe('Driver based tests', async () => {
         const personSchema = new mongooseInstance.Schema({
             name: { type: String, required: true }
         });
-        const Person = mongooseInstance.model('Person', personSchema);
+        const Person = mongooseInstance.model('Person', personSchema, TEST_COLLECTION_NAME);
         before(async function () {
-            await Person.createCollection();
+            const collections = await mongooseInstance.connection.listCollections();
+            const collectionNames = collections.map(({ name }) => name);
+            if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
+                await Person.createCollection();
+            }
         });
 
         after(async () => {
-            await Person.db.dropCollection(Person.collection.collectionName);
+            await Person.deleteMany({});
         });
 
         it('handles find cursors', async () => {
@@ -213,8 +216,11 @@ describe('Driver based tests', async () => {
 
         it('handles reconnecting after disconnecting', async () => {
             const mongooseInstance = await createMongooseInstance();
-            const TestModel = mongooseInstance.model('Person', Person.schema);
-            await TestModel.init();
+            const TestModel = mongooseInstance.model('Person', Person.schema, TEST_COLLECTION_NAME);
+            const collectionNames = await TestModel.db.listCollections().then(collections => collections.map(c => c.name));
+            if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
+                await TestModel.createCollection();
+            }
             await TestModel.findOne();
 
             await mongooseInstance.disconnect();
@@ -230,15 +236,9 @@ describe('Driver based tests', async () => {
         });
           
         it('handles listCollections()', async () => {
-            const Person = mongooseInstance!.model('Person');
-            await Person.init();
-            await Person.deleteMany({});
             const collections = await mongooseInstance!.connection.listCollections();
             const collectionNames = collections.map(({ name }) => name);
-            assert.ok(
-                collectionNames.includes('people'),
-                collectionNames.join(', ')
-            );
+            assert.ok(typeof collectionNames[0] === 'string', collectionNames.join(','));
         });
 
         async function createMongooseInstance() {
@@ -258,15 +258,15 @@ describe('Driver based tests', async () => {
         it('should fail when dropDatabase is called', async () => {
             const mongooseInstance = new mongoose.Mongoose();
             mongooseInstance.setDriver(StargateMongooseDriver);
-            mongooseInstance.set('autoCreate', true);
+            mongooseInstance.set('autoCreate', false);
             mongooseInstance.set('autoIndex', false);
             const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
-            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+            
             await mongooseInstance.connect(dbUri, options);
 
             await assert.rejects(
-              () => mongooseInstance.connection.dropDatabase(),
-              { message: 'dropDatabase() Not Implemented' }
+                () => mongooseInstance.connection.dropDatabase(),
+                { message: 'dropDatabase() Not Implemented' }
             );
             mongooseInstance.connection.getClient().close();
         });

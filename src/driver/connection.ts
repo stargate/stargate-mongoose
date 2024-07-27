@@ -18,7 +18,7 @@ import { STATES } from 'mongoose';
 import { executeOperation, parseUri } from '../collections/utils';
 import { CreateCollectionOptions } from '../collections/options';
 
-import { DataAPIClient, DSEUsernamePasswordTokenProvider } from '@datastax/astra-db-ts';
+import { DataAPIClient, UsernamePasswordTokenProvider } from '@datastax/astra-db-ts';
 
 export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
@@ -49,9 +49,9 @@ export class Connection extends MongooseConnection {
     }
 
     async createCollection(name: string, options?: Record<string, any>) {
-      await this._waitForClient();
-      const db = this.db;
-      return db.createCollection(name, { checkExists: false, ...options });
+        await this._waitForClient();
+        const db = this.db;
+        return db.createCollection(name, { checkExists: false, ...options });
     }
 
     async dropCollection(name: string) {
@@ -78,14 +78,14 @@ export class Connection extends MongooseConnection {
     }
 
     async listDatabases(): Promise<{ databases: string[] }> {
-      return this.db._httpClient._request({
-        url: this.baseUrl + '/' + this.baseApiPath,
-        method: 'POST',
-        data: JSON.stringify({ findNamespaces: {} }),
-        timeoutManager: this.db._httpClient.timeoutManager(120_000)
-      }).then((res: any) => {
-        return { databases: JSON.parse(res.body ?? '{}').status?.namespaces ?? [] };
-      });
+        return this.db._httpClient._request({
+            url: this.baseUrl + '/' + this.baseApiPath,
+            method: 'POST',
+            data: JSON.stringify({ findNamespaces: {} }),
+            timeoutManager: this.db._httpClient.timeoutManager(120_000)
+        }).then((res: any) => {
+            return { databases: JSON.parse(res.body ?? '{}').status?.namespaces ?? [] };
+        });
     }
 
     async openUri(uri: string, options: any) {
@@ -134,18 +134,18 @@ export class Connection extends MongooseConnection {
         const { baseUrl, keyspaceName, applicationToken, baseApiPath } = parseUri(uri);
 
         const client = options?.isAstra
-          ? new DataAPIClient(applicationToken)
-          : new DataAPIClient(
-            new DSEUsernamePasswordTokenProvider(options?.username, options?.password)
-          );
+            ? new DataAPIClient(applicationToken)
+            : new DataAPIClient(
+                new UsernamePasswordTokenProvider(options?.username, options?.password)
+            );
         const dbOptions = {
-          namespace: keyspaceName,
-          dataApiPath: baseApiPath
+            namespace: keyspaceName,
+            dataApiPath: baseApiPath
         };
         const db = client.db(baseUrl, dbOptions);
         const admin = client.admin(options?.isAstra
-          ? applicationToken
-          : new DSEUsernamePasswordTokenProvider(options?.username, options?.password)
+            ? { adminToken: applicationToken }
+            : { adminToken: new UsernamePasswordTokenProvider(options?.username, options?.password) }
         );
 
         this.client = client;
@@ -162,12 +162,12 @@ export class Connection extends MongooseConnection {
     }
 
     async createDatabase() {
-      return this.db._httpClient._request({
-        url: this.baseUrl + '/' + this.baseApiPath,
-        method: 'POST',
-        data: JSON.stringify({ createNamespace: { name: this.keyspaceName } }),
-        timeoutManager: this.db._httpClient.timeoutManager(120_000)
-      });
+        return this.db._httpClient._request({
+            url: this.baseUrl + '/' + this.baseApiPath,
+            method: 'POST',
+            data: JSON.stringify({ createNamespace: { name: this.keyspaceName } }),
+            timeoutManager: this.db._httpClient.timeoutManager(120_000)
+        });
     }
 
     setClient(client: DataAPIClient) {

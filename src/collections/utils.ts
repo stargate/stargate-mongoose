@@ -217,32 +217,32 @@ export function setDefaultIdForUpsert(command: Record<string, any>, replace?: bo
 }
 
 export function setDefaultIdForUpsertv2(filter: Record<string, any>, update: Record<string, any>, options: Record<string, any>, replace?: boolean) {
-  if (filter == null || options == null) {
-      return;
-  }
-  if (!options.upsert) {
-      return;
-  }
-  if ('_id' in filter) {
-      return;
-  }
+    if (filter == null || options == null) {
+        return;
+    }
+    if (!options.upsert) {
+        return;
+    }
+    if ('_id' in filter) {
+        return;
+    }
 
-  if (replace) {
-      if (update != null && '_id' in update) {
-          return;
-      }
-      update._id = new Types.ObjectId();
-  } else {
-      if (update != null && _updateHasKey(update, '_id')) {
-          return;
-      }
-      if (update.$setOnInsert == null) {
-          update.$setOnInsert = {};
-      }
-      if (!('_id' in update.$setOnInsert)) {
-          update.$setOnInsert._id = new Types.ObjectId();
-      }
-  }
+    if (replace) {
+        if (update != null && '_id' in update) {
+            return;
+        }
+        update._id = new Types.ObjectId();
+    } else {
+        if (update != null && _updateHasKey(update, '_id')) {
+            return;
+        }
+        if (update.$setOnInsert == null) {
+            update.$setOnInsert = {};
+        }
+        if (!('_id' in update.$setOnInsert)) {
+            update.$setOnInsert._id = new Types.ObjectId();
+        }
+    }
 }
 
 

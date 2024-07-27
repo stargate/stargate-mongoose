@@ -35,26 +35,30 @@ import {
 } from './options';
 
 export interface DataAPIUpdateResult {
-  matchedCount: number;
-  modifiedCount: number;
-  acknowledged: boolean;
-  upsertedId?: any,
-  upsertedCount?: number
+    matchedCount: number;
+    modifiedCount: number;
+    acknowledged: boolean;
+    upsertedId?: any;
+    upsertedCount?: number;
 }
 
 export interface DataAPIDeleteResult {
-  acknowledged: boolean;
-  deletedCount: number;
+    acknowledged: boolean;
+    deletedCount: number;
 }
 
 export interface DataAPIInsertOneResult {
-  acknowledged: boolean;
-  insertedId: any;
+    acknowledged: boolean;
+    insertedId: any;
 }
 
 export interface DataAPIModifyResult {
-  ok: number;
-  value: Record<string, any> | null;
+    ok: number;
+    value: Record<string, any> | null;
+}
+
+export type DataAPIInsertManyResult = InsertManyResult<any> & {
+    documentResponses?: { _id: unknown, status: string, errorsIdx?: number }
 }
 
 export class Collection {
@@ -94,7 +98,7 @@ export class Collection {
     }
 
     async insertMany(documents: Record<string, any>[], options?: InsertManyOptions) {
-        return executeOperation(async (): Promise<InsertManyResult<any>> => {
+        return executeOperation(async (): Promise<DataAPIInsertManyResult> => {
             const command = {
                 insertMany: {
                     documents,
@@ -109,7 +113,8 @@ export class Collection {
             return {
                 acknowledged: true,
                 insertedCount: resp.status.insertedIds?.length || 0,
-                insertedIds: resp.status.insertedIds
+                insertedIds: resp.status.insertedIds,
+                documentResponses: resp.status.documentResponses
             };
         });
     }
@@ -259,7 +264,7 @@ export class Collection {
                     filter,
                     options,
                     ...(options?.sort != null ? { sort: options?.sort } : {}),
-                    ...(options?.projection != null ? { sort: options?.projection } : {}),
+                    ...(options?.projection != null ? { projection: options?.projection } : {}),
                 }
             };
 
@@ -268,6 +273,9 @@ export class Collection {
                 command,
                 findOneInternalOptionsKeys
             );
+            if (options != null && options.includeSortVector) {
+                resp.data.document.$sortVector = resp.status.sortVector;
+            }
             return resp.data.document;
         });
     }
@@ -279,7 +287,8 @@ export class Collection {
                     filter,
                     replacement,
                     options: omit(options, ['sort']),
-                    ...(options?.sort != null ? { sort: options?.sort } : {})
+                    ...(options?.sort != null ? { sort: options?.sort } : {}),
+                    ...(options?.projection != null ? { projection: options?.projection } : {}),
                 }
             };
             setDefaultIdForUpsert(command.findOneAndReplace, true);
@@ -315,11 +324,24 @@ export class Collection {
         });
     }
 
+    async estimatedDocumentCount(): Promise<number> {
+        return executeOperation(async (): Promise<number> => {
+            const command = { estimatedDocumentCount: {} };
+            const resp = await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                null
+            );
+            return resp.status.count;
+        });
+    }
+
     async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions): Promise<DataAPIModifyResult> {
         const command = {
             findOneAndDelete: {
                 filter,
-                ...(options?.sort != null ? { sort: options?.sort } : {})
+                ...(options?.sort != null ? { sort: options?.sort } : {}),
+                ...(options?.projection != null ? { projection: options?.projection } : {}),
             }
         };
 
@@ -348,7 +370,8 @@ export class Collection {
                     filter,
                     update,
                     options: omit(options, ['sort']),
-                    ...(options?.sort != null ? { sort: options?.sort } : {})
+                    ...(options?.sort != null ? { sort: options?.sort } : {}),
+                    ...(options?.projection != null ? { projection: options?.projection } : {}),
                 }
             };
             setDefaultIdForUpsert(command.findOneAndUpdate);

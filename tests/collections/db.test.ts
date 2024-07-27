@@ -233,11 +233,12 @@ describe('StargateMongoose - collections.Db', async () => {
     describe('dropDatabase', function (this: Mocha.Suite) {
         const suite = this;
         const suffix = randString(4);
-        const keyspaceName = parseUri(dbUri).keyspaceName + '_' + suffix;
+        let keyspaceName = '';
         before(async () => {
             if (isAstra) {
                 return;
             }
+            keyspaceName = parseUri(dbUri).keyspaceName + '_' + suffix;
             await createNamespace(httpClient, keyspaceName);
         });
         it('should drop the underlying database (AKA namespace)', async () => {

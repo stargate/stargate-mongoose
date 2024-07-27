@@ -2,6 +2,7 @@ import { isAstra, testClient } from './fixtures';
 import { Schema, Mongoose } from 'mongoose';
 import * as StargateMongooseDriver from '@/src/driver';
 import { parseUri, createNamespace } from '@/src/collections/utils';
+import { plugins } from '@/src/driver';
 
 const cartSchema = new Schema({
     name: String,
@@ -25,24 +26,28 @@ export const mongooseInstance = new Mongoose();
 mongooseInstance.setDriver(StargateMongooseDriver);
 mongooseInstance.set('autoCreate', false);
 mongooseInstance.set('autoIndex', false);
+
+for (const plugin of plugins) {
+    mongooseInstance.plugin(plugin);
+}
+
 export const Cart = mongooseInstance.model('Cart', cartSchema);
 export const Product = mongooseInstance.model('Product', productSchema);
 
 async function createNamespace() {
-  return mongooseInstance.connection.db._httpClient._request({
-    url: mongooseInstance.connection.baseUrl + '/' + mongooseInstance.connection.baseApiPath,
-    method: 'POST',
-    data: JSON.stringify({
-      createNamespace: {
-        name: mongooseInstance.connection.keyspaceName
-      }
-    }),
-    timeoutManager: mongooseInstance.connection.db._httpClient.timeoutManager(120_000)
-  });
+    return mongooseInstance.connection.db._httpClient._request({
+        url: mongooseInstance.connection.baseUrl + '/' + mongooseInstance.connection.baseApiPath,
+        method: 'POST',
+        data: JSON.stringify({
+            createNamespace: {
+                name: mongooseInstance.connection.keyspaceName
+            }
+        }),
+        timeoutManager: mongooseInstance.connection.db._httpClient.timeoutManager(120_000)
+    });
 }
 
 export async function createMongooseCollections() {
-    this.timeout(120_000);
     await createNamespace();
 
     const collections = await mongooseInstance.connection.listCollections();
@@ -78,11 +83,6 @@ before(async function connectMongooseFixtures() {
 });
 
 before(createMongooseCollections);
-
-after(async function cleanupMongooseCollections() {
-    await Cart.db.dropCollection(Cart.collection.collectionName);
-    await Product.db.dropCollection(Product.collection.collectionName);
-});
 
 after(async function disconnectMongooseFixtures() {
     await mongooseInstance.disconnect();

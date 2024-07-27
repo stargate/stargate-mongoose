@@ -17,6 +17,10 @@ import mongoose from 'mongoose';
 import { Product } from '@/tests/mongooseFixtures';
 
 describe('Options tests', async () => {
+    beforeEach(async function() {
+        await Product.deleteMany({});
+    });
+
     afterEach(async function() {
         await Product.deleteMany({});
     });

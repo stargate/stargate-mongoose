@@ -35,6 +35,7 @@ export interface FindOptions {
     sort?: SortOption;
     projection?: ProjectionOption;
     includeSimilarity?: boolean;
+    includeSortVector?: boolean;
 }
 
 class _FindOptionsInternal {
@@ -42,6 +43,7 @@ class _FindOptionsInternal {
     skip?: number = undefined;
     pagingState?: string = undefined;
     includeSimilarity?: boolean = undefined;
+    includeSortVector?: boolean = undefined;
 }
 
 export interface FindOptionsInternal extends _FindOptionsInternal {}
@@ -54,10 +56,12 @@ export interface FindOneOptions {
     sort?: Record<string, 1 | -1>;
     projection?: ProjectionOption;
     includeSimilarity?: boolean;
+    includeSortVector?: boolean;
 }
 
 class _FindOneOptionsInternal {
     includeSimilarity?: boolean = undefined;
+    includeSortVector?: boolean = undefined;
 }
 
 export const findOneInternalOptionsKeys: Set<string> = new Set(
@@ -66,6 +70,7 @@ export const findOneInternalOptionsKeys: Set<string> = new Set(
 
 export interface FindOneAndDeleteOptions {
     sort?: SortOption;
+    projection?: ProjectionOption;
     includeResultMetadata?: boolean;
 }
 
@@ -74,6 +79,7 @@ class _FindOneAndReplaceOptions {
     upsert?: boolean = undefined;
     returnDocument?: 'before' | 'after' = undefined;
     sort?: SortOption;
+    projection?: ProjectionOption;
     includeResultMetadata?: boolean;
 }
 
@@ -87,6 +93,7 @@ class _FindOneAndUpdateOptions {
     upsert?: boolean = undefined;
     returnDocument?: 'before' | 'after' = undefined;
     sort?: SortOption;
+    projection?: ProjectionOption;
     includeResultMetadata?: boolean;
 }
 
@@ -99,6 +106,7 @@ export const findOneAndUpdateInternalOptionsKeys: Set<string> = new Set(
 class _InsertManyOptions {
     ordered?: boolean = undefined;
     usePagination?: boolean = undefined;
+    returnDocumentResponses?: boolean = undefined;
 }
 
 export interface InsertManyOptions extends _InsertManyOptions {}

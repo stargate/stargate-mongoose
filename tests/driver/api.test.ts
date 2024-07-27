@@ -20,6 +20,7 @@ import {
     TEST_COLLECTION_NAME
 } from '@/tests/fixtures';
 import mongoose, { Schema, InferSchemaType, InsertManyResult } from 'mongoose';
+import { once } from 'events';
 import * as StargateMongooseDriver from '@/src/driver';
 import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '@/src/driver';
@@ -372,19 +373,15 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(err?.message, 'distinct() Not Implemented');
         });
         
-        it('API ops tests Model.estimatedDocumentCount()', async () => {
-            let error: OperationNotSupportedError | null = null;
-            try {
-                const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
-                const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
-                const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
-                await Product.insertMany([product1, product2, product3]);
-                await Product.estimatedDocumentCount();
-            } catch (err: any) {
-                error = err;
-            }
-            assert.ok(error);
-            assert.strictEqual(error?.message, 'estimatedDocumentCount() Not Implemented');
+        it('API ops tests Model.estimatedDocumentCount()', async function() {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
+            const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+            const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+            await Product.create([product1, product2, product3]);
+            
+            const count = await Product.estimatedDocumentCount();
+            assert.equal(typeof count, 'number');
+            assert.ok(count >= 0);
         });
         //skipping Model.events() as it is not making any database calls
         it('API ops tests Model.exists()', async () => {
@@ -459,9 +456,12 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(findOneResp?.name, 'Product 4');
         });
         it('API ops tests Model.insertMany()', async () => {
-            const product1 = {name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'};
-            const product2 = {name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'};
-            const product3 = {name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'};
+            const product1Id = new mongoose.Types.ObjectId('0'.repeat(24));
+            const product2Id = new mongoose.Types.ObjectId('1'.repeat(24));
+            const product3Id = new mongoose.Types.ObjectId('2'.repeat(24));
+            const product1 = {_id: product1Id, name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'};
+            const product2 = {_id: product2Id, name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'};
+            const product3 = {_id: product3Id, name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'};
             const insertResp: InsertManyResult<any> = await Product.insertMany([product1, product2, product3] , {ordered: true, rawResult: true});
             assert.strictEqual(insertResp.insertedCount, 3);
 
@@ -478,6 +478,33 @@ describe('Mongoose Model API level tests', async () => {
             }
             const respUnordered: InsertManyResult<any> = await Product.insertMany(docs, { ordered: false, rawResult: true });
             assert.strictEqual(respUnordered.insertedCount, 21);
+        });
+        it('API ops tests Model.insertMany() with returnDocumentResponses', async () => {
+            const product1Id = new mongoose.Types.ObjectId('0'.repeat(24));
+            const product2Id = new mongoose.Types.ObjectId('1'.repeat(24));
+            const product3Id = new mongoose.Types.ObjectId('2'.repeat(24));
+            const product1 = {_id: product1Id, name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'};
+            const product2 = {_id: product2Id, name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'};
+            const product3 = {_id: product3Id, name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'};
+            const respWithResponses = await Product.insertMany(
+                [product1, product2, product3],
+                {returnDocumentResponses: true, rawResult: true}
+            );
+            assert.deepStrictEqual(respWithResponses.documentResponses, [
+                { _id: '0'.repeat(24), status: 'OK' },
+                { _id: '1'.repeat(24), status: 'OK' },
+                { _id: '2'.repeat(24), status: 'OK' }
+            ]);
+
+            const err = await Product.insertMany(
+                [product1, product2, product3],
+                {returnDocumentResponses: true}
+            ).then(() => null, err => err);
+            assert.deepStrictEqual(err.status.documentResponses, [
+                { _id: '0'.repeat(24), status: 'ERROR', errorsIdx: 0 },
+                { _id: '1'.repeat(24), status: 'ERROR', errorsIdx: 0 },
+                { _id: '2'.repeat(24), status: 'ERROR', errorsIdx: 0 }
+            ]);
         });
         //Model.inspect can not be tested since it is a helper for console logging. More info here: https://mongoosejs.com/docs/api/model.html#Model.inspect()
         it('API ops tests Model.listIndexes()', async () => {
@@ -681,7 +708,7 @@ describe('Mongoose Model API level tests', async () => {
     describe('vector search', function() {
         const vectorSchema = new Schema(
             {
-                $vector: { type: [Number], default: () => void 0 },
+                $vector: { type: [Number], default: () => void 0, select: true },
                 name: 'String'
             },
             {
@@ -689,6 +716,9 @@ describe('Mongoose Model API level tests', async () => {
                 autoCreate: true
             }
         );
+        vectorSchema.virtual('$sortVector').get(function() {
+            return this._doc.$sortVector;
+        });
         const Vector = mongooseInstance.model(
             'Vector',
             vectorSchema,
@@ -696,8 +726,15 @@ describe('Mongoose Model API level tests', async () => {
         );
 
         before(async function() {
-            await mongooseInstance.connection.dropCollection('vector');
-            await Vector.createCollection();
+            const collections = await mongooseInstance.connection.listCollections({ explain: true });
+            const vectorCollection = collections.find(coll => coll.name === 'vector');
+            if (!vectorCollection) {
+                await mongooseInstance.connection.dropCollection('vector');
+                await Vector.createCollection();
+            } else if (vectorCollection.options?.vector?.dimension !== 2 || vectorCollection.options?.vector?.metric !== 'cosine') {
+                await mongooseInstance.connection.dropCollection('vector');
+                await Vector.createCollection();
+            }
         });
 
         beforeEach(async function() {
@@ -714,23 +751,55 @@ describe('Mongoose Model API level tests', async () => {
             ]);
         });
 
-        after(async function() {
-            await mongooseInstance.connection.dropCollection('vector');
-        });
-
         it('supports updating $vector with save()', async function() {
             const vector = await Vector.findOne({ name: 'Test vector 1' }).orFail();
             vector.$vector = [1, 101];
             await vector.save();
 
-            const { $vector } = await Vector.findOne({ name: 'Test vector 1' }).orFail();
+            const { $vector } = await Vector
+                .findOne({ name: 'Test vector 1' })
+                .orFail();
             assert.deepStrictEqual($vector, [1, 101]);
+
+            let doc = await Vector
+                .findOne({ name: 'Test vector 1' })
+                .select({ name: 0 })
+                .orFail();
+            assert.deepStrictEqual(doc.$vector, [1, 101]);
+            assert.strictEqual(doc.name, undefined);
+
+            doc = await Vector
+                .findOne({ name: 'Test vector 1' })
+                .select({ $vector: 0 })
+                .orFail();
+            assert.strictEqual(doc.$vector, undefined);
+            assert.strictEqual(doc.name, 'Test vector 1');
         });
 
         it('supports sort() and similarity score with $meta with find()', async function() {
             const res = await Vector.find({}, null, { includeSimilarity: true }).sort({ $vector: { $meta: [1, 99] } });
             assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 1', 'Test vector 2']);
             assert.deepStrictEqual(res.map(doc => doc.get('$similarity')), [1, 0.51004946]);
+        });
+
+        it('supports sort() with includeSortVector in findOne()', async function() {
+            const doc = await Vector
+                .findOne({}, null, { includeSortVector: true })
+                .sort({ $vector: { $meta: [1, 99] } })
+                .orFail();
+            assert.deepStrictEqual(doc.name, 'Test vector 1');
+            assert.deepStrictEqual(doc.$sortVector, [1, 99]);
+            assert.deepStrictEqual(doc.get('$sortVector'), [1, 99]);
+        });
+
+        it('supports sort() with includeSortVector in find()', async function() {
+            const cursor = await Vector
+                .find({}, null, { includeSortVector: true })
+                .sort({ $vector: { $meta: [1, 99] } })
+                .cursor();
+            
+            await once(cursor, 'cursor');
+            assert.deepStrictEqual(await cursor.cursor.getSortVector(), [1, 99]);            
         });
 
         it('supports sort() and similarity score with $meta with findOne()', async function() {
@@ -808,7 +877,8 @@ describe('Mongoose Model API level tests', async () => {
                     { name: 'Test vector 2' },
                     { $setOnInsert: { $vector: [990, 1] } },
                     { returnDocument: 'after', upsert: true }
-                );
+                ).
+                orFail();
             assert.deepStrictEqual(res.$vector, [100, 1]);
             assert.strictEqual(res.name, 'Test vector 2');
 
@@ -817,7 +887,8 @@ describe('Mongoose Model API level tests', async () => {
                     { name: 'Test vector 3' },
                     { $setOnInsert: { $vector: [990, 1] } },
                     { returnDocument: 'after', upsert: true }
-                );
+                ).
+                orFail();
             assert.deepStrictEqual(res.$vector, [990, 1]);
             assert.strictEqual(res.name, 'Test vector 3');
         });
@@ -879,7 +950,6 @@ describe('Mongoose Model API level tests', async () => {
         it('contains vector options in listCollections() output with `explain`', async function() {
             const connection = mongooseInstance.connection;
             const collections = await connection.listCollections({ explain: true });
-            
             const collection = collections.find(collection => collection.name === 'vector');
             assert.ok(collection, 'Collection named "vector" not found');
             assert.deepStrictEqual(collection.options, {

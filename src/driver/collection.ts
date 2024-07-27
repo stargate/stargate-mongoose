@@ -29,10 +29,6 @@ import { DataAPIDeleteResult } from '../collections/collection';
 import { serialize } from '../client/serialize';
 import { setDefaultIdForUpsertv2 } from '../collections/utils';
 
-import { version } from 'mongoose';
-
-const IS_MONGOOSE_7 = version.startsWith('7.');
-
 type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null) => unknown;
 
 /**
@@ -131,28 +127,39 @@ export class Collection extends MongooseCollection {
         if (usePagination) {
             const batchSize = 20;
             const ops = [];
-            const ret = { acknowledged: true, insertedCount: 0, insertedIds: [] };
+            const ret = options?.returnDocumentResponses
+                ? { acknowledged: true, documentResponses: [] }
+                : { acknowledged: true, insertedCount: 0, insertedIds: [] };
             for (let i = 0; i < documents.length; i += batchSize) {
                 const batch = documents.slice(i, i + batchSize);
                 if (ordered) {
                     const {
                         acknowledged,
                         insertedCount,
-                        insertedIds
+                        insertedIds,
+                        documentResponses
                     } = await this.collection.insertMany(batch, options);
                     ret.acknowledged = ret.acknowledged && acknowledged;
-                    ret.insertedCount += insertedCount;
-                    ret.insertedIds = ret.insertedIds.concat(insertedIds);
+                    if (options?.returnDocumentResponses) {
+                        ret.documentResponses = ret.documentResponses?.concat(documentResponses ?? []);
+                    } else {
+                        ret.insertedCount += insertedCount;
+                        ret.insertedIds = ret.insertedIds!.concat(insertedIds);
+                    }
                 } else {
                     ops.push(this.collection.insertMany(batch, options));
                 }
             }
             if (!ordered) {
                 const results = await Promise.all(ops);
-                for (const { acknowledged, insertedCount, insertedIds } of results) {
+                for (const { acknowledged, insertedCount, insertedIds, documentResponses } of results) {
                     ret.acknowledged = ret.acknowledged && acknowledged;
-                    ret.insertedCount += insertedCount;
-                    ret.insertedIds = ret.insertedIds.concat(insertedIds);
+                    if (options?.returnDocumentResponses) {
+                        ret.documentResponses = ret.documentResponses?.concat(documentResponses ?? []);
+                    } else {
+                        ret.insertedCount += insertedCount;
+                        ret.insertedIds = ret.insertedIds!.concat(insertedIds);
+                    }
                 }
             }
 
@@ -270,6 +277,13 @@ export class Collection extends MongooseCollection {
     }
 
     /**
+     * Get the estimated number of documents in a collection based on collection metadata
+     */
+    estimatedDocumentCount() {
+        return this.collection.estimatedDocumentCount();
+    }
+
+    /**
      * Bulk write not supported.
      * @param ops
      * @param options
@@ -340,13 +354,6 @@ export class Collection extends MongooseCollection {
      */
     distinct() {
         throw new OperationNotSupportedError('distinct() Not Implemented');
-    }
-
-    /**
-     * Estimated document count operation not supported.
-     */
-    estimatedDocumentCount() {
-        throw new OperationNotSupportedError('estimatedDocumentCount() Not Implemented');
     }
 
     /**

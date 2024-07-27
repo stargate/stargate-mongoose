@@ -242,6 +242,65 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 assert.strictEqual(error.status.insertedIds[index], doc._id);
             });
         });
+        it('should error out when one of the docs in insertMany is invalid with ordered true and returnDocumentResponses', async () => {
+            const docList: { _id?: string, username: string }[] = Array.from({ length: 20 }, () => ({ 'username': 'id' }));
+            docList.forEach((doc, index) => {
+                doc._id = 'docml' + (index + 1);
+                doc.username = doc.username + (index + 1);
+            });
+            docList[10] = docList[9];
+            let error: any;
+            try {
+                await collection.insertMany(docList, { ordered: true, returnDocumentResponses: true });
+            } catch (e: any) {
+                error = e;
+            }
+            assert.ok(error);
+            assert.strictEqual(error.errors[0].message, 'Document already exists with the given _id');
+            assert.strictEqual(error.errors[0].errorCode, 'DOCUMENT_ALREADY_EXISTS');
+            assert.deepStrictEqual(error.status.documentResponses, [
+                { _id: 'docml1', status: 'OK' },
+                { _id: 'docml2', status: 'OK' },
+                { _id: 'docml3', status: 'OK' },
+                { _id: 'docml4', status: 'OK' },
+                { _id: 'docml5', status: 'OK' },
+                { _id: 'docml6', status: 'OK' },
+                { _id: 'docml7', status: 'OK' },
+                { _id: 'docml8', status: 'OK' },
+                { _id: 'docml9', status: 'OK' },
+                { _id: 'docml10', status: 'OK' },
+                { _id: 'docml10', status: 'ERROR', errorsIdx: 0 },
+                { _id: 'docml12', status: 'SKIPPED' },
+                { _id: 'docml13', status: 'SKIPPED' },
+                { _id: 'docml14', status: 'SKIPPED' },
+                { _id: 'docml15', status: 'SKIPPED' },
+                { _id: 'docml16', status: 'SKIPPED' },
+                { _id: 'docml17', status: 'SKIPPED' },
+                { _id: 'docml18', status: 'SKIPPED' },
+                { _id: 'docml19', status: 'SKIPPED' },
+                { _id: 'docml20', status: 'SKIPPED' }
+            ]);
+        });
+        it('should error out when one of the docs in insertMany is invalid with ordered false and returnDocumentResponses', async () => {
+            const docList: { _id?: string, username: string }[] = Array.from({ length: 20 }, () => ({ 'username': 'id' }));
+            docList.forEach((doc, index) => {
+                doc._id = 'docml' + (index + 1);
+                doc.username = doc.username + (index + 1);
+            });
+            docList[10] = docList[9];
+            let error: any;
+            try {
+                await collection.insertMany(docList, { ordered: false, returnDocumentResponses: true });
+            } catch (e: any) {
+                error = e;
+            }
+            assert.ok(error);
+            assert.strictEqual(error.errors[0].message, 'Document already exists with the given _id');
+            assert.strictEqual(error.errors[0].errorCode, 'DOCUMENT_ALREADY_EXISTS');
+            assert.equal(error.status.documentResponses.length, 20);
+            assert.ok(error.status.documentResponses.find(r => r._id === 'docml10' && r.status === 'ERROR' && r.errorsIdx === 0));
+            assert.ok(error.status.documentResponses.find(r => r._id === 'docml10' && r.status === 'OK'));
+        });
         it('should error out when one of the docs in insertMany is invalid with ordered false', async () => {
             const docList: { _id?: string, username: string }[] = Array.from({ length: 20 }, () => ({ 'username': 'id' }));
             docList.forEach((doc, index) => {
