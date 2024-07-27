@@ -25,6 +25,7 @@ import * as StargateMongooseDriver from '@/src/driver';
 import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '@/src/driver';
 import { Product, Cart, mongooseInstance } from '@/tests/mongooseFixtures';
+import { parseUri } from '@/src/collections/utils';
 
 const productSchema = new mongoose.Schema({
     name: String,
@@ -36,7 +37,6 @@ const productSchema = new mongoose.Schema({
 
 describe('Mongoose Model API level tests', async () => {
     let astraClient: Client | null;
-    let db: Db;
     before(async function () {
         if (testClient == null) {
             return this.skip();
@@ -45,8 +45,6 @@ describe('Mongoose Model API level tests', async () => {
         if (astraClient === null) {
             return this.skip();
         }
-
-        db = astraClient.db();
     });
     afterEach(async () => {
         await Promise.all([Product.deleteMany({}), Cart.deleteMany({})]);
@@ -296,7 +294,7 @@ describe('Mongoose Model API level tests', async () => {
         });
         it('API ops tests Model.db', async () => {
             const conn = Product.db as unknown as StargateMongooseDriver.Connection;
-            assert.strictEqual(conn.db.name, db.name);
+            assert.strictEqual(conn.db.name, parseUri(testClient.uri).keyspaceName);
         });
         it('API ops tests Model.deleteMany()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});

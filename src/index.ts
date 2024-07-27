@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { IndexingOptions, VectorOptions } from './collections';
+import { IndexingOptions, VectorOptions } from '@datastax/astra-db-ts';
 
-export * as collections from './collections';
 export * as driver from './driver';
-export * as client from './client';
 export * as logger from './logger';
 
 declare module 'mongodb' {
   interface CreateCollectionOptions {
     vector?: VectorOptions;
-    indexing?: IndexingOptions;
+    indexing?: IndexingOptions<any>;
   }
 }
 
@@ -34,6 +32,3 @@ declare module 'mongoose' {
 
   function setDriver<T = Mongoose>(driver: any): T;
 }
-
-import { createStargateUri, createAstraUri } from './collections';
-export { createStargateUri, createAstraUri };

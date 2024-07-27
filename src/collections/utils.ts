@@ -15,7 +15,6 @@
 import { Types } from 'mongoose';
 import url from 'url';
 import { logger } from '@/src/logger';
-import { HTTPClient, handleIfErrorResponse } from '@/src/client/httpClient';
 
 interface ParsedUri {
   baseUrl: string;
@@ -97,44 +96,6 @@ export function createAstraUri (
     return uri.toString();
 }
 
-/**
- * Create a JSON API connection URI while connecting to Open source JSON API
- * @param baseUrl the base URL of the JSON API
- * @param keyspace the keyspace to connect to
- * @param username the username to connect with
- * @param password the password to connect with
- * @param logLevel an winston log level (error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6)
-* @returns URL as string
- */
-export function createStargateUri(
-    baseUrl: string,
-    keyspace: string,
-    username: string,
-    password: string,
-    logLevel?: string
-) {
-    const uri = new url.URL(baseUrl);
-    uri.pathname = `/${keyspace}`;
-    if (logLevel) {
-        uri.searchParams.append('logLevel', logLevel);
-    }
-    const accessToken = getStargateAccessToken(username, password);
-    uri.searchParams.append('applicationToken', accessToken);
-    return uri.toString();
-}
-
-/**
- * Get an access token from Stargate (this is useful while connecting to open source JSON API)
- * @param username Username
- * @param password Password
- * @returns access token as string
- */
-export function getStargateAccessToken(
-    username: string,
-    password: string) {
-    return 'Cassandra:' + Buffer.from(username).toString('base64') + ':' + Buffer.from(password).toString('base64');
-}
-
 export class StargateAuthError extends Error {
     message: string;
     constructor(message: string) {
@@ -152,37 +113,6 @@ export const executeOperation = async (operation: () => Promise<unknown>) => {
     }
     return res;
 };
-
-export async function createNamespace(httpClient: HTTPClient, name: string) {
-    const data = {
-        createNamespace: {
-            name
-        }
-    };
-    parseUri(httpClient.baseUrl);
-    const response = await httpClient._request({
-        url: httpClient.baseUrl,
-        method: 'POST',
-        data
-    });
-    handleIfErrorResponse(response, data);
-    return response;
-}
-
-export async function dropNamespace(httpClient: HTTPClient, name: string) {
-    const data = {
-        dropNamespace: {
-            name
-        }
-    };
-    const response = await httpClient._request({
-        url: httpClient.baseUrl,
-        method: 'POST',
-        data
-    });
-    handleIfErrorResponse(response, data);
-    return response;
-}
 
 export function setDefaultIdForUpsert(command: Record<string, any>, replace?: boolean) {
     if (command.filter == null || command.options == null) {
@@ -216,7 +146,7 @@ export function setDefaultIdForUpsert(command: Record<string, any>, replace?: bo
     }
 }
 
-export function setDefaultIdForUpsertv2(filter: Record<string, any>, update: Record<string, any>, options: Record<string, any>, replace?: boolean) {
+export function setDefaultIdForUpsertv2(filter: Record<string, any>, update: Record<string, any>, options?: Record<string, any>, replace?: boolean) {
     if (filter == null || options == null) {
         return;
     }
