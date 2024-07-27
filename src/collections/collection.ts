@@ -273,9 +273,6 @@ export class Collection {
                 command,
                 findOneInternalOptionsKeys
             );
-            if (options != null && options.includeSortVector) {
-                resp.data.document.$sortVector = resp.status.sortVector;
-            }
             return resp.data.document;
         });
     }

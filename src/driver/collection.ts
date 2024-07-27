@@ -25,7 +25,7 @@ import {
     UpdateManyOptions,
     UpdateOneOptions
 } from '@/src/collections/options';
-import { DataAPIDeleteResult } from '../collections/collection';
+import { DeleteOneResult } from '@datastax/astra-db-ts';
 import { serialize } from '../client/serialize';
 import { setDefaultIdForUpsertv2 } from '../collections/utils';
 
@@ -232,7 +232,7 @@ export class Collection extends MongooseCollection {
      * @param options
      * @param callback
      */
-    deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<DataAPIDeleteResult>) {
+    deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<DeleteOneResult>) {
         if (options != null) {
             processSortOption(options);
         }
@@ -241,7 +241,7 @@ export class Collection extends MongooseCollection {
         const promise = this.collection.deleteOne(filter, options);
 
         if (callback != null) {
-            promise.then((res: DataAPIDeleteResult) => callback(null, res), (err: Error) => callback(err, null));
+            promise.then((res: DeleteOneResult) => callback(null, res), (err: Error) => callback(err, null));
         }
 
         return promise;
