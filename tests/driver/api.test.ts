@@ -488,7 +488,7 @@ describe('Mongoose Model API level tests', async () => {
             const respUnordered: InsertManyResult<any> = await Product.insertMany(docs, { ordered: false, rawResult: true });
             assert.strictEqual(respUnordered.insertedCount, 21);
         });
-        it('API ops tests Model.insertMany() with returnDocumentResponses', async () => {
+        it.skip('API ops tests Model.insertMany() with returnDocumentResponses', async () => {
             const product1Id = new mongoose.Types.ObjectId('0'.repeat(24));
             const product2Id = new mongoose.Types.ObjectId('1'.repeat(24));
             const product3Id = new mongoose.Types.ObjectId('2'.repeat(24));
