@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import assert from 'assert';
-import {Db} from '@/src/collections/db';
 import {Client} from '@/src/collections/client';
 import {
     testClient,
@@ -214,6 +213,18 @@ describe('Mongoose Model API level tests', async () => {
             }
             assert.ok(error);
             assert.strictEqual(error.errorDescriptors[0].message, 'Invalid filter expression: filter clause path (\'$where\') contains character(s) not allowed');
+        });
+        it('API ops tests db.dropCollection() and Model.createCollection()', async () => {
+            let collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
+            assert.ok(collections.includes(Product.collection.collectionName));
+            
+            await Product.db.dropCollection(Product.collection.collectionName);
+            collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
+            assert.ok(!collections.includes(Product.collection.collectionName));
+
+            await Product.createCollection();
+            collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
+            assert.ok(collections.includes(Product.collection.collectionName));
         });
         it('API ops tests Model.aggregate()', async () => {
             //Model.aggregate()

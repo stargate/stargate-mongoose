@@ -15,7 +15,6 @@
 import { IndexingOptions, VectorOptions } from '@datastax/astra-db-ts';
 
 export * as driver from './driver';
-export * as logger from './logger';
 
 declare module 'mongodb' {
   interface CreateCollectionOptions {

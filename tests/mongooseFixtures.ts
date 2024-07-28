@@ -76,9 +76,9 @@ before(async function connectMongooseFixtures() {
         };
         // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
         await mongooseInstance.connect(testClient.uri, options);
-        //const client = await testClient.client;
+        const client = await testClient.client;
         const keyspace = parseUri(testClient!.uri).keyspaceName;
-        //await createNamespace(client.httpClient, keyspace);
+        await mongooseInstance.connection.admin.createNamespace(keyspace);
     }
 });
 

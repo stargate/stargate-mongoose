@@ -16,7 +16,6 @@ import assert from 'assert';
 import mongoose from 'mongoose';
 import * as StargateMongooseDriver from '@/src/driver';
 import { testClient, TEST_COLLECTION_NAME } from '@/tests/fixtures';
-import { logger } from '@/src/logger';
 import { HTTPClient } from '@/src/client';
 import { Client } from '@/src/collections';
 import { Product, Cart, mongooseInstance } from '@/tests/mongooseFixtures';
@@ -30,7 +29,6 @@ describe('Driver based tests', async () => {
         }
         const astraClient = await testClient.client;
         if (astraClient === null) {
-            logger.info('Skipping tests for client: %s', testClient);
             return this.skip();
         }
         dbUri = testClient.uri;

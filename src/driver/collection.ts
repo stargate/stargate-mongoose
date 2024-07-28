@@ -14,18 +14,20 @@
 
 import { default as MongooseCollection } from 'mongoose/lib/collection';
 import {
+    InsertManyOptions,
+    SortOption
+} from '@/src/collections/options';
+import {
     DeleteOneOptions,
+    DeleteOneResult,
     FindOneAndDeleteOptions,
     FindOneAndReplaceOptions,
     FindOneAndUpdateOptions,
     FindOneOptions,
     FindOptions,
-    InsertManyOptions,
-    SortOption,
     UpdateManyOptions,
     UpdateOneOptions
-} from '@/src/collections/options';
-import { DeleteOneResult } from '@datastax/astra-db-ts';
+} from '@datastax/astra-db-ts';
 import { serialize } from '../client/serialize';
 import { setDefaultIdForUpsertv2 } from '../collections/utils';
 
@@ -119,6 +121,10 @@ export class Collection extends MongooseCollection {
         if (options != null && 'usePagination' in options) {
             options = { ...options };
             delete options.usePagination;
+        }
+        if (options != null && 'rawResult' in options) {
+            // Mongoose sets this option by default, make it a no-op
+            delete options.rawResult;
         }
 
         const ordered = options?.ordered ?? true;

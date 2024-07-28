@@ -14,7 +14,6 @@
 
 import { Types } from 'mongoose';
 import url from 'url';
-import { logger } from '@/src/logger';
 
 interface ParsedUri {
   baseUrl: string;
@@ -94,56 +93,6 @@ export function createAstraUri (
         uri.searchParams.append('authHeaderName', authHeaderName);
     }
     return uri.toString();
-}
-
-export class StargateAuthError extends Error {
-    message: string;
-    constructor(message: string) {
-        super(message);
-        this.message = message;
-    }
-}
-export const executeOperation = async (operation: () => Promise<unknown>) => {
-    let res: any = {};
-    try {
-        res = await operation();
-    } catch (e: any) {
-        logger.error(e?.stack || e?.message);
-        throw e;
-    }
-    return res;
-};
-
-export function setDefaultIdForUpsert(command: Record<string, any>, replace?: boolean) {
-    if (command.filter == null || command.options == null) {
-        return;
-    }
-    if (!command.options.upsert) {
-        return;
-    }
-    if ('_id' in command.filter) {
-        return;
-    }
-
-    if (replace) {
-        if (command.replacement != null && '_id' in command.replacement) {
-            return;
-        }
-        command.replacement._id = new Types.ObjectId();
-    } else {
-        if (command.update != null && _updateHasKey(command.update, '_id')) {
-            return;
-        }
-        if (command.update == null) {
-            command.update = {};
-        }
-        if (command.update.$setOnInsert == null) {
-            command.update.$setOnInsert = {};
-        }
-        if (!('_id' in command.update.$setOnInsert)) {
-            command.update.$setOnInsert._id = new Types.ObjectId();
-        }
-    }
 }
 
 export function setDefaultIdForUpsertv2(filter: Record<string, any>, update: Record<string, any>, options?: Record<string, any>, replace?: boolean) {
