@@ -95,7 +95,7 @@ export function createAstraUri (
     return uri.toString();
 }
 
-export function setDefaultIdForUpsertv2(filter: Record<string, any>, update: Record<string, any>, options?: Record<string, any>, replace?: boolean) {
+export function setDefaultIdForUpsert(filter: Record<string, any>, update: Record<string, any>, options?: Record<string, any>, replace?: boolean) {
     if (filter == null || options == null) {
         return;
     }
@@ -132,24 +132,4 @@ function _updateHasKey(update: Record<string, any>, key: string) {
         }
     }
     return false;
-}
-
-export function omit<T extends Record<string, any>>(obj: T | null | undefined, keys: string[]): T | null | undefined {
-    if (obj == null) {
-        return obj;
-    }
-    const hasKeys: string[] = [];
-    for (const key of keys) {
-        if (key in obj) {
-            hasKeys.push(key);
-        }
-    }
-    if (hasKeys.length === 0) {
-        return obj;
-    }
-    obj = { ...obj };
-    for (const key of hasKeys) {
-        delete obj[key];
-    }
-    return obj;
 }

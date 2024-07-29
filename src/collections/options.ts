@@ -20,16 +20,8 @@ export type SortOption = Record<string, SortDirection> |
   { $vectorize: { $meta: string } } |
   { $vectorize: string };
 
-export type ProjectionOption = Record<string, 1 | 0 | true | false | { $slice: number }>;
-
-class _InsertManyOptions {
-    ordered?: boolean = undefined;
-    usePagination?: boolean = undefined;
-    returnDocumentResponses?: boolean = undefined;
+export interface InsertManyOptions {
+    ordered?: boolean;
+    usePagination?: boolean;
+    returnDocumentResponses?: boolean;
 }
-
-export interface InsertManyOptions extends _InsertManyOptions {}
-
-export const insertManyInternalOptionsKeys: Set<string> = new Set(
-    Object.keys(new _InsertManyOptions)
-);

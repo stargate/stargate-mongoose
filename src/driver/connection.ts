@@ -71,17 +71,6 @@ export class Connection extends MongooseConnection {
         return db.listCollections(options);
     }
 
-    async listDatabases(): Promise<{ databases: string[] }> {
-        return this.db._httpClient._request({
-            url: this.baseUrl + '/' + this.baseApiPath,
-            method: 'POST',
-            data: JSON.stringify({ findNamespaces: {} }),
-            timeoutManager: this.db._httpClient.timeoutManager(120_000)
-        }).then((res: any) => {
-            return { databases: JSON.parse(res.body ?? '{}').status?.namespaces ?? [] };
-        });
-    }
-
     async openUri(uri: string, options: any) {
         let _fireAndForget = false;
         if (options && '_fireAndForget' in options) {
@@ -157,15 +146,6 @@ export class Connection extends MongooseConnection {
         this.readyState = STATES.connected;
         this.onOpen();
         return this;
-    }
-
-    async createDatabase() {
-        return this.db._httpClient._request({
-            url: this.baseUrl + '/' + this.baseApiPath,
-            method: 'POST',
-            data: JSON.stringify({ createNamespace: { name: this.keyspaceName } }),
-            timeoutManager: this.db._httpClient.timeoutManager(120_000)
-        });
     }
 
     setClient(client: DataAPIClient) {
