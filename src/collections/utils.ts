@@ -14,8 +14,6 @@
 
 import { Types } from 'mongoose';
 import url from 'url';
-import { logger } from '@/src/logger';
-import { HTTPClient, handleIfErrorResponse } from '@/src/client/httpClient';
 
 interface ParsedUri {
   baseUrl: string;
@@ -97,124 +95,35 @@ export function createAstraUri (
     return uri.toString();
 }
 
-/**
- * Create a JSON API connection URI while connecting to Open source JSON API
- * @param baseUrl the base URL of the JSON API
- * @param keyspace the keyspace to connect to
- * @param username the username to connect with
- * @param password the password to connect with
- * @param logLevel an winston log level (error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6)
-* @returns URL as string
- */
-export function createStargateUri(
-    baseUrl: string,
-    keyspace: string,
-    username: string,
-    password: string,
-    logLevel?: string
-) {
-    const uri = new url.URL(baseUrl);
-    uri.pathname = `/${keyspace}`;
-    if (logLevel) {
-        uri.searchParams.append('logLevel', logLevel);
-    }
-    const accessToken = getStargateAccessToken(username, password);
-    uri.searchParams.append('applicationToken', accessToken);
-    return uri.toString();
-}
-
-/**
- * Get an access token from Stargate (this is useful while connecting to open source JSON API)
- * @param username Username
- * @param password Password
- * @returns access token as string
- */
-export function getStargateAccessToken(
-    username: string,
-    password: string) {
-    return 'Cassandra:' + Buffer.from(username).toString('base64') + ':' + Buffer.from(password).toString('base64');
-}
-
-export class StargateAuthError extends Error {
-    message: string;
-    constructor(message: string) {
-        super(message);
-        this.message = message;
-    }
-}
-export const executeOperation = async (operation: () => Promise<unknown>) => {
-    let res: any = {};
-    try {
-        res = await operation();
-    } catch (e: any) {
-        logger.error(e?.stack || e?.message);
-        throw e;
-    }
-    return res;
-};
-
-export async function createNamespace(httpClient: HTTPClient, name: string) {
-    const data = {
-        createNamespace: {
-            name
-        }
-    };
-    parseUri(httpClient.baseUrl);
-    const response = await httpClient._request({
-        url: httpClient.baseUrl,
-        method: 'POST',
-        data
-    });
-    handleIfErrorResponse(response, data);
-    return response;
-}
-
-export async function dropNamespace(httpClient: HTTPClient, name: string) {
-    const data = {
-        dropNamespace: {
-            name
-        }
-    };
-    const response = await httpClient._request({
-        url: httpClient.baseUrl,
-        method: 'POST',
-        data
-    });
-    handleIfErrorResponse(response, data);
-    return response;
-}
-
-export function setDefaultIdForUpsert(command: Record<string, any>, replace?: boolean) {
-    if (command.filter == null || command.options == null) {
+export function setDefaultIdForUpsert(filter: Record<string, any>, update: Record<string, any>, options?: Record<string, any>, replace?: boolean) {
+    if (filter == null || options == null) {
         return;
     }
-    if (!command.options.upsert) {
+    if (!options.upsert) {
         return;
     }
-    if ('_id' in command.filter) {
+    if ('_id' in filter) {
         return;
     }
 
     if (replace) {
-        if (command.replacement != null && '_id' in command.replacement) {
+        if (update != null && '_id' in update) {
             return;
         }
-        command.replacement._id = new Types.ObjectId();
+        update._id = new Types.ObjectId();
     } else {
-        if (command.update != null && _updateHasKey(command.update, '_id')) {
+        if (update != null && _updateHasKey(update, '_id')) {
             return;
         }
-        if (command.update == null) {
-            command.update = {};
+        if (update.$setOnInsert == null) {
+            update.$setOnInsert = {};
         }
-        if (command.update.$setOnInsert == null) {
-            command.update.$setOnInsert = {};
-        }
-        if (!('_id' in command.update.$setOnInsert)) {
-            command.update.$setOnInsert._id = new Types.ObjectId();
+        if (!('_id' in update.$setOnInsert)) {
+            update.$setOnInsert._id = new Types.ObjectId();
         }
     }
 }
+
 
 function _updateHasKey(update: Record<string, any>, key: string) {
     for (const operator of Object.keys(update)) {
@@ -223,24 +132,4 @@ function _updateHasKey(update: Record<string, any>, key: string) {
         }
     }
     return false;
-}
-
-export function omit<T extends Record<string, any>>(obj: T | null | undefined, keys: string[]): T | null | undefined {
-    if (obj == null) {
-        return obj;
-    }
-    const hasKeys: string[] = [];
-    for (const key of keys) {
-        if (key in obj) {
-            hasKeys.push(key);
-        }
-    }
-    if (hasKeys.length === 0) {
-        return obj;
-    }
-    obj = { ...obj };
-    for (const key of hasKeys) {
-        delete obj[key];
-    }
-    return obj;
 }

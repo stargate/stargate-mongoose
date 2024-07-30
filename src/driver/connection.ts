@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Client } from '@/src/collections/client';
 import { Collection } from './collection';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
-import { executeOperation } from '../collections/utils';
-import { CreateCollectionOptions } from '../collections/options';
+import { parseUri } from '../collections/utils';
+
+import { CreateCollectionOptions, DataAPIClient, UsernamePasswordTokenProvider } from '@datastax/astra-db-ts';
 
 export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
@@ -48,55 +48,27 @@ export class Connection extends MongooseConnection {
     }
 
     async createCollection(name: string, options?: Record<string, any>) {
-        return executeOperation(async () => {
-            await this._waitForClient();
-            const db = this.client.db();
-            if (!this.client.httpClient.isAstra) {
-                db.createDatabase();
-            }
-            return db.createCollection(name, options);
-        });
+        await this._waitForClient();
+        const db = this.db;
+        return db.createCollection(name, { checkExists: false, ...options });
     }
 
     async dropCollection(name: string) {
-        return executeOperation(async () => {
-            await this._waitForClient();
-            const db = this.client.db();
-            return db.dropCollection(name);
-        });
+        await this._waitForClient();
+        const db = this.db;
+        return db.dropCollection(name);
     }
 
     async dropDatabase() {
-        return executeOperation(async () => {
-            await this._waitForClient();
-            const db = this.client.db();
-            return db.dropDatabase();
-        });
+        throw new Error('dropDatabase() Not Implemented');
     }
 
-    async listCollections(options: { explain: true }): Promise<Array<{ name: string, options?: CreateCollectionOptions }>>;
+    async listCollections(options: { explain: true }): Promise<Array<{ name: string, options?: CreateCollectionOptions<any> }>>;
 
     async listCollections(options?: { explain?: boolean }): Promise<Array<{ name: string }>> {
-        return executeOperation(async () => {
-            await this._waitForClient();
-            const db = this.client.db();
-            const res = await db.findCollections(options);
-            const collections = res?.status?.collections ?? [];
-            return collections.map((collection: string | Record<string, any>) => {
-                if (typeof collection === 'string') {
-                    return { name: collection };
-                }
-                return collection;
-            });
-        });
-    }
-
-    async listDatabases(): Promise<{ databases: string[] }> {
-        return executeOperation(async () => {
-            await this._waitForClient();
-            const { status } = await this.client.findNamespaces();
-            return { databases: status.namespaces };
-        });
+        await this._waitForClient();
+        const db = this.db;
+        return db.listCollections(options);
     }
 
     async openUri(uri: string, options: any) {
@@ -142,22 +114,50 @@ export class Connection extends MongooseConnection {
         this._closeCalled = false;
         this.readyState = STATES.connecting;
 
-        const client = await Client.connect(uri, options);
+        const { baseUrl, keyspaceName, applicationToken, baseApiPath } = parseUri(uri);
+
+        const client = options?.isAstra
+            ? new DataAPIClient(applicationToken)
+            : new DataAPIClient(
+                new UsernamePasswordTokenProvider(options?.username, options?.password),
+                { environment: 'dse' }
+            );
+        const dbOptions = {
+            namespace: keyspaceName,
+            dataApiPath: baseApiPath
+        };
+        const db = client.db(baseUrl, dbOptions);
+
+        const admin = options.isAstra
+            ? client.admin({ adminToken: applicationToken })
+            : db.admin({
+                environment: 'dse',
+                adminToken: new UsernamePasswordTokenProvider(options?.username, options?.password)
+            });
+
         this.client = client;
-        this.db = client.db();
+        this.db = db;
+        this.admin = admin;
+        this.db.name = keyspaceName;
+        this.baseUrl = baseUrl;
+        this.keyspaceName = keyspaceName;
+        this.baseApiPath = baseApiPath;
 
         this.readyState = STATES.connected;
         this.onOpen();
         return this;
     }
 
-    setClient(client: Client) {
-        this.client = client;
-        this.db = client.db();
+    setClient(client: DataAPIClient) {
+        throw new Error('SetClient not supported');
     }
 
     asPromise() {
         return this.initialConnection;
+    }
+
+    startSession() {
+        throw new Error('startSession() Not Implemented');
     }
 
     /**

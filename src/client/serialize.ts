@@ -1,66 +1,52 @@
-import { EJSON } from 'bson';
+import { Binary, UUID } from 'bson';
 import mongoose from 'mongoose';
 
-export function serialize(data: Record<string, any>, pretty?: boolean): string {
+export function serialize(data: Record<string, any>): Record<string, any> {
     return data != null
-        ? EJSON.stringify(
-            applyToBSONTransform(data),
-            (key, value) => serializeValue(value),
-            pretty ? '  ' : ''
-        )
+        ? applyTransforms(data)
         : data;
 }
 
 // Mongoose relies on certain values getting transformed into their BSON equivalents,
 // most notably subdocuments and document arrays. Otherwise `$push` on a document array fails.
-function applyToBSONTransform(data: Record<string, any> | any[]): Record<string, any> {
+function applyTransforms(data: any): any {
     if (data == null) {
         return data;
     }
+    if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean' || typeof data === 'bigint') {
+        return data;
+    }
     // @ts-ignore
-    if (shouldApplyToBSON(data) && typeof data.toBSON === 'function') {
+    if (typeof data.toBSON === 'function') {
         // @ts-ignore
         data = data.toBSON();
     }
-    if (Array.isArray(data)) {
-        return data.map(el => applyToBSONTransform(el));
-    }
-    for (const key of Object.keys(data)) {
-        if (data[key] == null) {
-            continue;
-        } else if (typeof data[key] === 'object') {
-            data[key] = applyToBSONTransform(data[key]);
+
+    if (data instanceof mongoose.Types.Decimal128) {
+        //Decimal128 handling
+        return Number(data.toString());
+    } else if (data instanceof Map) {
+        return Object.fromEntries(data.entries());
+    } else if (data instanceof Binary) {
+        if (data.sub_type === 3 || data.sub_type === 4) {
+            // UUIDs
+            return data.toString('hex').replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
         }
+        return data.toString('hex');
+    } else if (data instanceof UUID) {
+        return data.toString();
+    } else if (Array.isArray(data)) {
+        return data.map(el => applyTransforms(el));
+    } else if (data._bsontype == null) {
+        for (const key of Object.keys(data)) {
+            if (data[key] == null) {
+                continue;
+            } else if (typeof data[key] === 'object') {
+                data[key] = applyTransforms(data[key]);
+            }
+        }
+        return data;
     }
+
     return data;
-}
-
-function shouldApplyToBSON(value: any) {
-    return value?.isMongooseArrayProxy || value instanceof mongoose.Types.Subdocument;
-}
-
-function serializeValue(value: any): any {
-    if (value != null && typeof value === 'bigint') {
-        //BigInt handling
-        return Number(value);
-    } else if (value != null && typeof value === 'object') {
-        // ObjectId to strings
-        if (value.$oid) {
-            return value.$oid;
-        } else if (value.$numberDecimal) {
-            //Decimal128 handling
-            return Number(value.$numberDecimal);
-        } else if (value.$binary && (value.$binary.subType === '03' || value.$binary.subType === '04')) {
-            //UUID handling. Subtype 03 or 04 is UUID. Refer spec : https://bsonspec.org/spec.html
-            return Buffer.from(value.$binary.base64, 'base64').toString('hex')
-                .replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
-        }
-        //Date handling
-        else if (value.$date) {
-            // Use numbers instead of strings for dates
-            value.$date = new Date(value.$date).valueOf();
-        }
-    }
-    //all other values
-    return value;
 }
