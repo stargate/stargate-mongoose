@@ -64,4 +64,9 @@ export JSONTAG
 
 echo "Running with Stargate $SGTAG, JSON API $JSONTAG"
 
-docker-compose -f $SCRIPTS_HOME/docker-compose.yml up -d
+if which docker-compose
+then
+  docker-compose -f $SCRIPTS_HOME/docker-compose.yml up -d
+else
+  docker compose -f $SCRIPTS_HOME/docker-compose.yml up -d
+fi
