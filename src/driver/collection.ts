@@ -66,8 +66,13 @@ export class Collection extends MongooseCollection {
      * Count documents in the collection that match the given filter.
      * @param filter
      */
-    countDocuments(filter: Record<string, any>) {
-        return this.collection.countDocuments(filter);
+    async countDocuments(filter: Record<string, any>) {
+        const cursor = this.collection.find(filter, { projection: { '*': 0 } });
+        let count = 0;
+        while (await cursor.next() != null) {
+            ++count;
+        }
+        return count;
     }
 
     /**

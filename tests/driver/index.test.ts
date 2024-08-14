@@ -110,6 +110,33 @@ describe('Driver based tests', async () => {
             assert.deepEqual(names.sort(), ['Bill', 'John']);
         });
 
+        it('handles countDocuments', async () => {
+            const Person = mongooseInstance!.model('Person');
+            await Person.deleteMany({});
+            for (let i = 0; i < 150; ++i) {
+                await Person.insertMany([
+                    { name: 'Bill' },
+                    { name: 'John' },
+                    { name: 'Michael' },
+                    { name: 'Jennifer' },
+                    { name: 'Christopher' },
+                    { name: 'Jessica' },
+                    { name: 'Matthew' },
+                    { name: 'Amanda' },
+                    { name: 'David' },
+                    { name: 'Ashley' }
+                ]);
+            }
+
+            const start = Date.now();
+            let count = await Person.countDocuments();
+            assert.strictEqual(count, 1500);
+            count = await Person.countDocuments({ name: 'John' });
+            assert.strictEqual(count, 150);
+            count = await Person.countDocuments({ name: { $in: ['John', 'David'] } });
+            assert.strictEqual(count, 300);
+        });
+
         it('handles document deleteOne() and updateOne()', async () => {
             const Person = mongooseInstance!.model('Person');
             await Person.deleteMany({});
