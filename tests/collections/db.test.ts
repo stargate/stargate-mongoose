@@ -255,7 +255,7 @@ describe('StargateMongoose - collections.Db', async () => {
                 assert.strictEqual(err.errors.length, 1);
                 assert.strictEqual(
                     err.errors[0].message,
-                    'INVALID_ARGUMENT: Unknown namespace \'' + keyspaceName + '\', you must create it first.'
+                    'The provided namespace does not exist: Unknown namespace \'' + keyspaceName + '\', you must create it first'
                 );
             }
         });
@@ -296,7 +296,7 @@ describe('StargateMongoose - collections.Db', async () => {
                     assert.strictEqual(err.errors.length, 1);
                     assert.strictEqual(
                         err.errors[0].message,
-                        'INVALID_ARGUMENT: Unknown namespace \'' + keyspaceName + '\', you must create it first.'
+                        'The provided namespace does not exist: Unknown namespace \'' + keyspaceName + '\', you must create it first'
                     );
                 }
 
