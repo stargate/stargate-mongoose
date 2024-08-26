@@ -155,6 +155,13 @@ export const createCollectionOptionsKeys: Set<string> = new Set(
     Object.keys(new _CreateCollectionOptions)
 );
 
+type TableDataTypes = 'text' | 'int' | 'boolean' | 'bigint' | 'decimal' | 'double' | 'float' | 'smallint' | 'tinyint' | 'varint' | 'ascii';
+
+export interface CreateTableDefinition {
+    columns: Record<string, { type: TableDataTypes }>,
+    primaryKey: string
+}
+
 class _ListCollectionOptions {
     explain?: boolean = undefined;
 }

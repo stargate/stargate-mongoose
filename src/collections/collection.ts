@@ -386,6 +386,58 @@ export class Collection {
             };
         });
     }
+
+    /**
+     *
+     * @param column
+     * @param indexName
+     * @returns Promise
+     */
+    async createIndex(column: string, indexName: string) {
+        if (column == null) {
+            throw new TypeError(`Must specify a column when calling createIndex, got ${column}`);
+        }
+        if (indexName == null) {
+            throw new TypeError(`Must specify an indexName when calling createIndex, got ${indexName}`);
+        }
+        return executeOperation(async () => {
+            const command = {
+                addIndex: {
+                    column,
+                    indexName
+                }
+            };
+            return await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                null
+            );
+        });
+    }
+
+    /**
+     *
+     * @param column
+     * @param indexName
+     * @returns Promise
+     */
+    async dropIndex(indexName: string) {
+        if (indexName == null) {
+            throw new TypeError(`Must specify an indexName when calling dropIndex, got ${indexName}`);
+        }
+        return executeOperation(async () => {
+            const command = {
+                dropIndex: {
+                    indexName
+                }
+            };
+            return await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                null
+            );
+        });
+    }
 }
 
 export class StargateMongooseError extends Error {

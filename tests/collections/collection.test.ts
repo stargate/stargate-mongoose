@@ -2808,4 +2808,42 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(count, 0);
         });
     });
+
+    describe('tables and indexes', () => {
+        const tableName = 'test_table';
+
+        before(function () {
+            if (isAstra) {
+                return this.skip();
+            }
+            if (!process.env.TABLES_ENABLED) {
+                return this.skip();
+            }
+        });
+
+        before(async () => {
+            await db.createTable(tableName, {
+                primaryKey: 'id',
+                columns: { id: { type: 'text' }, age: { type: 'int' } }
+            });
+        });
+
+        after(async () => {
+            await db.dropTable(tableName);
+        });
+
+        it('can create and drop index', async function() {
+            await db.collection(tableName).createIndex('age', 'ageindex');
+
+            await db.collection(tableName).insertOne({ id: 'test', age: 42 });
+            const doc = await db.collection(tableName).findOne({ age: 42 });
+            assert.strictEqual(doc!.id, 'test');
+            
+            await db.collection(tableName).dropIndex('ageindex');
+            await assert.rejects(
+                () => db.collection(tableName).findOne({ age: 42 }),
+                /NO_INDEX_ERROR/
+            );
+        });
+    });
 });

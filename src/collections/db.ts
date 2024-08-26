@@ -16,6 +16,7 @@ import { HTTPClient } from '@/src/client';
 import {
     CreateCollectionOptions,
     createCollectionOptionsKeys,
+    CreateTableDefinition,
     ListCollectionOptions,
     listCollectionOptionsKeys
 } from './options';
@@ -80,6 +81,54 @@ export class Db {
                 this.httpBasePath,
                 command,
                 createCollectionOptionsKeys
+            );
+        });
+    }
+
+    /**
+     *
+     * @param name
+     * @param options
+     * @returns Promise
+     */
+    async createTable(name: string, definition: CreateTableDefinition) {
+        if (name == null) {
+            throw new TypeError(`Must specify a name when calling createTable, got ${name}`);
+        }
+        return executeOperation(async () => {
+            const command = {
+                createTable: {
+                    name,
+                    definition
+                }
+            };
+            return await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                null
+            );
+        });
+    }
+
+    /**
+     *
+     * @param name
+     * @returns Promise
+     */
+    async dropTable(name: string) {
+        if (name == null) {
+            throw new TypeError(`Must specify a name when calling dropTable, got ${name}`);
+        }
+        return executeOperation(async () => {
+            const command = {
+                dropTable: {
+                    name
+                }
+            };
+            return await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                null
             );
         });
     }

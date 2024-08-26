@@ -706,6 +706,38 @@ describe('Mongoose Model API level tests', async () => {
             // @ts-ignore
             assert.ok(databases.includes(mongooseInstance.connection.db.name));
         });
+        it('API ops tests createTable() dropTable() createIndex() dropIndex()', async function () {
+            if (testClient.isAstra) {
+                return this.skip();
+            }
+            if (!process.env.TABLES_ENABLED) {
+                return this.skip();
+            }
+            const name = 'test_table';
+            await mongooseInstance!.connection.createTable(
+                name,
+                {
+                    primaryKey: 'id',
+                    columns: { id: { type: 'text' }, age: { type: 'int' } }
+                }
+            );
+
+            await mongooseInstance!.connection.db.collection(name).createIndex('age', 'ageindex');
+
+            await mongooseInstance!.connection.db.collection(name).insertOne({ id: 'test', age: 42 });
+            let doc = await mongooseInstance!.connection.db.collection(name).findOne({ id: 'test' });
+            assert.equal(doc!.age, 42);
+            doc = await mongooseInstance!.connection.db.collection(name).findOne({ age: 42 });
+            assert.equal(doc!.id, 'test');
+
+            await mongooseInstance!.connection.db.collection(name).dropIndex('ageindex');
+
+            await mongooseInstance!.connection.dropTable(name);
+            await assert.rejects(
+                () => mongooseInstance!.connection.db.collection(name).insertOne({ id: 'test', age: 42 }),
+                /COLLECTION_NOT_EXIST/
+            );
+        });
     });
 
     describe('vector search', function() {
