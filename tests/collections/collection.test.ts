@@ -2829,6 +2829,9 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         });
 
         after(async () => {
+            if (isAstra || !process.env.TABLES_ENABLED) {
+                return;
+            }
             await db.dropTable(tableName);
         });
 
