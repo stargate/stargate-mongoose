@@ -386,6 +386,16 @@ export class Collection {
             };
         });
     }
+
+    async runCommand(command: Record<string, any>) {
+        return executeOperation(async () => {
+            return await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                null
+            );
+        });
+    }
 }
 
 export class StargateMongooseError extends Error {
