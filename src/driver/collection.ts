@@ -274,6 +274,25 @@ export class Collection extends MongooseCollection {
     }
 
     /**
+     *
+     * @param fieldOrSpec
+     * @param options
+     */
+    createIndex(fieldOrSpec: Record<string, any> | string, options: { name: string, [other: string]: any }) {
+        if (fieldOrSpec != null && typeof fieldOrSpec === 'object' && Object.keys(fieldOrSpec).length > 1) {
+            throw new TypeError('Can only index one key');
+        }
+        const field: string = typeof fieldOrSpec === 'string' ? fieldOrSpec : Object.keys(fieldOrSpec)[0];
+        if (typeof fieldOrSpec !== 'string') {
+            throw new TypeError('Invalid index specification');
+        }
+        if (typeof options?.name !== 'string') {
+            throw new TypeError('Must provide `name` option to `createIndex()`');
+        }
+        return this.collection.createIndex(field, options.name);
+    }
+
+    /**
      * Get the estimated number of documents in a collection based on collection metadata
      */
     estimatedDocumentCount() {
@@ -321,15 +340,6 @@ export class Collection extends MongooseCollection {
      */
     listIndexes(options?: any) {
         throw new OperationNotSupportedError('listIndexes() Not Implemented');
-    }
-
-    /**
-     * Create index not supported.
-     * @param fieldOrSpec
-     * @param options
-     */
-    createIndex(fieldOrSpec: any, options?: any) {
-        throw new OperationNotSupportedError('createIndex() Not Implemented');
     }
 
     /**

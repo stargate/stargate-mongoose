@@ -17,7 +17,7 @@ import { Collection } from './collection';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
 import { executeOperation } from '../collections/utils';
-import { CreateCollectionOptions } from '../collections/options';
+import { CreateCollectionOptions, CreateTableDefinition } from '../collections/options';
 
 export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
@@ -58,11 +58,43 @@ export class Connection extends MongooseConnection {
         });
     }
 
+    async createTable(name: string, definition: CreateTableDefinition) {
+        return executeOperation(async () => {
+            await this._waitForClient();
+            const db = this.client.db();
+            return db.createTable(name, definition);
+        });
+    }
+
+    async createIndex(column: string, indexName: string) {
+        return executeOperation(async () => {
+            await this._waitForClient();
+            const db = this.client.db();
+            return db.createIndex(column, indexName);
+        });
+    }
+
     async dropCollection(name: string) {
         return executeOperation(async () => {
             await this._waitForClient();
             const db = this.client.db();
             return db.dropCollection(name);
+        });
+    }
+
+    async dropTable(name: string) {
+        return executeOperation(async () => {
+            await this._waitForClient();
+            const db = this.client.db();
+            return db.dropTable(name);
+        });
+    }
+
+    async dropIndex(name: string) {
+        return executeOperation(async () => {
+            await this._waitForClient();
+            const db = this.client.db();
+            return db.dropTable(name);
         });
     }
 
