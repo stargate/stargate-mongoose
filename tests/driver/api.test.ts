@@ -706,6 +706,14 @@ describe('Mongoose Model API level tests', async () => {
             // @ts-ignore
             assert.ok(databases.includes(mongooseInstance.connection.db.name));
         });
+        it('API ops tests connection.runCommand()', async () => {
+            const res = await mongooseInstance!.connection.runCommand({ findCollections: {} });
+            assert.ok(res.status.collections.includes('carts'));
+        });
+        it('API ops tests collection.runCommand()', async () => {
+            const res = await mongooseInstance!.connection.db.collection('carts').runCommand({ find: {} });
+            assert.ok(Array.isArray(res.data.documents));
+        });
     });
 
     describe('vector search', function() {
