@@ -41,6 +41,7 @@ services:
       - QUARKUS_HTTP_ACCESS_LOG_ENABLED=${REQUESTLOG}
       - QUARKUS_LOG_LEVEL=${LOGLEVEL}
       - STARGATE_JSONAPI_OPERATIONS_DATABASE_CONFIG_CASSANDRA_END_POINTS=coordinator
+      - STARGATE_TABLES_ENABLED=true
     healthcheck:
       test: curl -f http://localhost:8181/stargate/health || exit 1
       interval: 5s
