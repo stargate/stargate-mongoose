@@ -63,7 +63,7 @@ function getBaseAPIPath(pathFromUrl?: string | null) {
 }
 
 /**
- * Create an Astra connection URI while connecting to Astra JSON API
+ * Create an Astra connection URI while connecting to Astra Data API
  * @param apiEndpoint the database API Endpoint of the Astra database
  * @param apiToken an Astra application token
  * @param namespace the namespace to connect to
@@ -98,8 +98,8 @@ export function createAstraUri (
 }
 
 /**
- * Create a JSON API connection URI while connecting to Open source JSON API
- * @param baseUrl the base URL of the JSON API
+ * Create a Data API connection URI while connecting to Open source Data API
+ * @param baseUrl the base URL of the Data API
  * @param keyspace the keyspace to connect to
  * @param username the username to connect with
  * @param password the password to connect with
@@ -124,7 +124,7 @@ export function createStargateUri(
 }
 
 /**
- * Get an access token from Stargate (this is useful while connecting to open source JSON API)
+ * Get an access token from Stargate (this is useful while connecting to open source Data API)
  * @param username Username
  * @param password Password
  * @returns access token as string

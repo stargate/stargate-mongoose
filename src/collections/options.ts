@@ -123,7 +123,7 @@ class _UpdateManyOptions {
 
 export interface UpdateManyOptions extends _UpdateManyOptions {}
 
-// `usePagination` is supported as user-specified option, but not passed to JSON API
+// `usePagination` is supported as user-specified option, but not passed to Data API
 export const updateManyInternalOptionsKeys: Set<string> = new Set(
     Object.keys(new _UpdateManyOptions).filter(key => key !== 'usePagination')
 );

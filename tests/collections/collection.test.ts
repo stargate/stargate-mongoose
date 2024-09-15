@@ -101,7 +101,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             }
             assert.ok(error);
             if (isAstra) {
-                //In Astra, it returns a 413 error prior to reaching the JSON API
+                //In Astra, it returns a 413 error prior to reaching the Data API
                 assert.strictEqual(error.errors[0].message, 'Request failed with status code 413');
             } else {
                 assert.strictEqual(
@@ -2575,7 +2575,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             }
             await assert.rejects(
                 async () => collection.find({}, { sort: { num: -1 }, limit: 22 }),
-                /JSON API can currently only return 20 documents with sort/
+                /Data API can currently only return 20 documents with sort/
             );
         });
         it('should findOne with sort', async () => {

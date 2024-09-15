@@ -231,7 +231,7 @@ export class HTTPClient {
         if (typeof window !== 'undefined') {
             throw new Error('not for use in a web browser');
         }
-        // set the baseURL to Astra, if the user provides a JSON API URL, use that instead.
+        // set the baseURL to Astra, if the user provides a Data API URL, use that instead.
         if (options.baseUrl) {
             this.baseUrl = options.baseUrl;
         } else {
