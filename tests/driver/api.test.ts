@@ -683,7 +683,7 @@ describe('Mongoose Model API level tests', async () => {
             let cursor = Product.find().sort({ product: 1 }).cursor();
             await assert.rejects(
                 cursor.next(),
-                /JSON API can currently only return 20 documents with sort/
+                /Data API can currently only return 20 documents with sort/
             );
 
             cursor = await Product.find().sort({ product: 1 }).limit(20).cursor();

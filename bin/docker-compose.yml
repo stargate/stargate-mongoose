@@ -22,8 +22,8 @@ services:
       timeout: 10s
       retries: 10
 
-  jsonapi:
-    image: stargateio/jsonapi:${JSONTAG}
+  dataapi:
+    image: stargateio/data-api:${DATAAPITAG}
     depends_on:
       coordinator:
         condition: service_healthy
