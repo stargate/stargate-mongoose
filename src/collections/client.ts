@@ -29,6 +29,7 @@ export interface ClientOptions {
   isAstra?: boolean;
   logSkippedOptions?: boolean;
   useHTTP2?: boolean;
+  featureFlags?: string[];
 }
 
 export class Client {
@@ -57,7 +58,8 @@ export class Client {
             password: options.password,
             isAstra: options.isAstra,
             logSkippedOptions: options.logSkippedOptions,
-            useHTTP2: options.useHTTP2
+            useHTTP2: options.useHTTP2,
+            featureFlags: options.featureFlags
         });
         this.dbs = new Map<string, Db>();
     }
@@ -79,7 +81,8 @@ export class Client {
             password: options?.password,
             isAstra: options?.isAstra,
             logSkippedOptions: options?.logSkippedOptions,
-            useHTTP2: options?.useHTTP2
+            useHTTP2: options?.useHTTP2,
+            featureFlags: options?.featureFlags
         });
         await client.connect().catch(err => {
             // If `connect()` throws an error, there's no way for the calling code to

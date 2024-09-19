@@ -48,6 +48,7 @@ interface APIClientOptions {
   isAstra?: boolean;
   logSkippedOptions?: boolean;
   useHTTP2?: boolean;
+  featureFlags?: string[]
 }
 
 export interface APIResponse {
@@ -135,7 +136,7 @@ class HTTP2Session {
         }
     }
 
-    request(path: string, token: string, body: Record<string, any>, timeout: number): Promise<{ status: number, data: Record<string, any> }> { 
+    request(path: string, token: string, body: Record<string, any>, timeout: number, additionalParams: Record<string, any>): Promise<{ status: number, data: Record<string, any> }> { 
         return new Promise((resolve, reject) => {
             if (!this.closed && this.session.closed) {
                 this._createSession();
@@ -160,6 +161,7 @@ class HTTP2Session {
             );
 
             const req: http2.ClientHttp2Stream = this.session.request({
+                ...additionalParams,
                 ':path': path,
                 ':method': 'POST',
                 token
@@ -225,6 +227,7 @@ export class HTTPClient {
     logSkippedOptions: boolean;
     http2Session?: HTTP2Session;
     closed: boolean;
+    featureFlagHeaders: Record<string, 'true'>;
 
     constructor(options: APIClientOptions) {
         // do not support usage in browsers
@@ -250,6 +253,10 @@ export class HTTPClient {
 
         this.closed = false;
         this.origin = new URL(this.baseUrl).origin;
+
+        // Convert array of strings to object with each key set to `'true'`
+        const featureFlags = Array.isArray(options.featureFlags) ? options.featureFlags : [];
+        this.featureFlagHeaders = featureFlags.reduce((obj, key) => Object.assign(obj, { [key]: 'true' }), {});
 
         const useHTTP2 = options.useHTTP2 == null ? true : !!options.useHTTP2;
         if (useHTTP2) {
@@ -318,7 +325,8 @@ export class HTTPClient {
                     requestInfo.url.replace(this.origin, ''),
                     this.applicationToken,
                     requestInfo.data,
-                    requestInfo.timeout || DEFAULT_TIMEOUT
+                    requestInfo.timeout || DEFAULT_TIMEOUT,
+                    this.featureFlagHeaders
                 )
                 : await axiosAgent({
                     url: requestInfo.url,
@@ -327,7 +335,8 @@ export class HTTPClient {
                     method: requestInfo.method || DEFAULT_METHOD,
                     timeout: requestInfo.timeout || DEFAULT_TIMEOUT,
                     headers: {
-                        [this.authHeaderName]: this.applicationToken
+                        ...this.featureFlagHeaders,
+                        [this.authHeaderName]: this.applicationToken,
                     }
                 });
 
@@ -360,7 +369,8 @@ export class HTTPClient {
         path: string,
         token: string,
         body: Record<string, any>,
-        timeout: number
+        timeout: number,
+        additionalParams: Record<string, any>
     ): Promise<{ status: number, data: Record<string, any> }> {
         // Should never happen, but good to have a readable error just in case
         if (this.http2Session == null) {
@@ -375,7 +385,7 @@ export class HTTPClient {
             this._createHTTP2Session();
         }
 
-        return await this.http2Session.request(path, token, body, timeout);
+        return await this.http2Session.request(path, token, body, timeout, additionalParams);
     }
 
     async executeCommandWithUrl(url: string, data: Record<string, any>, optionsToRetain: Set<string> | null) {
