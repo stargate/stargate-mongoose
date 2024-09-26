@@ -61,7 +61,7 @@ function getBaseAPIPath(pathFromUrl?: string | null) {
 }
 
 /**
- * Create an Astra connection URI while connecting to Astra JSON API
+ * Create an Astra connection URI while connecting to Astra Data API
  * @param apiEndpoint the database API Endpoint of the Astra database
  * @param apiToken an Astra application token
  * @param namespace the namespace to connect to

@@ -101,7 +101,7 @@ describe('Options tests', async () => {
             // @ts-ignore
             const product1 = new Product({ name: 'Product 1', price: 10, isCertified: true });
             await product1.save();
-            //runValidations is not a flag supported by JSON API, so it should be removed by stargate-mongoose
+            //runValidations is not a flag supported by Data API, so it should be removed by stargate-mongoose
             await Product.deleteOne({ name: 'Product 1' }, { runValidations: true } as unknown as Record<string, never>);
             const product1Deleted = await Product.findOne({ name: 'Product 1' });
             assert.strictEqual(product1Deleted, null);

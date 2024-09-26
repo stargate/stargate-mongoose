@@ -71,6 +71,12 @@ export class Connection extends MongooseConnection {
         return db.listCollections(options);
     }
 
+    async runCommand(command: Record<string, any>): Promise<unknown> {
+        await this._waitForClient();
+        const db = this.db;
+        return db.command(command);
+    }
+
     async openUri(uri: string, options: any) {
         let _fireAndForget = false;
         if (options && '_fireAndForget' in options) {

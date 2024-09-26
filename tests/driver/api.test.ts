@@ -704,6 +704,56 @@ describe('Mongoose Model API level tests', async () => {
             const res = await Product.db.collection('products').findOne();
             assert.equal(res!.name, 'Product 1');
         });
+        it.skip('API ops tests connection.listDatabases()', async () => {
+            const { databases } = await mongooseInstance!.connection.listDatabases();
+            assert.ok(Array.isArray(databases));
+            // @ts-ignore
+            assert.ok(mongooseInstance.connection.db.name);
+            // @ts-ignore
+            assert.ok(databases.includes(mongooseInstance.connection.db.name));
+        });
+        it('API ops tests connection.runCommand()', async () => {
+            const res = await mongooseInstance!.connection.runCommand({ findCollections: {} });
+            assert.ok(res.status.collections.includes('carts'));
+        });
+        it('API ops tests collection.runCommand()', async () => {
+            console.log('XT', mongooseInstance!.connection.db.collection('carts'));
+            const res = await mongooseInstance!.connection.db.collection('carts')._httpClient.executeCommand({ find: {} });
+            assert.ok(Array.isArray(res.data.documents));
+        });
+        it('API ops tests feature flags', async function() {
+            if (testClient!.isAstra) {
+                return this.skip();
+            }
+            const mongoose = new mongooseInstance.Mongoose();
+            mongoose.setDriver(StargateMongooseDriver);
+            mongoose.set('autoCreate', false);
+            mongoose.set('autoIndex', false);
+            const options = {
+                username: process.env.STARGATE_USERNAME,
+                password: process.env.STARGATE_PASSWORD,
+                featureFlags: ['Feature-Flag-tables']
+            };
+            await mongoose.connect(testClient!.uri, options as mongoose.ConnectOptions);
+            const res = await mongoose.connection.runCommand({
+                createTable: {
+                    name: 'bots',
+                    definition: {
+                        primaryKey: '_id',
+                        columns: {
+                            _id: {
+                                type: 'text'
+                            },
+                            name: {
+                                type: 'text'
+                            }
+                        }
+                    }
+                }
+            });
+            assert.ok(res.status.ok);
+            await mongoose.disconnect();
+        });
     });
 
     describe('vector search', function() {

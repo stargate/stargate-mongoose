@@ -286,6 +286,14 @@ export class Collection extends MongooseCollection {
     }
 
     /**
+     * Run an arbitrary command against this collection's http client
+     * @param command
+     */
+    runCommand(command: Record<string, any>) {
+        return this.collection._httpClient.executeCommand(command);
+    }
+
+    /**
      * Bulk write not supported.
      * @param ops
      * @param options
