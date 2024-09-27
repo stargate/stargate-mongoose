@@ -141,7 +141,7 @@ export class Connection extends MongooseConnection {
             dataApiPath: baseApiPath
         };
         const db = client.db(baseUrl, dbOptions);
-        Object.assign(db._httpClient.baseHeaders, featureFlags);
+        Object.assign((db as any)._httpClient.baseHeaders, featureFlags);
 
         const admin = options.isAstra
             ? client.admin({ adminToken: applicationToken })
