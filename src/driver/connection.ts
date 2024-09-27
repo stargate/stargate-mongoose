@@ -126,7 +126,7 @@ export class Connection extends MongooseConnection {
 
         const { baseUrl, keyspaceName, applicationToken, baseApiPath } = parseUri(uri);
 
-        const featureFlags: Record<string, 'true'>| null = Array.isArray(options && options.featureFlags)
+        const featureFlags: Record<string, 'true'> | null = Array.isArray(options && options.featureFlags)
             ? options.featureFlags.reduce((obj: Record<string, 'true'>, key: string) => Object.assign(obj, { [key]: 'true' }), {})
             : null;
         this.featureFlags = featureFlags;
@@ -143,6 +143,10 @@ export class Connection extends MongooseConnection {
         };
         const db = client.db(baseUrl, dbOptions);
         Object.assign((db as any)._httpClient.baseHeaders, featureFlags);
+
+        for (const collection of Object.values(this.collections)) {
+            delete collection._collection;
+        }
 
         const admin = options.isAstra
             ? client.admin({ adminToken: applicationToken })

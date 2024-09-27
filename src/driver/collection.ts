@@ -46,12 +46,18 @@ export class Collection extends MongooseCollection {
             delete options.modelName;
         }
         this._closed = false;
+        this._collection = null;
     }
 
     //getter for collection
     get collection() {
+        if (this._collection != null) {
+            return this._collection;
+        }
+        // Cache because @datastax/astra-db-ts doesn't
         const collection = this.conn.db.collection(this.name);
         Object.assign(collection._httpClient.baseHeaders, this.conn.featureFlags);
+        this._collection = collection;
         return collection;
     }
 
