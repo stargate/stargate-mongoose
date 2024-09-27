@@ -144,7 +144,8 @@ export class Connection extends MongooseConnection {
         const db = client.db(baseUrl, dbOptions);
         Object.assign((db as any)._httpClient.baseHeaders, featureFlags);
 
-        for (const collection of Object.values(this.collections)) {
+        const collections: Collection[] = Object.values(this.collections);
+        for (const collection of collections) {
             delete collection._collection;
         }
 
