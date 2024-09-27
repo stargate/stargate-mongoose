@@ -17,7 +17,11 @@ import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
 import { parseUri } from '../collections/utils';
 
-import { CreateCollectionOptions, DataAPIClient, UsernamePasswordTokenProvider } from '@datastax/astra-db-ts';
+import {
+    CreateCollectionOptions,
+    DataAPIClient,
+    UsernamePasswordTokenProvider
+} from '@datastax/astra-db-ts';
 
 export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
@@ -122,6 +126,10 @@ export class Connection extends MongooseConnection {
 
         const { baseUrl, keyspaceName, applicationToken, baseApiPath } = parseUri(uri);
 
+        const featureFlags: Record<string, 'true'>| null = Array.isArray(options && options.featureFlags)
+            ? options.featureFlags.reduce((obj: Record<string, 'true'>, key: string) => Object.assign(obj, { [key]: 'true' }), {})
+            : null;
+
         const client = options?.isAstra
             ? new DataAPIClient(applicationToken)
             : new DataAPIClient(
@@ -133,6 +141,7 @@ export class Connection extends MongooseConnection {
             dataApiPath: baseApiPath
         };
         const db = client.db(baseUrl, dbOptions);
+        Object.assign(db._httpClient.baseHeaders, featureFlags);
 
         const admin = options.isAstra
             ? client.admin({ adminToken: applicationToken })
