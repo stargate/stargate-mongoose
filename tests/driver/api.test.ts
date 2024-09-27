@@ -717,7 +717,6 @@ describe('Mongoose Model API level tests', async () => {
             assert.ok(res.status.collections.includes('carts'));
         });
         it('API ops tests collection.runCommand()', async () => {
-            console.log('XT', mongooseInstance!.connection.db.collection('carts'));
             const res = await mongooseInstance!.connection.db.collection('carts')._httpClient.executeCommand({ find: {} });
             assert.ok(Array.isArray(res.data.documents));
         });
@@ -752,6 +751,10 @@ describe('Mongoose Model API level tests', async () => {
                 }
             });
             assert.ok(res.status.ok);
+
+            const Bot = mongoose.model('Bot', new mongoose.Schema({ name: String }), 'bots');
+            await Bot.findOne();
+
             await mongoose.disconnect();
         });
     });

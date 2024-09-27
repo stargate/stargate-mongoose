@@ -50,7 +50,9 @@ export class Collection extends MongooseCollection {
 
     //getter for collection
     get collection() {
-        return this.conn.db.collection(this.name);
+        const collection = this.conn.db.collection(this.name);
+        Object.assign(collection._httpClient.baseHeaders, this.conn.featureFlags);
+        return collection;
     }
 
     /**

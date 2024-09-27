@@ -129,6 +129,7 @@ export class Connection extends MongooseConnection {
         const featureFlags: Record<string, 'true'>| null = Array.isArray(options && options.featureFlags)
             ? options.featureFlags.reduce((obj: Record<string, 'true'>, key: string) => Object.assign(obj, { [key]: 'true' }), {})
             : null;
+        this.featureFlags = featureFlags;
 
         const client = options?.isAstra
             ? new DataAPIClient(applicationToken)
