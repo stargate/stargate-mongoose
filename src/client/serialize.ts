@@ -54,6 +54,8 @@ function serializeValue(value: any): any {
             //UUID handling. Subtype 03 or 04 is UUID. Refer spec : https://bsonspec.org/spec.html
             return Buffer.from(value.$binary.base64, 'base64').toString('hex')
                 .replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
+        } else if (value.$binary) {
+            return { $binary: value.$binary.base64 };
         }
         //Date handling
         else if (value.$date) {

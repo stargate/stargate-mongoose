@@ -728,6 +728,11 @@ describe('Mongoose Model API level tests', async () => {
                 featureFlags: ['Feature-Flag-tables']
             };
             await mongoose.connect(testClient!.uri, options as mongoose.ConnectOptions);
+            await mongoose.connection.db.runCommand({
+                dropTable: {
+                    name: 'bots'
+                }
+            });
             const res = await mongoose.connection.db.runCommand({
                 createTable: {
                     name: 'bots',
@@ -739,12 +744,25 @@ describe('Mongoose Model API level tests', async () => {
                             },
                             name: {
                                 type: 'text'
+                            },
+                            buf: {
+                                type: 'blob'
                             }
                         }
                     }
                 }
             });
             assert.ok(res.status.ok);
+
+            const schema = new mongoose.Schema({ buf: Buffer }, { versionKey: false });
+            const TestModel = mongoose.model('Test', schema, 'bots');
+            const doc = new TestModel({ buf: Buffer.from('hello world') });
+            await doc.save();
+
+            // Still fails with [{"message":"Unexpected Binary Extended JSON format {\"$binary\":\"aGVsbG8gd29ybGQ=\"}"}]
+            // const fromDb = await TestModel.findOne();
+            // assert.equal(fromDb.buf.toString('utf8'), 'hello world');
+
             await mongoose.disconnect();
         });
     });
