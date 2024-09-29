@@ -166,7 +166,8 @@ class HTTP2Session {
                 ':method': 'POST',
                 token
             });
-            req.write(serialize(body), 'utf8');
+            const dataStr = serialize(body);
+            req.write(dataStr, 'utf8');
             req.end();
 
             let status = 0;
