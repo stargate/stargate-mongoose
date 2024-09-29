@@ -759,9 +759,8 @@ describe('Mongoose Model API level tests', async () => {
             const doc = new TestModel({ buf: Buffer.from('hello world') });
             await doc.save();
 
-            // Still fails with [{"message":"Unexpected Binary Extended JSON format {\"$binary\":\"aGVsbG8gd29ybGQ=\"}"}]
-            // const fromDb = await TestModel.findOne();
-            // assert.equal(fromDb.buf.toString('utf8'), 'hello world');
+            const fromDb = await TestModel.findOne();
+            assert.equal(fromDb.buf.toString('utf8'), 'hello world');
 
             await mongoose.disconnect();
         });
