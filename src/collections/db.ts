@@ -110,6 +110,19 @@ export class Db {
         });
     }
 
+    async listTables() {
+        return executeOperation(async () => {
+            const command = {
+                listTables: {}
+            };
+            return await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                null
+            );
+        });
+    }
+
     /**
      *
      * @param name

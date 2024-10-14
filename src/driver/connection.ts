@@ -66,6 +66,15 @@ export class Connection extends MongooseConnection {
         });
     }
 
+    async listTables(): Promise<string[]> {
+        return executeOperation(async () => {
+            await this._waitForClient();
+            const db = this.client.db();
+            const res: { status: { tables: string[] } } = await db.listTables();
+            return res.status.tables;
+        });
+    }
+
     async createIndex(column: string, indexName: string) {
         return executeOperation(async () => {
             await this._waitForClient();
