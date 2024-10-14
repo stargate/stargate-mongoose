@@ -29,6 +29,7 @@ export interface ClientOptions {
   isAstra?: boolean;
   logSkippedOptions?: boolean;
   useHTTP2?: boolean;
+  featureFlags?: string[];
 }
 
 export class Client {
@@ -57,14 +58,15 @@ export class Client {
             password: options.password,
             isAstra: options.isAstra,
             logSkippedOptions: options.logSkippedOptions,
-            useHTTP2: options.useHTTP2
+            useHTTP2: options.useHTTP2,
+            featureFlags: options.featureFlags
         });
         this.dbs = new Map<string, Db>();
     }
 
     /**
-   * Setup a connection to the Astra/Stargate JSON API
-   * @param uri an Stargate JSON API uri (Eg. http://localhost:8181/v1/testks1) where testks1 is the name of the keyspace/Namespace which should always be the last part of the URL
+   * Setup a connection to the Astra/Stargate Data API
+   * @param uri an Stargate Data API uri (Eg. http://localhost:8181/v1/testks1) where testks1 is the name of the keyspace/Namespace which should always be the last part of the URL
    * @returns MongoClient
    */
     static async connect(uri: string, options?: ClientOptions | null): Promise<Client> {
@@ -79,7 +81,8 @@ export class Client {
             password: options?.password,
             isAstra: options?.isAstra,
             logSkippedOptions: options?.logSkippedOptions,
-            useHTTP2: options?.useHTTP2
+            useHTTP2: options?.useHTTP2,
+            featureFlags: options?.featureFlags
         });
         await client.connect().catch(err => {
             // If `connect()` throws an error, there's no way for the calling code to
@@ -92,7 +95,7 @@ export class Client {
     }
 
     /**
-   * Connect the MongoClient instance to JSON API (create Namespace automatically when the 'createNamespaceOnConnect' flag is set to true)
+   * Connect the MongoClient instance to Data API (create Namespace automatically when the 'createNamespaceOnConnect' flag is set to true)
    * @returns a MongoClient instance
    */
     async connect(): Promise<Client> {
@@ -106,8 +109,8 @@ export class Client {
     }
 
     /**
-   * Use a JSON API keyspace
-   * @param dbName the JSON API keyspace to connect to
+   * Use a Data API keyspace
+   * @param dbName the Data API keyspace to connect to
    * @returns Db
    */
     db(dbName?: string): Db {

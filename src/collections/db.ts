@@ -185,6 +185,16 @@ export class Db {
             );
         });
     }
+
+    async runCommand(command: Record<string, any>) {
+        return executeOperation(async () => {
+            return await this.httpClient.executeCommandWithUrl(
+                '/' + this.name,
+                command,
+                null
+            );
+        });
+    }
 }
 
 export class StargateAstraError extends Error {

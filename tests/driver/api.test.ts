@@ -683,7 +683,7 @@ describe('Mongoose Model API level tests', async () => {
             let cursor = Product.find().sort({ product: 1 }).cursor();
             await assert.rejects(
                 cursor.next(),
-                /JSON API can currently only return 20 documents with sort/
+                /Data API can currently only return 20 documents with sort/
             );
 
             cursor = await Product.find().sort({ product: 1 }).limit(20).cursor();
@@ -737,6 +737,47 @@ describe('Mongoose Model API level tests', async () => {
                 () => mongooseInstance!.connection.db.collection(name).insertOne({ id: 'test', age: 42 }),
                 /COLLECTION_NOT_EXIST/
             );
+        });
+        it('API ops tests connection.runCommand()', async () => {
+            const res = await mongooseInstance!.connection.runCommand({ findCollections: {} });
+            assert.ok(res.status.collections.includes('carts'));
+        });
+        it('API ops tests collection.runCommand()', async () => {
+            const res = await mongooseInstance!.connection.db.collection('carts').runCommand({ find: {} });
+            assert.ok(Array.isArray(res.data.documents));
+        });
+        it('API ops tests feature flags', async function() {
+            if (testClient!.isAstra) {
+                return this.skip();
+            }
+            const mongoose = new mongooseInstance.Mongoose();
+            mongoose.setDriver(StargateMongooseDriver);
+            mongoose.set('autoCreate', false);
+            mongoose.set('autoIndex', false);
+            const options = {
+                username: process.env.STARGATE_USERNAME,
+                password: process.env.STARGATE_PASSWORD,
+                featureFlags: ['Feature-Flag-tables']
+            };
+            await mongoose.connect(testClient!.uri, options as mongoose.ConnectOptions);
+            const res = await mongoose.connection.db.runCommand({
+                createTable: {
+                    name: 'bots',
+                    definition: {
+                        primaryKey: '_id',
+                        columns: {
+                            _id: {
+                                type: 'text'
+                            },
+                            name: {
+                                type: 'text'
+                            }
+                        }
+                    }
+                }
+            });
+            assert.ok(res.status.ok);
+            await mongoose.disconnect();
         });
     });
 

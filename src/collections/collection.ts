@@ -431,6 +431,11 @@ export class Collection {
                     indexName
                 }
             };
+        });
+    }
+    
+    async runCommand(command: Record<string, any>) {
+        return executeOperation(async () => {
             return await this.httpClient.executeCommandWithUrl(
                 this.httpBasePath,
                 command,
