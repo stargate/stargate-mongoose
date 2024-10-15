@@ -235,7 +235,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 error = e;
             }
             assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Failed to insert document with _id \'docml10\': Document already exists with the given _id');
+            assert.strictEqual(error.errors[0].message, 'Failed to insert document with _id docml10: Document already exists with the given _id');
             assert.strictEqual(error.errors[0].errorCode, 'DOCUMENT_ALREADY_EXISTS');
             assert.strictEqual(error.status.insertedIds.length, 10);
             docList.slice(0, 10).forEach((doc, index) => {
@@ -315,7 +315,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 error = e;
             }
             assert.ok(error);
-            assert.strictEqual(error.errors[0].message, 'Failed to insert document with _id \'docml10\': Document already exists with the given _id');
+            assert.strictEqual(error.errors[0].message, 'Failed to insert document with _id docml10: Document already exists with the given _id');
             assert.strictEqual(error.errors[0].errorCode, 'DOCUMENT_ALREADY_EXISTS');
             assert.strictEqual(error.status.insertedIds.length, 19);
             //check if response insertedIds contains all the docs except the one that failed
