@@ -309,4 +309,37 @@ describe('StargateMongoose - collections.Db', async () => {
             }
         });
     });
+
+    describe('tables', function () {
+        before(function () {
+            if (isAstra) {
+                return this.skip();
+            }
+            if (!process.env.TABLES_ENABLED) {
+                return this.skip();
+            }
+        });
+
+        it('should create and drop a table', async () => {
+            const name = TEST_COLLECTION_NAME + '_table';
+            const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
+            await db.createTable(
+                name,
+                {
+                    primaryKey: 'id',
+                    columns: { id: { type: 'text' }, age: { type: 'int' } }
+                }
+            );
+
+            await db.collection(name).insertOne({ id: 'test', age: 42 });
+            const doc = await db.collection(name).findOne({ id: 'test' });
+            assert.equal(doc!.age, 42);
+
+            await db.dropTable(name);
+            await assert.rejects(
+                () => db.collection(name).insertOne({ id: 'test', age: 42 }),
+                /COLLECTION_NOT_EXIST/
+            );
+        });
+    });
 });

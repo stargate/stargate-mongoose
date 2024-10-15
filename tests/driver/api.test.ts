@@ -706,6 +706,56 @@ describe('Mongoose Model API level tests', async () => {
             // @ts-ignore
             assert.ok(databases.includes(mongooseInstance.connection.db.name));
         });
+        it('API ops tests createTable() listTables() dropTable() createIndex() dropIndex()', async function () {
+            if (testClient.isAstra) {
+                return this.skip();
+            }
+            if (!process.env.TABLES_ENABLED) {
+                return this.skip();
+            }
+
+            const mongoose = new mongooseInstance.Mongoose();
+            mongoose.setDriver(StargateMongooseDriver);
+            mongoose.set('autoCreate', false);
+            mongoose.set('autoIndex', false);
+            const options = {
+                username: process.env.STARGATE_USERNAME,
+                password: process.env.STARGATE_PASSWORD,
+                featureFlags: ['Feature-Flag-tables']
+            };
+            await mongoose.connect(testClient!.uri, options as mongoose.ConnectOptions);
+
+            const name = 'test_table';
+            await mongoose!.connection.dropTable(name);
+            await mongoose!.connection.createTable(
+                name,
+                {
+                    primaryKey: 'id',
+                    columns: { id: { type: 'text' }, age: { type: 'int' } }
+                }
+            );
+
+            const tables = await mongoose!.connection.listTables();
+            assert.ok(tables.includes(name), tables.join(', '));
+
+            await mongoose!.connection.db.collection(name).createIndex('age', 'ageindex');
+
+            await mongoose!.connection.db.collection(name).insertOne({ id: 'test', age: 42 });
+            let doc = await mongoose!.connection.db.collection(name).findOne({ id: 'test' });
+            assert.equal(doc!.age, 42);
+            doc = await mongoose!.connection.db.collection(name).findOne({ age: 42 });
+            assert.equal(doc!.id, 'test');
+
+            await mongoose!.connection.db.collection(name).dropIndex('ageindex');
+
+            await mongoose!.connection.dropTable(name);
+            await assert.rejects(
+                () => mongoose!.connection.db.collection(name).insertOne({ id: 'test', age: 42 }),
+                /COLLECTION_NOT_EXIST/
+            );
+
+            await mongoose.disconnect();
+        });
         it('API ops tests connection.runCommand()', async () => {
             const res = await mongooseInstance!.connection.runCommand({ findCollections: {} });
             assert.ok(res.status.collections.includes('carts'));
