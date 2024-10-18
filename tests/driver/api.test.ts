@@ -739,12 +739,31 @@ describe('Mongoose Model API level tests', async () => {
                             },
                             name: {
                                 type: 'text'
+                            },
+                            vector: {
+                                type: 'vector',
+                                dimension: 2
                             }
                         }
                     }
                 }
             });
             assert.ok(res.status.ok);
+
+            const Bot = mongoose.model('Bot', new mongoose.Schema({
+                name: String,
+                vector: [Number]
+            }, { versionKey: false }));
+            const { _id } = await Bot.create({ name: 'test', vector: [1, 1] });
+
+            const fromDb = await Bot.findById(_id).orFail();
+            assert.deepStrictEqual(fromDb.vector, [1, 1]);
+
+            await mongoose.connection.db.runCommand({
+                dropTable: {
+                    name: 'bots'
+                }
+            });
             await mongoose.disconnect();
         });
     });
