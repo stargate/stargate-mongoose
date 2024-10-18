@@ -14,12 +14,12 @@
 
 import { Collection } from './collection';
 import { executeOperation, omit } from './utils';
-import {findInternalOptionsKeys, FindOptions, FindOptionsInternal} from './options';
+import {findInternalOptionsKeys, FindOptionsForDataAPI, FindOptionsInternal} from './options';
 
 export class FindCursor {
     collection: Collection;
     filter: Record<string, any>;
-    options: FindOptions;
+    options: FindOptionsForDataAPI;
     documents: Record<string, any>[] = [];
     status = 'uninitialized';
     nextPageState?: string;
@@ -31,7 +31,7 @@ export class FindCursor {
     exhausted: boolean;
     sortVector?: number[];
 
-    constructor(collection: Collection, filter: Record<string, any>, options?: FindOptions) {
+    constructor(collection: Collection, filter: Record<string, any>, options?: FindOptionsForDataAPI) {
         this.collection = collection;
         this.filter = filter;
         this.options = options ?? {};
