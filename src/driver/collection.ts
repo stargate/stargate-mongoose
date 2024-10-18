@@ -14,22 +14,22 @@
 
 import { default as MongooseCollection } from 'mongoose/lib/collection';
 import {
+    InsertManyOptions,
+    SortOption
+} from '@/src/collections/options';
+import {
     DeleteOneOptions,
+    DeleteOneResult,
     FindOneAndDeleteOptions,
     FindOneAndReplaceOptions,
     FindOneAndUpdateOptions,
     FindOneOptions,
     FindOptions,
-    InsertManyOptions,
-    SortOption,
     UpdateManyOptions,
     UpdateOneOptions
-} from '@/src/collections/options';
-import { DataAPIDeleteResult } from '../collections/collection';
-
-import { version } from 'mongoose';
-
-const IS_MONGOOSE_7 = version.startsWith('7.');
+} from '@datastax/astra-db-ts';
+import { serialize } from '../client/serialize';
+import { setDefaultIdForUpsert} from '../collections/utils';
 
 type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null) => unknown;
 
@@ -46,11 +46,19 @@ export class Collection extends MongooseCollection {
             delete options.modelName;
         }
         this._closed = false;
+        this._collection = null;
     }
 
     //getter for collection
     get collection() {
-        return this.conn.db.collection(this.name);
+        if (this._collection != null) {
+            return this._collection;
+        }
+        // Cache because @datastax/astra-db-ts doesn't
+        const collection = this.conn.db.collection(this.name);
+        Object.assign(collection._httpClient.baseHeaders, this.conn.featureFlags);
+        this._collection = collection;
+        return collection;
     }
 
     /**
@@ -59,6 +67,7 @@ export class Collection extends MongooseCollection {
     * @deprecated
     */
     count(filter: Record<string, any>) {
+        filter = serialize(filter);
         return this.collection.count(filter);
     }
 
@@ -67,7 +76,8 @@ export class Collection extends MongooseCollection {
      * @param filter
      */
     countDocuments(filter: Record<string, any>) {
-        return this.collection.countDocuments(filter);
+        filter = serialize(filter);
+        return this.collection.countDocuments(filter, { limit: 1000 });
     }
 
     /**
@@ -80,6 +90,7 @@ export class Collection extends MongooseCollection {
         if (options != null) {
             processSortOption(options);
         }
+        filter = serialize(filter);
         const cursor = this.collection.find(filter, options);
         if (callback != null) {
             return callback(null, cursor);
@@ -96,6 +107,7 @@ export class Collection extends MongooseCollection {
         if (options != null) {
             processSortOption(options);
         }
+        filter = serialize(filter);
         return this.collection.findOne(filter, options);
     }
 
@@ -104,7 +116,7 @@ export class Collection extends MongooseCollection {
      * @param doc
      */
     insertOne(doc: Record<string, any>) {
-        return this.collection.insertOne(doc);
+        return this.collection.insertOne(serialize(doc));
     }
 
     /**
@@ -120,6 +132,7 @@ export class Collection extends MongooseCollection {
         }
 
         const ordered = options?.ordered ?? true;
+        documents = documents.map(doc => serialize(doc));
 
         if (usePagination) {
             const batchSize = 20;
@@ -176,13 +189,10 @@ export class Collection extends MongooseCollection {
         if (options != null) {
             processSortOption(options);
         }
-        const res = await this.collection.findOneAndUpdate(filter, update, options);
-        if (IS_MONGOOSE_7) {
-            return options?.includeResultMetadata === false ? res.value : res;
-        } else if (options?.includeResultMetadata !== false) {
-            return res.value;
-        }
-        return res;
+        filter = serialize(filter);
+        update = serialize(update);
+        setDefaultIdForUpsert(filter, update, options, false);
+        return this.collection.findOneAndUpdate(filter, update, options);
     }
 
     /**
@@ -194,13 +204,8 @@ export class Collection extends MongooseCollection {
         if (options != null) {
             processSortOption(options);
         }
-        const res = await this.collection.findOneAndDelete(filter, options);
-        if (IS_MONGOOSE_7) {
-            return options?.includeResultMetadata === false ? res.value : res;
-        } else if (options?.includeResultMetadata !== false) {
-            return res.value;
-        }
-        return res;
+        filter = serialize(filter);
+        return this.collection.findOneAndDelete(filter, options);
     }
 
     /**
@@ -213,13 +218,10 @@ export class Collection extends MongooseCollection {
         if (options != null) {
             processSortOption(options);
         }
-        const res = await this.collection.findOneAndReplace(filter, newDoc, options);
-        if (IS_MONGOOSE_7) {
-            return options?.includeResultMetadata === false ? res.value : res;
-        } else if (options?.includeResultMetadata !== false) {
-            return res.value;
-        }
-        return res;
+        filter = serialize(filter);
+        newDoc = serialize(newDoc);
+        setDefaultIdForUpsert(filter, newDoc, options, true);
+        return this.collection.findOneAndReplace(filter, newDoc, options);
     }
 
     /**
@@ -227,6 +229,10 @@ export class Collection extends MongooseCollection {
      * @param filter
      */
     deleteMany(filter: Record<string, any>) {
+        if (filter == null || Object.keys(filter).length === 0) {
+            return this.collection.deleteAll();
+        }
+        filter = serialize(filter);
         return this.collection.deleteMany(filter);
     }
 
@@ -236,15 +242,16 @@ export class Collection extends MongooseCollection {
      * @param options
      * @param callback
      */
-    deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<DataAPIDeleteResult>) {
+    deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<DeleteOneResult>) {
         if (options != null) {
             processSortOption(options);
         }
     
+        filter = serialize(filter);
         const promise = this.collection.deleteOne(filter, options);
 
         if (callback != null) {
-            promise.then((res: DataAPIDeleteResult) => callback(null, res), (err: Error) => callback(err, null));
+            promise.then((res: DeleteOneResult) => callback(null, res), (err: Error) => callback(err, null));
         }
 
         return promise;
@@ -260,6 +267,9 @@ export class Collection extends MongooseCollection {
         if (options != null) {
             processSortOption(options);
         }
+        filter = serialize(filter);
+        update = serialize(update);
+        setDefaultIdForUpsert(filter, update, options, false);
         return this.collection.updateOne(filter, update, options);
     }
 
@@ -270,6 +280,9 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     updateMany(filter: Record<string, any>, update: Record<string, any>, options?: UpdateManyOptions) {
+        filter = serialize(filter);
+        update = serialize(update);
+        setDefaultIdForUpsert(filter, update, options, false);
         return this.collection.updateMany(filter, update, options);
     }
 
@@ -285,7 +298,7 @@ export class Collection extends MongooseCollection {
      * @param command
      */
     runCommand(command: Record<string, any>) {
-        return this.collection.runCommand(command);
+        return this.collection._httpClient.executeCommand(command);
     }
 
     /**
