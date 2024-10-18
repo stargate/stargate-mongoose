@@ -15,15 +15,23 @@
 import { default as MongooseCollection } from 'mongoose/lib/collection';
 import {
     DeleteOneOptions,
+    DeleteOneOptionsForDataAPI,
     FindOneAndDeleteOptions,
+    FindOneAndDeleteOptionsForDataAPI,
     FindOneAndReplaceOptions,
+    FindOneAndReplaceOptionsForDataAPI,
     FindOneAndUpdateOptions,
+    FindOneAndUpdateOptionsForDataAPI,
     FindOneOptions,
+    FindOneOptionsForDataAPI,
     FindOptions,
+    FindOptionsForDataAPI,
     InsertManyOptions,
     SortOption,
+    SortOptionInternal,
     UpdateManyOptions,
-    UpdateOneOptions
+    UpdateOneOptions,
+    UpdateOneOptionsForDataAPI
 } from '@/src/collections/options';
 import { DataAPIDeleteResult } from '../collections/collection';
 
@@ -77,10 +85,14 @@ export class Collection extends MongooseCollection {
      * @param callback
      */
     find(filter: Record<string, any>, options?: FindOptions, callback?: NodeCallback<Record<string, any>[]>) {
-        if (options != null) {
-            processSortOption(options);
+        let requestOptions: FindOptionsForDataAPI | undefined = undefined;
+        if (options != null && options.sort != null) {
+            requestOptions = { ...options, sort: processSortOption(options.sort) };
+        } else if (options != null && options.sort == null) {
+            requestOptions = { ...options, sort: undefined };
+            delete requestOptions.sort;
         }
-        const cursor = this.collection.find(filter, options);
+        const cursor = this.collection.find(filter, requestOptions);
         if (callback != null) {
             return callback(null, cursor);
         }
@@ -93,10 +105,14 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     findOne(filter: Record<string, any>, options?: FindOneOptions) {
-        if (options != null) {
-            processSortOption(options);
+        let requestOptions: FindOneOptionsForDataAPI | undefined = undefined;
+        if (options != null && options.sort != null) {
+            requestOptions = { ...options, sort: processSortOption(options.sort) };
+        } else if (options != null && options.sort == null) {
+            requestOptions = { ...options, sort: undefined };
+            delete requestOptions.sort;
         }
-        return this.collection.findOne(filter, options);
+        return this.collection.findOne(filter, requestOptions);
     }
 
     /**
@@ -173,10 +189,14 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     async findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions) {
-        if (options != null) {
-            processSortOption(options);
+        let requestOptions: FindOneAndUpdateOptionsForDataAPI | undefined = undefined;
+        if (options != null && options.sort != null) {
+            requestOptions = { ...options, sort: processSortOption(options.sort) };
+        } else if (options != null && options.sort == null) {
+            requestOptions = { ...options, sort: undefined };
+            delete requestOptions.sort;
         }
-        const res = await this.collection.findOneAndUpdate(filter, update, options);
+        const res = await this.collection.findOneAndUpdate(filter, update, requestOptions);
         if (IS_MONGOOSE_7) {
             return options?.includeResultMetadata === false ? res.value : res;
         } else if (options?.includeResultMetadata !== false) {
@@ -191,10 +211,14 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions) {
-        if (options != null) {
-            processSortOption(options);
+        let requestOptions: FindOneAndDeleteOptionsForDataAPI | undefined = undefined;
+        if (options != null && options.sort != null) {
+            requestOptions = { ...options, sort: processSortOption(options.sort) };
+        } else if (options != null && options.sort == null) {
+            requestOptions = { ...options, sort: undefined };
+            delete requestOptions.sort;
         }
-        const res = await this.collection.findOneAndDelete(filter, options);
+        const res = await this.collection.findOneAndDelete(filter, requestOptions);
         if (IS_MONGOOSE_7) {
             return options?.includeResultMetadata === false ? res.value : res;
         } else if (options?.includeResultMetadata !== false) {
@@ -210,10 +234,14 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     async findOneAndReplace(filter: Record<string, any>, newDoc: Record<string, any>, options?: FindOneAndReplaceOptions) {
-        if (options != null) {
-            processSortOption(options);
+        let requestOptions: FindOneAndReplaceOptionsForDataAPI | undefined = undefined;
+        if (options != null && options.sort != null) {
+            requestOptions = { ...options, sort: processSortOption(options.sort) };
+        } else if (options != null && options.sort == null) {
+            requestOptions = { ...options, sort: undefined };
+            delete requestOptions.sort;
         }
-        const res = await this.collection.findOneAndReplace(filter, newDoc, options);
+        const res = await this.collection.findOneAndReplace(filter, newDoc, requestOptions);
         if (IS_MONGOOSE_7) {
             return options?.includeResultMetadata === false ? res.value : res;
         } else if (options?.includeResultMetadata !== false) {
@@ -236,12 +264,16 @@ export class Collection extends MongooseCollection {
      * @param options
      * @param callback
      */
-    deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<DataAPIDeleteResult>) {
-        if (options != null) {
-            processSortOption(options);
+    deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<DataAPIDeleteResult>) {    
+        let requestOptions: DeleteOneOptionsForDataAPI | undefined = undefined;
+        if (options != null && options.sort != null) {
+            requestOptions = { ...options, sort: processSortOption(options.sort) };
+        } else if (options != null && options.sort == null) {
+            requestOptions = { ...options, sort: undefined };
+            delete requestOptions.sort;
         }
-    
-        const promise = this.collection.deleteOne(filter, options);
+        
+        const promise = this.collection.deleteOne(filter, requestOptions);
 
         if (callback != null) {
             promise.then((res: DataAPIDeleteResult) => callback(null, res), (err: Error) => callback(err, null));
@@ -257,10 +289,14 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
-        if (options != null) {
-            processSortOption(options);
+        let requestOptions: UpdateOneOptionsForDataAPI | undefined = undefined;
+        if (options != null && options.sort != null) {
+            requestOptions = { ...options, sort: processSortOption(options.sort) };
+        } else if (options != null && options.sort == null) {
+            requestOptions = { ...options, sort: undefined };
+            delete requestOptions.sort;
         }
-        return this.collection.updateOne(filter, update, options);
+        return this.collection.updateOne(filter, update, requestOptions);
     }
 
     /**
@@ -369,20 +405,22 @@ export class Collection extends MongooseCollection {
     }
 }
 
-function processSortOption(options: { sort?: SortOption }) {
-    if (options.sort == null) {
-        return;
+function processSortOption(sort: SortOption): SortOptionInternal {
+    const result: SortOptionInternal = {};
+    for (const key of Object.keys(sort)) {
+        const sortValue = sort[key];
+        if (sortValue == null || typeof sortValue !== 'object') {
+            result[key] = sortValue;
+            continue;
+        }
+
+        const $meta = typeof sortValue === 'object' && sortValue.$meta;
+        if ($meta) {
+            result[key] = $meta;
+        }
     }
-    if ('$vector' in options.sort &&
-        typeof options.sort.$vector === 'object' &&
-        !Array.isArray(options.sort.$vector)) {
-        options.sort.$vector = options.sort.$vector.$meta;
-    }
-    if ('$vectorize' in options.sort &&
-        typeof options.sort.$vectorize === 'object' &&
-        !Array.isArray(options.sort.$vectorize)) {
-        options.sort.$vectorize = options.sort.$vectorize.$meta;
-    }
+    
+    return result;
 }
 
 export class OperationNotSupportedError extends Error {
