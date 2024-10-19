@@ -757,7 +757,7 @@ describe('Mongoose Model API level tests', async () => {
             const fromDb = await Bot.findById(_id).orFail();
             assert.deepStrictEqual(fromDb.vector, [1, 1]);
 
-            await mongoose.connection.db.runCommand({
+            await mongoose.connection.runCommand({
                 dropTable: {
                     name: 'bots'
                 }
