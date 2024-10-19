@@ -15,7 +15,7 @@
 import { IndexingOptions, VectorOptions } from '@datastax/astra-db-ts';
 
 export * as driver from './driver';
-export * from './collections/utils';
+export { default as createAstraUri } from './createAstraUri';
 
 declare module 'mongodb' {
   interface CreateCollectionOptions {

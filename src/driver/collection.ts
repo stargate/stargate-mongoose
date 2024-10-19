@@ -14,10 +14,6 @@
 
 import { default as MongooseCollection } from 'mongoose/lib/collection';
 import {
-    InsertManyOptions,
-    SortOption
-} from '@/src/collections/options';
-import {
     DeleteOneOptions,
     DeleteOneResult,
     FindOneAndDeleteOptions,
@@ -25,11 +21,24 @@ import {
     FindOneAndUpdateOptions,
     FindOneOptions,
     FindOptions,
+    SortDirection,
     UpdateManyOptions,
     UpdateOneOptions
 } from '@datastax/astra-db-ts';
-import { serialize } from '../client/serialize';
-import { setDefaultIdForUpsert} from '../collections/utils';
+import { serialize } from '../serialize';
+import { Types } from 'mongoose';
+
+export type SortOption = Record<string, SortDirection> |
+  { $vector: { $meta: Array<number> } } |
+  { $vector: Array<number> } |
+  { $vectorize: { $meta: string } } |
+  { $vectorize: string };
+
+export interface InsertManyOptions {
+    ordered?: boolean;
+    usePagination?: boolean;
+    returnDocumentResponses?: boolean;
+}
 
 type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null) => unknown;
 
@@ -403,4 +412,43 @@ export class OperationNotSupportedError extends Error {
         super(message);
         this.name = 'OperationNotSupportedError';
     }
+}
+
+export function setDefaultIdForUpsert(filter: Record<string, any>, update: Record<string, any>, options?: Record<string, any>, replace?: boolean) {
+    if (filter == null || options == null) {
+        return;
+    }
+    if (!options.upsert) {
+        return;
+    }
+    if ('_id' in filter) {
+        return;
+    }
+
+    if (replace) {
+        if (update != null && '_id' in update) {
+            return;
+        }
+        update._id = new Types.ObjectId();
+    } else {
+        if (update != null && _updateHasKey(update, '_id')) {
+            return;
+        }
+        if (update.$setOnInsert == null) {
+            update.$setOnInsert = {};
+        }
+        if (!('_id' in update.$setOnInsert)) {
+            update.$setOnInsert._id = new Types.ObjectId();
+        }
+    }
+}
+
+
+function _updateHasKey(update: Record<string, any>, key: string) {
+    for (const operator of Object.keys(update)) {
+        if (update[operator] != null && typeof update[operator] === 'object' && key in update[operator]) {
+            return true;
+        }
+    }
+    return false;
 }

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import assert from 'assert';
-import {Client} from '@/src/collections/client';
 import {
     testClient,
     TEST_COLLECTION_NAME
@@ -24,7 +23,7 @@ import * as StargateMongooseDriver from '@/src/driver';
 import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '@/src/driver';
 import { Product, Cart, mongooseInstance } from '@/tests/mongooseFixtures';
-import { parseUri } from '@/src/collections/utils';
+import { parseUri } from '@/src/driver/connection';
 
 const productSchema = new mongoose.Schema({
     name: String,
@@ -35,16 +34,6 @@ const productSchema = new mongoose.Schema({
 });
 
 describe('Mongoose Model API level tests', async () => {
-    let astraClient: Client | null;
-    before(async function () {
-        if (testClient == null) {
-            return this.skip();
-        }
-        astraClient = await testClient?.client;
-        if (astraClient === null) {
-            return this.skip();
-        }
-    });
     afterEach(async () => {
         await Promise.all([Product.deleteMany({}), Cart.deleteMany({})]);
     });
@@ -61,7 +50,7 @@ describe('Mongoose Model API level tests', async () => {
             }, null, {
                 strict: true
             }).save();
-            const savedRow = await Product.findById(saveResponseWithStrictTrue._id);
+            const savedRow = await Product.findById(saveResponseWithStrictTrue._id).orFail();
             assert.strictEqual(savedRow.name, 'Product 1');
             assert.strictEqual(savedRow.price, 10);
             assert.strictEqual(savedRow.isCertified, true);
@@ -77,7 +66,7 @@ describe('Mongoose Model API level tests', async () => {
             }, null, {
                 strict: false
             }).save();
-            const savedRowWithStrictFalse = await Product.findById(saveResponseWithStrictFalse._id);
+            const savedRowWithStrictFalse = await Product.findById(saveResponseWithStrictFalse._id).orFail();
             assert.strictEqual(savedRowWithStrictFalse.name, 'Product 1');
             assert.strictEqual(savedRowWithStrictFalse.price, 10);
             assert.strictEqual(savedRowWithStrictFalse.isCertified, true);
@@ -305,7 +294,7 @@ describe('Mongoose Model API level tests', async () => {
         });
         it('API ops tests Model.db', async () => {
             const conn = Product.db as unknown as StargateMongooseDriver.Connection;
-            assert.strictEqual(conn.db.name, parseUri(testClient.uri).keyspaceName);
+            assert.strictEqual(conn.db.name, parseUri(testClient!.uri).keyspaceName);
         });
         it('API ops tests Model.deleteMany()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
@@ -350,7 +339,7 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(regularProductSaved!.price, 10);
             assert.strictEqual(regularProductSaved!.isCertified, true);
             assert.strictEqual(regularProductSaved!.category, 'cat 1');
-            assert.ok(!regularProductSaved.url);
+            assert.ok(!regularProductSaved!.url);
             const onlineProduct = new OnlineProduct({
                 name: 'Product 2',
                 price: 10,
@@ -734,6 +723,9 @@ describe('Mongoose Model API level tests', async () => {
                 featureFlags: ['Feature-Flag-tables']
             };
             await mongoose.connect(testClient!.uri, options as mongoose.ConnectOptions);
+            await mongoose.connection.runCommand({
+                dropTable: { name: 'bots' }
+            });
             const res = await mongoose.connection.runCommand({
                 createTable: {
                     name: 'bots',

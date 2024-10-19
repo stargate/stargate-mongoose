@@ -1,7 +1,7 @@
 import { isAstra, testClient } from './fixtures';
 import { Schema, Mongoose } from 'mongoose';
 import * as StargateMongooseDriver from '@/src/driver';
-import { parseUri, createNamespace } from '@/src/collections/utils';
+import { parseUri } from '@/src/driver/connection';
 import { plugins } from '@/src/driver';
 
 const cartSchema = new Schema({

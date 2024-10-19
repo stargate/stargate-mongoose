@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { createAstraUri } from '@/src/collections/utils';
+import createAstraUri from '@/src/createAstraUri';
 
 describe('Utils test', () => {
     it('createProdAstraUriDefaultKeyspace', () => {
