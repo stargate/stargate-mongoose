@@ -14,8 +14,10 @@
 
 import { default as MongooseCollection } from 'mongoose/lib/collection';
 import {
+    Collection as AstraCollection,
     DeleteOneOptions,
     DeleteOneResult,
+    FindCursor,
     FindOneAndDeleteOptions,
     FindOneAndReplaceOptions,
     FindOneAndUpdateOptions,
@@ -27,6 +29,7 @@ import {
 } from '@datastax/astra-db-ts';
 import { serialize } from '../serialize';
 import { Types } from 'mongoose';
+import type { Connection } from './connection';
 
 export type SortOption = Record<string, SortDirection> |
   { $vector: { $meta: Array<number> } } |
@@ -48,7 +51,7 @@ type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null
 export class Collection extends MongooseCollection {
     debugType = 'StargateMongooseCollection';
 
-    constructor(name: string, conn: any, options?: any) {
+    constructor(name: string, conn: Connection, options?: any) {
         super(name, conn, options);
         if (options?.modelName != null) {
             this.modelName = options.modelName;
@@ -59,7 +62,7 @@ export class Collection extends MongooseCollection {
     }
 
     //getter for collection
-    get collection() {
+    get collection(): AstraCollection {
         if (this._collection != null) {
             return this._collection;
         }
@@ -71,22 +74,12 @@ export class Collection extends MongooseCollection {
     }
 
     /**
-    * Count documents in the collection that match the given filter. Use countDocuments() instead.
-    * @param filter
-    * @deprecated
-    */
-    count(filter: Record<string, any>) {
-        filter = serialize(filter);
-        return this.collection.count(filter);
-    }
-
-    /**
      * Count documents in the collection that match the given filter.
      * @param filter
      */
     countDocuments(filter: Record<string, any>) {
         filter = serialize(filter);
-        return this.collection.countDocuments(filter, { limit: 1000 });
+        return this.collection.countDocuments(filter, 1000);
     }
 
     /**
@@ -95,7 +88,7 @@ export class Collection extends MongooseCollection {
      * @param options
      * @param callback
      */
-    find(filter: Record<string, any>, options?: FindOptions, callback?: NodeCallback<Record<string, any>[]>) {
+    find(filter: Record<string, any>, options?: FindOptions, callback?: NodeCallback<FindCursor<unknown>>) {
         if (options != null) {
             processSortOption(options);
         }
@@ -145,44 +138,57 @@ export class Collection extends MongooseCollection {
 
         if (usePagination) {
             const batchSize = 20;
-            const ops = [];
-            const ret = options?.returnDocumentResponses
-                ? { acknowledged: true, documentResponses: [] }
-                : { acknowledged: true, insertedCount: 0, insertedIds: [] };
-            for (let i = 0; i < documents.length; i += batchSize) {
-                const batch = documents.slice(i, i + batchSize);
-                if (ordered) {
-                    const {
-                        acknowledged,
-                        insertedCount,
-                        insertedIds,
-                        documentResponses
-                    } = await this.collection.insertMany(batch, options);
-                    ret.acknowledged = ret.acknowledged && acknowledged;
-                    if (options?.returnDocumentResponses) {
-                        ret.documentResponses = ret.documentResponses?.concat(documentResponses ?? []);
-                    } else {
-                        ret.insertedCount += insertedCount;
-                        ret.insertedIds = ret.insertedIds!.concat(insertedIds);
+            if (ordered) {
+                if (options?.returnDocumentResponses) {
+                    const ret = { documentResponses: [] as unknown[] };
+                    for (let i = 0; i < documents.length; i += batchSize) {
+                        const batch = documents.slice(i, i + batchSize);
+                        const {
+                            documentResponses
+                        } = await this.collection.insertMany(batch, options) as unknown as { documentResponses: unknown[] };
+                        ret.documentResponses.push(...documentResponses);
                     }
+                    return ret;
                 } else {
-                    ops.push(this.collection.insertMany(batch, options));
+                    const ret = { insertedCount: 0, insertedIds: [] as unknown[] };
+                    for (let i = 0; i < documents.length; i += batchSize) {
+                        const batch = documents.slice(i, i + batchSize);
+                        const {
+                            insertedCount,
+                            insertedIds
+                        } = await this.collection.insertMany(batch, options);
+                        ret.insertedCount += insertedCount;
+                        ret.insertedIds.push(...insertedIds);
+                    }
+                    return ret;
                 }
-            }
-            if (!ordered) {
-                const results = await Promise.all(ops);
-                for (const { acknowledged, insertedCount, insertedIds, documentResponses } of results) {
-                    ret.acknowledged = ret.acknowledged && acknowledged;
-                    if (options?.returnDocumentResponses) {
-                        ret.documentResponses = ret.documentResponses?.concat(documentResponses ?? []);
-                    } else {
+            } else {
+                const ops = [];
+                if (options?.returnDocumentResponses) {
+                    const ret = { documentResponses: [] as unknown[] };
+                    for (let i = 0; i < documents.length; i += batchSize) {
+                        const batch = documents.slice(i, i + batchSize);
+                        ops.push(this.collection.insertMany(batch, options));
+                    }
+                    const results = await Promise.all(ops) as unknown as { documentResponses: unknown[] }[];
+                    for (const { documentResponses } of results) {
+                        ret.documentResponses.push(...documentResponses);
+                    }
+                    return ret;
+                } else {
+                    const ret = { insertedCount: 0, insertedIds: [] as unknown[] };
+                    for (let i = 0; i < documents.length; i += batchSize) {
+                        const batch = documents.slice(i, i + batchSize);
+                        ops.push(this.collection.insertMany(batch, options));
+                    }
+                    const results = await Promise.all(ops);
+                    for (const { insertedCount, insertedIds } of results) {
                         ret.insertedCount += insertedCount;
                         ret.insertedIds = ret.insertedIds!.concat(insertedIds);
                     }
+                    return ret;
                 }
             }
-
-            return ret;
         } else {
             return this.collection.insertMany(documents, options);
         }
@@ -201,7 +207,16 @@ export class Collection extends MongooseCollection {
         filter = serialize(filter);
         update = serialize(update);
         setDefaultIdForUpsert(filter, update, options, false);
-        return this.collection.findOneAndUpdate(filter, update, options);
+
+        // Weirdness to work around TypeScript, otherwise TypeScript fails with
+        // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
+        if (options == null) {
+            return this.collection.findOneAndUpdate(filter, update);
+        } else if (options.includeResultMetadata) {
+            return this.collection.findOneAndUpdate(filter, update, { ...options, includeResultMetadata: true });
+        } else {
+            return this.collection.findOneAndUpdate(filter, update, { ...options, includeResultMetadata: false });
+        }
     }
 
     /**
@@ -214,7 +229,16 @@ export class Collection extends MongooseCollection {
             processSortOption(options);
         }
         filter = serialize(filter);
-        return this.collection.findOneAndDelete(filter, options);
+
+        // Weirdness to work around TypeScript, otherwise TypeScript fails with
+        // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
+        if (options == null) {
+            return this.collection.findOneAndDelete(filter);
+        } else if (options.includeResultMetadata) {
+            return this.collection.findOneAndDelete(filter, { ...options, includeResultMetadata: true });
+        } else {
+            return this.collection.findOneAndDelete(filter, { ...options, includeResultMetadata: false });
+        }
     }
 
     /**
@@ -230,7 +254,16 @@ export class Collection extends MongooseCollection {
         filter = serialize(filter);
         newDoc = serialize(newDoc);
         setDefaultIdForUpsert(filter, newDoc, options, true);
-        return this.collection.findOneAndReplace(filter, newDoc, options);
+        
+        // Weirdness to work around TypeScript, otherwise TypeScript fails with
+        // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
+        if (options == null) {
+            return this.collection.findOneAndReplace(filter, newDoc);
+        } else if (options.includeResultMetadata) {
+            return this.collection.findOneAndReplace(filter, newDoc, { ...options, includeResultMetadata: true });
+        } else {
+            return this.collection.findOneAndReplace(filter, newDoc, { ...options, includeResultMetadata: false });
+        }
     }
 
     /**
@@ -307,7 +340,7 @@ export class Collection extends MongooseCollection {
      * @param command
      */
     runCommand(command: Record<string, any>) {
-        return this.collection._httpClient.executeCommand(command);
+        return (this.collection as any)._httpClient.executeCommand(command);
     }
 
     /**
