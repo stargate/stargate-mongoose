@@ -13,8 +13,10 @@
 // limitations under the License.
 
 import { Collection } from './collection';
+import type { Db, ListCollectionsOptions } from '@datastax/astra-db-ts';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
+import type { Mongoose } from 'mongoose';
 import url from 'url';
 
 import {
@@ -27,7 +29,7 @@ export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
     initialConnection: Promise<Connection> | null = null;
 
-    constructor(base: any) {
+    constructor(base: Mongoose) {
         super(base);
     }
 
@@ -53,13 +55,13 @@ export class Connection extends MongooseConnection {
 
     async createCollection(name: string, options?: Record<string, any>) {
         await this._waitForClient();
-        const db = this.db;
+        const db: Db = this.db;
         return db.createCollection(name, { checkExists: false, ...options });
     }
 
     async dropCollection(name: string) {
         await this._waitForClient();
-        const db = this.db;
+        const db: Db = this.db;
         return db.dropCollection(name);
     }
 
@@ -67,17 +69,21 @@ export class Connection extends MongooseConnection {
         throw new Error('dropDatabase() Not Implemented');
     }
 
-    async listCollections(options: { explain: true }): Promise<Array<{ name: string, options?: CreateCollectionOptions<any> }>>;
-
-    async listCollections(options?: { explain?: boolean }): Promise<Array<{ name: string }>> {
+    async listCollections(options?: ListCollectionsOptions) {
         await this._waitForClient();
-        const db = this.db;
-        return db.listCollections(options);
+        const db: Db = this.db;
+        if (options == null) {
+            return db.listCollections();
+        } else if (options.nameOnly) {
+            return db.listCollections({ ...options, nameOnly: true });
+        } else {
+            return db.listCollections({ ...options, nameOnly: false });
+        }
     }
 
     async runCommand(command: Record<string, any>): Promise<unknown> {
         await this._waitForClient();
-        const db = this.db;
+        const db: Db = this.db;
         return db.command(command);
     }
 
