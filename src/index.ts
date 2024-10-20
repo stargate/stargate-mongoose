@@ -27,7 +27,8 @@ declare module 'mongodb' {
 declare module 'mongoose' {
   interface ConnectOptions {
     isAstra?: boolean;
-    logSkippedOptions?: boolean;
+    sanitizeFilter?: boolean;
+    featureFlags?: string[];
   }
 
   function setDriver<T = Mongoose>(driver: any): T;

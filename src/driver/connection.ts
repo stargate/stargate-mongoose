@@ -16,14 +16,22 @@ import { Collection } from './collection';
 import type { Db, ListCollectionsOptions } from '@datastax/astra-db-ts';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
-import type { Mongoose } from 'mongoose';
+import type { ConnectOptions, Mongoose } from 'mongoose';
 import url from 'url';
 
 import {
-    CreateCollectionOptions,
     DataAPIClient,
     UsernamePasswordTokenProvider
 } from '@datastax/astra-db-ts';
+
+type ConnectOptionsInternal = ConnectOptions & {
+    isAstra?: boolean;
+    _fireAndForget?: boolean;
+    sanitizeFilter?: boolean;
+    featureFlags?: string[];
+    username?: string;
+    password?: string;
+};
 
 export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
@@ -46,7 +54,7 @@ export class Connection extends MongooseConnection {
         });
     }
 
-    collection(name: string, options: any) {
+    collection(name: string, options?: { modelName?: string }) {
         if (!(name in this.collections)) {
             this.collections[name] = new Collection(name, this, options);
         }
@@ -87,8 +95,8 @@ export class Connection extends MongooseConnection {
         return db.command(command);
     }
 
-    async openUri(uri: string, options: any) {
-        let _fireAndForget = false;
+    async openUri(uri: string, options: ConnectOptionsInternal) {
+        let _fireAndForget: boolean | undefined = false;
         if (options && '_fireAndForget' in options) {
             _fireAndForget = options._fireAndForget;
             delete options._fireAndForget;
@@ -125,7 +133,7 @@ export class Connection extends MongooseConnection {
         return this;
     }
 
-    async createClient(uri: string, options: any) {
+    async createClient(uri: string, options: ConnectOptionsInternal) {
         this._connectionString = uri;
         this._closeCalled = false;
         this.readyState = STATES.connecting;
@@ -133,34 +141,53 @@ export class Connection extends MongooseConnection {
         const { baseUrl, keyspaceName, applicationToken, baseApiPath } = parseUri(uri);
 
         const featureFlags: Record<string, 'true'> | null = Array.isArray(options && options.featureFlags)
-            ? options.featureFlags.reduce((obj: Record<string, 'true'>, key: string) => Object.assign(obj, { [key]: 'true' }), {})
+            ? (options.featureFlags ?? []).reduce((obj: Record<string, 'true'>, key: string) => Object.assign(obj, { [key]: 'true' }), {})
             : null;
         this.featureFlags = featureFlags;
 
-        const client = options?.isAstra
-            ? new DataAPIClient(applicationToken)
-            : new DataAPIClient(
-                new UsernamePasswordTokenProvider(options?.username, options?.password),
-                { environment: 'dse' }
-            );
         const dbOptions = {
             namespace: keyspaceName,
             dataApiPath: baseApiPath
         };
-        const db = client.db(baseUrl, dbOptions);
-        Object.assign((db as any)._httpClient.baseHeaders, featureFlags);
+
+        const { client, db, admin } = (() => {
+            if (options?.isAstra) {
+                const client = new DataAPIClient(applicationToken);
+                const db = client.db(baseUrl, dbOptions);
+                Object.assign((db as any)._httpClient.baseHeaders, featureFlags);
+                return {
+                    client,
+                    db,
+                    admin: client.admin({ adminToken: applicationToken })
+                };
+            }
+
+            if (options?.username == null) {
+                throw new Error('Username and password are required when connecting to Astra');
+            }
+            if (options?.password == null) {
+                throw new Error('Username and password are required when connecting to Astra');
+            }
+            const client = new DataAPIClient(
+                new UsernamePasswordTokenProvider(options.username, options.password),
+                { environment: 'dse' }
+            );
+            const db = client.db(baseUrl, dbOptions);
+            Object.assign((db as any)._httpClient.baseHeaders, featureFlags);
+            return {
+                client,
+                db,
+                admin: db.admin({
+                    environment: 'dse',
+                    adminToken: new UsernamePasswordTokenProvider(options.username, options.password)
+                })
+            };
+        })();
 
         const collections: Collection[] = Object.values(this.collections);
         for (const collection of collections) {
             delete collection._collection;
         }
-
-        const admin = options.isAstra
-            ? client.admin({ adminToken: applicationToken })
-            : db.admin({
-                environment: 'dse',
-                adminToken: new UsernamePasswordTokenProvider(options?.username, options?.password)
-            });
 
         this.client = client;
         this.db = db;
