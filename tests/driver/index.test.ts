@@ -14,21 +14,15 @@
 
 import assert from 'assert';
 import mongoose from 'mongoose';
-import * as StargateMongooseDriver from '@/src/driver';
-import { testClient, TEST_COLLECTION_NAME } from '@/tests/fixtures';
-import { HTTPClient } from '@/src/client';
-import { Client } from '@/src/collections';
-import { Product, Cart, mongooseInstance } from '@/tests/mongooseFixtures';
+import * as StargateMongooseDriver from '../../src/driver';
+import { testClient, TEST_COLLECTION_NAME } from '../fixtures';
+import { Product, Cart, mongooseInstance } from '../mongooseFixtures';
 
 describe('Driver based tests', async () => {
     let dbUri: string;
     let isAstra: boolean;
     before(async function () {
         if (testClient == null) {
-            return this.skip();
-        }
-        const astraClient = await testClient.client;
-        if (astraClient === null) {
             return this.skip();
         }
         dbUri = testClient.uri;
@@ -190,26 +184,6 @@ describe('Driver based tests', async () => {
                 () => Person.watch([{$match: {name: 'John'}}]),
                 /watch\(\) Not Implemented/
             );
-        });
-
-        it.skip('disconnect() closes all httpClients', async () => {
-            const mongooseInstance = await createMongooseInstance();
-            const client: Client = mongooseInstance.connection.getClient() as any as Client;
-            const httpClient: HTTPClient = client.httpClient;
-            assert.ok(!httpClient.closed);
-            await mongooseInstance.disconnect();
-
-            assert.ok(httpClient.closed);
-        });
-
-        it.skip('close() close underlying httpClient', async () => {
-            const mongooseInstance = await createMongooseInstance();
-            const client: Client = mongooseInstance.connection.getClient() as any as Client;
-            const httpClient: HTTPClient = client.httpClient;
-            assert.ok(!httpClient.closed);
-            await client.close();
-
-            assert.ok(httpClient.closed);
         });
 
         it('handles reconnecting after disconnecting', async () => {

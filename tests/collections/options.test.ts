@@ -14,7 +14,7 @@
 
 import assert from 'assert';
 import mongoose from 'mongoose';
-import { Product } from '@/tests/mongooseFixtures';
+import { Product } from '../../tests/mongooseFixtures';
 
 describe('Options tests', async () => {
     beforeEach(async function() {

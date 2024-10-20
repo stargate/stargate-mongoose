@@ -16,14 +16,14 @@ import assert from 'assert';
 import {
     testClient,
     TEST_COLLECTION_NAME
-} from '@/tests/fixtures';
+} from '../fixtures';
 import mongoose, { Schema, InferSchemaType, InsertManyResult } from 'mongoose';
 import { once } from 'events';
-import * as StargateMongooseDriver from '@/src/driver';
+import * as StargateMongooseDriver from '../../src/driver';
 import {randomUUID} from 'crypto';
-import {OperationNotSupportedError} from '@/src/driver';
-import { Product, Cart, mongooseInstance } from '@/tests/mongooseFixtures';
-import { parseUri } from '@/src/driver/connection';
+import {OperationNotSupportedError} from '../../src/driver';
+import { Product, Cart, mongooseInstance } from '../mongooseFixtures';
+import { parseUri } from '../../src/driver/connection';
 
 const productSchema = new mongoose.Schema({
     name: String,

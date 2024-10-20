@@ -55,7 +55,7 @@
     "test-astra": "env TEST_DOC_DB=astra nyc ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts",
     "test-dataapi": "env TEST_DOC_DB=dataapi nyc ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts",
     "preinstall": "npm run update-version-file",
-    "build": "npm run update-version-file && tsc --project tsconfig.build.json && tscpaths -p tsconfig.build.json -s ./src -o ./dist",
+    "build": "npm run update-version-file && tsc --project tsconfig.build.json",
     "build:docs": "jsdoc2md -t APIReference.hbs --files src/**/*.ts --configure ./jsdoc2md.json > APIReference.md",
     "update-version-file": "node -p \"'export const LIB_NAME = \\'' + require('./package.json').name + '\\';'\" > src/version.ts && node -p \"'export const LIB_VERSION = \\'' + require('./package.json').version + '\\';'\" >> src/version.ts"
   },
@@ -83,8 +83,6 @@
     "sinon": "15.2.0",
     "ts-mocha": "^10.0.0",
     "ts-node": "^10.8.1",
-    "tscpaths": "^0.0.9",
-    "tsconfig-paths": "^4.0.0",
     "typescript": "^4.7.2"
   },
   "dependencies": {
