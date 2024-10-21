@@ -14,7 +14,7 @@
 
 import assert from 'assert';
 import mongoose from 'mongoose';
-import { Product } from '@/tests/mongooseFixtures';
+import { Product } from '../../tests/mongooseFixtures';
 
 describe('Options tests', async () => {
     beforeEach(async function() {
@@ -61,7 +61,6 @@ describe('Options tests', async () => {
                 { $set : { isCertified : true }, $inc: { price: 5 } },
                 { upsert: true, rawResult: false, sort: { name : 1 } } as unknown as Record<string, never>
             );
-            assert.ok(updateOneResp.acknowledged);
             assert.strictEqual(updateOneResp.matchedCount, 0);
             assert.strictEqual(updateOneResp.modifiedCount, 0);
             assert.strictEqual(updateOneResp.upsertedCount, 1);
@@ -86,10 +85,9 @@ describe('Options tests', async () => {
                 { $set : { isCertified : true }, $inc: { price: 5 } },
                 { upsert: true, rawResult: false, sort: { name : 1 } } as unknown as Record<string, never>
             );
-            assert.ok(updateManyResp.acknowledged);
             assert.strictEqual(updateManyResp.matchedCount, 2);
             assert.strictEqual(updateManyResp.modifiedCount, 2);
-            assert.strictEqual(updateManyResp.upsertedCount, undefined);
+            assert.strictEqual(updateManyResp.upsertedCount, 0);
             assert.strictEqual(updateManyResp.upsertedId, undefined);
             //find product 4
             const cat1Products = await Product.find({ category : 'cat1' });
@@ -139,10 +137,9 @@ describe('Options tests', async () => {
                 products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true }));
             }
             await Product.insertMany(products, { ordered: true, rawResult: false });
-            //findOneAndReplace with rawResult option
             const findOneAndReplaceResp = await Product.findOneAndReplace({ name: 'Product 25' },
                 { price: 20, isCertified: false, name: 'Product 25'},
-                { rawResult: false, upsert: true, returnDocument: 'after' }
+                { upsert: true, returnDocument: 'after' }
             );
             assert.strictEqual(findOneAndReplaceResp.isCertified,false);
             assert.strictEqual(findOneAndReplaceResp.price,20);
