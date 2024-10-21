@@ -24,6 +24,7 @@ import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '../../src/driver';
 import { Product, Cart, mongooseInstance } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
+import { FindCursor } from '@datastax/astra-db-ts';
 
 const productSchema = new mongoose.Schema({
     name: String,
@@ -55,7 +56,7 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(savedRow.price, 10);
             assert.strictEqual(savedRow.isCertified, true);
             assert.strictEqual(savedRow.category, 'cat 1');
-            assert.strictEqual(savedRow.extraCol, undefined);
+            assert.strictEqual((savedRow as any).extraCol, undefined);
             //strict is false, so extraCol should be saved
             const saveResponseWithStrictFalse = await new Product({
                 name: 'Product 1',
@@ -332,14 +333,14 @@ describe('Mongoose Model API level tests', async () => {
                 category: 'cat 1',
                 url: 'http://product1.com'
             });
-            assert.ok(!regularProduct.url);
+            assert.ok(!(regularProduct as any).url);
             await regularProduct.save();
             const regularProductSaved = await Product.findOne({name: 'Product 1'});
             assert.strictEqual(regularProductSaved!.name, 'Product 1');
             assert.strictEqual(regularProductSaved!.price, 10);
             assert.strictEqual(regularProductSaved!.isCertified, true);
             assert.strictEqual(regularProductSaved!.category, 'cat 1');
-            assert.ok(!regularProductSaved!.url);
+            assert.ok(!(regularProductSaved as any).url);
             const onlineProduct = new OnlineProduct({
                 name: 'Product 2',
                 price: 10,
@@ -398,6 +399,7 @@ describe('Mongoose Model API level tests', async () => {
             const nameArray: Set<string> = new Set(['Product 1', 'Product 3']);
             for(const doc of findResp) {
                 assert.strictEqual(doc.category, 'cat 1');
+                assert.ok(doc.name);
                 assert.strictEqual(nameArray.has(doc.name), true);
                 nameArray.delete(doc.name);
             }
@@ -522,7 +524,9 @@ describe('Mongoose Model API level tests', async () => {
             await Product.insertMany([product1, product2, product3]);
             const cart1 = new Cart({name: 'Cart 1', products: [product1._id, product2._id]});
             await Cart.insertMany([cart1]);
-            const populateResp = await Cart.findOne({name: 'Cart 1'}).populate('products');
+
+            type CartModel = ReturnType<(typeof Cart)['hydrate']>;
+            const populateResp = await Cart.findOne({name: 'Cart 1'}).populate<{ products: CartModel[] }>('products');
             assert.strictEqual(populateResp?.products.length, 2);
             assert.strictEqual(populateResp?.products[0].name, 'Product 1');
             assert.strictEqual(populateResp?.products[1].name, 'Product 2');
@@ -638,8 +642,8 @@ describe('Mongoose Model API level tests', async () => {
             //UpdateOne
             await Cart.updateOne({ _id: cart._id }, { $set: { user: { name: 'test updated subdoc' } } });
           
-            const { user } = await Cart.findById(cart._id).orFail();
-            assert.deepStrictEqual(user!.toObject(), { name: 'test updated subdoc' });
+            const doc = await Cart.findById(cart._id).orFail();
+            assert.deepStrictEqual(doc.toObject().user, { name: 'test updated subdoc' });
         });
         //Model.validate is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.validate
         it('API ops tests Model.watch()', async () => {
@@ -852,7 +856,8 @@ describe('Mongoose Model API level tests', async () => {
                 .cursor();
             
             await once(cursor, 'cursor');
-            assert.deepStrictEqual(await cursor.cursor.getSortVector(), [1, 99]);            
+            const rawCursor = (cursor as unknown as { cursor: FindCursor<unknown> }).cursor;
+            assert.deepStrictEqual(await rawCursor.getSortVector(), [1, 99]);            
         });
 
         it('supports sort() and similarity score with $meta with findOne()', async function() {

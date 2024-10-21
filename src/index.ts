@@ -31,5 +31,9 @@ declare module 'mongoose' {
     featureFlags?: string[];
   }
 
+  interface InsertManyOptions {
+    returnDocumentResponses?: boolean;
+  }
+
   function setDriver<T = Mongoose>(driver: any): T;
 }
