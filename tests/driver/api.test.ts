@@ -999,8 +999,8 @@ describe('Mongoose Model API level tests', async () => {
         });
 
         it('contains vector options in listCollections() output with `explain`', async function() {
-            const connection = mongooseInstance.connection;
-            const collections = await connection.listCollections({ explain: true });
+            const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+            const collections = await connection.listCollections();
             const collection = collections.find(collection => collection.name === 'vector');
             assert.ok(collection, 'Collection named "vector" not found');
             assert.deepStrictEqual(collection.options, {

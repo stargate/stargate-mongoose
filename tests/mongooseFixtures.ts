@@ -35,15 +35,16 @@ export const Cart = mongooseInstance.model('Cart', cartSchema);
 export const Product = mongooseInstance.model('Product', productSchema);
 
 async function createNamespace() {
-    return mongooseInstance.connection.db._httpClient._request({
-        url: mongooseInstance.connection.baseUrl + '/' + mongooseInstance.connection.baseApiPath,
+    const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+    return (connection.db as any)._httpClient._request({
+        url: connection.baseUrl + '/' + connection.baseApiPath,
         method: 'POST',
         data: JSON.stringify({
             createNamespace: {
-                name: mongooseInstance.connection.keyspaceName
+                name: connection.keyspaceName
             }
         }),
-        timeoutManager: mongooseInstance.connection.db._httpClient.timeoutManager(120_000)
+        timeoutManager: (connection.db as any)._httpClient.timeoutManager(120_000)
     });
 }
 
@@ -74,10 +75,11 @@ before(async function connectMongooseFixtures() {
             password: process.env.STARGATE_PASSWORD,
             logSkippedOptions: true
         };
+        const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
         // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
         await mongooseInstance.connect(testClient.uri, options);
         const keyspace = parseUri(testClient!.uri).keyspaceName;
-        await mongooseInstance.connection.admin.createNamespace(keyspace);
+        await connection.admin.createNamespace(keyspace);
     }
 });
 

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Collection } from './collection';
-import type { Db, ListCollectionsOptions } from '@datastax/astra-db-ts';
+import type { AstraDbAdmin, DataAPIDbAdmin, Db, FullCollectionInfo, ListCollectionsOptions } from '@datastax/astra-db-ts';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
 import type { ConnectOptions, Mongoose } from 'mongoose';
@@ -80,13 +80,7 @@ export class Connection extends MongooseConnection {
     async listCollections(options?: ListCollectionsOptions) {
         await this._waitForClient();
         const db: Db = this.db;
-        if (options == null) {
-            return db.listCollections();
-        } else if (options.nameOnly) {
-            return db.listCollections({ ...options, nameOnly: true });
-        } else {
-            return db.listCollections({ ...options, nameOnly: false });
-        }
+        return db.listCollections();
     }
 
     async runCommand(command: Record<string, any>): Promise<unknown> {
