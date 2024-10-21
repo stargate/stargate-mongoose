@@ -559,7 +559,7 @@ describe('Mongoose Model API level tests', async () => {
             let error: OperationNotSupportedError | null = null;
             try {
                 await Product.startSession();
-                await product1.remove();
+                await product1.deleteOne();
             } catch(err: OperationNotSupportedError | any) {
                 error = err;
             }
@@ -639,7 +639,7 @@ describe('Mongoose Model API level tests', async () => {
             await Cart.updateOne({ _id: cart._id }, { $set: { user: { name: 'test updated subdoc' } } });
           
             const { user } = await Cart.findById(cart._id).orFail();
-            assert.deepStrictEqual(user.toObject(), { name: 'test updated subdoc' });
+            assert.deepStrictEqual(user!.toObject(), { name: 'test updated subdoc' });
         });
         //Model.validate is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.validate
         it('API ops tests Model.watch()', async () => {
@@ -652,7 +652,7 @@ describe('Mongoose Model API level tests', async () => {
                     assert.strictEqual(change.documentKey._id.toString(), product1._id.toString());
                     changeStream.close();
                 });
-                await product1.remove();
+                await product1.deleteOne();
             } catch(err: OperationNotSupportedError | any) {
                 error = err;
             }
@@ -702,11 +702,13 @@ describe('Mongoose Model API level tests', async () => {
             assert.ok(databases.includes(mongooseInstance.connection.db.name));
         });
         it('API ops tests connection.runCommand()', async () => {
-            const res = await mongooseInstance!.connection.runCommand({ findCollections: {} });
+            const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+            const res = await connection.runCommand({ findCollections: {} });
             assert.ok(res.status.collections.includes('carts'));
         });
         it('API ops tests collection.runCommand()', async () => {
-            const res = await mongooseInstance!.connection.db.collection('carts')._httpClient.executeCommand({ find: {} });
+            const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+            const res = await (connection.db.collection('carts') as any)._httpClient.executeCommand({ find: {} });
             assert.ok(Array.isArray(res.data.documents));
         });
         it('API ops tests feature flags', async function() {
@@ -723,10 +725,11 @@ describe('Mongoose Model API level tests', async () => {
                 featureFlags: ['Feature-Flag-tables']
             };
             await mongoose.connect(testClient!.uri, options as mongoose.ConnectOptions);
-            await mongoose.connection.runCommand({
+            const connection: StargateMongooseDriver.Connection = mongoose.connection as unknown as StargateMongooseDriver.Connection;
+            await connection.runCommand({
                 dropTable: { name: 'bots' }
             });
-            const res = await mongoose.connection.runCommand({
+            const res = await connection.runCommand({
                 createTable: {
                     name: 'bots',
                     definition: {
@@ -752,12 +755,13 @@ describe('Mongoose Model API level tests', async () => {
                 name: String,
                 vector: [Number]
             }, { versionKey: false }));
+
             const { _id } = await Bot.create({ name: 'test', vector: [1, 1] });
 
             const fromDb = await Bot.findById(_id).orFail();
             assert.deepStrictEqual(fromDb.vector, [1, 1]);
 
-            await mongoose.connection.runCommand({
+            await connection.runCommand({
                 dropTable: {
                     name: 'bots'
                 }
@@ -777,9 +781,6 @@ describe('Mongoose Model API level tests', async () => {
                 autoCreate: true
             }
         );
-        vectorSchema.virtual('$sortVector').get(function() {
-            return this._doc.$sortVector;
-        });
         const Vector = mongooseInstance.model(
             'Vector',
             vectorSchema,
@@ -787,7 +788,8 @@ describe('Mongoose Model API level tests', async () => {
         );
 
         before(async function() {
-            const collections = await mongooseInstance.connection.listCollections({ explain: true });
+            const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+            const collections = await connection.listCollections();
             const vectorCollection = collections.find(coll => coll.name === 'vector');
             if (!vectorCollection) {
                 await mongooseInstance.connection.dropCollection('vector');
