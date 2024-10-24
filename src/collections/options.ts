@@ -147,7 +147,7 @@ export const updateOneInternalOptionsKeys: Set<string> = new Set(
 
 export type IndexingOptions = { deny: string[], allow?: never } | { allow: string[], deny?: never };
 
-export type DefaultIdOptions = { type: 'objectId' | 'uuid' | 'uuid6' | 'uuid7' };
+export interface DefaultIdOptions { type: 'objectId' | 'uuid' | 'uuid6' | 'uuid7' }
 
 class _CreateCollectionOptions {
     vector?: VectorOptions = undefined;

@@ -175,7 +175,7 @@ export class FindCursor {
      * @returns Promise<number>
      * @param options
      */
-    async count(options?: any) {
+    async count(_options?: any) {
         return executeOperation(async () => {
             await this.getAll();
             return this.documents.length;
@@ -188,7 +188,7 @@ export class FindCursor {
      *
      * @param options
      */
-    stream(options?: any) {
+    stream(_options?: any) {
         throw new Error('Streaming cursors are not supported');
     }
 }

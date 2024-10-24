@@ -293,7 +293,7 @@ export class Collection extends MongooseCollection {
      * @param ops
      * @param options
      */
-    bulkWrite(ops: any[], options?: any) {
+    bulkWrite(_ops: any[], _options?: any) {
         throw new OperationNotSupportedError('bulkWrite() Not Implemented');
     }
 
@@ -302,7 +302,7 @@ export class Collection extends MongooseCollection {
      * @param pipeline
      * @param options
      */
-    aggregate(pipeline: any[], options?: any) {
+    aggregate(_pipeline: any[], _options?: any) {
         throw new OperationNotSupportedError('aggregate() Not Implemented');
     }
 
@@ -311,7 +311,7 @@ export class Collection extends MongooseCollection {
      * @param docs
      * @param options
      */
-    bulkSave(docs: any[], options?: any) {
+    bulkSave(_docs: any[], _options?: any) {
         throw new OperationNotSupportedError('bulkSave() Not Implemented');
     }
 
@@ -319,7 +319,7 @@ export class Collection extends MongooseCollection {
      * Clean indexes not supported.
      * @param options
      */
-    cleanIndexes(options?: any) {
+    cleanIndexes(_options?: any) {
         throw new OperationNotSupportedError('cleanIndexes() Not Implemented');
     }
 
@@ -327,7 +327,7 @@ export class Collection extends MongooseCollection {
      * List indexes not supported.
      * @param options
      */
-    listIndexes(options?: any) {
+    listIndexes(_options?: any) {
         throw new OperationNotSupportedError('listIndexes() Not Implemented');
     }
 
@@ -336,7 +336,7 @@ export class Collection extends MongooseCollection {
      * @param fieldOrSpec
      * @param options
      */
-    createIndex(fieldOrSpec: any, options?: any) {
+    createIndex(_fieldOrSpec: any, _options?: any) {
         throw new OperationNotSupportedError('createIndex() Not Implemented');
     }
 

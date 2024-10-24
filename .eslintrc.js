@@ -36,11 +36,10 @@ module.exports = {
                 'no-dupe-keys': 'error',
                 'no-unreachable': 'error',
                 '@typescript-eslint/no-explicit-any': 'off',
+                '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
                 '@typescript-eslint/no-unused-vars': [
                     'warn',
-                    // Never warn about unused parameters
-                    // See: https://eslint.org/docs/latest/rules/no-unused-vars#args
-                    {'args': 'none'}
+                    { 'argsIgnorePattern': '^_' }
                 ]
             }
         }
