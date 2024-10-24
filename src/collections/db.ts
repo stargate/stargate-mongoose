@@ -137,7 +137,7 @@ export class Db {
         });
     }
 
-    async runCommand(command: Record<string, any>) {
+    async runCommand(command: Record<string, unknown>) {
         return executeOperation(async () => {
             return await this.httpClient.executeCommandWithUrl(
                 '/' + this.name,

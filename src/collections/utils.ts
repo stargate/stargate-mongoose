@@ -143,9 +143,11 @@ export class StargateAuthError extends Error {
     }
 }
 export const executeOperation = async (operation: () => Promise<unknown>) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let res: any = {};
     try {
         res = await operation();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
         logger.error(e?.stack || e?.message);
         throw e;
@@ -184,6 +186,7 @@ export async function dropNamespace(httpClient: HTTPClient, name: string) {
     return response;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function setDefaultIdForUpsert(command: Record<string, any>, replace?: boolean) {
     if (command.filter == null || command.options == null) {
         return;
@@ -216,6 +219,7 @@ export function setDefaultIdForUpsert(command: Record<string, any>, replace?: bo
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function _updateHasKey(update: Record<string, any>, key: string) {
     for (const operator of Object.keys(update)) {
         if (update[operator] != null && typeof update[operator] === 'object' && key in update[operator]) {
@@ -225,6 +229,7 @@ function _updateHasKey(update: Record<string, any>, key: string) {
     return false;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function omit<T extends Record<string, any>>(obj: T | null | undefined, keys: string[]): T | null | undefined {
     if (obj == null) {
         return obj;

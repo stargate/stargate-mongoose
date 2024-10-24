@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { default as MongooseCollection } from 'mongoose/lib/collection';
+import type { Connection } from './connection';
 import {
     DeleteOneOptions,
     FindOneAndDeleteOptions,
@@ -31,7 +32,7 @@ import { version } from 'mongoose';
 
 const IS_MONGOOSE_7 = version.startsWith('7.');
 
-type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null) => unknown;
+type NodeCallback<ResultType = unknown> = (err: Error | null, res: ResultType | null) => unknown;
 
 /**
  * Collection operations supported by the driver.
@@ -39,12 +40,8 @@ type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null
 export class Collection extends MongooseCollection {
     debugType = 'StargateMongooseCollection';
 
-    constructor(name: string, conn: any, options?: any) {
+    constructor(name: string, conn: Connection, options?: unknown) {
         super(name, conn, options);
-        if (options?.modelName != null) {
-            this.modelName = options.modelName;
-            delete options.modelName;
-        }
         this._closed = false;
     }
 
@@ -58,7 +55,7 @@ export class Collection extends MongooseCollection {
     * @param filter
     * @deprecated
     */
-    count(filter: Record<string, any>) {
+    count(filter: Record<string, unknown>) {
         return this.collection.count(filter);
     }
 
@@ -66,7 +63,7 @@ export class Collection extends MongooseCollection {
      * Count documents in the collection that match the given filter.
      * @param filter
      */
-    countDocuments(filter: Record<string, any>) {
+    countDocuments(filter: Record<string, unknown>) {
         return this.collection.countDocuments(filter);
     }
 
@@ -76,7 +73,7 @@ export class Collection extends MongooseCollection {
      * @param options
      * @param callback
      */
-    find(filter: Record<string, any>, options?: FindOptions, callback?: NodeCallback<Record<string, any>[]>) {
+    find(filter: Record<string, unknown>, options?: FindOptions, callback?: NodeCallback<Record<string, unknown>[]>) {
         if (options != null) {
             processSortOption(options);
         }
@@ -92,7 +89,7 @@ export class Collection extends MongooseCollection {
      * @param filter
      * @param options
      */
-    findOne(filter: Record<string, any>, options?: FindOneOptions) {
+    findOne(filter: Record<string, unknown>, options?: FindOneOptions) {
         if (options != null) {
             processSortOption(options);
         }
@@ -103,7 +100,7 @@ export class Collection extends MongooseCollection {
      * Insert a single document into the collection.
      * @param doc
      */
-    insertOne(doc: Record<string, any>) {
+    insertOne(doc: Record<string, unknown>) {
         return this.collection.insertOne(doc);
     }
 
@@ -112,7 +109,7 @@ export class Collection extends MongooseCollection {
      * @param documents
      * @param options
      */
-    async insertMany(documents: Record<string, any>[], options?: InsertManyOptions) {
+    async insertMany(documents: Record<string, unknown>[], options?: InsertManyOptions) {
         const usePagination = options?.usePagination ?? false;
         if (options != null && 'usePagination' in options) {
             options = { ...options };
@@ -172,7 +169,7 @@ export class Collection extends MongooseCollection {
      * @param update
      * @param options
      */
-    async findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions) {
+    async findOneAndUpdate(filter: Record<string, unknown>, update: Record<string, unknown>, options?: FindOneAndUpdateOptions) {
         if (options != null) {
             processSortOption(options);
         }
@@ -190,7 +187,7 @@ export class Collection extends MongooseCollection {
      * @param filter
      * @param options
      */
-    async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions) {
+    async findOneAndDelete(filter: Record<string, unknown>, options?: FindOneAndDeleteOptions) {
         if (options != null) {
             processSortOption(options);
         }
@@ -209,7 +206,7 @@ export class Collection extends MongooseCollection {
      * @param newDoc
      * @param options
      */
-    async findOneAndReplace(filter: Record<string, any>, newDoc: Record<string, any>, options?: FindOneAndReplaceOptions) {
+    async findOneAndReplace(filter: Record<string, unknown>, newDoc: Record<string, unknown>, options?: FindOneAndReplaceOptions) {
         if (options != null) {
             processSortOption(options);
         }
@@ -226,7 +223,7 @@ export class Collection extends MongooseCollection {
      * Delete one or more documents in a collection that match the given filter.
      * @param filter
      */
-    deleteMany(filter: Record<string, any>) {
+    deleteMany(filter: Record<string, unknown>) {
         return this.collection.deleteMany(filter);
     }
 
@@ -236,7 +233,7 @@ export class Collection extends MongooseCollection {
      * @param options
      * @param callback
      */
-    deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<DataAPIDeleteResult>) {
+    deleteOne(filter: Record<string, unknown>, options?: DeleteOneOptions, callback?: NodeCallback<DataAPIDeleteResult>) {
         if (options != null) {
             processSortOption(options);
         }
@@ -256,7 +253,7 @@ export class Collection extends MongooseCollection {
      * @param update
      * @param options
      */
-    updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
+    updateOne(filter: Record<string, unknown>, update: Record<string, unknown>, options?: UpdateOneOptions) {
         if (options != null) {
             processSortOption(options);
         }
@@ -269,7 +266,7 @@ export class Collection extends MongooseCollection {
      * @param update
      * @param options
      */
-    updateMany(filter: Record<string, any>, update: Record<string, any>, options?: UpdateManyOptions) {
+    updateMany(filter: Record<string, unknown>, update: Record<string, unknown>, options?: UpdateManyOptions) {
         return this.collection.updateMany(filter, update, options);
     }
 
@@ -284,7 +281,7 @@ export class Collection extends MongooseCollection {
      * Run an arbitrary command against this collection's http client
      * @param command
      */
-    runCommand(command: Record<string, any>) {
+    runCommand(command: Record<string, unknown>) {
         return this.collection.runCommand(command);
     }
 
@@ -293,7 +290,7 @@ export class Collection extends MongooseCollection {
      * @param ops
      * @param options
      */
-    bulkWrite(_ops: any[], _options?: any) {
+    bulkWrite(_ops: Record<string, unknown>[], _options?: Record<string, unknown>) {
         throw new OperationNotSupportedError('bulkWrite() Not Implemented');
     }
 
@@ -302,7 +299,7 @@ export class Collection extends MongooseCollection {
      * @param pipeline
      * @param options
      */
-    aggregate(_pipeline: any[], _options?: any) {
+    aggregate(_pipeline: Record<string, unknown>[], _options?: Record<string, unknown>) {
         throw new OperationNotSupportedError('aggregate() Not Implemented');
     }
 
@@ -311,7 +308,7 @@ export class Collection extends MongooseCollection {
      * @param docs
      * @param options
      */
-    bulkSave(_docs: any[], _options?: any) {
+    bulkSave(_docs: Record<string, unknown>[], _options?: Record<string, unknown>) {
         throw new OperationNotSupportedError('bulkSave() Not Implemented');
     }
 
@@ -319,7 +316,7 @@ export class Collection extends MongooseCollection {
      * Clean indexes not supported.
      * @param options
      */
-    cleanIndexes(_options?: any) {
+    cleanIndexes(_options?: Record<string, unknown>) {
         throw new OperationNotSupportedError('cleanIndexes() Not Implemented');
     }
 
@@ -327,7 +324,7 @@ export class Collection extends MongooseCollection {
      * List indexes not supported.
      * @param options
      */
-    listIndexes(_options?: any) {
+    listIndexes(_options?: Record<string, unknown>) {
         throw new OperationNotSupportedError('listIndexes() Not Implemented');
     }
 
@@ -336,7 +333,7 @@ export class Collection extends MongooseCollection {
      * @param fieldOrSpec
      * @param options
      */
-    createIndex(_fieldOrSpec: any, _options?: any) {
+    createIndex(_fieldOrSpec: Record<string, unknown>, _options?: Record<string, unknown>) {
         throw new OperationNotSupportedError('createIndex() Not Implemented');
     }
 

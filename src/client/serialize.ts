@@ -1,6 +1,7 @@
 import { EJSON } from 'bson';
 import mongoose from 'mongoose';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function serialize(data: Record<string, any>, pretty?: boolean): string {
     return data != null
         ? EJSON.stringify(
@@ -13,6 +14,7 @@ export function serialize(data: Record<string, any>, pretty?: boolean): string {
 
 // Mongoose relies on certain values getting transformed into their BSON equivalents,
 // most notably subdocuments and document arrays. Otherwise `$push` on a document array fails.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyToBSONTransform(data: Record<string, any> | any[]): Record<string, any> {
     if (data == null) {
         return data;
@@ -31,6 +33,7 @@ function applyToBSONTransform(data: Record<string, any> | any[]): Record<string,
     return data;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyToBSON(value: any) {
     if (value?.isMongooseArrayProxy || value instanceof mongoose.Types.Subdocument) {
         return value.toBSON();
@@ -39,6 +42,7 @@ function applyToBSON(value: any) {
     return value;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function serializeValue(value: any): any {
     if (value != null && typeof value === 'bigint') {
         //BigInt handling

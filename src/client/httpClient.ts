@@ -417,12 +417,13 @@ export class StargateServerError extends Error {
     }
 }
 
-export const handleIfErrorResponse = (response: any, data: Record<string, any>) => {
-    if (response.errors && response.errors.length > 0) {
+export const handleIfErrorResponse = (response: any, data: Record<string, unknown>) => {
+    if (Array.isArray(response.errors) && response.errors.length > 0) {
         throw new StargateServerError(response, data);
     }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function cleanupOptions(commandName: string, command: Record<string, any>, optionsToRetain: Set<string> | null, logSkippedOptions: boolean) {
     if (command.options != null) {
         Object.keys(command.options).forEach((key) => {
