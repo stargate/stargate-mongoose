@@ -18,20 +18,20 @@ import {executeOperation, omit, setDefaultIdForUpsert} from './utils';
 import {InsertManyResult} from 'mongoose';
 import {
     DeleteOneOptions,
-    FindOneAndDeleteOptions,
+    FindOneAndDeleteOptionsForDataAPI,
+    FindOneAndReplaceOptionsForDataAPI,
     findOneAndReplaceInternalOptionsKeys,
-    FindOneAndReplaceOptions,
     findOneAndUpdateInternalOptionsKeys,
     FindOneAndUpdateOptions,
-    FindOneOptions,
     insertManyInternalOptionsKeys,
     InsertManyOptions,
     updateManyInternalOptionsKeys,
     UpdateManyOptions,
     updateOneInternalOptionsKeys,
-    UpdateOneOptions,
-    FindOptions,
-    findOneInternalOptionsKeys
+    findOneInternalOptionsKeys,
+    FindOptionsForDataAPI,
+    FindOneOptionsForDataAPI,
+    UpdateOneOptionsForDataAPI
 } from './options';
 
 export interface DataAPIUpdateResult {
@@ -119,7 +119,7 @@ export class Collection {
         });
     }
 
-    async updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
+    async updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptionsForDataAPI) {
         return executeOperation(async (): Promise<DataAPIUpdateResult> => {
             const command = {
                 updateOne: {
@@ -253,11 +253,11 @@ export class Collection {
         });
     }
 
-    find(filter: Record<string, any>, options?: FindOptions): FindCursor {
+    find(filter: Record<string, any>, options?: FindOptionsForDataAPI): FindCursor {
         return new FindCursor(this, filter, options);
     }
 
-    async findOne(filter: Record<string, any>, options?: FindOneOptions): Promise<Record<string, any> | null> {
+    async findOne(filter: Record<string, any>, options?: FindOneOptionsForDataAPI): Promise<Record<string, any> | null> {
         return executeOperation(async (): Promise<Record<string, any> | null> => {
             const command = {
                 findOne: {
@@ -280,7 +280,7 @@ export class Collection {
         });
     }
 
-    async findOneAndReplace(filter: Record<string, any>, replacement: Record<string, any>, options?: FindOneAndReplaceOptions): Promise<DataAPIModifyResult> {
+    async findOneAndReplace(filter: Record<string, any>, replacement: Record<string, any>, options?: FindOneAndReplaceOptionsForDataAPI): Promise<DataAPIModifyResult> {
         return executeOperation(async (): Promise<DataAPIModifyResult> => {
             const command = {
                 findOneAndReplace: {
@@ -336,7 +336,7 @@ export class Collection {
         });
     }
 
-    async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions): Promise<DataAPIModifyResult> {
+    async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptionsForDataAPI): Promise<DataAPIModifyResult> {
         const command = {
             findOneAndDelete: {
                 filter,
