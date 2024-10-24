@@ -113,7 +113,9 @@ class HTTP2Session {
         // Without these handlers, any errors will end up as uncaught exceptions,
         // even if they are handled in `_request()`.
         // More info: https://github.com/nodejs/node/issues/16345
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         this.session.on('error', () => {});
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         this.session.on('socketError', () => {});
     }
 
@@ -422,8 +424,8 @@ export const handleIfErrorResponse = (response: any, data: Record<string, any>) 
 };
 
 function cleanupOptions(commandName: string, command: Record<string, any>, optionsToRetain: Set<string> | null, logSkippedOptions: boolean) {
-    if (command.options) {
-        Object.keys(command.options!).forEach((key) => {
+    if (command.options != null) {
+        Object.keys(command.options).forEach((key) => {
             if (optionsToRetain === null || !optionsToRetain.has(key)) {
                 if (logSkippedOptions) {
                     logger.warn(`'${commandName}' does not support option '${key}'`);

@@ -15,7 +15,7 @@
 import { Client } from '@/src/collections/client';
 import { Collection } from './collection';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
-import { STATES } from 'mongoose';
+import { STATES, Model } from 'mongoose';
 import { executeOperation } from '../collections/utils';
 import { CreateCollectionOptions } from '../collections/options';
 
@@ -124,8 +124,8 @@ export class Connection extends MongooseConnection {
             bufferCommands: options?.bufferCommands
         };
 
-        for (const model of Object.values(this.models)) {
-            // @ts-ignore
+        for (const model of Object.values(this.models) as Model<any>[]) {
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
             model.init().catch(() => { });
         }
 

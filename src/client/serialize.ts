@@ -17,11 +17,7 @@ function applyToBSONTransform(data: Record<string, any> | any[]): Record<string,
     if (data == null) {
         return data;
     }
-    // @ts-ignore
-    if (shouldApplyToBSON(data) && typeof data.toBSON === 'function') {
-        // @ts-ignore
-        data = data.toBSON();
-    }
+    data = applyToBSON(data);
     if (Array.isArray(data)) {
         return data.map(el => applyToBSONTransform(el));
     }
@@ -35,8 +31,12 @@ function applyToBSONTransform(data: Record<string, any> | any[]): Record<string,
     return data;
 }
 
-function shouldApplyToBSON(value: any) {
-    return value?.isMongooseArrayProxy || value instanceof mongoose.Types.Subdocument;
+function applyToBSON(value: any) {
+    if (value?.isMongooseArrayProxy || value instanceof mongoose.Types.Subdocument) {
+        return value.toBSON();
+    }
+
+    return value;
 }
 
 function serializeValue(value: any): any {
