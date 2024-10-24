@@ -183,21 +183,21 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 |--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | literal comparison | Equal to. Example: `{ 'first_name' : 'jim' }`                                                                                                                  |
 | $eq                | Example: `{ 'first_name' : { '$eq' : 'jim' } }`                                                                                                                |
-| $gt                | Not supported. Example (age > 25): `{ 'age' : { '$gt' : 25 } }`                                                                                                |
-| $gte               | Not supported. Example (age >= 25): `{ 'age' : { '$gte' : 25 } }`                                                                                              |
-| $lt                | Not supported. Example (age < 25): `{ 'age' : { '$lt' : 25 } }`                                                                                                |
-| $lte               | Not supported. Example (age <= 25): `{ 'age' : { '$lte' : 25 } }`                                                                                              |
-| $ne                | Not supported. Not Equal to. Example: `{ 'first_name' : { '$ne' : 'jim' } }`                                                                                   |
+| $gt                | Example (age > 25): `{ 'age' : { '$gt' : 25 } }`                                                                                                |
+| $gte               | Example (age >= 25): `{ 'age' : { '$gte' : 25 } }`                                                                                              |
+| $lt                | Example (age < 25): `{ 'age' : { '$lt' : 25 } }`                                                                                                |
+| $lte               | Example (age <= 25): `{ 'age' : { '$lte' : 25 } }`                                                                                              |
+| $ne                | Example: `{ 'first_name' : { '$ne' : 'jim' } }`                                                                                   |
 | $in                | Example: `{ '_id' : { '$in' : ['nyc', 'la'] } }` $in is not supported in non _id columns at the moment                                                         |
-| $nin               | Not supported. Example: `{ 'address.city' : { '$nin' : ['nyc', 'la'] } }`                                                                                      |
+| $nin               | Example: `{ 'address.city' : { '$nin' : ['nyc', 'la'] } }`                                                                                      |
 | $not               | Not supported. Example: `{ 'first_name' : { '$not' : { '$eq' : 'jim' }}}`                                                                                      |
 | $exists            | Example: `{ 'address.city' : { '$exists' : true} }`                                                                                                            |
 | $all               | Array operation. Matches if all the elements of an array matches the given values. Example: `{ 'tags' : { '$all' : [ 'home', 'school' ] } }`                   |
 | $elemMatch         | Not supported. Matches if the elements of an array in a document matches the given conditions. Example: `{'goals': { '$elemMatch': { '$gte': 2, '$lt': 10 }}}` |
 | $size              | Array Operation. Example: `{ 'tags' : { '$size' : 1 } }`                                                                                                       |
 | $and (implicit)    | Logical expression. Example : ` { '$and' : [ {first_name : 'jim'}, {'age' : {'$gt' : 25 } } ] } `                                                              |
-| $and (explicit)    | Not supported. Example : ` { '$and' : [ {first_name : 'jim'}, {'age' : {'$gt' : 25 } } ] } `                                                                   |
-| $or                | Not supported                                                                                                                                                  |
+| $and (explicit)    | Example : ` { '$and' : [ {first_name : 'jim'}, {'age' : {'$gt' : 25 } } ] } `                                                                   |
+| $or                | Example: `{ '$or' : [ {first_name : 'jim'}, {'age' : {'$gt' : 25 } } ] }`                                                                                                                                              |
 
 ### Projection Clause
 | Operator                | Description                                                                                                                      |
