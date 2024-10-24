@@ -16,6 +16,7 @@ import {Db} from './db';
 import {FindCursor} from './cursor';
 import {executeOperation, omit, setDefaultIdForUpsert} from './utils';
 import {InsertManyResult} from 'mongoose';
+import type { HTTPClient } from '../client';
 import {
     DeleteOneOptions,
     FindOneAndDeleteOptions,
@@ -38,7 +39,7 @@ export interface DataAPIUpdateResult {
     matchedCount: number;
     modifiedCount: number;
     acknowledged: boolean;
-    upsertedId?: any;
+    upsertedId?: unknown;
     upsertedCount?: number;
 }
 
@@ -49,20 +50,20 @@ export interface DataAPIDeleteResult {
 
 export interface DataAPIInsertOneResult {
     acknowledged: boolean;
-    insertedId: any;
+    insertedId: unknown;
 }
 
 export interface DataAPIModifyResult {
     ok: number;
-    value: Record<string, any> | null;
+    value: Record<string, unknown> | null;
 }
 
-export type DataAPIInsertManyResult = InsertManyResult<any> & {
+export type DataAPIInsertManyResult = InsertManyResult<unknown> & {
     documentResponses?: { _id: unknown, status: string, errorsIdx?: number }
 }
 
 export class Collection {
-    httpClient: any;
+    httpClient: HTTPClient;
     name: string;
     httpBasePath: string;
     collectionName: string;
@@ -78,7 +79,7 @@ export class Collection {
         this.httpBasePath = `/${db.name}/${name}`;
     }
 
-    async insertOne(document: Record<string, any>) {
+    async insertOne(document: Record<string, unknown>) {
         return executeOperation(async (): Promise<DataAPIInsertOneResult> => {
             const command = {
                 insertOne: {
@@ -97,7 +98,7 @@ export class Collection {
         });
     }
 
-    async insertMany(documents: Record<string, any>[], options?: InsertManyOptions) {
+    async insertMany(documents: Record<string, unknown>[], options?: InsertManyOptions) {
         return executeOperation(async (): Promise<DataAPIInsertManyResult> => {
             const command = {
                 insertMany: {
@@ -119,7 +120,7 @@ export class Collection {
         });
     }
 
-    async updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
+    async updateOne(filter: Record<string, unknown>, update: Record<string, unknown>, options?: UpdateOneOptions) {
         return executeOperation(async (): Promise<DataAPIUpdateResult> => {
             const command = {
                 updateOne: {
@@ -148,7 +149,7 @@ export class Collection {
         });
     }
 
-    async updateMany(filter: Record<string, any>, update: Record<string, any>, options?: UpdateManyOptions) {
+    async updateMany(filter: Record<string, unknown>, update: Record<string, unknown>, options?: UpdateManyOptions) {
         return executeOperation(async (): Promise<DataAPIUpdateResult> => {
             const command = {
                 updateMany: {
@@ -211,7 +212,7 @@ export class Collection {
         });
     }
 
-    async deleteOne(filter: Record<string, any>, options?: DeleteOneOptions): Promise<DataAPIDeleteResult> {
+    async deleteOne(filter: Record<string, unknown>, options?: DeleteOneOptions): Promise<DataAPIDeleteResult> {
         return executeOperation(async (): Promise<DataAPIDeleteResult> => {
             const command = {
                 deleteOne: {
@@ -231,7 +232,7 @@ export class Collection {
         });
     }
 
-    async deleteMany(filter: Record<string, any>): Promise<DataAPIDeleteResult> {
+    async deleteMany(filter: Record<string, unknown>): Promise<DataAPIDeleteResult> {
         return executeOperation(async (): Promise<DataAPIDeleteResult> => {
             const command = {
                 deleteMany: {
@@ -253,12 +254,12 @@ export class Collection {
         });
     }
 
-    find(filter: Record<string, any>, options?: FindOptions): FindCursor {
+    find(filter: Record<string, unknown>, options?: FindOptions): FindCursor {
         return new FindCursor(this, filter, options);
     }
 
-    async findOne(filter: Record<string, any>, options?: FindOneOptions): Promise<Record<string, any> | null> {
-        return executeOperation(async (): Promise<Record<string, any> | null> => {
+    async findOne(filter: Record<string, unknown>, options?: FindOneOptions): Promise<Record<string, unknown> | null> {
+        return executeOperation(async (): Promise<Record<string, unknown> | null> => {
             const command = {
                 findOne: {
                     filter,
@@ -280,7 +281,7 @@ export class Collection {
         });
     }
 
-    async findOneAndReplace(filter: Record<string, any>, replacement: Record<string, any>, options?: FindOneAndReplaceOptions): Promise<DataAPIModifyResult> {
+    async findOneAndReplace(filter: Record<string, unknown>, replacement: Record<string, unknown>, options?: FindOneAndReplaceOptions): Promise<DataAPIModifyResult> {
         return executeOperation(async (): Promise<DataAPIModifyResult> => {
             const command = {
                 findOneAndReplace: {
@@ -304,11 +305,11 @@ export class Collection {
         });
     }
 
-    async distinct(_key: any, _filter: any, _options?: any) {
+    async distinct(_key: string, _filter: Record<string, unknown>, _options?: Record<string, unknown>) {
         throw new Error('Not Implemented');
     }
 
-    async countDocuments(filter?: Record<string, any>): Promise<number> {
+    async countDocuments(filter?: Record<string, unknown>): Promise<number> {
         return executeOperation(async (): Promise<number> => {
             const command = {
                 countDocuments: {
@@ -336,7 +337,7 @@ export class Collection {
         });
     }
 
-    async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions): Promise<DataAPIModifyResult> {
+    async findOneAndDelete(filter: Record<string, unknown>, options?: FindOneAndDeleteOptions): Promise<DataAPIModifyResult> {
         const command = {
             findOneAndDelete: {
                 filter,
@@ -359,11 +360,11 @@ export class Collection {
     /** 
    * @deprecated
    */
-    async count(filter?: Record<string, any>) {
+    async count(filter?: Record<string, unknown>) {
         return this.countDocuments(filter);
     }
 
-    async findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions): Promise<DataAPIModifyResult> {
+    async findOneAndUpdate(filter: Record<string, unknown>, update: Record<string, unknown>, options?: FindOneAndUpdateOptions): Promise<DataAPIModifyResult> {
         return executeOperation(async (): Promise<DataAPIModifyResult> => {
             const command = {
                 findOneAndUpdate: {
@@ -387,7 +388,7 @@ export class Collection {
         });
     }
 
-    async runCommand(command: Record<string, any>) {
+    async runCommand(command: Record<string, unknown>) {
         return executeOperation(async () => {
             return await this.httpClient.executeCommandWithUrl(
                 this.httpBasePath,
@@ -399,8 +400,8 @@ export class Collection {
 }
 
 export class StargateMongooseError extends Error {
-    command: Record<string, any>;
-    constructor(message: any, command: Record<string, any>) {
+    command: Record<string, unknown>;
+    constructor(message: string, command: Record<string, unknown>) {
         const commandName = Object.keys(command)[0] || 'unknown';
         super(`Command "${commandName}" failed with the following error: ${message}`);
         this.command = command;

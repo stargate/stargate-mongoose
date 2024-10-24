@@ -228,8 +228,7 @@ describe('StargateMongoose - collections.Db', async () => {
         });
     });
 
-    describe('dropDatabase', function (this: Mocha.Suite) {
-        const suite = this;
+    describe('dropDatabase', () => {
         const suffix = randString(4);
         const keyspaceName = parseUri(dbUri).keyspaceName + '_' + suffix;
         before(async () => {
@@ -238,9 +237,9 @@ describe('StargateMongoose - collections.Db', async () => {
             }
             await createNamespace(httpClient, keyspaceName);
         });
-        it('should drop the underlying database (AKA namespace)', async () => {
+        it('should drop the underlying database (AKA namespace)', async function() {
             if (isAstra) {
-                suite.ctx.skip();
+                return this.skip();
             }
             const db = new Db(httpClient, keyspaceName);
             
@@ -261,8 +260,7 @@ describe('StargateMongoose - collections.Db', async () => {
         });
     });
 
-    describe('createDatabase', function (this: Mocha.Suite) {
-        const suite = this;
+    describe('createDatabase', () => {
         after(async () => {
             if (isAstra) {
                 return;
@@ -272,9 +270,9 @@ describe('StargateMongoose - collections.Db', async () => {
             await createMongooseCollections();
         });
 
-        it('should create the underlying database (AKA namespace)', async () => {
+        it('should create the underlying database (AKA namespace)', async function() {
             if (isAstra) {
-                suite.ctx.skip();
+                return this.skip();
             }
             const keyspaceName = parseUri(dbUri).keyspaceName;
             const db = new Db(httpClient, keyspaceName);
