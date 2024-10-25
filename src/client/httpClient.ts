@@ -115,9 +115,7 @@ class HTTP2Session {
         // Without these handlers, any errors will end up as uncaught exceptions,
         // even if they are handled in `_request()`.
         // More info: https://github.com/nodejs/node/issues/16345
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
         this.session.on('error', () => {});
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
         this.session.on('socketError', () => {});
     }
 
@@ -211,8 +209,9 @@ class HTTP2Session {
                     }
 
                     resolve({ status, data });
-                } catch (error) {
-                    reject(new Error('Unable to parse response as JSON, got: "' + data + '"'));
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } catch (error: any) {
+                    reject(new Error('Unable to parse response as JSON, got: "' + data + '", error: ' + error?.message));
                     return;
                 }
             });

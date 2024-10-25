@@ -46,7 +46,7 @@ class _FindOptionsInternal {
     includeSortVector?: boolean = undefined;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface FindOptionsInternal extends _FindOptionsInternal {}
 
 export const findInternalOptionsKeys: Set<string> = new Set(
@@ -84,7 +84,7 @@ class _FindOneAndReplaceOptions {
     includeResultMetadata?: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface FindOneAndReplaceOptions extends _FindOneAndReplaceOptions {}
 
 export const findOneAndReplaceInternalOptionsKeys: Set<string> = new Set(
@@ -99,7 +99,7 @@ class _FindOneAndUpdateOptions {
     includeResultMetadata?: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface FindOneAndUpdateOptions extends _FindOneAndUpdateOptions {}
 
 export const findOneAndUpdateInternalOptionsKeys: Set<string> = new Set(
@@ -112,7 +112,7 @@ class _InsertManyOptions {
     returnDocumentResponses?: boolean = undefined;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface InsertManyOptions extends _InsertManyOptions {}
 
 export const insertManyInternalOptionsKeys: Set<string> = new Set(
@@ -125,7 +125,7 @@ class _UpdateManyOptions {
     pageState?: string = undefined;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface UpdateManyOptions extends _UpdateManyOptions {}
 
 // `usePagination` is supported as user-specified option, but not passed to Data API
@@ -138,7 +138,7 @@ class _UpdateOneOptions {
     sort?: SortOption;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface UpdateOneOptions extends _UpdateOneOptions {}
 
 export const updateOneInternalOptionsKeys: Set<string> = new Set(
@@ -155,7 +155,7 @@ class _CreateCollectionOptions {
     defaultId?: DefaultIdOptions = undefined;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface CreateCollectionOptions extends _CreateCollectionOptions {}
 
 export const createCollectionOptionsKeys: Set<string> = new Set(
@@ -166,7 +166,7 @@ class _ListCollectionOptions {
     explain?: boolean = undefined;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface ListCollectionOptions extends _ListCollectionOptions {}
 
 export const listCollectionOptionsKeys: Set<string> = new Set(

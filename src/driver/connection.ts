@@ -130,8 +130,7 @@ export class Connection extends MongooseConnection {
         };
 
         for (const model of Object.values(this.models) as Model<unknown>[]) {
-            // eslint-disable-next-line @typescript-eslint/no-empty-function
-            model.init().catch(() => { });
+            model.init().catch(() => {});
         }
 
         this.initialConnection = this.createClient(uri, options)

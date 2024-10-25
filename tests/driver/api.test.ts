@@ -24,15 +24,7 @@ import { once } from 'events';
 import * as StargateMongooseDriver from '@/src/driver';
 import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '@/src/driver';
-import { Product, Cart, mongooseInstance } from '@/tests/mongooseFixtures';
-
-const productSchema = new mongoose.Schema({
-    name: String,
-    price: Number,
-    expiryDate: Date,
-    isCertified: Boolean,
-    category: String
-});
+import { Product, Cart, mongooseInstance, productSchema } from '@/tests/mongooseFixtures';
 
 describe('Mongoose Model API level tests', async () => {
     let astraClient: Client | null;
