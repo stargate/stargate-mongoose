@@ -64,7 +64,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             let error: any;
             let collection: Collection | null = null;
             try {
-                // @ts-ignore: Testing invalid input
+                // @ts-expect-error: Testing invalid input
                 collection = new Collection(db);
                 assert.ok(collection);
             } catch (e) {
@@ -2651,7 +2651,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                     'upsert': true
                 }
             );
-            // @ts-ignore
+            // @ts-expect-error
             assert.ok(value!._id!.toString().match(/^[a-f\d]{24}$/i), value!._id);
         });
         it('should findOneAndUpdate without any updates to apply', async () => {

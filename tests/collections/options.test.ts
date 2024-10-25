@@ -27,7 +27,7 @@ describe('Options tests', async () => {
 
     describe('options cleanup tests', () => {
         it('should cleanup insertManyOptions', async () => {
-            // @ts-ignore
+            // @ts-expect-error
             const products: Product[] = [new Product({ name: 'Product 2', price: 10, isCertified: true }), new Product({ name: 'Product 1', price: 10, isCertified: false})];
             //rawResult options should be cleaned up by stargate-mongoose, but 'ordered' should be preserved
             const insertManyResp = await Product.insertMany(products, { ordered: true, rawResult: false });
@@ -47,7 +47,7 @@ describe('Options tests', async () => {
             assert.strictEqual(productNames.size, 0);
         });
         it('should cleanup updateOneOptions', async () => {
-            // @ts-ignore
+            // @ts-expect-error
             const products: Product[] = [new Product({ name: 'Product 2', price: 10, isCertified: true }),
                 new Product({ name: 'Product 1', price: 10, isCertified: false }),
                 new Product({ name: 'Product 3', price: 10, isCertified: true })];
@@ -73,7 +73,7 @@ describe('Options tests', async () => {
             assert.strictEqual(product4?.isCertified, true);
         });
         it('should cleanup updateManyOptions', async () => {
-            // @ts-ignore
+            // @ts-expect-error
             const products: Product[] = [new Product({ name: 'Product 2', price: 10, isCertified: true, category: 'cat1' }), new Product({ name: 'Product 1', price: 10, isCertified: false, category: 'cat1' }), new Product({ name: 'Product 3', price: 10, isCertified: false, category: 'cat2' })];
             const insertManyResp = await Product.insertMany(products, { ordered: true, rawResult: false });
             assert.strictEqual(insertManyResp.length, 3);
@@ -100,7 +100,7 @@ describe('Options tests', async () => {
             });
         });
         it('should cleanup deleteOneOptions', async () => {
-            // @ts-ignore
+            // @ts-expect-error
             const product1 = new Product({ name: 'Product 1', price: 10, isCertified: true });
             await product1.save();
             //runValidations is not a flag supported by Data API, so it should be removed by stargate-mongoose
@@ -110,18 +110,18 @@ describe('Options tests', async () => {
         });
         it('should cleanup findOptions', async () => {
             //create 20 products using Array with id suffixed to prduct name
-            // @ts-ignore
+            // @ts-expect-error
             let products: Product[] = [];
             for (let i = 0; i < 20; i++) {
-                // @ts-ignore
+                // @ts-expect-error
                 products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true }));
             }
             await Product.insertMany(products, { ordered: true, rawResult: false });
             //insert next 20 products using Array with id suffixed to product name
-            // @ts-ignore
+            // @ts-expect-error
             products = [];
             for (let i = 20; i < 40; i++) {
-                // @ts-ignore
+                // @ts-expect-error
                 products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true }));
             }
             await Product.insertMany(products, { ordered: true, rawResult: false });
@@ -132,10 +132,10 @@ describe('Options tests', async () => {
         });
         it('should cleanup findOneAndReplaceOptions', async () => {
             //create 20 products using Array with id suffixed to prduct name
-            // @ts-ignore
+            // @ts-expect-error
             const products: Product[] = [];
             for (let i = 0; i < 20; i++) {
-                // @ts-ignore
+                // @ts-expect-error
                 products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true }));
             }
             await Product.insertMany(products, { ordered: true, rawResult: false });
@@ -155,14 +155,14 @@ describe('Options tests', async () => {
         });
         it('should cleanup findOneAndDeleteOptions', async () => {
             //create 20 products using Array with id suffixed to prduct name
-            // @ts-ignore
+            // @ts-expect-error
             const products: Product[] = [];
             for (let i = 0; i < 20; i++) {
                 if(i === 5 || i === 6) {
-                    // @ts-ignore
+                    // @ts-expect-error
                     products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true, category: 'cat 6' }));
                 } else {
-                    // @ts-ignore
+                    // @ts-expect-error
                     products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true, category: `cat ${i}` }));
                 }
             }
@@ -181,10 +181,10 @@ describe('Options tests', async () => {
         });
         it('should cleanup findOneAndUpdateOptions', async () => {
             //create 20 products using Array with id suffixed to product name
-            // @ts-ignore
+            // @ts-expect-error
             const products: Product[] = [];
             for (let i = 0; i < 20; i++) {
-                // @ts-ignore
+                // @ts-expect-error
                 products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true }));
             }
             await Product.insertMany(products, { ordered: true, rawResult: false });

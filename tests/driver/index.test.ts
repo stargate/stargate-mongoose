@@ -178,7 +178,7 @@ describe('Driver based tests', async () => {
         it('throws readable error on aggregate()', async () => {
             const Person = mongooseInstance!.model('Person');
             await Person.deleteMany({});
-            // @ts-ignore
+            // @ts-expect-error
             await assert.rejects(
                 Person.aggregate([{$match: {name: 'John'}}]),
                 /aggregate\(\) Not Implemented/
@@ -227,7 +227,7 @@ describe('Driver based tests', async () => {
             await mongooseInstance.disconnect();
 
             const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
-            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+            // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
             await mongooseInstance.connect(dbUri, options);
 
             // Should be able to execute query after reconnecting
@@ -249,7 +249,7 @@ describe('Driver based tests', async () => {
             mongooseInstance.set('autoIndex', false);
 
             const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
-            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+            // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
             await mongooseInstance.connect(dbUri, options);
 
             return mongooseInstance;
@@ -272,7 +272,7 @@ describe('Driver based tests', async () => {
             //if token is not null, append it to the new dbUri
             newDbUri = token ? newDbUri + '?applicationToken=' + token : newDbUri;
 
-            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+            // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
             await mongooseInstance.connect(newDbUri, options);
             if (isAstra) {
                 let error: any;
@@ -303,7 +303,7 @@ describe('Driver based tests', async () => {
             let newDbUri = dbUriSplit.join('/');
             //if token is not null, append it to the new dbUri
             newDbUri = token ? newDbUri + '?applicationToken=' + token : newDbUri;
-            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+            // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
             await mongooseInstance.connect(newDbUri, options);
             if (isAstra) {
                 let error: any;

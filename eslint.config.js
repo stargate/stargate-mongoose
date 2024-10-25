@@ -16,24 +16,28 @@ module.exports = [
             }
         },
         files: [
-            './src/**/*.ts'
+            'src/**/*.ts',
+            'tests/**/*.ts'
         ]
     },
     {
         ...eslint.configs.recommended,
         files: [
-            './src/**/*.ts'
+            'src/**/*.ts',
+            'tests/**/*.ts'
         ],
     },
     ...tseslint.configs.recommended.map(config => ({
         ...config,
         files: [
-            './src/**/*.ts'
+            'src/**/*.ts',
+            'tests/**/*.ts'
         ],
     })),
     {
         files: [
-            './src/**/*.ts',
+            'src/**/*.ts',
+            'tests/**/*.ts'
         ],
         rules: {
             'semi': 'error',
@@ -50,7 +54,8 @@ module.exports = [
     },
     {
         files: [
-            './src/**/*.ts'
+            'src/**/*.ts',
+            'tests/**/*.ts'
         ],
         rules: {
             'no-dupe-keys': 'error',
@@ -62,5 +67,13 @@ module.exports = [
             ]
         }
     },
-    
+    {
+        files: [
+            'tests/**/*.ts'
+        ],
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'off',
+            '@typescript-eslint/ban-ts-comment': ['warn', { 'ts-expect-error': false }]
+        }
+    }
 ];

@@ -247,7 +247,7 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests Model.cleanIndexes()', async () => {
             let error: OperationNotSupportedError | null = null;
             try {
-                // @ts-ignore
+                // @ts-expect-error
                 await Product.cleanIndexes();
             } catch (err: any) {
                 error = err;
@@ -693,9 +693,9 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests connection.listDatabases()', async () => {
             const { databases } = await mongooseInstance!.connection.listDatabases();
             assert.ok(Array.isArray(databases));
-            // @ts-ignore
+            // @ts-expect-error
             assert.ok(mongooseInstance.connection.db.name);
-            // @ts-ignore
+            // @ts-expect-error
             assert.ok(databases.includes(mongooseInstance.connection.db.name));
         });
         it('API ops tests connection.runCommand()', async () => {

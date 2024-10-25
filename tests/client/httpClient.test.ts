@@ -20,22 +20,22 @@ describe('StargateMongoose - client.HTTPClient', () => {
         it('should not initialize in a web browser', () => {
             let error: any;
             try {
-                // @ts-ignore
+                // @ts-expect-error
                 global.window = true;
-                // @ts-ignore
+                // @ts-expect-error
                 const client = new HTTPClient();
                 assert.ok(client);
             } catch (e) {
                 error = e;
             }
             assert.ok(error);
-            // @ts-ignore
+            // @ts-expect-error
             delete global.window;
         });
         it('should not initialize without an application token', () => {
             let error: any;
             try {
-                // @ts-ignore
+                // @ts-expect-error
                 const client = new HTTPClient({});
                 assert.ok(client);
             } catch (e) {
@@ -46,7 +46,7 @@ describe('StargateMongoose - client.HTTPClient', () => {
         it('should not initialize without a baseUrl or both database settings', () => {
             let error: any;
             try {
-                // @ts-ignore
+                // @ts-expect-error
                 const client = new HTTPClient({});
                 assert.ok(client);
             } catch (e) {

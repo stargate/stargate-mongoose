@@ -48,7 +48,7 @@ describe('StargateMongoose - collections.Db', async () => {
         it('should not initialize a Db without a name', () => {
             let error: any;
             try {
-                // @ts-ignore - intentionally passing undefined for testing purposes
+                // @ts-expect-error - intentionally passing undefined for testing purposes
                 const db = new Db(httpClient);
                 assert.ok(db);
             } catch (e) {
@@ -77,7 +77,7 @@ describe('StargateMongoose - collections.Db', async () => {
             let db: Db | null = null;
             try {
                 db = new Db(httpClient, 'test-db');
-                // @ts-ignore - intentionally passing undefined for testing purposes
+                // @ts-expect-error - intentionally passing undefined for testing purposes
                 const collection = db.collection();
                 assert.ok(collection);
             } catch (e) {
@@ -112,7 +112,7 @@ describe('StargateMongoose - collections.Db', async () => {
             const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
 
             await assert.rejects(
-                // @ts-ignore
+                // @ts-expect-error
                 () => db.createCollection(),
                 /Must specify a collection name when calling createCollection/
             );
@@ -221,7 +221,7 @@ describe('StargateMongoose - collections.Db', async () => {
             const db = new Db(httpClient, parseUri(dbUri).keyspaceName);
 
             await assert.rejects(
-                // @ts-ignore
+                // @ts-expect-error
                 () => db.dropCollection(),
                 /Must specify a collection name when calling dropCollection/
             );
