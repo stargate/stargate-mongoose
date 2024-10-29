@@ -330,10 +330,14 @@ export class Collection extends MongooseCollection {
 
     /**
      * Create index not supported.
+     * 
+     * Async because Mongoose `createIndexes()` throws an unhandled error if `createIndex()` throws a sync error
+     * See Automattic/mongoose#14995
+     * 
      * @param fieldOrSpec
      * @param options
      */
-    createIndex(_fieldOrSpec: Record<string, unknown>, _options?: Record<string, unknown>) {
+    async createIndex(_fieldOrSpec: Record<string, unknown>, _options?: Record<string, unknown>) {
         throw new OperationNotSupportedError('createIndex() Not Implemented');
     }
 

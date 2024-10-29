@@ -400,7 +400,8 @@ export class Collection {
 }
 
 export class StargateMongooseError extends Error {
-    command: Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    command: Record<string, any>;
     constructor(message: string, command: Record<string, unknown>) {
         const commandName = Object.keys(command)[0] || 'unknown';
         super(`Command "${commandName}" failed with the following error: ${message}`);

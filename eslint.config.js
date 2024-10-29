@@ -72,7 +72,6 @@ module.exports = [
             'tests/**/*.ts'
         ],
         rules: {
-            '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/ban-ts-comment': ['warn', { 'ts-expect-error': false }]
         }
     }

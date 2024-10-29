@@ -18,41 +18,20 @@ import { HTTPClient } from '@/src/client/httpClient';
 describe('StargateMongoose - client.HTTPClient', () => {
     describe('HTTPClient Operations', () => {
         it('should not initialize in a web browser', () => {
-            let error: any;
-            try {
+            assert.throws(() => {
                 // @ts-expect-error
                 global.window = true;
                 // @ts-expect-error
-                const client = new HTTPClient();
-                assert.ok(client);
-            } catch (e) {
-                error = e;
-            }
-            assert.ok(error);
+                new HTTPClient();
+            });
             // @ts-expect-error
             delete global.window;
         });
         it('should not initialize without an application token', () => {
-            let error: any;
-            try {
+            assert.throws(() => {
                 // @ts-expect-error
-                const client = new HTTPClient({});
-                assert.ok(client);
-            } catch (e) {
-                error = e;
-            }
-            assert.ok(error);
-        });
-        it('should not initialize without a baseUrl or both database settings', () => {
-            let error: any;
-            try {
-                // @ts-expect-error
-                const client = new HTTPClient({});
-                assert.ok(client);
-            } catch (e) {
-                error = e;
-            }
-            assert.ok(error);
+                new HTTPClient({});
+            });
         });
     });
 });

@@ -21,6 +21,7 @@ import { createMongooseCollections } from '@/tests/mongooseFixtures';
 import {HTTPClient} from '@/src/client';
 import { randomBytes } from 'crypto';
 import mongoose from 'mongoose';
+import { StargateServerError } from '@/src/client/httpClient';
 
 const randString = (length: number) => randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length);
 
@@ -46,15 +47,8 @@ describe('StargateMongoose - collections.Db', async () => {
             assert.ok(db);
         });
         it('should not initialize a Db without a name', () => {
-            let error: any;
-            try {
-                // @ts-expect-error - intentionally passing undefined for testing purposes
-                const db = new Db(httpClient);
-                assert.ok(db);
-            } catch (e) {
-                error = e;
-            }
-            assert.ok(error);
+            // @ts-expect-error - intentionally passing undefined for testing purposes
+            assert.throws(() => new Db(httpClient));
         });
     });
 
@@ -73,17 +67,11 @@ describe('StargateMongoose - collections.Db', async () => {
             assert.ok(collection);
         });
         it('should not initialize a Collection without a name', () => {
-            let error: any;
-            let db: Db | null = null;
-            try {
-                db = new Db(httpClient, 'test-db');
+            const db = new Db(httpClient, 'test-db');
+            assert.throws(() => {
                 // @ts-expect-error - intentionally passing undefined for testing purposes
-                const collection = db.collection();
-                assert.ok(collection);
-            } catch (e) {
-                error = e;
-            }
-            assert.ok(error);
+                db.collection();
+            });
         });
         it('should create a Collection', async () => {
             const collectionName = TEST_COLLECTION_NAME;
@@ -247,16 +235,13 @@ describe('StargateMongoose - collections.Db', async () => {
             const res = await db.dropDatabase();
             assert.strictEqual(res.status?.ok, 1);
 
-            try {
-                await db.createCollection(`test_db_collection_${suffix}`);
-                assert.ok(false);
-            } catch (err: any) {
-                assert.strictEqual(err.errors.length, 1);
-                assert.strictEqual(
-                    err.errors[0].message,
-                    'The provided keyspace does not exist: Unknown keyspace \'' + keyspaceName + '\', you must create it first'
-                );
-            }
+            const error: Error | null = await db.createCollection(`test_db_collection_${suffix}`).then(() => null, error => error);
+            assert.ok(error instanceof StargateServerError);
+            assert.strictEqual(error.errors.length, 1);
+            assert.strictEqual(
+                error.errors[0].message,
+                'The provided keyspace does not exist: Unknown keyspace \'' + keyspaceName + '\', you must create it first'
+            );
         });
     });
 
@@ -287,16 +272,13 @@ describe('StargateMongoose - collections.Db', async () => {
                     throw err;
                 });
 
-                try {
-                    await db.createCollection(`test_db_collection_${suffix}`);
-                    assert.ok(false);
-                } catch (err: any) {
-                    assert.strictEqual(err.errors.length, 1);
-                    assert.strictEqual(
-                        err.errors[0].message,
-                        'The provided keyspace does not exist: Unknown keyspace \'' + keyspaceName + '\', you must create it first'
-                    );
-                }
+                const error: Error | null = await db.createCollection(`test_db_collection_${suffix}`).then(() => null, error => error);
+                assert.ok(error instanceof StargateServerError);
+                assert.strictEqual(error.errors.length, 1);
+                assert.strictEqual(
+                    error.errors[0].message,
+                    'The provided keyspace does not exist: Unknown keyspace \'' + keyspaceName + '\', you must create it first'
+                );
 
                 const res = await db.createDatabase();
                 assert.strictEqual(res.status?.ok, 1);

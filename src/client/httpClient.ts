@@ -408,8 +408,9 @@ export class HTTPClient {
 }
 
 export class StargateServerError extends Error {
-    errors: unknown[];
-    command: Record<string, unknown>;
+    errors: { message: string, errorCode: string }[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    command: Record<string, any>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     status: any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
