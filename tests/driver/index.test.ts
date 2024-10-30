@@ -62,9 +62,12 @@ describe('Driver based tests', async () => {
                 products: [product1._id, product2._id]
             });
             await cart.save();
-            assert.strictEqual(await Cart.findOne({cartName: 'wewson'}).select('name').exec().then((doc: any) => doc.name), cart.name);
+            assert.strictEqual(await Cart.findOne({cartName: 'wewson'}).select('name').orFail().exec().then((doc) => doc.name), cart.name);
             //compare if product expiryDate is same as saved
-            assert.strictEqual(await Product.findOne({name: 'Product 1'}).select('expiryDate').exec().then((doc: any) => doc.expiryDate.toISOString()), product1.expiryDate!.toISOString());
+            assert.strictEqual(
+                await Product.findOne({name: 'Product 1'}).select('expiryDate').orFail().exec().then((doc) => doc.expiryDate!.toISOString()),
+                product1.expiryDate!.toISOString()
+            );
 
             const findOneAndReplaceResp = await Cart.findOneAndReplace({cartName: 'wewson'}, {
                 name: 'My Cart 2',
@@ -178,7 +181,7 @@ describe('Driver based tests', async () => {
         it('throws readable error on aggregate()', async () => {
             const Person = mongooseInstance!.model('Person');
             await Person.deleteMany({});
-            // @ts-ignore
+            // @ts-expect-error
             await assert.rejects(
                 Person.aggregate([{$match: {name: 'John'}}]),
                 /aggregate\(\) Not Implemented/
@@ -197,7 +200,7 @@ describe('Driver based tests', async () => {
 
         it('disconnect() closes all httpClients', async () => {
             const mongooseInstance = await createMongooseInstance();
-            const client: Client = mongooseInstance.connection.getClient() as any as Client;
+            const client: Client = mongooseInstance.connection.getClient() as unknown as Client;
             const httpClient: HTTPClient = client.httpClient;
             assert.ok(!httpClient.closed);
             await mongooseInstance.disconnect();
@@ -207,7 +210,7 @@ describe('Driver based tests', async () => {
 
         it('close() close underlying httpClient', async () => {
             const mongooseInstance = await createMongooseInstance();
-            const client: Client = mongooseInstance.connection.getClient() as any as Client;
+            const client: Client = mongooseInstance.connection.getClient() as unknown as Client;
             const httpClient: HTTPClient = client.httpClient;
             assert.ok(!httpClient.closed);
             await client.close();
@@ -227,7 +230,7 @@ describe('Driver based tests', async () => {
             await mongooseInstance.disconnect();
 
             const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
-            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+            // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
             await mongooseInstance.connect(dbUri, options);
 
             // Should be able to execute query after reconnecting
@@ -249,7 +252,7 @@ describe('Driver based tests', async () => {
             mongooseInstance.set('autoIndex', false);
 
             const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
-            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+            // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
             await mongooseInstance.connect(dbUri, options);
 
             return mongooseInstance;
@@ -272,16 +275,13 @@ describe('Driver based tests', async () => {
             //if token is not null, append it to the new dbUri
             newDbUri = token ? newDbUri + '?applicationToken=' + token : newDbUri;
 
-            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+            // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
             await mongooseInstance.connect(newDbUri, options);
             if (isAstra) {
-                let error: any;
-                try {
-                    await mongooseInstance.connection.dropDatabase();
-                } catch (e: any) {
-                    error = e;
-                }
-                assert.strictEqual(error.message, 'Cannot drop database in Astra. Please use the Astra UI to drop the database.');
+                await assert.rejects(
+                    () => mongooseInstance.connection.dropDatabase(),
+                    { message: 'Cannot drop database in Astra. Please use the Astra UI to drop the database.' }
+                );
             } else {
                 const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
                 const resp = await connection.dropDatabase();
@@ -303,16 +303,13 @@ describe('Driver based tests', async () => {
             let newDbUri = dbUriSplit.join('/');
             //if token is not null, append it to the new dbUri
             newDbUri = token ? newDbUri + '?applicationToken=' + token : newDbUri;
-            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+            // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
             await mongooseInstance.connect(newDbUri, options);
             if (isAstra) {
-                let error: any;
-                try {
-                    await mongooseInstance.connection.createCollection('new_collection');
-                } catch (e: any) {
-                    error = e;
-                }
-                assert.strictEqual(error.errors[0].message, 'INVALID_ARGUMENT: Unknown keyspace ' + newKeyspaceName);
+                await assert.rejects(
+                    () => mongooseInstance.connection.createCollection('new_collection'),
+                    { message: 'INVALID_ARGUMENT: Unknown keyspace ' + newKeyspaceName }
+                );
             } else {
                 const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
                 const resp = await connection.createCollection('new_collection');

@@ -37,24 +37,26 @@ const HTTP_METHODS = {
 const MAX_HTTP2_REQUESTS_PER_SESSION = 1000;
 
 interface APIClientOptions {
-  //applicationToken is optional, since adding username and password eventually will be an alternate option for this.
-  applicationToken?: string;
-  baseApiPath?: string;
-  baseUrl?: string;
-  authHeaderName?: string;
-  logLevel?: string;
-  username?: string;
-  password?: string;
-  isAstra?: boolean;
-  logSkippedOptions?: boolean;
-  useHTTP2?: boolean;
-  featureFlags?: string[]
+    //applicationToken is optional, since adding username and password eventually will be an alternate option for this.
+    applicationToken?: string;
+    baseApiPath?: string;
+    baseUrl?: string;
+    authHeaderName?: string;
+    logLevel?: string;
+    username?: string;
+    password?: string;
+    isAstra?: boolean;
+    logSkippedOptions?: boolean;
+    useHTTP2?: boolean;
+    featureFlags?: string[]
 }
 
 export interface APIResponse {
-  status?: any
-  data?: any
-  errors?: any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    status?: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data?: any;
+    errors?: unknown[];
 }
 
 const axiosAgent = axios.create({
@@ -136,7 +138,7 @@ class HTTP2Session {
         }
     }
 
-    request(path: string, token: string, body: Record<string, any>, timeout: number, additionalParams: Record<string, any>): Promise<{ status: number, data: Record<string, any> }> { 
+    request(path: string, token: string, body: Record<string, unknown>, timeout: number, additionalParams: Record<string, unknown>): Promise<{ status: number, data: Record<string, unknown> }> { 
         return new Promise((resolve, reject) => {
             if (!this.closed && this.session.closed) {
                 this._createSession();
@@ -207,8 +209,9 @@ class HTTP2Session {
                     }
 
                     resolve({ status, data });
-                } catch (error) {
-                    reject(new Error('Unable to parse response as JSON, got: "' + data + '"'));
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } catch (error: any) {
+                    reject(new Error('Unable to parse response as JSON, got: "' + data + '", error: ' + error?.message));
                     return;
                 }
             });
@@ -291,6 +294,7 @@ export class HTTPClient {
                 logger.debug('@stargate-mongoose/rest: getting token');
                 try {
                     this.applicationToken = getStargateAccessToken(this.username, this.password);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } catch (authError: any) {
                     return {
                         errors: [
@@ -349,6 +353,7 @@ export class HTTPClient {
             } else {
                 return { errors: response.data?.errors };
             }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
             logger.error(requestInfo.url + ': ' + e.message);
             logger.error('Data: ' + inspect(requestInfo.data));
@@ -368,10 +373,10 @@ export class HTTPClient {
     async makeHTTP2Request(
         path: string,
         token: string,
-        body: Record<string, any>,
+        body: Record<string, unknown>,
         timeout: number,
-        additionalParams: Record<string, any>
-    ): Promise<{ status: number, data: Record<string, any> }> {
+        additionalParams: Record<string, unknown>
+    ): Promise<{ status: number, data: Record<string, unknown> }> {
         // Should never happen, but good to have a readable error just in case
         if (this.http2Session == null) {
             throw new Error('Cannot make http2 request without session');
@@ -388,6 +393,7 @@ export class HTTPClient {
         return await this.http2Session.request(path, token, body, timeout, additionalParams);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async executeCommandWithUrl(url: string, data: Record<string, any>, optionsToRetain: Set<string> | null) {
         const commandName = Object.keys(data)[0];
         cleanupOptions(commandName, data[commandName], optionsToRetain, this.logSkippedOptions);
@@ -402,10 +408,13 @@ export class HTTPClient {
 }
 
 export class StargateServerError extends Error {
-    errors: any[];
+    errors: { message: string, errorCode: string }[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     command: Record<string, any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     status: any;
-    constructor(response: any, command: Record<string, any>) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    constructor(response: any, command: Record<string, unknown>) {
         const commandName = Object.keys(command)[0] || 'unknown';
         const status = response.status ? `, Status : ${JSON.stringify(response.status)}` : '';
         super(`Command "${commandName}" failed with the following errors: ${JSON.stringify(response.errors)}${status}`);
@@ -415,15 +424,17 @@ export class StargateServerError extends Error {
     }
 }
 
-export const handleIfErrorResponse = (response: any, data: Record<string, any>) => {
-    if (response.errors && response.errors.length > 0) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const handleIfErrorResponse = (response: any, data: Record<string, unknown>) => {
+    if (Array.isArray(response.errors) && response.errors.length > 0) {
         throw new StargateServerError(response, data);
     }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function cleanupOptions(commandName: string, command: Record<string, any>, optionsToRetain: Set<string> | null, logSkippedOptions: boolean) {
-    if (command.options) {
-        Object.keys(command.options!).forEach((key) => {
+    if (command.options != null) {
+        Object.keys(command.options).forEach((key) => {
             if (optionsToRetain === null || !optionsToRetain.has(key)) {
                 if (logSkippedOptions) {
                     logger.warn(`'${commandName}' does not support option '${key}'`);

@@ -1,6 +1,7 @@
 import { EJSON } from 'bson';
 import mongoose from 'mongoose';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function serialize(data: Record<string, any>, pretty?: boolean): string {
     return data != null
         ? EJSON.stringify(
@@ -13,15 +14,12 @@ export function serialize(data: Record<string, any>, pretty?: boolean): string {
 
 // Mongoose relies on certain values getting transformed into their BSON equivalents,
 // most notably subdocuments and document arrays. Otherwise `$push` on a document array fails.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyToBSONTransform(data: Record<string, any> | any[]): Record<string, any> {
     if (data == null) {
         return data;
     }
-    // @ts-ignore
-    if (shouldApplyToBSON(data) && typeof data.toBSON === 'function') {
-        // @ts-ignore
-        data = data.toBSON();
-    }
+    data = applyToBSON(data);
     if (Array.isArray(data)) {
         return data.map(el => applyToBSONTransform(el));
     }
@@ -35,10 +33,16 @@ function applyToBSONTransform(data: Record<string, any> | any[]): Record<string,
     return data;
 }
 
-function shouldApplyToBSON(value: any) {
-    return value?.isMongooseArrayProxy || value instanceof mongoose.Types.Subdocument;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyToBSON(value: any) {
+    if (value?.isMongooseArrayProxy || value instanceof mongoose.Types.Subdocument) {
+        return value.toBSON();
+    }
+
+    return value;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function serializeValue(value: any): any {
     if (value != null && typeof value === 'bigint') {
         //BigInt handling

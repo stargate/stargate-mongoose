@@ -14,7 +14,7 @@
 
 import assert from 'assert';
 import { Db } from '@/src/collections/db';
-import { Collection } from '@/src/collections/collection';
+import { Collection, StargateMongooseError } from '@/src/collections/collection';
 import { Client } from '@/src/collections/client';
 import {
     testClient,
@@ -26,6 +26,7 @@ import {
     createSampleDocWithMultiLevelWithId,
     TEST_COLLECTION_NAME
 } from '@/tests/fixtures';
+import { StargateServerError } from '@/src/client/httpClient';
 
 describe(`StargateMongoose - ${testClientName} Connection - collections.collection`, async () => {
     const isAstra: boolean = testClientName === 'astra';
@@ -61,17 +62,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.ok(collection);
         });
         it('should not initialize a Collection without a name', () => {
-            let error: any;
-            let collection: Collection | null = null;
-            try {
-                // @ts-ignore: Testing invalid input
-                collection = new Collection(db);
-                assert.ok(collection);
-            } catch (e) {
-                error = e;
-            }
-            assert.ok(error);
-            collection?.httpClient?.close();
+            // @ts-expect-error: Testing invalid input
+            assert.throws(() => new Collection(db));
         });
     });
 
@@ -93,13 +85,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         it('Should fail insert of doc over size 1 MB', async () => {
             const jsonDocGt1MB = new Array(1024 * 1024).fill('a').join('');
             const docToInsert = { username: jsonDocGt1MB };
-            let error: any;
-            try {
-                await collection.insertOne(docToInsert);
-            } catch (e: any) {
-                error = e;
-            }
-            assert.ok(error);
+            const error: Error | null = await collection.insertOne(docToInsert).then(() => null, error => error);
+            assert.ok(error instanceof StargateServerError);
             if (isAstra) {
                 //In Astra, it returns a 413 error prior to reaching the Data API
                 assert.strictEqual(error.errors[0].message, 'Request failed with status code 413');
@@ -113,25 +100,15 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         it('Should fail if the field length is > 1000', async () => {
             const fieldName = 'a'.repeat(1001);
             const docToInsert = { [fieldName]: 'value' };
-            let error: any;
-            try {
-                await collection.insertOne(docToInsert);
-            } catch (e: any) {
-                error = e;
-            }
-            assert.ok(error);
+            const error: Error | null = await collection.insertOne(docToInsert).then(() => null, error => error);
+            assert.ok(error instanceof StargateServerError);
             assert.strictEqual(error.errors[0].message, 'Document size limitation violated: property path length (1001) exceeds maximum allowed (1000) (path ends with \''+ fieldName +'\')');
         });
         it('Should fail if the string field value is > 16000', async () => {
             const _string16klength = new Array(16001).fill('a').join('');
             const docToInsert = { username: _string16klength };
-            let error: any;
-            try {
-                await collection.insertOne(docToInsert);
-            } catch (e: any) {
-                error = e;
-            }
-            assert.ok(error);
+            const error: Error | null = await collection.insertOne(docToInsert).then(() => null, error => error);
+            assert.ok(error instanceof StargateServerError);
             assert.strictEqual(
                 error.errors[0].message,
                 'Document size limitation violated: indexed String value (property \'username\') length (16001 bytes) exceeds maximum allowed (8000 bytes)'
@@ -139,30 +116,20 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
         });
         it('Should fail if an array field size is > 10000', async () => {
             const docToInsert = { tags: new Array(10001).fill('tag') };
-            let error: any;
-            try {
-                await collection.insertOne(docToInsert);
-            } catch (e: any) {
-                error = e;
-            }
-            assert.ok(error);
+            const error: Error | null = await collection.insertOne(docToInsert).then(() => null, error => error);
+            assert.ok(error instanceof StargateServerError);
             assert.strictEqual(
                 error.errors[0].message,
                 'Document size limitation violated: number of elements an indexable Array (property \'tags\') has (10001) exceeds maximum allowed (1000)'
             );
         });
         it('Should fail if a doc contains more than 1000 properties', async () => {
-            const docToInsert: any = { _id: '123' };
+            const docToInsert: Record<string, string> = { _id: '123' };
             for (let i = 1; i <= 1001; i++) {
                 docToInsert[`prop${i}`] = `prop${i}value`;
             }
-            let error: any;
-            try {
-                await collection.insertOne(docToInsert);
-            } catch (e: any) {
-                error = e;
-            }
-            assert.ok(error);
+            const error: Error | null = await collection.insertOne(docToInsert).then(() => null, error => error);
+            assert.ok(error instanceof StargateServerError);
             assert.strictEqual(
                 error.errors[0].message, 
                 'Document size limitation violated: number of properties an indexable Object (property \'null\') has (1002) exceeds maximum allowed (1000)'
@@ -197,12 +164,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             );
         });
         it('should error out when docs list is empty in insertMany', async () => {
-            let error: any;
-            try {
-                await collection.insertMany([]);
-            } catch (e: any) {
-                error = e;
-            }
+            const error: Error | null = await collection.insertMany([]).then(() => null, error => error);
+            assert.ok(error instanceof StargateServerError);
             assert.strictEqual(
                 error.errors[0].message,
                 'Request invalid: field \'command.documents\' value "[]" not valid. Problem: must not be empty.'
@@ -228,13 +191,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 doc.username = doc.username + (index + 1);
             });
             docList[10] = docList[9];
-            let error: any;
-            try {
-                await collection.insertMany(docList, { ordered: true });
-            } catch (e: any) {
-                error = e;
-            }
-            assert.ok(error);
+            const error = await collection.insertMany(docList, { ordered: true }).then(() => null, error => error);
+            assert.ok(error instanceof StargateServerError);
             assert.strictEqual(error.errors[0].message, 'Failed to insert document with _id docml10: Document already exists with the given _id');
             assert.strictEqual(error.errors[0].errorCode, 'DOCUMENT_ALREADY_EXISTS');
             assert.strictEqual(error.status.insertedIds.length, 10);
@@ -249,13 +207,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 doc.username = doc.username + (index + 1);
             });
             docList[10] = docList[9];
-            let error: any;
-            try {
-                await collection.insertMany(docList, { ordered: true, returnDocumentResponses: true });
-            } catch (e: any) {
-                error = e;
-            }
-            assert.ok(error);
+            const error: Error | null = await collection.insertMany(docList, { ordered: true, returnDocumentResponses: true }).then(() => null, error => error);
+            assert.ok(error instanceof StargateServerError);
             assert.strictEqual(error.errors[0].message, 'Document already exists with the given _id');
             assert.strictEqual(error.errors[0].errorCode, 'DOCUMENT_ALREADY_EXISTS');
             assert.deepStrictEqual(error.status.documentResponses, [
@@ -288,13 +241,11 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 doc.username = doc.username + (index + 1);
             });
             docList[10] = docList[9];
-            let error: any;
-            try {
-                await collection.insertMany(docList, { ordered: false, returnDocumentResponses: true });
-            } catch (e: any) {
-                error = e;
-            }
-            assert.ok(error);
+            const error: Error | null = await collection.insertMany(
+                docList,
+                { ordered: false, returnDocumentResponses: true }
+            ).then(() => null, error => error);
+            assert.ok(error instanceof StargateServerError);
             assert.strictEqual(error.errors[0].message, 'Document already exists with the given _id');
             assert.strictEqual(error.errors[0].errorCode, 'DOCUMENT_ALREADY_EXISTS');
             assert.equal(error.status.documentResponses.length, 20);
@@ -308,13 +259,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                 doc.username = doc.username + (index + 1);
             });
             docList[10] = docList[9];
-            let error: any;
-            try {
-                await collection.insertMany(docList, { ordered: false });
-            } catch (e: any) {
-                error = e;
-            }
-            assert.ok(error);
+            const error: Error | null = await collection.insertMany(docList, { ordered: false }).then(() => null, error => error);
+            assert.ok(error instanceof StargateServerError);
             assert.strictEqual(error.errors[0].message, 'Failed to insert document with _id docml10: Document already exists with the given _id');
             assert.strictEqual(error.errors[0].errorCode, 'DOCUMENT_ALREADY_EXISTS');
             assert.strictEqual(error.status.insertedIds.length, 19);
@@ -1558,13 +1504,8 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             const update = {
                 '$set': { 'state': 'ny' }
             };
-            let error;
-            try {
-                await collection.updateMany(filter, update);
-            } catch (e: any) {
-                error = e;
-            }
-            assert.ok(error);
+            const error: Error | null = await collection.updateMany(filter, update).then(() => null, error => error);
+            assert.ok(error instanceof StargateMongooseError);
             assert.strictEqual(error.message, 'Command "updateMany" failed with the following error: More than 20 records found for update by the server');
             assert.deepStrictEqual(error.command.updateMany.filter, filter);
             assert.deepStrictEqual(error.command.updateMany.update, update);
@@ -2543,16 +2484,11 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.strictEqual(resNextSet.acknowledged, true);
             assert.strictEqual(Object.keys(resNextSet.insertedIds).length, docListNextSet.length);
             //test for deleteMany errors
-            let exception: any;
             const filter = { 'city': 'trichy' };
-            try {
-                await collection.deleteMany(filter);
-            } catch (e: any) {
-                exception = e;
-            }
-            assert.ok(exception);
-            assert.strictEqual(exception.message, 'Command "deleteMany" failed with the following error: More records found to be deleted even after deleting 20 records');
-            assert.deepStrictEqual(exception.command.deleteMany.filter, filter);
+            const error: Error | null = await collection.deleteMany(filter).then(() => null, error => error);
+            assert.ok(error instanceof StargateMongooseError);
+            assert.strictEqual(error.message, 'Command "deleteMany" failed with the following error: More records found to be deleted even after deleting 20 records');
+            assert.deepStrictEqual(error.command.deleteMany.filter, filter);
         });
         it('should find with sort', async () => {
             await collection.deleteMany({});
@@ -2651,7 +2587,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
                     'upsert': true
                 }
             );
-            // @ts-ignore
+            // @ts-expect-error
             assert.ok(value!._id!.toString().match(/^[a-f\d]{24}$/i), value!._id);
         });
         it('should findOneAndUpdate without any updates to apply', async () => {

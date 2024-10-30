@@ -15,15 +15,20 @@
 import { Client } from '@/src/collections/client';
 import { Collection } from './collection';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
-import { STATES } from 'mongoose';
+import { STATES, Model, Mongoose, ConnectOptions } from 'mongoose';
 import { executeOperation } from '../collections/utils';
 import { CreateCollectionOptions } from '../collections/options';
+
+interface ConnectOptionsInternal extends ConnectOptions {
+    _fireAndForget?: boolean;
+    sanitizeFilter?: boolean;
+}
 
 export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
     initialConnection: Promise<Connection> | null = null;
 
-    constructor(base: any) {
+    constructor(base: Mongoose) {
         super(base);
     }
 
@@ -40,14 +45,14 @@ export class Connection extends MongooseConnection {
         });
     }
 
-    collection(name: string, options: any) {
+    collection(name: string, options?: Record<string, unknown>) {
         if (!(name in this.collections)) {
             this.collections[name] = new Collection(name, this, options);
         }
         return super.collection(name, options);
     }
 
-    async createCollection(name: string, options?: Record<string, any>) {
+    async createCollection(name: string, options?: Record<string, unknown>) {
         return executeOperation(async () => {
             await this._waitForClient();
             const db = this.client.db();
@@ -82,7 +87,7 @@ export class Connection extends MongooseConnection {
             const db = this.client.db();
             const res = await db.findCollections(options);
             const collections = res?.status?.collections ?? [];
-            return collections.map((collection: string | Record<string, any>) => {
+            return collections.map((collection: string | Record<string, unknown>) => {
                 if (typeof collection === 'string') {
                     return { name: collection };
                 }
@@ -99,7 +104,7 @@ export class Connection extends MongooseConnection {
         });
     }
 
-    async runCommand(command: Record<string, any>): Promise<unknown> {
+    async runCommand(command: Record<string, unknown>): Promise<unknown> {
         return executeOperation(async () => {
             await this._waitForClient();
             const db = this.client.db();
@@ -107,10 +112,10 @@ export class Connection extends MongooseConnection {
         });
     }
 
-    async openUri(uri: string, options: any) {
+    async openUri(uri: string, options?: ConnectOptionsInternal) {
         let _fireAndForget = false;
         if (options && '_fireAndForget' in options) {
-            _fireAndForget = options._fireAndForget;
+            _fireAndForget = !!options._fireAndForget;
             delete options._fireAndForget;
         }
 
@@ -124,9 +129,8 @@ export class Connection extends MongooseConnection {
             bufferCommands: options?.bufferCommands
         };
 
-        for (const model of Object.values(this.models)) {
-            // @ts-ignore
-            model.init().catch(() => { });
+        for (const model of Object.values(this.models) as Model<unknown>[]) {
+            model.init().catch(() => {});
         }
 
         this.initialConnection = this.createClient(uri, options)
@@ -145,7 +149,7 @@ export class Connection extends MongooseConnection {
         return this;
     }
 
-    async createClient(uri: string, options: any) {
+    async createClient(uri: string, options?: ConnectOptionsInternal) {
         this._connectionString = uri;
         this._closeCalled = false;
         this.readyState = STATES.connecting;

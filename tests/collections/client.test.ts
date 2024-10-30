@@ -39,14 +39,7 @@ describe('StargateMongoose clients test', () => {
             assert.ok(appClient);
         });
         it('should not a Client connection with an invalid uri', async () => {
-            let error: any;
-            try {
-                const badClient = await Client.connect('invaliduri');
-                assert.ok(badClient);
-            } catch (e) {
-                error = e;
-            }
-            assert.ok(error);
+            await assert.rejects(() => Client.connect('invaliduri'));
         });
         it('should have unique httpClients for each db', async () => {
             const dbFromUri = appClient?.db();
@@ -188,15 +181,10 @@ describe('StargateMongoose clients test', () => {
             assert.ok(client);
         });
         it('should not initialize a Client connection with a uri using the constructor with no options', () => {
-            let error: any;
-            try {
-                // @ts-ignore intentionally passing no options
-                const client = new Client(baseUrl, 'keyspace1');
-                assert.ok(client);
-            } catch (e) {
-                error = e;
-            }
-            assert.ok(error);
+            assert.throws(() => {
+                // @ts-expect-error intentionally passing no options
+                new Client(baseUrl, 'keyspace1');
+            });
         });
         it('should initialize a Client connection with a uri using the constructor and a keyspace', () => {
             const client = new Client(baseUrl, 'keyspace1', {
@@ -241,18 +229,16 @@ describe('StargateMongoose clients test', () => {
             assert.ok(connectedClient);
             await client.close();
         });
-        it('should not create client when token is not present & one/more of auth details are missing', async () => {
-            let error: any;
-            try {
-                const client = new Client(baseUrl, 'keyspace1', {
-                    username: 'user1'
-                });
-                client.connect();
-            } catch (e: any) {
-                error = e;
-            }
-            assert.ok(error);
-            assert.strictEqual(error.message, 'stargate-mongoose: must set `username` and `password` option when connecting if `applicationToken` not set');
+        it('should not create client when token is not present & one/more of auth details are missing', () => {
+            assert.throws(
+                () => {
+                    const client = new Client(baseUrl, 'keyspace1', {
+                        username: 'user1'
+                    });
+                    client.connect();
+                },
+                { message: 'stargate-mongoose: must set `username` and `password` option when connecting if `applicationToken` not set' }
+            );
         });
     });
     describe('Client Db operations', () => {
@@ -267,20 +253,13 @@ describe('StargateMongoose clients test', () => {
 
             await client.close();
         });
-        it('should not return a db if no name is provided', async () => {
+        it('should return a db if no name is provided', async () => {
             const client = new Client(baseUrl, 'keyspace1', {
                 applicationToken: '123',
                 createNamespaceOnConnect: false
             });
             await client.connect();
-            let error: any;
-            try {
-                client.db();
-                assert.ok(false);
-            } catch (e) {
-                error = e;
-            }
-            assert.ok(error);
+            assert.ok(client.db());
             await client.close();
         });
         it('close() should close HTTP client', async () => {
@@ -297,15 +276,9 @@ describe('StargateMongoose clients test', () => {
             await client.close();
             assert.ok(client.httpClient.closed);
 
-            let error: any;
-            try {
-                await client.db('test')!.collection('test')!.findOne({
-                    url: '/test'
-                });
-                assert.ok(false);
-            } catch (e) {
-                error = e;
-            }
+            const error: Error | null = await client.db('test')!.collection('test')!.findOne({
+                url: '/test'
+            }).then(() => null, error => error);
             assert.ok(error);
             assert.ok(error.message.includes('Cannot make http2 request when client is closed'), error.message);
         });

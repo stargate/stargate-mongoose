@@ -204,14 +204,7 @@ describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, asy
         it('should handle noop: stream', async () => {
             await collection.insertMany(sampleUsers);
             const cursor = new FindCursor(collection, { username: sampleUsers[0].username });
-            let error: any;
-            try {
-                const stream = cursor.stream();
-                assert.ok(stream);
-            } catch (e) {
-                error = e;
-            }
-            assert.ok(error);
+            assert.throws(() => cursor.stream());
         });
     });
 });

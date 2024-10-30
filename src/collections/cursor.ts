@@ -18,20 +18,20 @@ import {findInternalOptionsKeys, FindOptions, FindOptionsInternal} from './optio
 
 export class FindCursor {
     collection: Collection;
-    filter: Record<string, any>;
+    filter: Record<string, unknown>;
     options: FindOptions;
-    documents: Record<string, any>[] = [];
+    documents: Record<string, unknown>[] = [];
     status = 'uninitialized';
     nextPageState?: string;
     limit: number;
     includeSortVector?: boolean;
 
-    page: Record<string, any>[] = [];
+    page: Record<string, unknown>[] = [];
     pageIndex: number;
     exhausted: boolean;
     sortVector?: number[];
 
-    constructor(collection: Collection, filter: Record<string, any>, options?: FindOptions) {
+    constructor(collection: Collection, filter: Record<string, unknown>, options?: FindOptions) {
         this.collection = collection;
         this.filter = filter;
         this.options = options ?? {};
@@ -81,9 +81,9 @@ export class FindCursor {
 
     /**
    *
-   * @returns Record<string, any>[]
+   * @returns Record<string, unknown>[]
    */
-    async toArray(): Promise<any[]> {
+    async toArray(): Promise<Record<string, unknown>[]> {
         await this.getAll();
         return this.documents;
     }
@@ -91,7 +91,7 @@ export class FindCursor {
     /**
    * @returns Promise
    */
-    async next(): Promise<any> {
+    async next(): Promise<Record<string, unknown>> {
         return executeOperation(async () => {
             if (this.pageIndex < this.page.length) {
                 return this.page[this.pageIndex++];
@@ -162,7 +162,7 @@ export class FindCursor {
    *
    * @param iterator
    */
-    async forEach(iterator: any) {
+    async forEach(iterator: (doc: Record<string, unknown>) => void) {
         return executeOperation(async () => {
             for (let doc = await this.next(); doc != null; doc = await this.next()) {
                 iterator(doc);
@@ -175,7 +175,7 @@ export class FindCursor {
      * @returns Promise<number>
      * @param options
      */
-    async count(options?: any) {
+    async count(_options?: Record<string, unknown>) {
         return executeOperation(async () => {
             await this.getAll();
             return this.documents.length;
@@ -188,7 +188,7 @@ export class FindCursor {
      *
      * @param options
      */
-    stream(options?: any) {
+    stream(_options?: Record<string, unknown>) {
         throw new Error('Streaming cursors are not supported');
     }
 }

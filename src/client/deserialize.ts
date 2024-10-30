@@ -1,10 +1,12 @@
 import { EJSON, ObjectId } from 'bson';
 import mongoose from 'mongoose';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function deserialize(data: Record<string, any>): Record<string, any> {
     return data != null ? deserializeObjectIds(EJSON.deserialize(data)) : data;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function deserializeObjectIds(data: Record<string, any>): Record<string, any> {
     if (data == null) {
         return data;

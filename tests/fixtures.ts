@@ -49,7 +49,7 @@ export const createSampleDoc = () => ({
     username: 'aaron'
 });
 
-export type Employee = {
+export interface Employee {
   _id?: string;
   username?: string;
   human?: boolean;

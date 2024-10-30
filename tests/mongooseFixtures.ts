@@ -13,7 +13,7 @@ const cartSchema = new Schema({
     }, { _id: false })
 });
 
-const productSchema = new Schema({
+export const productSchema = new Schema({
     name: String,
     price: Number,
     expiryDate: Date,
@@ -47,7 +47,7 @@ export async function createMongooseCollections() {
 
 before(async function connectMongooseFixtures() {
     if (isAstra) {
-    // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+    // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
         await mongooseInstance.connect(testClient.uri, {isAstra: true});
     } else {
         const options = {
@@ -55,7 +55,7 @@ before(async function connectMongooseFixtures() {
             password: process.env.STARGATE_PASSWORD,
             logSkippedOptions: true
         };
-        // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+        // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
         await mongooseInstance.connect(testClient.uri, options);
         const client = await testClient.client;
         const keyspace = parseUri(testClient!.uri).keyspaceName;
