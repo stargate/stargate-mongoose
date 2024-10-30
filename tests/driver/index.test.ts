@@ -53,9 +53,12 @@ describe('Driver based tests', async () => {
                 products: [product1._id, product2._id]
             });
             await cart.save();
-            assert.strictEqual(await Cart.findOne({cartName: 'wewson'}).select('name').exec().then((doc: any) => doc.name), cart.name);
+            assert.strictEqual(await Cart.findOne({cartName: 'wewson'}).select('name').orFail().exec().then((doc) => doc.name), cart.name);
             //compare if product expiryDate is same as saved
-            assert.strictEqual(await Product.findOne({name: 'Product 1'}).select('expiryDate').exec().then((doc: any) => doc.expiryDate.toISOString()), product1.expiryDate!.toISOString());
+            assert.strictEqual(
+                await Product.findOne({name: 'Product 1'}).select('expiryDate').orFail().exec().then((doc) => doc.expiryDate!.toISOString()),
+                product1.expiryDate!.toISOString()
+            );
 
             const findOneAndReplaceResp = await Cart.findOneAndReplace({cartName: 'wewson'}, {
                 name: 'My Cart 2',
@@ -169,7 +172,7 @@ describe('Driver based tests', async () => {
         it('throws readable error on aggregate()', async () => {
             const Person = mongooseInstance!.model('Person');
             await Person.deleteMany({});
-            // @ts-ignore
+            // @ts-expect-error
             await assert.rejects(
                 Person.aggregate([{$match: {name: 'John'}}]),
                 /aggregate\(\) Not Implemented/
@@ -198,7 +201,7 @@ describe('Driver based tests', async () => {
             await mongooseInstance.disconnect();
 
             const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
-            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+            // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
             await mongooseInstance.connect(dbUri, options);
 
             // Should be able to execute query after reconnecting
@@ -220,7 +223,7 @@ describe('Driver based tests', async () => {
             mongooseInstance.set('autoIndex', false);
 
             const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
-            // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+            // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
             await mongooseInstance.connect(dbUri, options);
 
             return mongooseInstance;

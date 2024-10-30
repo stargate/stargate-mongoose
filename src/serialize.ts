@@ -1,6 +1,7 @@
 import { Binary, UUID } from 'bson';
 import mongoose from 'mongoose';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function serialize(data: Record<string, any>): Record<string, any> {
     return data != null
         ? applyTransforms(data)
@@ -9,6 +10,7 @@ export function serialize(data: Record<string, any>): Record<string, any> {
 
 // Mongoose relies on certain values getting transformed into their BSON equivalents,
 // most notably subdocuments and document arrays. Otherwise `$push` on a document array fails.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyTransforms(data: any): any {
     if (data == null) {
         return data;
@@ -16,9 +18,7 @@ function applyTransforms(data: any): any {
     if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean' || typeof data === 'bigint') {
         return data;
     }
-    // @ts-ignore
     if (typeof data.toBSON === 'function') {
-        // @ts-ignore
         data = data.toBSON();
     }
 

@@ -13,10 +13,10 @@
 // limitations under the License.
 
 import { Collection } from './collection';
-import type { Db, ListCollectionsOptions } from '@datastax/astra-db-ts';
+import type { Db } from '@datastax/astra-db-ts';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
-import type { ConnectOptions, Mongoose } from 'mongoose';
+import type { ConnectOptions, Mongoose, Model } from 'mongoose';
 import url from 'url';
 
 import {
@@ -24,14 +24,14 @@ import {
     UsernamePasswordTokenProvider
 } from '@datastax/astra-db-ts';
 
-type ConnectOptionsInternal = ConnectOptions & {
+interface ConnectOptionsInternal extends ConnectOptions {
     isAstra?: boolean;
     _fireAndForget?: boolean;
     sanitizeFilter?: boolean;
     featureFlags?: string[];
     username?: string;
     password?: string;
-};
+}
 
 export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
@@ -61,7 +61,7 @@ export class Connection extends MongooseConnection {
         return super.collection(name, options);
     }
 
-    async createCollection(name: string, options?: Record<string, any>) {
+    async createCollection(name: string, options?: Record<string, unknown>) {
         await this._waitForClient();
         const db: Db = this.db;
         return db.createCollection(name, { checkExists: false, ...options });
@@ -77,13 +77,13 @@ export class Connection extends MongooseConnection {
         throw new Error('dropDatabase() Not Implemented');
     }
 
-    async listCollections(options?: ListCollectionsOptions) {
+    async listCollections() {
         await this._waitForClient();
         const db: Db = this.db;
         return db.listCollections();
     }
 
-    async runCommand(command: Record<string, any>): Promise<Record<string, any>> {
+    async runCommand(command: Record<string, unknown>): Promise<Record<string, unknown>> {
         await this._waitForClient();
         const db: Db = this.db;
         return db.command(command);
@@ -92,7 +92,7 @@ export class Connection extends MongooseConnection {
     async openUri(uri: string, options: ConnectOptionsInternal) {
         let _fireAndForget: boolean | undefined = false;
         if (options && '_fireAndForget' in options) {
-            _fireAndForget = options._fireAndForget;
+            _fireAndForget = !!options._fireAndForget;
             delete options._fireAndForget;
         }
 
@@ -106,9 +106,8 @@ export class Connection extends MongooseConnection {
             bufferCommands: options?.bufferCommands
         };
 
-        for (const model of Object.values(this.models)) {
-            // @ts-ignore
-            model.init().catch(() => { });
+        for (const model of Object.values(this.models) as Model<unknown>[]) {
+            model.init().catch(() => {});
         }
 
         this.initialConnection = this.createClient(uri, options)
@@ -148,6 +147,7 @@ export class Connection extends MongooseConnection {
             if (options?.isAstra) {
                 const client = new DataAPIClient(applicationToken);
                 const db = client.db(baseUrl, dbOptions);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 Object.assign((db as any)._httpClient.baseHeaders, featureFlags);
                 return {
                     client,
@@ -167,6 +167,7 @@ export class Connection extends MongooseConnection {
                 { environment: 'dse' }
             );
             const db = client.db(baseUrl, dbOptions);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             Object.assign((db as any)._httpClient.baseHeaders, featureFlags);
             return {
                 client,
@@ -196,7 +197,7 @@ export class Connection extends MongooseConnection {
         return this;
     }
 
-    setClient(client: DataAPIClient) {
+    setClient(_client: DataAPIClient) {
         throw new Error('SetClient not supported');
     }
 

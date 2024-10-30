@@ -13,7 +13,7 @@ const cartSchema = new Schema({
     }, { _id: false })
 });
 
-const productSchema = new Schema({
+export const productSchema = new Schema({
     name: String,
     price: Number,
     expiryDate: Date,
@@ -36,6 +36,7 @@ export const Product = mongooseInstance.model('Product', productSchema);
 
 async function createNamespace() {
     const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (connection.db as any)._httpClient._request({
         url: connection.baseUrl + '/' + connection.baseApiPath,
         method: 'POST',
@@ -44,6 +45,7 @@ async function createNamespace() {
                 name: connection.keyspaceName
             }
         }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         timeoutManager: (connection.db as any)._httpClient.timeoutManager(120_000)
     });
 }
@@ -67,7 +69,7 @@ export async function createMongooseCollections() {
 
 before(async function connectMongooseFixtures() {
     if (isAstra) {
-    // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
+    // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
         await mongooseInstance.connect(testClient.uri, {isAstra: true});
     } else {
         const options = {
@@ -76,7 +78,6 @@ before(async function connectMongooseFixtures() {
             logSkippedOptions: true
         };
         const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
-        // @ts-ignore - these are config options supported by stargate-mongoose but not mongoose
         await mongooseInstance.connect(testClient.uri, options);
         const keyspace = parseUri(testClient!.uri).keyspaceName;
         await connection.admin.createNamespace(keyspace);

@@ -20,6 +20,7 @@ export { default as createAstraUri } from './createAstraUri';
 declare module 'mongodb' {
   interface CreateCollectionOptions {
     vector?: VectorOptions;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     indexing?: IndexingOptions<any>;
   }
 }
@@ -35,5 +36,5 @@ declare module 'mongoose' {
     returnDocumentResponses?: boolean;
   }
 
-  function setDriver<T = Mongoose>(driver: any): T;
+  function setDriver<T = Mongoose>(driver: unknown): T;
 }

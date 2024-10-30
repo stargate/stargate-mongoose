@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { default as MongooseCollection } from 'mongoose/lib/collection';
+import type { Connection } from './connection';
 import {
     Collection as AstraCollection,
     DeleteOneOptions,
@@ -29,7 +30,6 @@ import {
 } from '@datastax/astra-db-ts';
 import { serialize } from '../serialize';
 import { Types } from 'mongoose';
-import type { Connection } from './connection';
 
 export type SortOption = Record<string, SortDirection> |
   { $vector: { $meta: Array<number> } } |
@@ -43,7 +43,7 @@ export interface InsertManyOptions {
     returnDocumentResponses?: boolean;
 }
 
-type NodeCallback<ResultType = any> = (err: Error | null, res: ResultType | null) => unknown;
+type NodeCallback<ResultType = unknown> = (err: Error | null, res: ResultType | null) => unknown;
 
 /**
  * Collection operations supported by the driver.
@@ -53,10 +53,6 @@ export class Collection extends MongooseCollection {
 
     constructor(name: string, conn: Connection, options?: { modelName?: string | null }) {
         super(name, conn, options);
-        if (options?.modelName != null) {
-            this.modelName = options.modelName;
-            delete options.modelName;
-        }
         this._closed = false;
         this._collection = null;
     }
@@ -77,7 +73,7 @@ export class Collection extends MongooseCollection {
      * Count documents in the collection that match the given filter.
      * @param filter
      */
-    countDocuments(filter: Record<string, any>) {
+    countDocuments(filter: Record<string, unknown>) {
         filter = serialize(filter);
         return this.collection.countDocuments(filter, 1000);
     }
@@ -88,7 +84,7 @@ export class Collection extends MongooseCollection {
      * @param options
      * @param callback
      */
-    find(filter: Record<string, any>, options?: FindOptions, callback?: NodeCallback<FindCursor<unknown>>) {
+    find(filter: Record<string, unknown>, options?: FindOptions, callback?: NodeCallback<FindCursor<unknown>>) {
         if (options != null) {
             processSortOption(options);
         }
@@ -105,7 +101,7 @@ export class Collection extends MongooseCollection {
      * @param filter
      * @param options
      */
-    findOne(filter: Record<string, any>, options?: FindOneOptions) {
+    findOne(filter: Record<string, unknown>, options?: FindOneOptions) {
         if (options != null) {
             processSortOption(options);
         }
@@ -117,7 +113,7 @@ export class Collection extends MongooseCollection {
      * Insert a single document into the collection.
      * @param doc
      */
-    insertOne(doc: Record<string, any>) {
+    insertOne(doc: Record<string, unknown>) {
         return this.collection.insertOne(serialize(doc));
     }
 
@@ -126,7 +122,7 @@ export class Collection extends MongooseCollection {
      * @param documents
      * @param options
      */
-    async insertMany(documents: Record<string, any>[], options?: InsertManyOptions) {
+    async insertMany(documents: Record<string, unknown>[], options?: InsertManyOptions) {
         const usePagination = options?.usePagination ?? false;
         if (options != null && 'usePagination' in options) {
             options = { ...options };
@@ -184,7 +180,7 @@ export class Collection extends MongooseCollection {
                     const results = await Promise.all(ops);
                     for (const { insertedCount, insertedIds } of results) {
                         ret.insertedCount += insertedCount;
-                        ret.insertedIds = ret.insertedIds!.concat(insertedIds);
+                        ret.insertedIds = (ret.insertedIds ?? []).concat(insertedIds);
                     }
                     return ret;
                 }
@@ -200,7 +196,7 @@ export class Collection extends MongooseCollection {
      * @param update
      * @param options
      */
-    async findOneAndUpdate(filter: Record<string, any>, update: Record<string, any>, options?: FindOneAndUpdateOptions) {
+    async findOneAndUpdate(filter: Record<string, unknown>, update: Record<string, unknown>, options?: FindOneAndUpdateOptions) {
         if (options != null) {
             processSortOption(options);
         }
@@ -224,7 +220,7 @@ export class Collection extends MongooseCollection {
      * @param filter
      * @param options
      */
-    async findOneAndDelete(filter: Record<string, any>, options?: FindOneAndDeleteOptions) {
+    async findOneAndDelete(filter: Record<string, unknown>, options?: FindOneAndDeleteOptions) {
         if (options != null) {
             processSortOption(options);
         }
@@ -247,7 +243,7 @@ export class Collection extends MongooseCollection {
      * @param newDoc
      * @param options
      */
-    async findOneAndReplace(filter: Record<string, any>, newDoc: Record<string, any>, options?: FindOneAndReplaceOptions) {
+    async findOneAndReplace(filter: Record<string, unknown>, newDoc: Record<string, unknown>, options?: FindOneAndReplaceOptions) {
         if (options != null) {
             processSortOption(options);
         }
@@ -270,7 +266,7 @@ export class Collection extends MongooseCollection {
      * Delete one or more documents in a collection that match the given filter.
      * @param filter
      */
-    deleteMany(filter: Record<string, any>) {
+    deleteMany(filter: Record<string, unknown>) {
         if (filter == null || Object.keys(filter).length === 0) {
             return this.collection.deleteAll();
         }
@@ -284,7 +280,7 @@ export class Collection extends MongooseCollection {
      * @param options
      * @param callback
      */
-    deleteOne(filter: Record<string, any>, options?: DeleteOneOptions, callback?: NodeCallback<DeleteOneResult>) {
+    deleteOne(filter: Record<string, unknown>, options?: DeleteOneOptions, callback?: NodeCallback<DeleteOneResult>) {
         if (options != null) {
             processSortOption(options);
         }
@@ -305,7 +301,7 @@ export class Collection extends MongooseCollection {
      * @param update
      * @param options
      */
-    updateOne(filter: Record<string, any>, update: Record<string, any>, options?: UpdateOneOptions) {
+    updateOne(filter: Record<string, unknown>, update: Record<string, unknown>, options?: UpdateOneOptions) {
         if (options != null) {
             processSortOption(options);
         }
@@ -321,7 +317,7 @@ export class Collection extends MongooseCollection {
      * @param update
      * @param options
      */
-    updateMany(filter: Record<string, any>, update: Record<string, any>, options?: UpdateManyOptions) {
+    updateMany(filter: Record<string, unknown>, update: Record<string, unknown>, options?: UpdateManyOptions) {
         filter = serialize(filter);
         update = serialize(update);
         setDefaultIdForUpsert(filter, update, options, false);
@@ -339,7 +335,8 @@ export class Collection extends MongooseCollection {
      * Run an arbitrary command against this collection's http client
      * @param command
      */
-    runCommand(command: Record<string, any>) {
+    runCommand(command: Record<string, unknown>) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (this.collection as any)._httpClient.executeCommand(command);
     }
 
@@ -348,7 +345,7 @@ export class Collection extends MongooseCollection {
      * @param ops
      * @param options
      */
-    bulkWrite(ops: any[], options?: any) {
+    bulkWrite(_ops: Record<string, unknown>[], _options?: Record<string, unknown>) {
         throw new OperationNotSupportedError('bulkWrite() Not Implemented');
     }
 
@@ -357,7 +354,7 @@ export class Collection extends MongooseCollection {
      * @param pipeline
      * @param options
      */
-    aggregate(pipeline: any[], options?: any) {
+    aggregate(_pipeline: Record<string, unknown>[], _options?: Record<string, unknown>) {
         throw new OperationNotSupportedError('aggregate() Not Implemented');
     }
 
@@ -366,7 +363,7 @@ export class Collection extends MongooseCollection {
      * @param docs
      * @param options
      */
-    bulkSave(docs: any[], options?: any) {
+    bulkSave(_docs: Record<string, unknown>[], _options?: Record<string, unknown>) {
         throw new OperationNotSupportedError('bulkSave() Not Implemented');
     }
 
@@ -374,7 +371,7 @@ export class Collection extends MongooseCollection {
      * Clean indexes not supported.
      * @param options
      */
-    cleanIndexes(options?: any) {
+    cleanIndexes(_options?: Record<string, unknown>) {
         throw new OperationNotSupportedError('cleanIndexes() Not Implemented');
     }
 
@@ -382,16 +379,20 @@ export class Collection extends MongooseCollection {
      * List indexes not supported.
      * @param options
      */
-    listIndexes(options?: any) {
+    listIndexes(_options?: Record<string, unknown>) {
         throw new OperationNotSupportedError('listIndexes() Not Implemented');
     }
 
     /**
      * Create index not supported.
+     * 
+     * Async because Mongoose `createIndexes()` throws an unhandled error if `createIndex()` throws a sync error
+     * See Automattic/mongoose#14995
+     * 
      * @param fieldOrSpec
      * @param options
      */
-    createIndex(fieldOrSpec: any, options?: any) {
+    async createIndex(_fieldOrSpec: Record<string, unknown>, _options?: Record<string, unknown>) {
         throw new OperationNotSupportedError('createIndex() Not Implemented');
     }
 
@@ -447,7 +448,7 @@ export class OperationNotSupportedError extends Error {
     }
 }
 
-export function setDefaultIdForUpsert(filter: Record<string, any>, update: Record<string, any>, options?: Record<string, any>, replace?: boolean) {
+export function setDefaultIdForUpsert(filter: Record<string, unknown>, update: Record<string, unknown>, options?: Record<string, unknown>, replace?: boolean) {
     if (filter == null || options == null) {
         return;
     }
@@ -476,7 +477,7 @@ export function setDefaultIdForUpsert(filter: Record<string, any>, update: Recor
     }
 }
 
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function _updateHasKey(update: Record<string, any>, key: string) {
     for (const operator of Object.keys(update)) {
         if (update[operator] != null && typeof update[operator] === 'object' && key in update[operator]) {
