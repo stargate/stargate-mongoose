@@ -522,9 +522,7 @@ describe('Mongoose Model API level tests', async () => {
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
             await Product.insertMany([product1, product2, product3]);
-            const error: Error | null = await Product.startSession().then(() => null, error => error);
-            assert.ok(error instanceof OperationNotSupportedError);
-            assert.strictEqual(error.message, 'startSession() Not Implemented');
+            assert.throws(() => Product.startSession(), { message: 'startSession() Not Implemented' });
         });
         it('API ops tests Model.syncIndexes()', async () => {
             const error: Error | null = await Product.syncIndexes().then(() => null, error => error);
