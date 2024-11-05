@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Collection } from './collection';
-import type { Db } from '@datastax/astra-db-ts';
+import type { Db, RawDataAPIResponse } from '@datastax/astra-db-ts';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
 import type { ConnectOptions, Mongoose, Model } from 'mongoose';
@@ -83,7 +83,7 @@ export class Connection extends MongooseConnection {
         return db.listCollections();
     }
 
-    async runCommand(command: Record<string, unknown>): Promise<Record<string, unknown>> {
+    async runCommand(command: Record<string, unknown>): Promise<RawDataAPIResponse> {
         await this._waitForClient();
         const db: Db = this.db;
         return db.command(command);

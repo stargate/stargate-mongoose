@@ -24,15 +24,7 @@ import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '../../src/driver';
 import { Product, Cart, mongooseInstance, productSchema } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
-import { FindCursor } from '@datastax/astra-db-ts';
-
-const productSchema = new mongoose.Schema({
-    name: String,
-    price: Number,
-    expiryDate: Date,
-    isCertified: Boolean,
-    category: String
-});
+import { FindCursor, DataAPIResponseError } from '@datastax/astra-db-ts';
 
 describe('Mongoose Model API level tests', async () => {
     afterEach(async () => {
@@ -56,6 +48,7 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(savedRow.price, 10);
             assert.strictEqual(savedRow.isCertified, true);
             assert.strictEqual(savedRow.category, 'cat 1');
+            // @ts-expect-error
             assert.strictEqual(savedRow.extraCol, undefined);
             //strict is false, so extraCol should be saved
             const saveResponseWithStrictFalse = await new Product({
@@ -196,7 +189,7 @@ describe('Mongoose Model API level tests', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
             const error: Error | null = await Product.$where('this.name === "Product 1"').exec().then(() => null, error => error);
-            assert.ok(error);
+            assert.ok(error instanceof DataAPIResponseError);
             assert.strictEqual(error.errorDescriptors[0].message, 'Invalid filter expression: filter clause path (\'$where\') contains character(s) not allowed');
         });
         it('API ops tests db.dropCollection() and Model.createCollection()', async () => {
@@ -311,13 +304,15 @@ describe('Mongoose Model API level tests', async () => {
                 category: 'cat 1',
                 url: 'http://product1.com'
             });
+            // @ts-expect-error
             assert.ok(!regularProduct.url);
             await regularProduct.save();
-            const regularProductSaved = await Product.findOne({name: 'Product 1'});
-            assert.strictEqual(regularProductSaved!.name, 'Product 1');
-            assert.strictEqual(regularProductSaved!.price, 10);
-            assert.strictEqual(regularProductSaved!.isCertified, true);
-            assert.strictEqual(regularProductSaved!.category, 'cat 1');
+            const regularProductSaved = await Product.findOne({name: 'Product 1'}).orFail();
+            assert.strictEqual(regularProductSaved.name, 'Product 1');
+            assert.strictEqual(regularProductSaved.price, 10);
+            assert.strictEqual(regularProductSaved.isCertified, true);
+            assert.strictEqual(regularProductSaved.category, 'cat 1');
+            // @ts-expect-error
             assert.ok(!regularProductSaved.url);
             const onlineProduct = new OnlineProduct({
                 name: 'Product 2',
@@ -462,6 +457,7 @@ describe('Mongoose Model API level tests', async () => {
                 [product1, product2, product3],
                 {returnDocumentResponses: true, rawResult: true}
             );
+            // @ts-expect-error
             assert.deepStrictEqual(respWithResponses.documentResponses, [
                 { _id: '0'.repeat(24), status: 'OK' },
                 { _id: '1'.repeat(24), status: 'OK' },
@@ -602,7 +598,6 @@ describe('Mongoose Model API level tests', async () => {
                 () => Product.watch().on('change', (change) => {
                     assert.strictEqual(change.operationType, 'delete');
                     assert.strictEqual(change.documentKey._id.toString(), product1._id.toString());
-                    changeStream.close();
                 }),
                 { message: 'watch() Not Implemented' }
             );
@@ -652,7 +647,7 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests connection.runCommand()', async () => {
             const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
             const res = await connection.runCommand({ findCollections: {} });
-            assert.ok(res.status.collections.includes('carts'));
+            assert.ok(res.status?.collections?.includes('carts'));
         });
         it('API ops tests collection.runCommand()', async () => {
             const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
@@ -698,7 +693,7 @@ describe('Mongoose Model API level tests', async () => {
                     }
                 }
             });
-            assert.ok(res.status.ok);
+            assert.ok(res.status?.ok);
 
             const Bot = mongoose.model('Bot', new mongoose.Schema({
                 name: String,

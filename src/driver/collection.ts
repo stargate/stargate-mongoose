@@ -448,7 +448,7 @@ export class OperationNotSupportedError extends Error {
     }
 }
 
-export function setDefaultIdForUpsert(filter: Record<string, unknown>, update: Record<string, unknown>, options?: Record<string, unknown>, replace?: boolean) {
+export function setDefaultIdForUpsert(filter: Record<string, unknown>, update: { $setOnInsert?: Record<string, unknown> } & Record<string, unknown>, options?: { upsert?: boolean }, replace?: boolean) {
     if (filter == null || options == null) {
         return;
     }
