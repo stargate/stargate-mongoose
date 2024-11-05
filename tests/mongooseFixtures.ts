@@ -1,5 +1,5 @@
 import { isAstra, testClient } from './fixtures';
-import { Schema, Mongoose, ConnectOptions } from 'mongoose';
+import { Schema, Mongoose } from 'mongoose';
 import * as StargateMongooseDriver from '../src/driver';
 import { parseUri } from '../src/driver/connection';
 import { plugins } from '../src/driver';
@@ -77,7 +77,7 @@ before(async function connectMongooseFixtures() {
             password: process.env.STARGATE_PASSWORD
         };
         const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
-        await mongooseInstance.connect(testClient!.uri, options as unknown as ConnectOptions);
+        await mongooseInstance.connect(testClient!.uri, options);
         const keyspace = parseUri(testClient!.uri).keyspaceName;
         await connection.admin.createNamespace(keyspace);
     }

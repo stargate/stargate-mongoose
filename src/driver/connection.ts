@@ -225,9 +225,9 @@ interface ParsedUri {
     baseUrl: string;
     baseApiPath: string;
     keyspaceName: string;
-    applicationToken: string;
-    logLevel: string;
-    authHeaderName: string;
+    applicationToken?: string;
+    logLevel?: string;
+    authHeaderName?: string;
   }
   
 // Parse a connection URI in the format of: https://${baseUrl}/${baseAPIPath}/${keyspace}?applicationToken=${applicationToken}
@@ -236,9 +236,18 @@ export const parseUri = (uri: string): ParsedUri => {
     const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
     const keyspaceName = parsedUrl.pathname?.substring(parsedUrl.pathname?.lastIndexOf('/') + 1);
     const baseApiPath = getBaseAPIPath(parsedUrl.pathname);
-    const applicationToken = parsedUrl.query?.applicationToken as string;
-    const logLevel = parsedUrl.query?.logLevel as string;
-    const authHeaderName = parsedUrl.query?.authHeaderName as string;
+    const applicationToken = parsedUrl.query?.applicationToken;
+    const logLevel = parsedUrl.query?.logLevel;
+    const authHeaderName = parsedUrl.query?.authHeaderName;
+    if (Array.isArray(applicationToken)) {
+        throw new Error('Invalid URI: multiple application tokens');
+    }
+    if (Array.isArray(logLevel)) {
+        throw new Error('Invalid URI: multiple application log levels');
+    }
+    if (Array.isArray(authHeaderName)) {
+        throw new Error('Invalid URI: multiple application auth header names');
+    }
     if (!keyspaceName) {
         throw new Error('Invalid URI: keyspace is required');
     }

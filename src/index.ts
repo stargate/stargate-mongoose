@@ -30,6 +30,8 @@ declare module 'mongoose' {
     isAstra?: boolean;
     sanitizeFilter?: boolean;
     featureFlags?: string[];
+    username?: string;
+    password?: string;
   }
 
   interface InsertManyOptions {
