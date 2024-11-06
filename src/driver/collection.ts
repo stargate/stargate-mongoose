@@ -24,6 +24,7 @@ import {
     FindOneAndUpdateOptions,
     FindOneOptions,
     FindOptions,
+    InsertManyResult,
     SortDirection,
     UpdateManyOptions,
     UpdateOneOptions
@@ -122,7 +123,7 @@ export class Collection extends MongooseCollection {
      * @param documents
      * @param options
      */
-    async insertMany(documents: Record<string, unknown>[], options?: InsertManyOptions) {
+    async insertMany(documents: Record<string, unknown>[], options?: InsertManyOptions): Promise<InsertManyResult<Record<string, unknown>>> {
         const usePagination = options?.usePagination ?? false;
         if (options != null && 'usePagination' in options) {
             options = { ...options };
@@ -135,55 +136,30 @@ export class Collection extends MongooseCollection {
         if (usePagination) {
             const batchSize = 20;
             if (ordered) {
-                if (options?.returnDocumentResponses) {
-                    const ret = { documentResponses: [] as unknown[] };
-                    for (let i = 0; i < documents.length; i += batchSize) {
-                        const batch = documents.slice(i, i + batchSize);
-                        const {
-                            documentResponses
-                        } = await this.collection.insertMany(batch, options) as unknown as { documentResponses: unknown[] };
-                        ret.documentResponses.push(...documentResponses);
-                    }
-                    return ret;
-                } else {
-                    const ret = { insertedCount: 0, insertedIds: [] as unknown[] };
-                    for (let i = 0; i < documents.length; i += batchSize) {
-                        const batch = documents.slice(i, i + batchSize);
-                        const {
-                            insertedCount,
-                            insertedIds
-                        } = await this.collection.insertMany(batch, options);
-                        ret.insertedCount += insertedCount;
-                        ret.insertedIds.push(...insertedIds);
-                    }
-                    return ret;
+                const ret: InsertManyResult<Record<string, unknown>> = { insertedCount: 0, insertedIds: [] };
+                for (let i = 0; i < documents.length; i += batchSize) {
+                    const batch = documents.slice(i, i + batchSize);
+                    const {
+                        insertedCount,
+                        insertedIds
+                    } = await this.collection.insertMany(batch, options);
+                    ret.insertedCount += insertedCount;
+                    ret.insertedIds.push(...insertedIds);
                 }
+                return ret;
             } else {
                 const ops = [];
-                if (options?.returnDocumentResponses) {
-                    const ret = { documentResponses: [] as unknown[] };
-                    for (let i = 0; i < documents.length; i += batchSize) {
-                        const batch = documents.slice(i, i + batchSize);
-                        ops.push(this.collection.insertMany(batch, options));
-                    }
-                    const results = await Promise.all(ops) as unknown as { documentResponses: unknown[] }[];
-                    for (const { documentResponses } of results) {
-                        ret.documentResponses.push(...documentResponses);
-                    }
-                    return ret;
-                } else {
-                    const ret = { insertedCount: 0, insertedIds: [] as unknown[] };
-                    for (let i = 0; i < documents.length; i += batchSize) {
-                        const batch = documents.slice(i, i + batchSize);
-                        ops.push(this.collection.insertMany(batch, options));
-                    }
-                    const results = await Promise.all(ops);
-                    for (const { insertedCount, insertedIds } of results) {
-                        ret.insertedCount += insertedCount;
-                        ret.insertedIds = (ret.insertedIds ?? []).concat(insertedIds);
-                    }
-                    return ret;
+                const ret: InsertManyResult<Record<string, unknown>> = { insertedCount: 0, insertedIds: [] };
+                for (let i = 0; i < documents.length; i += batchSize) {
+                    const batch = documents.slice(i, i + batchSize);
+                    ops.push(this.collection.insertMany(batch, options));
                 }
+                const results = await Promise.all(ops);
+                for (const { insertedCount, insertedIds } of results) {
+                    ret.insertedCount += insertedCount;
+                    ret.insertedIds = (ret.insertedIds ?? []).concat(insertedIds);
+                }
+                return ret;
             }
         } else {
             return this.collection.insertMany(documents, options);
