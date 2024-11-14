@@ -470,8 +470,8 @@ describe('Mongoose Model API level tests', async () => {
             ).then(() => null, err => err);
             assert.deepStrictEqual(err.status.documentResponses, [
                 { _id: '0'.repeat(24), status: 'ERROR', errorsIdx: 0 },
-                { _id: '1'.repeat(24), status: 'ERROR', errorsIdx: 0 },
-                { _id: '2'.repeat(24), status: 'ERROR', errorsIdx: 0 }
+                { _id: '1'.repeat(24), status: 'ERROR', errorsIdx: 1 },
+                { _id: '2'.repeat(24), status: 'ERROR', errorsIdx: 2 }
             ]);
         });
         //Model.inspect can not be tested since it is a helper for console logging. More info here: https://mongoosejs.com/docs/api/model.html#Model.inspect()
@@ -951,7 +951,7 @@ describe('Mongoose Model API level tests', async () => {
             const collection = collections.find(collection => collection.name === 'vector');
             assert.ok(collection, 'Collection named "vector" not found');
             assert.deepStrictEqual(collection.options, {
-                vector: { dimension: 2, metric: 'cosine' }
+                vector: { dimension: 2, metric: 'cosine', sourceModel: 'other' }
             });
         });
     });
