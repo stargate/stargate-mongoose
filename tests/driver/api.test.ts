@@ -672,6 +672,12 @@ describe('Mongoose Model API level tests', async () => {
             const connection: StargateMongooseDriver.Connection = mongoose.connection as unknown as StargateMongooseDriver.Connection;
             await connection.runCommand({
                 dropTable: { name: 'bots' }
+            }).catch(err => {
+                // Ignore if table doesn't already exist
+                if (err instanceof DataAPIResponseError && err.errorDescriptors.length === 1 && err.errorDescriptors[0].errorCode === 'CANNOT_DROP_UNKNOWN_TABLE') {
+                    return;
+                }
+                throw err;
             });
             const res = await connection.runCommand({
                 createTable: {
