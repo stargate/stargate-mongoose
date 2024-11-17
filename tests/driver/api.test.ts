@@ -694,9 +694,14 @@ describe('Mongoose Model API level tests', async () => {
                 vector: [Number]
             }, { versionKey: false }));
             const { _id } = await Bot.create({ name: 'test', vector: [1, 1] });
+            await Bot.create({ name: 'test', vector: [10, -10] });
+            await Bot.create({ name: 'test', vector: [-100, -100] });
 
             const fromDb = await Bot.findById(_id).orFail();
             assert.deepStrictEqual(fromDb.vector, [1, 1]);
+
+            const closest = await Bot.findOne().sort({ vector: { $meta: [9.9, -9.9] } }).orFail();
+            assert.deepStrictEqual(closest.vector, [10, -10]);
 
             await mongoose.connection.db.runCommand({
                 dropTable: {

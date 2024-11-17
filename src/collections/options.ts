@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export type SortOption = Record<string, 1 | -1> |
-  { $vector: { $meta: Array<number> } } |
-  { $vector: Array<number> } |
-  { $vectorize: { $meta: string } } |
-  { $vectorize: string };
+export type SortOption = Record<string, 1 | -1 | { $meta: Array<number> } | { $meta: string }>;
+export type SortOptionInternal = Record<string, 1 | -1 | Array<number> | string>;
 
 export type ProjectionOption = Record<string, 1 | 0 | true | false | { $slice: number }>;
 
 export interface DeleteOneOptions {
-    sort?: Record<string, 1 | -1>;
+    sort?: SortOption;
+}
+export interface DeleteOneOptionsForDataAPI {
+    sort?: SortOptionInternal;
 }
 
 export interface VectorOptions {
@@ -37,6 +37,7 @@ export interface FindOptions {
     includeSimilarity?: boolean;
     includeSortVector?: boolean;
 }
+export type FindOptionsForDataAPI = Omit<FindOptions, 'sort'> & { sort?: SortOptionInternal };
 
 class _FindOptionsInternal {
     limit?: number = undefined;
@@ -59,6 +60,7 @@ export interface FindOneOptions {
     includeSimilarity?: boolean;
     includeSortVector?: boolean;
 }
+export type FindOneOptionsForDataAPI = Omit<FindOneOptions, 'sort'> & { sort?: SortOptionInternal };
 
 class _FindOneOptionsInternal {
     includeSimilarity?: boolean = undefined;
@@ -74,6 +76,7 @@ export interface FindOneAndDeleteOptions {
     projection?: ProjectionOption;
     includeResultMetadata?: boolean;
 }
+export type FindOneAndDeleteOptionsForDataAPI = Omit<FindOneAndDeleteOptions, 'sort'> & { sort?: SortOptionInternal };
 
 
 class _FindOneAndReplaceOptions {
@@ -86,6 +89,7 @@ class _FindOneAndReplaceOptions {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface FindOneAndReplaceOptions extends _FindOneAndReplaceOptions {}
+export type FindOneAndReplaceOptionsForDataAPI = Omit<FindOneAndReplaceOptions, 'sort'> & { sort?: SortOptionInternal };
 
 export const findOneAndReplaceInternalOptionsKeys: Set<string> = new Set(
     Object.keys(new _FindOneAndReplaceOptions)
@@ -101,6 +105,7 @@ class _FindOneAndUpdateOptions {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface FindOneAndUpdateOptions extends _FindOneAndUpdateOptions {}
+export type FindOneAndUpdateOptionsForDataAPI = Omit<FindOneAndUpdateOptions, 'sort'> & { sort?: SortOptionInternal };
 
 export const findOneAndUpdateInternalOptionsKeys: Set<string> = new Set(
     Object.keys(new _FindOneAndUpdateOptions)
@@ -140,6 +145,7 @@ class _UpdateOneOptions {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface UpdateOneOptions extends _UpdateOneOptions {}
+export type UpdateOneOptionsForDataAPI = Omit<UpdateOneOptions, 'sort'> & { sort?: SortOptionInternal };
 
 export const updateOneInternalOptionsKeys: Set<string> = new Set(
     Object.keys(new _UpdateOneOptions)
