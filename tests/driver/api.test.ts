@@ -667,7 +667,19 @@ describe('Mongoose Model API level tests', async () => {
                 featureFlags: ['Feature-Flag-tables']
             };
             await mongoose.connect(testClient!.uri, options as mongoose.ConnectOptions);
-            const res = await mongoose.connection.db.runCommand({
+
+            const conn = mongoose.connection.db as unknown as StargateMongooseDriver.Connection;
+            await conn.runCommand({
+                dropTable: {
+                    name: 'bots'
+                }
+            }).catch((err: Error) => {
+                if (err instanceof StargateServerError && err.errors.length === 1 && err.errors[0].errorCode === 'CANNOT_DROP_UNKNOWN_TABLE') {
+                    return;
+                }
+                throw err;
+            });
+            const res = await conn.runCommand({
                 createTable: {
                     name: 'bots',
                     definition: {
@@ -693,6 +705,16 @@ describe('Mongoose Model API level tests', async () => {
                 name: String,
                 vector: [Number]
             }, { versionKey: false }));
+
+            const collection = Bot.collection as unknown as StargateMongooseDriver.Collection;
+            await collection.runCommand({
+                createVectorIndex: {
+                    name: 'vector',
+                    definition: {
+                        column: 'vector'
+                    }
+                }
+            });
             const { _id } = await Bot.create({ name: 'test', vector: [1, 1] });
             await Bot.create({ name: 'test', vector: [10, -10] });
             await Bot.create({ name: 'test', vector: [-100, -100] });
@@ -703,7 +725,7 @@ describe('Mongoose Model API level tests', async () => {
             const closest = await Bot.findOne().sort({ vector: { $meta: [9.9, -9.9] } }).orFail();
             assert.deepStrictEqual(closest.vector, [10, -10]);
 
-            await mongoose.connection.db.runCommand({
+            await conn.runCommand({
                 dropTable: {
                     name: 'bots'
                 }
