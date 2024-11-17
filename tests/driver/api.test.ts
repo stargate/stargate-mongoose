@@ -722,8 +722,13 @@ describe('Mongoose Model API level tests', async () => {
             const fromDb = await Bot.findById(_id).orFail();
             assert.deepStrictEqual(fromDb.vector, [1, 1]);
 
-            const closest = await Bot.findOne().sort({ vector: { $meta: [9.9, -9.9] } }).orFail();
+            let closest = await Bot.findOne().sort({ vector: { $meta: [9.9, -9.9] } }).orFail();
             assert.deepStrictEqual(closest.vector, [10, -10]);
+
+            closest = await Bot.findOne().sort({ vector: { $meta: [9.9, -9.9] } }).setOptions({ includeSortVector: true, includeSimilarity: true }).orFail();
+            assert.deepStrictEqual(closest.vector, [10, -10]);
+            assert.deepStrictEqual(closest.get('$sortVector'), [9.9, -9.9]);
+            assert.equal(typeof closest.get('$similarity'), 'number');
 
             await conn.runCommand({
                 dropTable: {
