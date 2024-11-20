@@ -435,7 +435,7 @@ export const handleIfErrorResponse = (response: any, data: Record<string, unknow
 function cleanupOptions(commandName: string, command: Record<string, any>, optionsToRetain: Set<string> | null, logSkippedOptions: boolean) {
     if (command.options != null) {
         Object.keys(command.options).forEach((key) => {
-            if (optionsToRetain !== null && !optionsToRetain.has(key)) {
+            if (optionsToRetain != null && !optionsToRetain.has(key)) {
                 if (logSkippedOptions) {
                     logger.warn(`'${commandName}' does not support option '${key}'`);
                 }
