@@ -17,7 +17,8 @@ import {
     CreateCollectionOptions,
     createCollectionOptionsKeys,
     ListCollectionOptions,
-    listCollectionOptionsKeys
+    listCollectionOptionsKeys,
+    retainNoOptions
 } from './options';
 import { Collection } from './collection';
 import { executeOperation, createNamespace, dropNamespace } from './utils';
@@ -101,7 +102,7 @@ export class Db {
         return await this.httpClient.executeCommandWithUrl(
             this.httpBasePath,
             command,
-            null
+            retainNoOptions
         );
     }
 
@@ -142,7 +143,7 @@ export class Db {
             return await this.httpClient.executeCommandWithUrl(
                 '/' + this.name,
                 command,
-                null
+                retainNoOptions
             );
         });
     }

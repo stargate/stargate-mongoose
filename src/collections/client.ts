@@ -17,6 +17,7 @@ import { createNamespace, executeOperation, parseUri } from './utils';
 import { HTTPClient } from '@/src/client';
 import { logger } from '@/src/logger';
 import {OperationNotSupportedError} from '@/src/driver';
+import { retainNoOptions } from './options';
 
 export interface ClientOptions {
   applicationToken?: string;
@@ -143,7 +144,7 @@ export class Client {
             return await this.httpClient.executeCommandWithUrl(
                 '/',
                 command,
-                null
+                retainNoOptions
             );
         });
     }

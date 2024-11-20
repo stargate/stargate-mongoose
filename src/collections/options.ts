@@ -178,3 +178,5 @@ export interface ListCollectionOptions extends _ListCollectionOptions {}
 export const listCollectionOptionsKeys: Set<string> = new Set(
     Object.keys(new _ListCollectionOptions)
 );
+
+export const retainNoOptions: Set<string> = new Set();

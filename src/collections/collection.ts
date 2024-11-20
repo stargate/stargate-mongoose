@@ -32,7 +32,8 @@ import {
     findOneInternalOptionsKeys,
     FindOptionsForDataAPI,
     FindOneOptionsForDataAPI,
-    UpdateOneOptionsForDataAPI
+    UpdateOneOptionsForDataAPI,
+    retainNoOptions
 } from './options';
 
 export interface DataAPIUpdateResult {
@@ -89,7 +90,7 @@ export class Collection {
             const resp = await this.httpClient.executeCommandWithUrl(
                 this.httpBasePath,
                 command,
-                null
+                retainNoOptions
             );
             return {
                 acknowledged: true,
@@ -223,7 +224,7 @@ export class Collection {
             const deleteOneResp = await this.httpClient.executeCommandWithUrl(
                 this.httpBasePath,
                 command,
-                null
+                retainNoOptions
             );
             return {
                 acknowledged: true,
@@ -242,7 +243,7 @@ export class Collection {
             const deleteManyResp = await this.httpClient.executeCommandWithUrl(
                 this.httpBasePath,
                 command,
-                null
+                retainNoOptions
             );
             if (deleteManyResp.status.moreData) {
                 throw new StargateMongooseError(`More records found to be deleted even after deleting ${deleteManyResp.status.deletedCount} records`, command);
@@ -319,7 +320,7 @@ export class Collection {
             const resp = await this.httpClient.executeCommandWithUrl(
                 this.httpBasePath,
                 command,
-                null
+                retainNoOptions
             );
             return resp.status.count;
         });
@@ -331,7 +332,7 @@ export class Collection {
             const resp = await this.httpClient.executeCommandWithUrl(
                 this.httpBasePath,
                 command,
-                null
+                retainNoOptions
             );
             return resp.status.count;
         });
@@ -349,7 +350,7 @@ export class Collection {
         const resp = await this.httpClient.executeCommandWithUrl(
             this.httpBasePath,
             command,
-            null
+            retainNoOptions
         );
         return {
             value : resp.data?.document,
