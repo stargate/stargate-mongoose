@@ -470,8 +470,8 @@ describe('Mongoose Model API level tests', async () => {
             ).then(() => null, err => err);
             assert.deepStrictEqual(err.status.documentResponses, [
                 { _id: '0'.repeat(24), status: 'ERROR', errorsIdx: 0 },
-                { _id: '1'.repeat(24), status: 'ERROR', errorsIdx: 0 },
-                { _id: '2'.repeat(24), status: 'ERROR', errorsIdx: 0 }
+                { _id: '1'.repeat(24), status: 'ERROR', errorsIdx: 1 },
+                { _id: '2'.repeat(24), status: 'ERROR', errorsIdx: 2 }
             ]);
         });
         //Model.inspect can not be tested since it is a helper for console logging. More info here: https://mongoosejs.com/docs/api/model.html#Model.inspect()
@@ -667,7 +667,19 @@ describe('Mongoose Model API level tests', async () => {
                 featureFlags: ['Feature-Flag-tables']
             };
             await mongoose.connect(testClient!.uri, options as mongoose.ConnectOptions);
-            const res = await mongoose.connection.db.runCommand({
+
+            const conn = mongoose.connection.db as unknown as StargateMongooseDriver.Connection;
+            await conn.runCommand({
+                dropTable: {
+                    name: 'bots'
+                }
+            }).catch((err: Error) => {
+                if (err instanceof StargateServerError && err.errors.length === 1 && err.errors[0].errorCode === 'CANNOT_DROP_UNKNOWN_TABLE') {
+                    return;
+                }
+                throw err;
+            });
+            const res = await conn.runCommand({
                 createTable: {
                     name: 'bots',
                     definition: {
@@ -693,12 +705,32 @@ describe('Mongoose Model API level tests', async () => {
                 name: String,
                 vector: [Number]
             }, { versionKey: false }));
+
+            const collection = Bot.collection as unknown as StargateMongooseDriver.Collection;
+            await collection.runCommand({
+                createVectorIndex: {
+                    name: 'vector',
+                    definition: {
+                        column: 'vector'
+                    }
+                }
+            });
             const { _id } = await Bot.create({ name: 'test', vector: [1, 1] });
+            await Bot.create({ name: 'test', vector: [10, -10] });
+            await Bot.create({ name: 'test', vector: [-100, -100] });
 
             const fromDb = await Bot.findById(_id).orFail();
             assert.deepStrictEqual(fromDb.vector, [1, 1]);
 
-            await mongoose.connection.db.runCommand({
+            let closest = await Bot.findOne().sort({ vector: { $meta: [9.9, -9.9] } }).orFail();
+            assert.deepStrictEqual(closest.vector, [10, -10]);
+
+            closest = await Bot.findOne().sort({ vector: { $meta: [9.9, -9.9] } }).setOptions({ includeSortVector: true, includeSimilarity: true }).orFail();
+            assert.deepStrictEqual(closest.vector, [10, -10]);
+            assert.deepStrictEqual(closest.get('$sortVector'), [9.9, -9.9]);
+            assert.equal(typeof closest.get('$similarity'), 'number');
+
+            await conn.runCommand({
                 dropTable: {
                     name: 'bots'
                 }
@@ -955,7 +987,7 @@ describe('Mongoose Model API level tests', async () => {
             const collection = collections.find(collection => collection.name === 'vector');
             assert.ok(collection, 'Collection named "vector" not found');
             assert.deepStrictEqual(collection.options, {
-                vector: { dimension: 2, metric: 'cosine' }
+                vector: { dimension: 2, metric: 'cosine', sourceModel: 'other' }
             });
         });
     });
