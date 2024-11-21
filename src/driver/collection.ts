@@ -16,34 +16,38 @@ import { default as MongooseCollection } from 'mongoose/lib/collection';
 import type { Connection } from './connection';
 import {
     Collection as AstraCollection,
-    DeleteOneOptions,
+    DeleteOneOptions as DeleteOneOptionsInternal,
     DeleteOneResult,
     FindCursor,
-    FindOneAndDeleteOptions,
-    FindOneAndReplaceOptions,
-    FindOneAndUpdateOptions,
-    FindOneOptions,
-    FindOptions,
+    FindOptions as FindOptionsInternal,
+    FindOneAndDeleteOptions as FindOneAndDeleteOptionsInternal,
+    FindOneAndReplaceOptions as FindOneAndReplaceOptionsInternal,
+    FindOneAndUpdateOptions as FindOneAndUpdateOptionsInternal,
+    FindOneOptions as FindOneOptionsInternal,
+    UpdateManyOptions,
+    UpdateOneOptions as UpdateOneOptionsInternal,
     InsertManyResult,
     SortDirection,
-    UpdateManyOptions,
-    UpdateOneOptions
+    Sort as SortOptionInternal
 } from '@datastax/astra-db-ts';
 import { serialize } from '../serialize';
 import { Types } from 'mongoose';
 
-export type SortOption = Record<string, SortDirection> |
-  { $vector: { $meta: Array<number> } } |
-  { $vector: Array<number> } |
-  { $vectorize: { $meta: string } } |
-  { $vectorize: string };
+export type MongooseSortOption = Record<string, 1 | -1 | { $meta: Array<number> } | { $meta: string }>;
+
+type FindOptions = Omit<FindOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
+type FindOneOptions = Omit<FindOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
+type FindOneAndUpdateOptions = Omit<FindOneAndUpdateOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
+type FindOneAndDeleteOptions = Omit<FindOneAndDeleteOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
+type FindOneAndReplaceOptions = Omit<FindOneAndReplaceOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
+type DeleteOneOptions = Omit<DeleteOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
+type UpdateOneOptions = Omit<UpdateOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
 
 export interface InsertManyOptions {
     ordered?: boolean;
     usePagination?: boolean;
     returnDocumentResponses?: boolean;
 }
-
 type NodeCallback<ResultType = unknown> = (err: Error | null, res: ResultType | null) => unknown;
 
 /**
@@ -86,11 +90,16 @@ export class Collection extends MongooseCollection {
      * @param callback
      */
     find(filter: Record<string, unknown>, options?: FindOptions, callback?: NodeCallback<FindCursor<unknown>>) {
-        if (options != null) {
-            processSortOption(options);
+        let requestOptions: FindOptionsInternal | undefined = undefined;
+        if (options != null && options.sort != null) {
+            requestOptions = { ...options, sort: processSortOption(options.sort) };
+        } else if (options != null && options.sort == null) {
+            requestOptions = { ...options, sort: undefined };
+            delete requestOptions.sort;
         }
         filter = serialize(filter);
-        const cursor = this.collection.find(filter, options);
+        const cursor = this.collection.find(filter, requestOptions);
+
         if (callback != null) {
             return callback(null, cursor);
         }
@@ -103,11 +112,15 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     findOne(filter: Record<string, unknown>, options?: FindOneOptions) {
-        if (options != null) {
-            processSortOption(options);
+        let requestOptions: FindOneOptionsInternal | undefined = undefined;
+        if (options != null && options.sort != null) {
+            requestOptions = { ...options, sort: processSortOption(options.sort) };
+        } else if (options != null && options.sort == null) {
+            requestOptions = { ...options, sort: undefined };
+            delete requestOptions.sort;
         }
         filter = serialize(filter);
-        return this.collection.findOne(filter, options);
+        return this.collection.findOne(filter, requestOptions);
     }
 
     /**
@@ -173,21 +186,25 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     async findOneAndUpdate(filter: Record<string, unknown>, update: Record<string, unknown>, options?: FindOneAndUpdateOptions) {
-        if (options != null) {
-            processSortOption(options);
+        let requestOptions: FindOneAndUpdateOptionsInternal | undefined = undefined;
+        if (options != null && options.sort != null) {
+            requestOptions = { ...options, sort: processSortOption(options.sort) };
+        } else if (options != null && options.sort == null) {
+            requestOptions = { ...options, sort: undefined };
+            delete requestOptions.sort;
         }
         filter = serialize(filter);
         update = serialize(update);
-        setDefaultIdForUpsert(filter, update, options, false);
+        setDefaultIdForUpsert(filter, update, requestOptions, false);
 
         // Weirdness to work around TypeScript, otherwise TypeScript fails with
         // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
-        if (options == null) {
+        if (requestOptions == null) {
             return this.collection.findOneAndUpdate(filter, update);
-        } else if (options.includeResultMetadata) {
-            return this.collection.findOneAndUpdate(filter, update, { ...options, includeResultMetadata: true });
+        } else if (requestOptions.includeResultMetadata) {
+            return this.collection.findOneAndUpdate(filter, update, { ...requestOptions, includeResultMetadata: true });
         } else {
-            return this.collection.findOneAndUpdate(filter, update, { ...options, includeResultMetadata: false });
+            return this.collection.findOneAndUpdate(filter, update, { ...requestOptions, includeResultMetadata: false });
         }
     }
 
@@ -197,19 +214,23 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     async findOneAndDelete(filter: Record<string, unknown>, options?: FindOneAndDeleteOptions) {
-        if (options != null) {
-            processSortOption(options);
+        let requestOptions: FindOneAndDeleteOptionsInternal | undefined = undefined;
+        if (options != null && options.sort != null) {
+            requestOptions = { ...options, sort: processSortOption(options.sort) };
+        } else if (options != null && options.sort == null) {
+            requestOptions = { ...options, sort: undefined };
+            delete requestOptions.sort;
         }
         filter = serialize(filter);
 
         // Weirdness to work around TypeScript, otherwise TypeScript fails with
         // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
-        if (options == null) {
+        if (requestOptions == null) {
             return this.collection.findOneAndDelete(filter);
-        } else if (options.includeResultMetadata) {
-            return this.collection.findOneAndDelete(filter, { ...options, includeResultMetadata: true });
+        } else if (requestOptions.includeResultMetadata) {
+            return this.collection.findOneAndDelete(filter, { ...requestOptions, includeResultMetadata: true });
         } else {
-            return this.collection.findOneAndDelete(filter, { ...options, includeResultMetadata: false });
+            return this.collection.findOneAndDelete(filter, { ...requestOptions, includeResultMetadata: false });
         }
     }
 
@@ -220,21 +241,25 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     async findOneAndReplace(filter: Record<string, unknown>, newDoc: Record<string, unknown>, options?: FindOneAndReplaceOptions) {
-        if (options != null) {
-            processSortOption(options);
+        let requestOptions: FindOneAndReplaceOptionsInternal | undefined = undefined;
+        if (options != null && options.sort != null) {
+            requestOptions = { ...options, sort: processSortOption(options.sort) };
+        } else if (options != null && options.sort == null) {
+            requestOptions = { ...options, sort: undefined };
+            delete requestOptions.sort;
         }
         filter = serialize(filter);
         newDoc = serialize(newDoc);
-        setDefaultIdForUpsert(filter, newDoc, options, true);
+        setDefaultIdForUpsert(filter, newDoc, requestOptions, true);
         
         // Weirdness to work around TypeScript, otherwise TypeScript fails with
         // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
-        if (options == null) {
+        if (requestOptions == null) {
             return this.collection.findOneAndReplace(filter, newDoc);
-        } else if (options.includeResultMetadata) {
-            return this.collection.findOneAndReplace(filter, newDoc, { ...options, includeResultMetadata: true });
+        } else if (requestOptions.includeResultMetadata) {
+            return this.collection.findOneAndReplace(filter, newDoc, { ...requestOptions, includeResultMetadata: true });
         } else {
-            return this.collection.findOneAndReplace(filter, newDoc, { ...options, includeResultMetadata: false });
+            return this.collection.findOneAndReplace(filter, newDoc, { ...requestOptions, includeResultMetadata: false });
         }
     }
 
@@ -257,13 +282,15 @@ export class Collection extends MongooseCollection {
      * @param callback
      */
     deleteOne(filter: Record<string, unknown>, options?: DeleteOneOptions, callback?: NodeCallback<DeleteOneResult>) {
-        if (options != null) {
-            processSortOption(options);
-        }
-    
+        let requestOptions: DeleteOneOptionsInternal | undefined = undefined;
+        if (options != null && options.sort != null) {
+            requestOptions = { ...options, sort: processSortOption(options.sort) };
+        } else if (options != null && options.sort == null) {
+            requestOptions = { ...options, sort: undefined };
+            delete requestOptions.sort;
+        } 
         filter = serialize(filter);
-        const promise = this.collection.deleteOne(filter, options);
-
+        const promise = this.collection.deleteOne(filter, requestOptions);
         if (callback != null) {
             promise.then((res: DeleteOneResult) => callback(null, res), (err: Error) => callback(err, null));
         }
@@ -278,13 +305,17 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     updateOne(filter: Record<string, unknown>, update: Record<string, unknown>, options?: UpdateOneOptions) {
-        if (options != null) {
-            processSortOption(options);
+        let requestOptions: UpdateOneOptionsInternal | undefined = undefined;
+        if (options != null && options.sort != null) {
+            requestOptions = { ...options, sort: processSortOption(options.sort) };
+        } else if (options != null && options.sort == null) {
+            requestOptions = { ...options, sort: undefined };
+            delete requestOptions.sort;
         }
         filter = serialize(filter);
         update = serialize(update);
-        setDefaultIdForUpsert(filter, update, options, false);
-        return this.collection.updateOne(filter, update, options);
+        setDefaultIdForUpsert(filter, update, requestOptions, false);
+        return this.collection.updateOne(filter, update, requestOptions);
     }
 
     /**
@@ -401,20 +432,25 @@ export class Collection extends MongooseCollection {
     }
 }
 
-function processSortOption(options: { sort?: SortOption }) {
-    if (options.sort == null) {
-        return;
+function processSortOption(sort: MongooseSortOption): SortOptionInternal {
+    const result: SortOptionInternal = {};
+    for (const key of Object.keys(sort)) {
+        const sortValue = sort[key];
+        if (sortValue == null || typeof sortValue !== 'object') {
+            result[key] = sortValue;
+            continue;
+        }
+
+        const $meta = typeof sortValue === 'object' && sortValue.$meta;
+        if ($meta) {
+            // Astra-db-ts 1.x does not currently support using fields other than $vector and $vectorize
+            // for vector sort and vectorize sort, but that works in tables. Stargate-mongoose added
+            // support in PR #258
+            result[key] = $meta as unknown as SortDirection;
+        }
     }
-    if ('$vector' in options.sort &&
-        typeof options.sort.$vector === 'object' &&
-        !Array.isArray(options.sort.$vector)) {
-        options.sort.$vector = options.sort.$vector.$meta;
-    }
-    if ('$vectorize' in options.sort &&
-        typeof options.sort.$vectorize === 'object' &&
-        !Array.isArray(options.sort.$vectorize)) {
-        options.sort.$vectorize = options.sort.$vectorize.$meta;
-    }
+    
+    return result;
 }
 
 export class OperationNotSupportedError extends Error {

@@ -706,10 +706,30 @@ describe('Mongoose Model API level tests', async () => {
                 vector: [Number]
             }, { versionKey: false }));
 
+            const collection = Bot.collection as unknown as StargateMongooseDriver.Collection;
+            const vectorIndexResult = await collection.runCommand({
+                createVectorIndex: {
+                    name: 'vector',
+                    definition: {
+                        column: 'vector'
+                    }
+                }
+            });
+            console.log('FF', vectorIndexResult);
             const { _id } = await Bot.create({ name: 'test', vector: [1, 1] });
+            await Bot.create({ name: 'test', vector: [10, -10] });
+            await Bot.create({ name: 'test', vector: [-100, -100] });
 
             const fromDb = await Bot.findById(_id).orFail();
             assert.deepStrictEqual(fromDb.vector, [1, 1]);
+
+            let closest = await Bot.findOne().sort({ vector: { $meta: [9.9, -9.9] } }).orFail();
+            assert.deepStrictEqual(closest.vector, [10, -10]);
+
+            closest = await Bot.findOne().sort({ vector: { $meta: [9.9, -9.9] } }).setOptions({ includeSortVector: true, includeSimilarity: true }).orFail();
+            assert.deepStrictEqual(closest.vector, [10, -10]);
+            assert.deepStrictEqual(closest.get('$sortVector'), [9.9, -9.9]);
+            assert.equal(typeof closest.get('$similarity'), 'number');
 
             await connection.runCommand({
                 dropTable: {
@@ -957,7 +977,7 @@ describe('Mongoose Model API level tests', async () => {
             const collection = collections.find(collection => collection.name === 'vector');
             assert.ok(collection, 'Collection named "vector" not found');
             assert.deepStrictEqual(collection.options, {
-                vector: { dimension: 2, metric: 'cosine', sourceModel: 'other' }
+                vector: { dimension: 2, metric: 'cosine' }
             });
         });
     });
