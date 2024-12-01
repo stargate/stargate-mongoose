@@ -506,9 +506,12 @@ describe('Mongoose Model API level tests', async () => {
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
             await Product.insertMany([product1, product2, product3]);
-            const error: Error | null = await Product.replaceOne({category: 'cat 1'}, {name: 'Product 4'}).then(() => null, error => error);
-            assert.ok(error instanceof OperationNotSupportedError);
-            assert.strictEqual(error.message, 'replaceOne() Not Implemented');
+            const resp = await Product.replaceOne({category: 'cat 1'}, {name: 'Product 4'});
+            assert.equal(resp.modifiedCount, 1);
+
+            const doc = await Product.findOne({name: 'Product 4'});
+            assert.ok(doc);
+            assert.strictEqual(doc.category, undefined);
         });
         //Model.schema() is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.schema
         it('API ops tests Model.startSession()', async () => {

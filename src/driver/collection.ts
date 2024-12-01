@@ -28,6 +28,8 @@ import {
     FindOptions,
     FindOptionsForDataAPI,
     InsertManyOptions,
+    ReplaceOneOptions,
+    ReplaceOneOptionsForDataAPI,
     SortOption,
     SortOptionInternal,
     UpdateManyOptions,
@@ -280,6 +282,24 @@ export class Collection extends MongooseCollection {
     }
 
     /**
+     * Update a single document in a collection that matches the given filter, replacing it with `replacement`.
+     * Converted to a `findOneAndReplace()` under the hood.
+     * @param filter
+     * @param replacement
+     * @param options
+     */
+    replaceOne(filter: Record<string, unknown>, replacement: Record<string, unknown>, options?: ReplaceOneOptions) {
+        let requestOptions: ReplaceOneOptionsForDataAPI | undefined = undefined;
+        if (options != null && options.sort != null) {
+            requestOptions = { ...options, sort: processSortOption(options.sort) };
+        } else if (options != null && options.sort == null) {
+            requestOptions = { ...options, sort: undefined };
+            delete requestOptions.sort;
+        }
+        return this.collection.replaceOne(filter, replacement, requestOptions);
+    }
+
+    /**
      * Update a single document in a collection that matches the given filter.
      * @param filter
      * @param update
@@ -396,13 +416,6 @@ export class Collection extends MongooseCollection {
      */
     distinct() {
         throw new OperationNotSupportedError('distinct() Not Implemented');
-    }
-
-    /**
-     * Replace one operation not supported.
-     */
-    replaceOne() {
-        throw new OperationNotSupportedError('replaceOne() Not Implemented');
     }
 }
 
