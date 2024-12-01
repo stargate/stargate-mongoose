@@ -33,7 +33,8 @@ import {
     FindOptionsForDataAPI,
     FindOneOptionsForDataAPI,
     UpdateOneOptionsForDataAPI,
-    retainNoOptions
+    retainNoOptions,
+    ReplaceOneOptionsForDataAPI
 } from './options';
 
 export interface DataAPIUpdateResult {
@@ -118,6 +119,34 @@ export class Collection {
                 insertedIds: resp.status.insertedIds,
                 documentResponses: resp.status.documentResponses
             };
+        });
+    }
+
+    async replaceOne(filter: Record<string, unknown>, replacement: Record<string, unknown>, options?: ReplaceOneOptionsForDataAPI) {
+        return executeOperation(async (): Promise<DataAPIUpdateResult> => {
+            const command = {
+                findOneAndReplace: {
+                    filter,
+                    replacement,
+                    options: { ...options, projection: { '*': 0 } }
+                }
+            };
+            setDefaultIdForUpsert(command.findOneAndReplace);
+            const findOneAndReplaceResp = await this.httpClient.executeCommandWithUrl(
+                this.httpBasePath,
+                command,
+                updateOneInternalOptionsKeys
+            );
+            const resp = {
+                modifiedCount: findOneAndReplaceResp.status.modifiedCount,
+                matchedCount: findOneAndReplaceResp.status.matchedCount,
+                acknowledged: true
+            } as DataAPIUpdateResult;
+            if (findOneAndReplaceResp.status.upsertedId) {
+                resp.upsertedId = findOneAndReplaceResp.status.upsertedId;
+                resp.upsertedCount = 1;
+            }
+            return resp;
         });
     }
 
