@@ -275,10 +275,20 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests Model.deleteMany()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
-            const deleteManyResp = await Product.deleteMany({name: 'Product 1'});
+            let deleteManyResp = await Product.deleteMany({name: 'Product 1'});
             assert.strictEqual(deleteManyResp.deletedCount, 1);
             const findDeletedDoc = await Product.findOne({name: 'Product 1'});
             assert.strictEqual(findDeletedDoc, null);
+
+            for (let i = 0; i < 51; ++i) {
+                await Product.create({ name: `Product ${i}` });
+            }
+            deleteManyResp = await Product.deleteMany({});
+            // Deleted an unknown number of rows
+            assert.strictEqual(deleteManyResp.deletedCount, -1);
+            
+            const count = await Product.countDocuments();
+            assert.strictEqual(count, 0);
         });
         it('API ops tests Model.deleteOne()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});

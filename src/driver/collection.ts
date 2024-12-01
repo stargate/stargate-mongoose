@@ -226,9 +226,6 @@ export class Collection extends MongooseCollection {
      * @param filter
      */
     deleteMany(filter: Record<string, unknown>) {
-        if (filter == null || Object.keys(filter).length === 0) {
-            return this.collection.deleteAll();
-        }
         filter = serialize(filter);
         return this.collection.deleteMany(filter);
     }
