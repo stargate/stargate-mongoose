@@ -20,6 +20,7 @@ export declare class Connection extends MongooseConnection {
     }): any;
     createCollection(name: string, options?: Record<string, unknown>): Promise<import("@datastax/astra-db-ts").Collection<import("@datastax/astra-db-ts").SomeDoc>>;
     dropCollection(name: string): Promise<boolean>;
+    createNamespace(namespace: string): Promise<any>;
     dropDatabase(): Promise<void>;
     listCollections(): Promise<import("@datastax/astra-db-ts").FullCollectionInfo[]>;
     runCommand(command: Record<string, unknown>): Promise<RawDataAPIResponse>;

@@ -58,6 +58,10 @@ class Connection extends connection_1.default {
         const db = this.db;
         return db.dropCollection(name);
     }
+    async createNamespace(namespace) {
+        await this._waitForClient();
+        return this.admin.createNamespace(namespace);
+    }
     async dropDatabase() {
         throw new Error('dropDatabase() Not Implemented');
     }

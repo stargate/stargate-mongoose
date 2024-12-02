@@ -79,7 +79,7 @@ before(async function connectMongooseFixtures() {
         const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
         await mongooseInstance.connect(testClient!.uri, options);
         const keyspace = parseUri(testClient!.uri).keyspaceName;
-        await connection.admin.createNamespace(keyspace);
+        await connection.createNamespace(keyspace);
     }
 });
 

@@ -73,6 +73,11 @@ export class Connection extends MongooseConnection {
         return db.dropCollection(name);
     }
 
+    async createNamespace(namespace: string) {
+        await this._waitForClient();
+        return this.admin.createNamespace(namespace);
+    }
+
     async dropDatabase() {
         throw new Error('dropDatabase() Not Implemented');
     }
