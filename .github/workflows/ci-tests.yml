@@ -60,8 +60,3 @@ jobs:
       - name: run e2e smoke test
         working-directory: ./tests/e2e
         run: node .
-      - name: upload packed build tarball
-        uses: actions/upload-artifact@v4
-        with:
-          name: stargate-mongoose
-          path: stargate-mongoose.tgz
