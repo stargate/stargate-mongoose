@@ -13,36 +13,8 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { Client, ClientOptions } from '@/src/collections/client';
 
 export const TEST_COLLECTION_NAME = 'collection1';
-
-export const getDataAPIClient = async () => {
-    if (!process.env.DATA_API_URI) {
-        return null;
-    }
-    const options: ClientOptions = { authHeaderName: process.env.AUTH_HEADER_NAME };
-    if (process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD) {
-        options.username = process.env.STARGATE_USERNAME;
-        options.password = process.env.STARGATE_PASSWORD;
-    }
-    //options.logLevel = 'debug';
-    return await Client.connect(process.env.DATA_API_URI, options);
-};
-
-export const getAstraClient = async () => {
-    if (!process.env.ASTRA_URI) {
-        return null;
-    }
-    const options: ClientOptions = { authHeaderName: process.env.AUTH_HEADER_NAME };
-    if (process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD) {
-        options.username = process.env.STARGATE_USERNAME;
-        options.password = process.env.STARGATE_PASSWORD;
-    }
-    //options.logLevel = 'debug';
-    options.isAstra = true;
-    return await Client.connect(process.env.ASTRA_URI, options);
-};
 
 export const createSampleDoc = () => ({
     _id: 'doc1',
@@ -132,19 +104,12 @@ export const isAstra = process.env.TEST_DOC_DB === 'astra' && !!process.env.ASTR
 export const testClient = process.env.TEST_DOC_DB === 'astra' ?
     (process.env.ASTRA_URI ?
         {
-            client: getAstraClient(),
             isAstra,
             uri: process.env.ASTRA_URI
         } : null)
     : (process.env.TEST_DOC_DB === 'dataapi' ? (process.env.DATA_API_URI ?
         {
-            client: getDataAPIClient(),
             isAstra,
             uri: process.env.DATA_API_URI
         } : null
     ) : null);
-
-after(async function() {
-    const client = await testClient?.client;
-    client?.close();
-});

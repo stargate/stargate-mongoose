@@ -12,28 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { IndexingOptions, VectorOptions } from './collections';
+import { IndexingOptions, VectorOptions } from '@datastax/astra-db-ts';
 
-export * as collections from './collections';
 export * as driver from './driver';
-export * as client from './client';
-export * as logger from './logger';
+export { default as createAstraUri } from './createAstraUri';
 
 declare module 'mongodb' {
   interface CreateCollectionOptions {
     vector?: VectorOptions;
-    indexing?: IndexingOptions;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    indexing?: IndexingOptions<any>;
   }
 }
 
 declare module 'mongoose' {
   interface ConnectOptions {
     isAstra?: boolean;
-    logSkippedOptions?: boolean;
+    sanitizeFilter?: boolean;
+    featureFlags?: string[];
+    username?: string;
+    password?: string;
+  }
+
+  interface InsertManyOptions {
+    returnDocumentResponses?: boolean;
   }
 
   function setDriver<T = Mongoose>(driver: unknown): T;
 }
-
-import { createStargateUri, createAstraUri } from './collections';
-export { createStargateUri, createAstraUri };
