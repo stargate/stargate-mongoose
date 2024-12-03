@@ -153,6 +153,8 @@ class Connection extends connection_1.default {
         }
         this.client = client;
         this.db = db;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this.db.name = keyspaceName;
         this.admin = admin;
         this.baseUrl = baseUrl;
         this.namespace = keyspaceName;
