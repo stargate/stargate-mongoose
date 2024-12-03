@@ -36,6 +36,7 @@ interface ConnectOptionsInternal extends ConnectOptions {
 export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
     initialConnection: Promise<Connection> | null = null;
+    client: DataAPIClient | null = null;
     db: Db | null = null;
     namespace: string | null = null;
 

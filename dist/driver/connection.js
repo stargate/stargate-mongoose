@@ -27,6 +27,7 @@ class Connection extends connection_1.default {
         super(base);
         this.debugType = 'StargateMongooseConnection';
         this.initialConnection = null;
+        this.client = null;
         this.db = null;
         this.namespace = null;
     }

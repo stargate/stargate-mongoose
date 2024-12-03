@@ -13,6 +13,7 @@ interface ConnectOptionsInternal extends ConnectOptions {
 export declare class Connection extends MongooseConnection {
     debugType: string;
     initialConnection: Promise<Connection> | null;
+    client: DataAPIClient | null;
     db: Db | null;
     namespace: string | null;
     constructor(base: Mongoose);
