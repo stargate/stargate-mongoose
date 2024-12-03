@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Collection } from './collection';
-import type { Db, RawDataAPIResponse } from '@datastax/astra-db-ts';
+import { AstraAdmin, DataAPIDbAdmin, Db, RawDataAPIResponse } from '@datastax/astra-db-ts';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
 import type { ConnectOptions, Mongoose, Model } from 'mongoose';
@@ -37,6 +37,7 @@ export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
     initialConnection: Promise<Connection> | null = null;
     client: DataAPIClient | null = null;
+    admin: AstraAdmin | DataAPIDbAdmin | null = null;
     db: Db | null = null;
     namespace: string | null = null;
 
@@ -76,7 +77,11 @@ export class Connection extends MongooseConnection {
 
     async createNamespace(namespace: string) {
         await this._waitForClient();
-        return this.admin.createNamespace(namespace);
+        if (this.admin instanceof AstraAdmin) {
+            throw new Error('Cannot createNamespace() in Astra');
+        }
+        // Use createKeyspace because createNamespace is deprecated
+        return this.admin!.createKeyspace(namespace);
     }
 
     async dropDatabase() {

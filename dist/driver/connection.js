@@ -18,16 +18,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseUri = exports.Connection = void 0;
 const collection_1 = require("./collection");
+const astra_db_ts_1 = require("@datastax/astra-db-ts");
 const connection_1 = __importDefault(require("mongoose/lib/connection"));
 const mongoose_1 = require("mongoose");
 const url_1 = __importDefault(require("url"));
-const astra_db_ts_1 = require("@datastax/astra-db-ts");
+const astra_db_ts_2 = require("@datastax/astra-db-ts");
 class Connection extends connection_1.default {
     constructor(base) {
         super(base);
         this.debugType = 'StargateMongooseConnection';
         this.initialConnection = null;
         this.client = null;
+        this.admin = null;
         this.db = null;
         this.namespace = null;
     }
@@ -61,7 +63,11 @@ class Connection extends connection_1.default {
     }
     async createNamespace(namespace) {
         await this._waitForClient();
-        return this.admin.createNamespace(namespace);
+        if (this.admin instanceof astra_db_ts_1.AstraAdmin) {
+            throw new Error('Cannot createNamespace() in Astra');
+        }
+        // Use createKeyspace because createNamespace is deprecated
+        return this.admin.createKeyspace(namespace);
     }
     async dropDatabase() {
         throw new Error('dropDatabase() Not Implemented');
@@ -119,7 +125,7 @@ class Connection extends connection_1.default {
         };
         const { client, db, admin } = (() => {
             if (options?.isAstra) {
-                const client = new astra_db_ts_1.DataAPIClient(applicationToken);
+                const client = new astra_db_ts_2.DataAPIClient(applicationToken);
                 const db = client.db(baseUrl, dbOptions);
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 Object.assign(db._httpClient.baseHeaders, featureFlags);
@@ -135,7 +141,7 @@ class Connection extends connection_1.default {
             if (options?.password == null) {
                 throw new Error('Username and password are required when connecting to Astra');
             }
-            const client = new astra_db_ts_1.DataAPIClient(new astra_db_ts_1.UsernamePasswordTokenProvider(options.username, options.password), { environment: 'dse' });
+            const client = new astra_db_ts_2.DataAPIClient(new astra_db_ts_2.UsernamePasswordTokenProvider(options.username, options.password), { environment: 'dse' });
             const db = client.db(baseUrl, dbOptions);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             Object.assign(db._httpClient.baseHeaders, featureFlags);
@@ -144,7 +150,7 @@ class Connection extends connection_1.default {
                 db,
                 admin: db.admin({
                     environment: 'dse',
-                    adminToken: new astra_db_ts_1.UsernamePasswordTokenProvider(options.username, options.password)
+                    adminToken: new astra_db_ts_2.UsernamePasswordTokenProvider(options.username, options.password)
                 })
             };
         })();

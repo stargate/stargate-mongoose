@@ -1,4 +1,4 @@
-import type { Db, RawDataAPIResponse } from '@datastax/astra-db-ts';
+import { AstraAdmin, DataAPIDbAdmin, Db, RawDataAPIResponse } from '@datastax/astra-db-ts';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import type { ConnectOptions, Mongoose } from 'mongoose';
 import { DataAPIClient } from '@datastax/astra-db-ts';
@@ -14,6 +14,7 @@ export declare class Connection extends MongooseConnection {
     debugType: string;
     initialConnection: Promise<Connection> | null;
     client: DataAPIClient | null;
+    admin: AstraAdmin | DataAPIDbAdmin | null;
     db: Db | null;
     namespace: string | null;
     constructor(base: Mongoose);
@@ -23,7 +24,7 @@ export declare class Connection extends MongooseConnection {
     }): any;
     createCollection(name: string, options?: Record<string, unknown>): Promise<import("@datastax/astra-db-ts").Collection<import("@datastax/astra-db-ts").SomeDoc>>;
     dropCollection(name: string): Promise<boolean>;
-    createNamespace(namespace: string): Promise<any>;
+    createNamespace(namespace: string): Promise<void>;
     dropDatabase(): Promise<void>;
     listCollections(): Promise<import("@datastax/astra-db-ts").FullCollectionInfo[]>;
     runCommand(command: Record<string, unknown>): Promise<RawDataAPIResponse>;
