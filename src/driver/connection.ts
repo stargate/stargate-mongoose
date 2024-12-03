@@ -36,6 +36,8 @@ interface ConnectOptionsInternal extends ConnectOptions {
 export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
     initialConnection: Promise<Connection> | null = null;
+    db: Db | null = null;
+    namespace: string | null = null;
 
     constructor(base: Mongoose) {
         super(base);
@@ -63,14 +65,12 @@ export class Connection extends MongooseConnection {
 
     async createCollection(name: string, options?: Record<string, unknown>) {
         await this._waitForClient();
-        const db: Db = this.db;
-        return db.createCollection(name, { checkExists: false, ...options });
+        return this.db!.createCollection(name, { checkExists: false, ...options });
     }
 
     async dropCollection(name: string) {
         await this._waitForClient();
-        const db: Db = this.db;
-        return db.dropCollection(name);
+        return this.db!.dropCollection(name);
     }
 
     async createNamespace(namespace: string) {
@@ -84,14 +84,12 @@ export class Connection extends MongooseConnection {
 
     async listCollections() {
         await this._waitForClient();
-        const db: Db = this.db;
-        return db.listCollections();
+        return this.db!.listCollections();
     }
 
     async runCommand(command: Record<string, unknown>): Promise<RawDataAPIResponse> {
         await this._waitForClient();
-        const db: Db = this.db;
-        return db.command(command);
+        return this.db!.command(command);
     }
 
     async openUri(uri: string, options: ConnectOptionsInternal) {
@@ -192,9 +190,8 @@ export class Connection extends MongooseConnection {
         this.client = client;
         this.db = db;
         this.admin = admin;
-        this.db.name = keyspaceName;
         this.baseUrl = baseUrl;
-        this.keyspaceName = keyspaceName;
+        this.namespace = keyspaceName;
         this.baseApiPath = baseApiPath;
 
         this.readyState = STATES.connected;

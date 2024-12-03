@@ -27,6 +27,8 @@ class Connection extends connection_1.default {
         super(base);
         this.debugType = 'StargateMongooseConnection';
         this.initialConnection = null;
+        this.db = null;
+        this.namespace = null;
     }
     _waitForClient() {
         return new Promise((resolve, reject) => {
@@ -50,13 +52,11 @@ class Connection extends connection_1.default {
     }
     async createCollection(name, options) {
         await this._waitForClient();
-        const db = this.db;
-        return db.createCollection(name, { checkExists: false, ...options });
+        return this.db.createCollection(name, { checkExists: false, ...options });
     }
     async dropCollection(name) {
         await this._waitForClient();
-        const db = this.db;
-        return db.dropCollection(name);
+        return this.db.dropCollection(name);
     }
     async createNamespace(namespace) {
         await this._waitForClient();
@@ -67,13 +67,11 @@ class Connection extends connection_1.default {
     }
     async listCollections() {
         await this._waitForClient();
-        const db = this.db;
-        return db.listCollections();
+        return this.db.listCollections();
     }
     async runCommand(command) {
         await this._waitForClient();
-        const db = this.db;
-        return db.command(command);
+        return this.db.command(command);
     }
     async openUri(uri, options) {
         let _fireAndForget = false;
@@ -156,9 +154,8 @@ class Connection extends connection_1.default {
         this.client = client;
         this.db = db;
         this.admin = admin;
-        this.db.name = keyspaceName;
         this.baseUrl = baseUrl;
-        this.keyspaceName = keyspaceName;
+        this.namespace = keyspaceName;
         this.baseApiPath = baseApiPath;
         this.readyState = mongoose_1.STATES.connected;
         this.onOpen();

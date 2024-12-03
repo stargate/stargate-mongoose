@@ -1,4 +1,4 @@
-import type { RawDataAPIResponse } from '@datastax/astra-db-ts';
+import type { Db, RawDataAPIResponse } from '@datastax/astra-db-ts';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import type { ConnectOptions, Mongoose } from 'mongoose';
 import { DataAPIClient } from '@datastax/astra-db-ts';
@@ -13,6 +13,8 @@ interface ConnectOptionsInternal extends ConnectOptions {
 export declare class Connection extends MongooseConnection {
     debugType: string;
     initialConnection: Promise<Connection> | null;
+    db: Db | null;
+    namespace: string | null;
     constructor(base: Mongoose);
     _waitForClient(): Promise<void>;
     collection(name: string, options?: {
