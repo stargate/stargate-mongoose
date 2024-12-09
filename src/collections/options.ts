@@ -151,6 +151,19 @@ export const updateOneInternalOptionsKeys: Set<string> = new Set(
     Object.keys(new _UpdateOneOptions)
 );
 
+class _ReplaceOneOptions {
+    upsert?: boolean = undefined;
+    sort?: SortOption;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ReplaceOneOptions extends _ReplaceOneOptions {}
+export type ReplaceOneOptionsForDataAPI = Omit<UpdateOneOptions, 'sort'> & { sort?: SortOptionInternal };
+
+export const ReplaceOneInternalOptionsKeys: Set<string> = new Set(
+    Object.keys(new _ReplaceOneOptions)
+);
+
 export type IndexingOptions = { deny: string[], allow?: never } | { allow: string[], deny?: never };
 
 export interface DefaultIdOptions { type: 'objectId' | 'uuid' | 'uuid6' | 'uuid7' }
