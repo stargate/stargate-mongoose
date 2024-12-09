@@ -27,10 +27,13 @@ import {
 interface ConnectOptionsInternal extends ConnectOptions {
     isAstra?: boolean;
     _fireAndForget?: boolean;
-    sanitizeFilter?: boolean;
     featureFlags?: string[];
     username?: string;
     password?: string;
+    autoIndex?: boolean;
+    autoCreate?: boolean;
+    sanitizeFilter?: boolean;
+    bufferCommands?: boolean;
 }
 
 export class Connection extends MongooseConnection {
@@ -40,6 +43,9 @@ export class Connection extends MongooseConnection {
     admin: AstraAdmin | DataAPIDbAdmin | null = null;
     db: Db | null = null;
     namespace: string | null = null;
+    config: ConnectOptionsInternal | null = null;
+    baseUrl: string | null = null;
+    baseApiPath: string | null = null;
 
     constructor(base: Mongoose) {
         super(base);
@@ -190,7 +196,7 @@ export class Connection extends MongooseConnection {
 
         const collections: Collection[] = Object.values(this.collections);
         for (const collection of collections) {
-            delete collection._collection;
+            collection._collection = null;
         }
 
         this.client = client;

@@ -5,10 +5,13 @@ import { DataAPIClient } from '@datastax/astra-db-ts';
 interface ConnectOptionsInternal extends ConnectOptions {
     isAstra?: boolean;
     _fireAndForget?: boolean;
-    sanitizeFilter?: boolean;
     featureFlags?: string[];
     username?: string;
     password?: string;
+    autoIndex?: boolean;
+    autoCreate?: boolean;
+    sanitizeFilter?: boolean;
+    bufferCommands?: boolean;
 }
 export declare class Connection extends MongooseConnection {
     debugType: string;
@@ -17,6 +20,9 @@ export declare class Connection extends MongooseConnection {
     admin: AstraAdmin | DataAPIDbAdmin | null;
     db: Db | null;
     namespace: string | null;
+    config: ConnectOptionsInternal | null;
+    baseUrl: string | null;
+    baseApiPath: string | null;
     constructor(base: Mongoose);
     _waitForClient(): Promise<void>;
     collection(name: string, options?: {

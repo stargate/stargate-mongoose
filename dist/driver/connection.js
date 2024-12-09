@@ -32,6 +32,9 @@ class Connection extends connection_1.default {
         this.admin = null;
         this.db = null;
         this.namespace = null;
+        this.config = null;
+        this.baseUrl = null;
+        this.baseApiPath = null;
     }
     _waitForClient() {
         return new Promise((resolve, reject) => {
@@ -156,7 +159,7 @@ class Connection extends connection_1.default {
         })();
         const collections = Object.values(this.collections);
         for (const collection of collections) {
-            delete collection._collection;
+            collection._collection = null;
         }
         this.client = client;
         this.db = db;
