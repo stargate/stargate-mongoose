@@ -39,7 +39,6 @@ interface ParsedUri {
     baseApiPath: string;
     keyspaceName: string;
     applicationToken?: string;
-    logLevel?: string;
     authHeaderName?: string;
 }
 export declare const parseUri: (uri: string) => ParsedUri;

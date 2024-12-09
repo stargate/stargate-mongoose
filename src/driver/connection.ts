@@ -43,7 +43,7 @@ export class Connection extends MongooseConnection {
     admin: AstraAdmin | DataAPIDbAdmin | null = null;
     db: Db | null = null;
     namespace: string | null = null;
-    config: ConnectOptionsInternal | null = null;
+    config?: ConnectOptionsInternal;
     baseUrl: string | null = null;
     baseApiPath: string | null = null;
 
@@ -242,7 +242,6 @@ interface ParsedUri {
     baseApiPath: string;
     keyspaceName: string;
     applicationToken?: string;
-    logLevel?: string;
     authHeaderName?: string;
   }
   
@@ -253,13 +252,9 @@ export const parseUri = (uri: string): ParsedUri => {
     const keyspaceName = parsedUrl.pathname?.substring(parsedUrl.pathname?.lastIndexOf('/') + 1);
     const baseApiPath = getBaseAPIPath(parsedUrl.pathname);
     const applicationToken = parsedUrl.query?.applicationToken;
-    const logLevel = parsedUrl.query?.logLevel;
     const authHeaderName = parsedUrl.query?.authHeaderName;
     if (Array.isArray(applicationToken)) {
         throw new Error('Invalid URI: multiple application tokens');
-    }
-    if (Array.isArray(logLevel)) {
-        throw new Error('Invalid URI: multiple application log levels');
     }
     if (Array.isArray(authHeaderName)) {
         throw new Error('Invalid URI: multiple application auth header names');
@@ -272,7 +267,6 @@ export const parseUri = (uri: string): ParsedUri => {
         baseApiPath,
         keyspaceName,
         applicationToken,
-        logLevel,
         authHeaderName
     };
 };

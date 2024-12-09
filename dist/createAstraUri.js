@@ -23,11 +23,10 @@ const url_1 = __importDefault(require("url"));
  * @param apiToken an Astra application token
  * @param namespace the namespace to connect to
  * @param baseApiPath baseAPI path defaults to /api/json/v1
- * @param logLevel an winston log level (error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6)
  * @param authHeaderName
  * @returns URL as string
  */
-function createAstraUri(apiEndpoint, apiToken, namespace, baseApiPath, logLevel, authHeaderName) {
+function createAstraUri(apiEndpoint, apiToken, namespace, baseApiPath, authHeaderName) {
     const uri = new url_1.default.URL(apiEndpoint);
     let contextPath = '';
     contextPath += baseApiPath ? `/${baseApiPath}` : '/api/json/v1';
@@ -35,9 +34,6 @@ function createAstraUri(apiEndpoint, apiToken, namespace, baseApiPath, logLevel,
     uri.pathname = contextPath;
     if (apiToken) {
         uri.searchParams.append('applicationToken', apiToken);
-    }
-    if (logLevel) {
-        uri.searchParams.append('logLevel', logLevel);
     }
     if (authHeaderName) {
         uri.searchParams.append('authHeaderName', authHeaderName);

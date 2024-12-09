@@ -188,13 +188,9 @@ const parseUri = (uri) => {
     const keyspaceName = parsedUrl.pathname?.substring(parsedUrl.pathname?.lastIndexOf('/') + 1);
     const baseApiPath = getBaseAPIPath(parsedUrl.pathname);
     const applicationToken = parsedUrl.query?.applicationToken;
-    const logLevel = parsedUrl.query?.logLevel;
     const authHeaderName = parsedUrl.query?.authHeaderName;
     if (Array.isArray(applicationToken)) {
         throw new Error('Invalid URI: multiple application tokens');
-    }
-    if (Array.isArray(logLevel)) {
-        throw new Error('Invalid URI: multiple application log levels');
     }
     if (Array.isArray(authHeaderName)) {
         throw new Error('Invalid URI: multiple application auth header names');
@@ -207,7 +203,6 @@ const parseUri = (uri) => {
         baseApiPath,
         keyspaceName,
         applicationToken,
-        logLevel,
         authHeaderName
     };
 };

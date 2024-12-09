@@ -28,7 +28,6 @@ class Collection extends collection_1.default {
         super(name, conn, options);
         this.debugType = 'StargateMongooseCollection';
         this._closed = false;
-        this._collection = null;
     }
     //getter for collection
     get collection() {

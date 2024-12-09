@@ -33,7 +33,6 @@ type NodeCallback<ResultType = unknown> = (err: Error | null, res: ResultType | 
  */
 export declare class Collection extends MongooseCollection {
     debugType: string;
-    _collection: AstraCollection | null;
     _closed: boolean;
     constructor(name: string, conn: Connection, options?: {
         modelName?: string | null;
