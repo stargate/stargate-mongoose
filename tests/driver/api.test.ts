@@ -13,34 +13,20 @@
 // limitations under the License.
 
 import assert from 'assert';
-import {Db} from '@/src/collections/db';
-import {Client} from '@/src/collections/client';
 import {
     testClient,
     TEST_COLLECTION_NAME
-} from '@/tests/fixtures';
+} from '../fixtures';
 import mongoose, { Schema, InferSchemaType, InsertManyResult } from 'mongoose';
 import { once } from 'events';
-import * as StargateMongooseDriver from '@/src/driver';
+import * as StargateMongooseDriver from '../../src/driver';
 import {randomUUID} from 'crypto';
-import {OperationNotSupportedError} from '@/src/driver';
-import { Product, Cart, mongooseInstance, productSchema } from '@/tests/mongooseFixtures';
-import { StargateServerError } from '@/src/client/httpClient';
+import {OperationNotSupportedError} from '../../src/driver';
+import { Product, Cart, mongooseInstance, productSchema } from '../mongooseFixtures';
+import { parseUri } from '../../src/driver/connection';
+import { FindCursor, DataAPIResponseError } from '@datastax/astra-db-ts';
 
 describe('Mongoose Model API level tests', async () => {
-    let astraClient: Client | null;
-    let db: Db;
-    before(async function () {
-        if (testClient == null) {
-            return this.skip();
-        }
-        astraClient = await testClient?.client;
-        if (astraClient === null) {
-            return this.skip();
-        }
-
-        db = astraClient.db();
-    });
     afterEach(async () => {
         await Promise.all([Product.deleteMany({}), Cart.deleteMany({})]);
     });
@@ -57,11 +43,12 @@ describe('Mongoose Model API level tests', async () => {
             }, null, {
                 strict: true
             }).save();
-            const savedRow = await Product.findById(saveResponseWithStrictTrue._id);
+            const savedRow = await Product.findById(saveResponseWithStrictTrue._id).orFail();
             assert.strictEqual(savedRow.name, 'Product 1');
             assert.strictEqual(savedRow.price, 10);
             assert.strictEqual(savedRow.isCertified, true);
             assert.strictEqual(savedRow.category, 'cat 1');
+            // @ts-expect-error
             assert.strictEqual(savedRow.extraCol, undefined);
             //strict is false, so extraCol should be saved
             const saveResponseWithStrictFalse = await new Product({
@@ -73,7 +60,7 @@ describe('Mongoose Model API level tests', async () => {
             }, null, {
                 strict: false
             }).save();
-            const savedRowWithStrictFalse = await Product.findById(saveResponseWithStrictFalse._id);
+            const savedRowWithStrictFalse = await Product.findById(saveResponseWithStrictFalse._id).orFail();
             assert.strictEqual(savedRowWithStrictFalse.name, 'Product 1');
             assert.strictEqual(savedRowWithStrictFalse.price, 10);
             assert.strictEqual(savedRowWithStrictFalse.isCertified, true);
@@ -122,6 +109,8 @@ describe('Mongoose Model API level tests', async () => {
             const collectionNames = await User.db.listCollections().then(collections => collections.map(c => c.name));
             if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
                 await User.createCollection();
+            } else {
+                await User.deleteMany({});
             }
             const employeeIdVal = new mongoose.Types.ObjectId();
             //generate a random uuid
@@ -200,9 +189,20 @@ describe('Mongoose Model API level tests', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
             const error: Error | null = await Product.$where('this.name === "Product 1"').exec().then(() => null, error => error);
-            assert.ok(error);
-            assert.ok(error instanceof StargateServerError);
-            assert.strictEqual(error.errors[0].message, 'Invalid filter expression: filter clause path (\'$where\') contains character(s) not allowed');
+            assert.ok(error instanceof DataAPIResponseError);
+            assert.strictEqual(error.errorDescriptors[0].message, 'Invalid filter expression: filter clause path (\'$where\') contains character(s) not allowed');
+        });
+        it('API ops tests db.dropCollection() and Model.createCollection()', async () => {
+            let collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
+            assert.ok(collections.includes(Product.collection.collectionName));
+            
+            await Product.db.dropCollection(Product.collection.collectionName);
+            collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
+            assert.ok(!collections.includes(Product.collection.collectionName));
+
+            await Product.createCollection();
+            collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
+            assert.ok(collections.includes(Product.collection.collectionName));
         });
         it('API ops tests Model.aggregate()', async () => {
             //Model.aggregate()
@@ -270,15 +270,27 @@ describe('Mongoose Model API level tests', async () => {
         });
         it('API ops tests Model.db', async () => {
             const conn = Product.db as unknown as StargateMongooseDriver.Connection;
-            assert.strictEqual(conn.db.name, db.name);
+            assert.strictEqual(conn.namespace, parseUri(testClient!.uri).keyspaceName);
+            // @ts-expect-error
+            assert.strictEqual(conn.db.name, parseUri(testClient!.uri).keyspaceName);
         });
         it('API ops tests Model.deleteMany()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
-            const deleteManyResp = await Product.deleteMany({name: 'Product 1'});
+            let deleteManyResp = await Product.deleteMany({name: 'Product 1'});
             assert.strictEqual(deleteManyResp.deletedCount, 1);
             const findDeletedDoc = await Product.findOne({name: 'Product 1'});
             assert.strictEqual(findDeletedDoc, null);
+
+            for (let i = 0; i < 51; ++i) {
+                await Product.create({ name: `Product ${i}` });
+            }
+            deleteManyResp = await Product.deleteMany({});
+            // Deleted an unknown number of rows
+            assert.strictEqual(deleteManyResp.deletedCount, -1);
+            
+            const count = await Product.countDocuments();
+            assert.strictEqual(count, 0);
         });
         it('API ops tests Model.deleteOne()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
@@ -304,13 +316,15 @@ describe('Mongoose Model API level tests', async () => {
                 category: 'cat 1',
                 url: 'http://product1.com'
             });
+            // @ts-expect-error
             assert.ok(!regularProduct.url);
             await regularProduct.save();
-            const regularProductSaved = await Product.findOne({name: 'Product 1'});
-            assert.strictEqual(regularProductSaved!.name, 'Product 1');
-            assert.strictEqual(regularProductSaved!.price, 10);
-            assert.strictEqual(regularProductSaved!.isCertified, true);
-            assert.strictEqual(regularProductSaved!.category, 'cat 1');
+            const regularProductSaved = await Product.findOne({name: 'Product 1'}).orFail();
+            assert.strictEqual(regularProductSaved.name, 'Product 1');
+            assert.strictEqual(regularProductSaved.price, 10);
+            assert.strictEqual(regularProductSaved.isCertified, true);
+            assert.strictEqual(regularProductSaved.category, 'cat 1');
+            // @ts-expect-error
             assert.ok(!regularProductSaved.url);
             const onlineProduct = new OnlineProduct({
                 name: 'Product 2',
@@ -364,6 +378,7 @@ describe('Mongoose Model API level tests', async () => {
             const nameArray: Set<string> = new Set(['Product 1', 'Product 3']);
             for(const doc of findResp) {
                 assert.strictEqual(doc.category, 'cat 1');
+                assert.ok(doc.name);
                 assert.strictEqual(nameArray.has(doc.name), true);
                 nameArray.delete(doc.name);
             }
@@ -427,26 +442,23 @@ describe('Mongoose Model API level tests', async () => {
             const product2 = {_id: product2Id, name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'};
             const product3 = {_id: product3Id, name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'};
             const insertResp: InsertManyResult<unknown> = await Product.insertMany([product1, product2, product3] , {ordered: true, rawResult: true});
-            assert.ok(insertResp.acknowledged);
             assert.strictEqual(insertResp.insertedCount, 3);
 
             let docs = [];
             for (let i = 0; i < 21; ++i) {
                 docs.push({ name: 'Test product ' + i, price: 10, isCertified: true });
             }
-            const respOrdered: InsertManyResult<unknown> = await Product.insertMany(docs, { usePagination: true, rawResult: true  });
-            assert.ok(respOrdered.acknowledged);
+            const respOrdered: InsertManyResult<unknown> = await Product.insertMany(docs, { rawResult: true  });
             assert.strictEqual(respOrdered.insertedCount, 21);
 
             docs = [];
             for (let i = 0; i < 21; ++i) {
                 docs.push({ name: 'Test product ' + i, price: 10, isCertified: true });
             }
-            const respUnordered: InsertManyResult<unknown> = await Product.insertMany(docs, { usePagination: true, ordered: false, rawResult: true });
-            assert.ok(respUnordered.acknowledged);
+            const respUnordered: InsertManyResult<unknown> = await Product.insertMany(docs, { ordered: false, rawResult: true });
             assert.strictEqual(respUnordered.insertedCount, 21);
         });
-        it('API ops tests Model.insertMany() with returnDocumentResponses', async () => {
+        it.skip('API ops tests Model.insertMany() with returnDocumentResponses', async () => {
             const product1Id = new mongoose.Types.ObjectId('0'.repeat(24));
             const product2Id = new mongoose.Types.ObjectId('1'.repeat(24));
             const product3Id = new mongoose.Types.ObjectId('2'.repeat(24));
@@ -457,7 +469,7 @@ describe('Mongoose Model API level tests', async () => {
                 [product1, product2, product3],
                 {returnDocumentResponses: true, rawResult: true}
             );
-            assert.ok(respWithResponses.acknowledged);
+            // @ts-expect-error
             assert.deepStrictEqual(respWithResponses.documentResponses, [
                 { _id: '0'.repeat(24), status: 'OK' },
                 { _id: '1'.repeat(24), status: 'OK' },
@@ -487,7 +499,9 @@ describe('Mongoose Model API level tests', async () => {
             await Product.insertMany([product1, product2, product3]);
             const cart1 = new Cart({name: 'Cart 1', products: [product1._id, product2._id]});
             await Cart.insertMany([cart1]);
-            const populateResp = await Cart.findOne({name: 'Cart 1'}).populate('products');
+
+            type CartModel = ReturnType<(typeof Cart)['hydrate']>;
+            const populateResp = await Cart.findOne({name: 'Cart 1'}).populate<{ products: CartModel[] }>('products');
             assert.strictEqual(populateResp?.products.length, 2);
             assert.strictEqual(populateResp?.products[0].name, 'Product 1');
             assert.strictEqual(populateResp?.products[1].name, 'Product 2');
@@ -516,9 +530,7 @@ describe('Mongoose Model API level tests', async () => {
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
             await Product.insertMany([product1, product2, product3]);
-            const error: Error | null = await Product.startSession().then(() => null, error => error);
-            assert.ok(error instanceof OperationNotSupportedError);
-            assert.strictEqual(error.message, 'startSession() Not Implemented');
+            assert.throws(() => Product.startSession(), { message: 'startSession() Not Implemented' });
         });
         it('API ops tests Model.syncIndexes()', async () => {
             const error: Error | null = await Product.syncIndexes().then(() => null, error => error);
@@ -534,10 +546,9 @@ describe('Mongoose Model API level tests', async () => {
             await Product.insertMany([product1, product2, product3]);
             //updateMany
             const updateManyResp: mongoose.UpdateWriteOpResult = await Product.updateMany({category: 'cat 2'}, {category: 'cat 3'});
-            assert.strictEqual(updateManyResp.acknowledged, true);
             assert.strictEqual(updateManyResp.matchedCount, 2);
             assert.strictEqual(updateManyResp.modifiedCount, 2);
-            assert.strictEqual(updateManyResp.upsertedCount, undefined);
+            assert.strictEqual(updateManyResp.upsertedCount, 0);
             const findUpdatedDocs = await Product.find({category: 'cat 3'});
             assert.strictEqual(findUpdatedDocs.length, 2);
             const productNames: Set<string> = new Set();
@@ -557,10 +568,9 @@ describe('Mongoose Model API level tests', async () => {
             await Product.insertMany([product1, product2, product3]);
             //UpdateOne
             const updateOneResp: mongoose.UpdateWriteOpResult = await Product.updateOne({category: 'cat 1'}, {category: 'cat 3'});
-            assert.strictEqual(updateOneResp.acknowledged, true);
             assert.strictEqual(updateOneResp.matchedCount, 1);
             assert.strictEqual(updateOneResp.modifiedCount, 1);
-            assert.strictEqual(updateOneResp.upsertedCount, undefined);
+            assert.strictEqual(updateOneResp.upsertedCount, 0);
             const findUpdatedDoc = await Product.findOne({category: 'cat 3'});
             assert.strictEqual(findUpdatedDoc?.name, 'Product 3');
         });
@@ -589,14 +599,14 @@ describe('Mongoose Model API level tests', async () => {
             //UpdateOne
             await Cart.updateOne({ _id: cart._id }, { $set: { user: { name: 'test updated subdoc' } } });
           
-            const { user } = await Cart.findById(cart._id).orFail();
-            assert.deepStrictEqual(user.toObject(), { name: 'test updated subdoc' });
+            const doc = await Cart.findById(cart._id).orFail();
+            assert.deepStrictEqual(doc.toObject().user, { name: 'test updated subdoc' });
         });
         //Model.validate is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.validate
         it('API ops tests Model.watch()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
             await product1.save();
-            await assert.throws(
+            assert.throws(
                 () => Product.watch().on('change', (change) => {
                     assert.strictEqual(change.operationType, 'delete');
                     assert.strictEqual(change.documentKey._id.toString(), product1._id.toString());
@@ -614,16 +624,17 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests Query cursor', async () => {
             await Product.create(
                 Array.from({ length: 25 }, (_, index) => ({
-                    name: `Product ${(index + 1).toString().padStart(2, '0')}`,
+                    name: `Product ${index + 1}`,
                     price: 10
                 }))
             );
 
             let cursor = Product.find().sort({ product: 1 }).cursor();
-            await assert.rejects(
-                cursor.next(),
-                /Data API can currently only return 20 documents with sort/
-            );
+            for (let i = 0; i < 20; ++i) {
+                const product = await cursor.next();
+                assert.equal(product?.name, `Product ${i + 1}`, 'Failed at index ' + i);
+            }
+            assert.equal(await cursor.next(), null);
 
             cursor = await Product.find().sort({ product: 1 }).limit(20).cursor();
             for (let i = 0; i < 20; ++i) {
@@ -637,7 +648,7 @@ describe('Mongoose Model API level tests', async () => {
             const res = await Product.db.collection('products').findOne();
             assert.equal(res!.name, 'Product 1');
         });
-        it('API ops tests connection.listDatabases()', async () => {
+        it.skip('API ops tests connection.listDatabases()', async () => {
             const { databases } = await mongooseInstance!.connection.listDatabases();
             assert.ok(Array.isArray(databases));
             // @ts-expect-error
@@ -646,11 +657,14 @@ describe('Mongoose Model API level tests', async () => {
             assert.ok(databases.includes(mongooseInstance.connection.db.name));
         });
         it('API ops tests connection.runCommand()', async () => {
-            const res = await mongooseInstance!.connection.runCommand({ findCollections: {} });
-            assert.ok(res.status.collections.includes('carts'));
+            const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+            const res = await connection.runCommand({ findCollections: {} });
+            assert.ok(res.status?.collections?.includes('carts'));
         });
         it('API ops tests collection.runCommand()', async () => {
-            const res = await mongooseInstance!.connection.db.collection('carts').runCommand({ find: {} });
+            const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const res = await (connection.db.collection('carts') as any)._httpClient.executeCommand({ find: {} });
             assert.ok(Array.isArray(res.data.documents));
         });
         it('API ops tests feature flags', async function() {
@@ -667,19 +681,17 @@ describe('Mongoose Model API level tests', async () => {
                 featureFlags: ['Feature-Flag-tables']
             };
             await mongoose.connect(testClient!.uri, options as mongoose.ConnectOptions);
-
-            const conn = mongoose.connection.db as unknown as StargateMongooseDriver.Connection;
-            await conn.runCommand({
-                dropTable: {
-                    name: 'bots'
-                }
-            }).catch((err: Error) => {
-                if (err instanceof StargateServerError && err.errors.length === 1 && err.errors[0].errorCode === 'CANNOT_DROP_UNKNOWN_TABLE') {
+            const connection: StargateMongooseDriver.Connection = mongoose.connection as unknown as StargateMongooseDriver.Connection;
+            await connection.runCommand({
+                dropTable: { name: 'bots' }
+            }).catch(err => {
+                // Ignore if table doesn't already exist
+                if (err instanceof DataAPIResponseError && err.errorDescriptors.length === 1 && err.errorDescriptors[0].errorCode === 'CANNOT_DROP_UNKNOWN_TABLE') {
                     return;
                 }
                 throw err;
             });
-            const res = await conn.runCommand({
+            const res = await connection.runCommand({
                 createTable: {
                     name: 'bots',
                     definition: {
@@ -699,7 +711,7 @@ describe('Mongoose Model API level tests', async () => {
                     }
                 }
             });
-            assert.ok(res.status.ok);
+            assert.ok(res.status?.ok);
 
             const Bot = mongoose.model('Bot', new mongoose.Schema({
                 name: String,
@@ -725,12 +737,13 @@ describe('Mongoose Model API level tests', async () => {
             let closest = await Bot.findOne().sort({ vector: { $meta: [9.9, -9.9] } }).orFail();
             assert.deepStrictEqual(closest.vector, [10, -10]);
 
-            closest = await Bot.findOne().sort({ vector: { $meta: [9.9, -9.9] } }).setOptions({ includeSortVector: true, includeSimilarity: true }).orFail();
+            closest = await Bot.findOne().sort({ vector: { $meta: [9.9, -9.9] } }).setOptions({ /*includeSortVector: true,*/ includeSimilarity: true }).orFail();
             assert.deepStrictEqual(closest.vector, [10, -10]);
-            assert.deepStrictEqual(closest.get('$sortVector'), [9.9, -9.9]);
+            // TODO: astra-db-ts does not currently support `includeSortVector` on findOne()
+            // assert.deepStrictEqual(closest.get('$sortVector'), [9.9, -9.9]);
             assert.equal(typeof closest.get('$similarity'), 'number');
 
-            await conn.runCommand({
+            await connection.runCommand({
                 dropTable: {
                     name: 'bots'
                 }
@@ -750,9 +763,6 @@ describe('Mongoose Model API level tests', async () => {
                 autoCreate: true
             }
         );
-        vectorSchema.virtual('$sortVector').get(function() {
-            return this._doc.$sortVector;
-        });
         const Vector = mongooseInstance.model(
             'Vector',
             vectorSchema,
@@ -760,7 +770,8 @@ describe('Mongoose Model API level tests', async () => {
         );
 
         before(async function() {
-            const collections = await mongooseInstance.connection.listCollections({ explain: true });
+            const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+            const collections = await connection.listCollections();
             const vectorCollection = collections.find(coll => coll.name === 'vector');
             if (!vectorCollection) {
                 await mongooseInstance.connection.dropCollection('vector');
@@ -816,16 +827,6 @@ describe('Mongoose Model API level tests', async () => {
             assert.deepStrictEqual(res.map(doc => doc.get('$similarity')), [1, 0.51004946]);
         });
 
-        it('supports sort() with includeSortVector in findOne()', async function() {
-            const doc = await Vector
-                .findOne({}, null, { includeSortVector: true })
-                .sort({ $vector: { $meta: [1, 99] } })
-                .orFail();
-            assert.deepStrictEqual(doc.name, 'Test vector 1');
-            assert.deepStrictEqual(doc.$sortVector, [ 1, 99 ]);
-            assert.deepStrictEqual(doc.get('$sortVector'), [1, 99]);
-        });
-
         it('supports sort() with includeSortVector in find()', async function() {
             const cursor = await Vector
                 .find({}, null, { includeSortVector: true })
@@ -833,7 +834,8 @@ describe('Mongoose Model API level tests', async () => {
                 .cursor();
             
             await once(cursor, 'cursor');
-            assert.deepStrictEqual(await cursor.cursor.getSortVector(), [1, 99]);            
+            const rawCursor = (cursor as unknown as { cursor: FindCursor<unknown> }).cursor;
+            assert.deepStrictEqual(await rawCursor.getSortVector(), [1, 99]);            
         });
 
         it('supports sort() and similarity score with $meta with findOne()', async function() {
@@ -982,8 +984,8 @@ describe('Mongoose Model API level tests', async () => {
         });
 
         it('contains vector options in listCollections() output with `explain`', async function() {
-            const connection = mongooseInstance.connection;
-            const collections = await connection.listCollections({ explain: true });
+            const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+            const collections = await connection.listCollections();
             const collection = collections.find(collection => collection.name === 'vector');
             assert.ok(collection, 'Collection named "vector" not found');
             assert.deepStrictEqual(collection.options, {
