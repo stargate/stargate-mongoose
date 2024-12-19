@@ -198,7 +198,7 @@ export class Connection extends MongooseConnection {
 
         const collections: Collection[] = Object.values(this.collections);
         for (const collection of collections) {
-            collection._collection = null;
+            collection._collection = undefined;
         }
 
         this.client = client;
