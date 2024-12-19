@@ -664,7 +664,10 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests collection.runCommand()', async () => {
             const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const res = await (connection.db.collection('carts') as any)._httpClient.executeCommand({ find: {} });
+            const res = await (connection.db.collection('carts') as any)._httpClient.executeCommand({ find: {} }, {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                timeoutManager: (connection.db.collection('carts') as any)._httpClient.tm.single('runCommandTimeoutMS', 60_000)
+            });
             assert.ok(Array.isArray(res.data.documents));
         });
         it('API ops tests feature flags', async function() {
@@ -776,7 +779,7 @@ describe('Mongoose Model API level tests', async () => {
             if (!vectorCollection) {
                 await mongooseInstance.connection.dropCollection('vector');
                 await Vector.createCollection();
-            } else if (vectorCollection.options?.vector?.dimension !== 2 || vectorCollection.options?.vector?.metric !== 'cosine') {
+            } else if (vectorCollection.definition?.vector?.dimension !== 2 || vectorCollection.definition?.vector?.metric !== 'cosine') {
                 await mongooseInstance.connection.dropCollection('vector');
                 await Vector.createCollection();
             }
@@ -835,7 +838,7 @@ describe('Mongoose Model API level tests', async () => {
             
             await once(cursor, 'cursor');
             const rawCursor = (cursor as unknown as { cursor: FindCursor<unknown> }).cursor;
-            assert.deepStrictEqual(await rawCursor.getSortVector(), [1, 99]);            
+            assert.deepStrictEqual(await rawCursor.getSortVector().then(vec => vec?.asArray()), [1, 99]);            
         });
 
         it('supports sort() and similarity score with $meta with findOne()', async function() {
@@ -988,7 +991,7 @@ describe('Mongoose Model API level tests', async () => {
             const collections = await connection.listCollections();
             const collection = collections.find(collection => collection.name === 'vector');
             assert.ok(collection, 'Collection named "vector" not found');
-            assert.deepStrictEqual(collection.options, {
+            assert.deepStrictEqual(collection.definition, {
                 vector: { dimension: 2, metric: 'cosine', sourceModel: 'other' }
             });
         });

@@ -32,6 +32,7 @@ import {
     Sort as SortOptionInternal
 } from '@datastax/astra-db-ts';
 import { serialize } from '../serialize';
+import deserializeDoc from 'src/deserializeDoc';
 import { Types } from 'mongoose';
 
 export type MongooseSortOption = Record<string, 1 | -1 | { $meta: Array<number> } | { $meta: string }>;
@@ -95,7 +96,7 @@ export class Collection extends MongooseCollection {
             delete requestOptions.sort;
         }
         filter = serialize(filter);
-        const cursor = this.collection.find(filter, requestOptions);
+        const cursor = this.collection.find(filter, requestOptions).map(doc => deserializeDoc(doc));
 
         if (callback != null) {
             return callback(null, cursor);
@@ -108,7 +109,7 @@ export class Collection extends MongooseCollection {
      * @param filter
      * @param options
      */
-    findOne(filter: Record<string, unknown>, options?: FindOneOptions) {
+    async findOne(filter: Record<string, unknown>, options?: FindOneOptions) {
         let requestOptions: FindOneOptionsInternal | undefined = undefined;
         if (options != null && options.sort != null) {
             requestOptions = { ...options, sort: processSortOption(options.sort) };
@@ -117,7 +118,9 @@ export class Collection extends MongooseCollection {
             delete requestOptions.sort;
         }
         filter = serialize(filter);
-        return this.collection.findOne(filter, requestOptions);
+        const doc = await this.collection.findOne(filter, requestOptions);
+        deserializeDoc(doc);
+        return doc;
     }
 
     /**
@@ -125,7 +128,8 @@ export class Collection extends MongooseCollection {
      * @param doc
      */
     insertOne(doc: Record<string, unknown>) {
-        return this.collection.insertOne(serialize(doc));
+        doc = serialize(doc);
+        return this.collection.insertOne(doc);
     }
 
     /**
@@ -153,17 +157,19 @@ export class Collection extends MongooseCollection {
             delete requestOptions.sort;
         }
         filter = serialize(filter);
-        update = serialize(update);
         setDefaultIdForUpsert(filter, update, requestOptions, false);
+        update = serialize(update);
 
         // Weirdness to work around TypeScript, otherwise TypeScript fails with
         // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
         if (requestOptions == null) {
-            return this.collection.findOneAndUpdate(filter, update);
+            return this.collection.findOneAndUpdate(filter, update).then(doc => deserializeDoc(doc));
         } else if (requestOptions.includeResultMetadata) {
-            return this.collection.findOneAndUpdate(filter, update, { ...requestOptions, includeResultMetadata: true });
+            return this.collection.findOneAndUpdate(filter, update, { ...requestOptions, includeResultMetadata: true }).then(value => {
+                return { value: deserializeDoc(value) };
+            });
         } else {
-            return this.collection.findOneAndUpdate(filter, update, { ...requestOptions, includeResultMetadata: false });
+            return this.collection.findOneAndUpdate(filter, update, { ...requestOptions, includeResultMetadata: false }).then(doc => deserializeDoc(doc));
         }
     }
 
@@ -185,11 +191,13 @@ export class Collection extends MongooseCollection {
         // Weirdness to work around TypeScript, otherwise TypeScript fails with
         // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
         if (requestOptions == null) {
-            return this.collection.findOneAndDelete(filter);
+            return this.collection.findOneAndDelete(filter).then(doc => deserializeDoc(doc));
         } else if (requestOptions.includeResultMetadata) {
-            return this.collection.findOneAndDelete(filter, { ...requestOptions, includeResultMetadata: true });
+            return this.collection.findOneAndDelete(filter, { ...requestOptions, includeResultMetadata: true }).then(value => {
+                return { value: deserializeDoc(value) };
+            });
         } else {
-            return this.collection.findOneAndDelete(filter, { ...requestOptions, includeResultMetadata: false });
+            return this.collection.findOneAndDelete(filter, { ...requestOptions, includeResultMetadata: false }).then(doc => deserializeDoc(doc));
         }
     }
 
@@ -208,17 +216,19 @@ export class Collection extends MongooseCollection {
             delete requestOptions.sort;
         }
         filter = serialize(filter);
-        newDoc = serialize(newDoc);
         setDefaultIdForUpsert(filter, newDoc, requestOptions, true);
-        
+        newDoc = serialize(newDoc);
+
         // Weirdness to work around TypeScript, otherwise TypeScript fails with
         // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
         if (requestOptions == null) {
-            return this.collection.findOneAndReplace(filter, newDoc);
+            return this.collection.findOneAndReplace(filter, newDoc).then(doc => deserializeDoc(doc));
         } else if (requestOptions.includeResultMetadata) {
-            return this.collection.findOneAndReplace(filter, newDoc, { ...requestOptions, includeResultMetadata: true });
+            return this.collection.findOneAndReplace(filter, newDoc, { ...requestOptions, includeResultMetadata: true }).then(value => {
+                return { value: deserializeDoc(value) };
+            });
         } else {
-            return this.collection.findOneAndReplace(filter, newDoc, { ...requestOptions, includeResultMetadata: false });
+            return this.collection.findOneAndReplace(filter, newDoc, { ...requestOptions, includeResultMetadata: false }).then(doc => deserializeDoc(doc));
         }
     }
 
@@ -269,8 +279,8 @@ export class Collection extends MongooseCollection {
             delete requestOptions.sort;
         }
         filter = serialize(filter);
-        update = serialize(update);
         setDefaultIdForUpsert(filter, update, requestOptions, false);
+        update = serialize(update);
         return this.collection.updateOne(filter, update, requestOptions);
     }
 
@@ -282,8 +292,8 @@ export class Collection extends MongooseCollection {
      */
     updateMany(filter: Record<string, unknown>, update: Record<string, unknown>, options?: UpdateManyOptions) {
         filter = serialize(filter);
-        update = serialize(update);
         setDefaultIdForUpsert(filter, update, options, false);
+        update = serialize(update);
         return this.collection.updateMany(filter, update, options);
     }
 
@@ -300,7 +310,10 @@ export class Collection extends MongooseCollection {
      */
     runCommand(command: Record<string, unknown>) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (this.collection as any)._httpClient.executeCommand(command);
+        return (this.collection as any)._httpClient.executeCommand(command, {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            timeoutManager: (this.collection as any)._httpClient.tm.single('runCommandTimeoutMS', 60_000)
+        });
     }
 
     /**

@@ -96,7 +96,7 @@ export class Connection extends MongooseConnection {
 
     async listCollections() {
         await this._waitForClient();
-        return this.db!.listCollections();
+        return this.db!.listCollections({ nameOnly: false });
     }
 
     async runCommand(command: Record<string, unknown>): Promise<RawDataAPIResponse> {
@@ -162,6 +162,7 @@ export class Connection extends MongooseConnection {
             if (options?.isAstra) {
                 const client = new DataAPIClient(applicationToken);
                 const db = client.db(baseUrl, dbOptions);
+                db.useKeyspace(keyspaceName);
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 Object.assign((db as any)._httpClient.baseHeaders, featureFlags);
                 return {
@@ -182,6 +183,7 @@ export class Connection extends MongooseConnection {
                 { environment: 'dse' }
             );
             const db = client.db(baseUrl, dbOptions);
+            db.useKeyspace(keyspaceName);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             Object.assign((db as any)._httpClient.baseHeaders, featureFlags);
             return {

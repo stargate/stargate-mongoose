@@ -46,7 +46,7 @@ async function createNamespace() {
             }
         }),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        timeoutManager: (connection.db as any)._httpClient.timeoutManager(120_000)
+        timeoutManager: (connection.db as any)._httpClient.tm.single('databaseAdminTimeoutMs', { timeout: 120_000 })
     });
 }
 

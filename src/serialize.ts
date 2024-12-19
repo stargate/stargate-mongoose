@@ -1,4 +1,4 @@
-import { Binary, UUID } from 'bson';
+import { Binary, ObjectId, UUID } from 'bson';
 import mongoose from 'mongoose';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,14 +15,21 @@ function applyTransforms(data: any): any {
     if (data == null) {
         return data;
     }
-    if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean' || typeof data === 'bigint') {
+    if (typeof data === 'bigint') {
+        return data.toString();
+    }
+    if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
         return data;
     }
     if (typeof data.toBSON === 'function') {
         data = data.toBSON();
     }
 
-    if (data instanceof mongoose.Types.Decimal128) {
+    if (data instanceof ObjectId) {
+        return data.toHexString();
+    } else if (data instanceof BigInt) {
+        return data.toString();
+    } else if (data instanceof mongoose.Types.Decimal128) {
         //Decimal128 handling
         return Number(data.toString());
     } else if (data instanceof Map) {
@@ -41,7 +48,7 @@ function applyTransforms(data: any): any {
         for (const key of Object.keys(data)) {
             if (data[key] == null) {
                 continue;
-            } else if (typeof data[key] === 'object') {
+            } else {
                 data[key] = applyTransforms(data[key]);
             }
         }
