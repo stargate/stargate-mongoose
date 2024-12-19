@@ -73,7 +73,7 @@ export class Connection extends MongooseConnection {
 
     async createCollection(name: string, options?: Record<string, unknown>) {
         await this._waitForClient();
-        return this.db!.createCollection(name, { checkExists: false, ...options });
+        return this.db!.createCollection(name, options);
     }
 
     async dropCollection(name: string) {

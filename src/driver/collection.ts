@@ -39,9 +39,9 @@ export type MongooseSortOption = Record<string, 1 | -1 | { $meta: Array<number> 
 
 type FindOptions = Omit<FindOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
 type FindOneOptions = Omit<FindOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
-type FindOneAndUpdateOptions = Omit<FindOneAndUpdateOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
-type FindOneAndDeleteOptions = Omit<FindOneAndDeleteOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
-type FindOneAndReplaceOptions = Omit<FindOneAndReplaceOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
+type FindOneAndUpdateOptions = Omit<FindOneAndUpdateOptionsInternal, 'sort'> & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
+type FindOneAndDeleteOptions = Omit<FindOneAndDeleteOptionsInternal, 'sort'> & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
+type FindOneAndReplaceOptions = Omit<FindOneAndReplaceOptionsInternal, 'sort'> & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
 type DeleteOneOptions = Omit<DeleteOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
 type UpdateOneOptions = Omit<UpdateOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
 
@@ -163,13 +163,13 @@ export class Collection extends MongooseCollection {
         // Weirdness to work around TypeScript, otherwise TypeScript fails with
         // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
         if (requestOptions == null) {
-            return this.collection.findOneAndUpdate(filter, update).then(doc => deserializeDoc(doc));
-        } else if (requestOptions.includeResultMetadata) {
-            return this.collection.findOneAndUpdate(filter, update, { ...requestOptions, includeResultMetadata: true }).then(value => {
+            return this.collection.findOneAndUpdate(filter, update).then((doc: Record<string, unknown>) => deserializeDoc(doc));
+        } else if (options?.includeResultMetadata) {
+            return this.collection.findOneAndUpdate(filter, update, requestOptions).then((value: Record<string, unknown>) => {
                 return { value: deserializeDoc(value) };
             });
         } else {
-            return this.collection.findOneAndUpdate(filter, update, { ...requestOptions, includeResultMetadata: false }).then(doc => deserializeDoc(doc));
+            return this.collection.findOneAndUpdate(filter, update, requestOptions).then((doc: Record<string, unknown>) => deserializeDoc(doc));
         }
     }
 
@@ -191,13 +191,13 @@ export class Collection extends MongooseCollection {
         // Weirdness to work around TypeScript, otherwise TypeScript fails with
         // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
         if (requestOptions == null) {
-            return this.collection.findOneAndDelete(filter).then(doc => deserializeDoc(doc));
-        } else if (requestOptions.includeResultMetadata) {
-            return this.collection.findOneAndDelete(filter, { ...requestOptions, includeResultMetadata: true }).then(value => {
+            return this.collection.findOneAndDelete(filter).then((doc: Record<string, unknown>) => deserializeDoc(doc));
+        } else if (options?.includeResultMetadata) {
+            return this.collection.findOneAndDelete(filter, requestOptions).then((value: Record<string, unknown>) => {
                 return { value: deserializeDoc(value) };
             });
         } else {
-            return this.collection.findOneAndDelete(filter, { ...requestOptions, includeResultMetadata: false }).then(doc => deserializeDoc(doc));
+            return this.collection.findOneAndDelete(filter, requestOptions).then((doc: Record<string, unknown>) => deserializeDoc(doc));
         }
     }
 
@@ -222,13 +222,13 @@ export class Collection extends MongooseCollection {
         // Weirdness to work around TypeScript, otherwise TypeScript fails with
         // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
         if (requestOptions == null) {
-            return this.collection.findOneAndReplace(filter, newDoc).then(doc => deserializeDoc(doc));
-        } else if (requestOptions.includeResultMetadata) {
-            return this.collection.findOneAndReplace(filter, newDoc, { ...requestOptions, includeResultMetadata: true }).then(value => {
+            return this.collection.findOneAndReplace(filter, newDoc).then((doc: Record<string, unknown>) => deserializeDoc(doc));
+        } else if (options?.includeResultMetadata) {
+            return this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((value: Record<string, unknown>) => {
                 return { value: deserializeDoc(value) };
             });
         } else {
-            return this.collection.findOneAndReplace(filter, newDoc, { ...requestOptions, includeResultMetadata: false }).then(doc => deserializeDoc(doc));
+            return this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((doc: Record<string, unknown>) => deserializeDoc(doc));
         }
     }
 
