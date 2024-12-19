@@ -14,13 +14,14 @@ interface ConnectOptionsInternal extends ConnectOptions {
     bufferCommands?: boolean;
 }
 export declare class Connection extends MongooseConnection {
+    static [x: string]: any;
     debugType: string;
     initialConnection: Promise<Connection> | null;
     client: DataAPIClient | null;
     admin: AstraAdmin | DataAPIDbAdmin | null;
     db: Db | null;
     namespace: string | null;
-    config: ConnectOptionsInternal | null;
+    config?: ConnectOptionsInternal;
     baseUrl: string | null;
     baseApiPath: string | null;
     constructor(base: Mongoose);
@@ -28,11 +29,11 @@ export declare class Connection extends MongooseConnection {
     collection(name: string, options?: {
         modelName?: string;
     }): any;
-    createCollection(name: string, options?: Record<string, unknown>): Promise<import("@datastax/astra-db-ts").Collection<import("@datastax/astra-db-ts").SomeDoc>>;
-    dropCollection(name: string): Promise<boolean>;
+    createCollection(name: string, options?: Record<string, unknown>): Promise<import("@datastax/astra-db-ts").Collection<import("@datastax/astra-db-ts").SomeDoc, import("@datastax/astra-db-ts").FoundDoc<import("@datastax/astra-db-ts").SomeDoc>>>;
+    dropCollection(name: string): Promise<void>;
     createNamespace(namespace: string): Promise<void>;
     dropDatabase(): Promise<void>;
-    listCollections(): Promise<import("@datastax/astra-db-ts").FullCollectionInfo[]>;
+    listCollections(): Promise<import("@datastax/astra-db-ts").CollectionDescriptor[]>;
     runCommand(command: Record<string, unknown>): Promise<RawDataAPIResponse>;
     openUri(uri: string, options: ConnectOptionsInternal): Promise<this>;
     createClient(uri: string, options: ConnectOptionsInternal): Promise<this>;

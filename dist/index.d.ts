@@ -1,10 +1,10 @@
-import { IndexingOptions, VectorOptions } from '@datastax/astra-db-ts';
+import { CollectionIndexingOptions, CollectionVectorOptions } from '@datastax/astra-db-ts';
 export * as driver from './driver';
 export { default as createAstraUri } from './createAstraUri';
 declare module 'mongodb' {
     interface CreateCollectionOptions {
-        vector?: VectorOptions;
-        indexing?: IndexingOptions<any>;
+        vector?: CollectionVectorOptions;
+        indexing?: CollectionIndexingOptions<any>;
     }
 }
 declare module 'mongoose' {

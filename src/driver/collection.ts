@@ -16,18 +16,18 @@ import { default as MongooseCollection } from 'mongoose/lib/collection';
 import type { Connection } from './connection';
 import {
     Collection as AstraCollection,
-    DeleteOneOptions as DeleteOneOptionsInternal,
-    DeleteOneResult,
+    CollectionDeleteOneOptions as DeleteOneOptionsInternal,
+    CollectionDeleteOneResult,
     FindCursor,
-    FindOptions as FindOptionsInternal,
-    FindOneAndDeleteOptions as FindOneAndDeleteOptionsInternal,
-    FindOneAndReplaceOptions as FindOneAndReplaceOptionsInternal,
-    FindOneAndUpdateOptions as FindOneAndUpdateOptionsInternal,
-    FindOneOptions as FindOneOptionsInternal,
-    UpdateManyOptions,
-    UpdateOneOptions as UpdateOneOptionsInternal,
-    InsertManyOptions,
-    InsertManyResult,
+    CollectionFindOptions as FindOptionsInternal,
+    CollectionFindOneAndDeleteOptions as FindOneAndDeleteOptionsInternal,
+    CollectionFindOneAndReplaceOptions as FindOneAndReplaceOptionsInternal,
+    CollectionFindOneAndUpdateOptions as FindOneAndUpdateOptionsInternal,
+    CollectionFindOneOptions as FindOneOptionsInternal,
+    CollectionUpdateManyOptions,
+    CollectionUpdateOneOptions as UpdateOneOptionsInternal,
+    CollectionInsertManyOptions,
+    CollectionInsertManyResult,
     SortDirection,
     Sort as SortOptionInternal
 } from '@datastax/astra-db-ts';
@@ -137,7 +137,7 @@ export class Collection extends MongooseCollection {
      * @param documents
      * @param options
      */
-    async insertMany(documents: Record<string, unknown>[], options?: InsertManyOptions): Promise<InsertManyResult<Record<string, unknown>>> {
+    async insertMany(documents: Record<string, unknown>[], options?: CollectionInsertManyOptions): Promise<CollectionInsertManyResult<Record<string, unknown>>> {
         documents = documents.map(doc => serialize(doc));
         return this.collection.insertMany(documents, options);
     }
@@ -247,7 +247,7 @@ export class Collection extends MongooseCollection {
      * @param options
      * @param callback
      */
-    deleteOne(filter: Record<string, unknown>, options?: DeleteOneOptions, callback?: NodeCallback<DeleteOneResult>) {
+    deleteOne(filter: Record<string, unknown>, options?: DeleteOneOptions, callback?: NodeCallback<CollectionDeleteOneResult>) {
         let requestOptions: DeleteOneOptionsInternal | undefined = undefined;
         if (options != null && options.sort != null) {
             requestOptions = { ...options, sort: processSortOption(options.sort) };
@@ -258,7 +258,7 @@ export class Collection extends MongooseCollection {
         filter = serialize(filter);
         const promise = this.collection.deleteOne(filter, requestOptions);
         if (callback != null) {
-            promise.then((res: DeleteOneResult) => callback(null, res), (err: Error) => callback(err, null));
+            promise.then((res: CollectionDeleteOneResult) => callback(null, res), (err: Error) => callback(err, null));
         }
 
         return promise;
@@ -290,7 +290,7 @@ export class Collection extends MongooseCollection {
      * @param update
      * @param options
      */
-    updateMany(filter: Record<string, unknown>, update: Record<string, unknown>, options?: UpdateManyOptions) {
+    updateMany(filter: Record<string, unknown>, update: Record<string, unknown>, options?: CollectionUpdateManyOptions) {
         filter = serialize(filter);
         setDefaultIdForUpsert(filter, update, options, false);
         update = serialize(update);

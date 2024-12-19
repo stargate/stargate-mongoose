@@ -16,6 +16,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = createAstraUri;
 const url_1 = __importDefault(require("url"));
 /**
  * Create an Astra connection URI while connecting to Astra Data API
@@ -40,5 +41,4 @@ function createAstraUri(apiEndpoint, apiToken, namespace, baseApiPath, authHeade
     }
     return uri.toString();
 }
-exports.default = createAstraUri;
 //# sourceMappingURL=createAstraUri.js.map

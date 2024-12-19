@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { IndexingOptions, VectorOptions } from '@datastax/astra-db-ts';
+import { CollectionIndexingOptions, CollectionVectorOptions } from '@datastax/astra-db-ts';
 
 export * as driver from './driver';
 export { default as createAstraUri } from './createAstraUri';
 
 declare module 'mongodb' {
   interface CreateCollectionOptions {
-    vector?: VectorOptions;
+    vector?: CollectionVectorOptions;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    indexing?: IndexingOptions<any>;
+    indexing?: CollectionIndexingOptions<any>;
   }
 }
 

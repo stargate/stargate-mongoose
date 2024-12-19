@@ -1,6 +1,6 @@
 import { default as MongooseCollection } from 'mongoose/lib/collection';
 import type { Connection } from './connection';
-import { Collection as AstraCollection, DeleteOneOptions as DeleteOneOptionsInternal, DeleteOneResult, FindCursor, FindOptions as FindOptionsInternal, FindOneAndDeleteOptions as FindOneAndDeleteOptionsInternal, FindOneAndReplaceOptions as FindOneAndReplaceOptionsInternal, FindOneAndUpdateOptions as FindOneAndUpdateOptionsInternal, FindOneOptions as FindOneOptionsInternal, UpdateManyOptions, UpdateOneOptions as UpdateOneOptionsInternal, InsertManyOptions, InsertManyResult } from '@datastax/astra-db-ts';
+import { Collection as AstraCollection, CollectionDeleteOneOptions as DeleteOneOptionsInternal, CollectionDeleteOneResult, FindCursor, CollectionFindOptions as FindOptionsInternal, CollectionFindOneAndDeleteOptions as FindOneAndDeleteOptionsInternal, CollectionFindOneAndReplaceOptions as FindOneAndReplaceOptionsInternal, CollectionFindOneAndUpdateOptions as FindOneAndUpdateOptionsInternal, CollectionFindOneOptions as FindOneOptionsInternal, CollectionUpdateManyOptions, CollectionUpdateOneOptions as UpdateOneOptionsInternal, CollectionInsertManyOptions, CollectionInsertManyResult } from '@datastax/astra-db-ts';
 export type MongooseSortOption = Record<string, 1 | -1 | {
     $meta: Array<number>;
 } | {
@@ -32,7 +32,9 @@ type NodeCallback<ResultType = unknown> = (err: Error | null, res: ResultType | 
  * Collection operations supported by the driver.
  */
 export declare class Collection extends MongooseCollection {
+    static [x: string]: any;
     debugType: string;
+    _collection?: AstraCollection;
     _closed: boolean;
     constructor(name: string, conn: Connection, options?: {
         modelName?: string | null;
@@ -55,64 +57,70 @@ export declare class Collection extends MongooseCollection {
      * @param filter
      * @param options
      */
-    findOne(filter: Record<string, unknown>, options?: FindOneOptions): Promise<import("@datastax/astra-db-ts").FoundDoc<import("@datastax/astra-db-ts").SomeDoc> | null>;
+    findOne(filter: Record<string, unknown>, options?: FindOneOptions): Promise<import("@datastax/astra-db-ts").WithSim<import("@datastax/astra-db-ts").FoundDoc<import("@datastax/astra-db-ts").SomeDoc>> | null>;
     /**
      * Insert a single document into the collection.
      * @param doc
      */
-    insertOne(doc: Record<string, unknown>): Promise<import("@datastax/astra-db-ts").InsertOneResult<import("@datastax/astra-db-ts").SomeDoc>>;
+    insertOne(doc: Record<string, unknown>): Promise<import("@datastax/astra-db-ts").CollectionInsertOneResult<import("@datastax/astra-db-ts").FoundDoc<import("@datastax/astra-db-ts").SomeDoc>>>;
     /**
      * Insert multiple documents into the collection.
      * @param documents
      * @param options
      */
-    insertMany(documents: Record<string, unknown>[], options?: InsertManyOptions): Promise<InsertManyResult<Record<string, unknown>>>;
+    insertMany(documents: Record<string, unknown>[], options?: CollectionInsertManyOptions): Promise<CollectionInsertManyResult<Record<string, unknown>>>;
     /**
      * Update a single document in a collection.
      * @param filter
      * @param update
      * @param options
      */
-    findOneAndUpdate(filter: Record<string, unknown>, update: Record<string, unknown>, options?: FindOneAndUpdateOptions): Promise<import("@datastax/astra-db-ts").WithId<import("@datastax/astra-db-ts").SomeDoc> | import("@datastax/astra-db-ts").ModifyResult<import("@datastax/astra-db-ts").SomeDoc> | null>;
+    findOneAndUpdate(filter: Record<string, unknown>, update: Record<string, unknown>, options?: FindOneAndUpdateOptions): Promise<Record<string, unknown> | {
+        value: Record<string, unknown> | null;
+    } | null>;
     /**
      * Find a single document in the collection and delete it.
      * @param filter
      * @param options
      */
-    findOneAndDelete(filter: Record<string, unknown>, options?: FindOneAndDeleteOptions): Promise<import("@datastax/astra-db-ts").WithId<import("@datastax/astra-db-ts").SomeDoc> | import("@datastax/astra-db-ts").ModifyResult<import("@datastax/astra-db-ts").SomeDoc> | null>;
+    findOneAndDelete(filter: Record<string, unknown>, options?: FindOneAndDeleteOptions): Promise<Record<string, unknown> | {
+        value: Record<string, unknown> | null;
+    } | null>;
     /**
      * Find a single document in the collection and replace it.
      * @param filter
      * @param newDoc
      * @param options
      */
-    findOneAndReplace(filter: Record<string, unknown>, newDoc: Record<string, unknown>, options?: FindOneAndReplaceOptions): Promise<import("@datastax/astra-db-ts").WithId<import("@datastax/astra-db-ts").SomeDoc> | import("@datastax/astra-db-ts").ModifyResult<import("@datastax/astra-db-ts").SomeDoc> | null>;
+    findOneAndReplace(filter: Record<string, unknown>, newDoc: Record<string, unknown>, options?: FindOneAndReplaceOptions): Promise<Record<string, unknown> | {
+        value: Record<string, unknown> | null;
+    } | null>;
     /**
      * Delete one or more documents in a collection that match the given filter.
      * @param filter
      */
-    deleteMany(filter: Record<string, unknown>): Promise<import("@datastax/astra-db-ts").DeleteManyResult>;
+    deleteMany(filter: Record<string, unknown>): Promise<import("@datastax/astra-db-ts").GenericDeleteManyResult>;
     /**
      * Delete a single document in a collection that matches the given filter.
      * @param filter
      * @param options
      * @param callback
      */
-    deleteOne(filter: Record<string, unknown>, options?: DeleteOneOptions, callback?: NodeCallback<DeleteOneResult>): Promise<DeleteOneResult>;
+    deleteOne(filter: Record<string, unknown>, options?: DeleteOneOptions, callback?: NodeCallback<CollectionDeleteOneResult>): Promise<CollectionDeleteOneResult>;
     /**
      * Update a single document in a collection that matches the given filter.
      * @param filter
      * @param update
      * @param options
      */
-    updateOne(filter: Record<string, unknown>, update: Record<string, unknown>, options?: UpdateOneOptions): Promise<import("@datastax/astra-db-ts").UpdateOneResult<import("@datastax/astra-db-ts").SomeDoc>>;
+    updateOne(filter: Record<string, unknown>, update: Record<string, unknown>, options?: UpdateOneOptions): Promise<import("@datastax/astra-db-ts").CollectionUpdateOneResult<import("@datastax/astra-db-ts").FoundDoc<import("@datastax/astra-db-ts").SomeDoc>>>;
     /**
      * Update multiple documents in a collection that match the given filter.
      * @param filter
      * @param update
      * @param options
      */
-    updateMany(filter: Record<string, unknown>, update: Record<string, unknown>, options?: UpdateManyOptions): Promise<import("@datastax/astra-db-ts").UpdateManyResult<import("@datastax/astra-db-ts").SomeDoc>>;
+    updateMany(filter: Record<string, unknown>, update: Record<string, unknown>, options?: CollectionUpdateManyOptions): Promise<import("@datastax/astra-db-ts").CollectionUpdateManyResult<import("@datastax/astra-db-ts").FoundDoc<import("@datastax/astra-db-ts").SomeDoc>>>;
     /**
      * Get the estimated number of documents in a collection based on collection metadata
      */

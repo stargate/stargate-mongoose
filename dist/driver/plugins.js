@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleVectorFieldsProjection = void 0;
+exports.handleVectorFieldsProjection = handleVectorFieldsProjection;
 function handleVectorFieldsProjection(schema) {
     schema.pre(['find', 'findOne', 'findOneAndUpdate', 'findOneAndReplace', 'findOneAndDelete'], function () {
         const projection = this.projection();
@@ -19,5 +19,4 @@ function handleVectorFieldsProjection(schema) {
         }
     });
 }
-exports.handleVectorFieldsProjection = handleVectorFieldsProjection;
 //# sourceMappingURL=plugins.js.map

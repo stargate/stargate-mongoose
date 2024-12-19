@@ -16,9 +16,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setDefaultIdForUpsert = exports.OperationNotSupportedError = exports.Collection = void 0;
+exports.OperationNotSupportedError = exports.Collection = void 0;
+exports.setDefaultIdForUpsert = setDefaultIdForUpsert;
 const collection_1 = __importDefault(require("mongoose/lib/collection"));
 const serialize_1 = require("../serialize");
+const deserializeDoc_1 = __importDefault(require("src/deserializeDoc"));
 const mongoose_1 = require("mongoose");
 /**
  * Collection operations supported by the driver.
@@ -64,7 +66,7 @@ class Collection extends collection_1.default {
             delete requestOptions.sort;
         }
         filter = (0, serialize_1.serialize)(filter);
-        const cursor = this.collection.find(filter, requestOptions);
+        const cursor = this.collection.find(filter, requestOptions).map(doc => (0, deserializeDoc_1.default)(doc));
         if (callback != null) {
             return callback(null, cursor);
         }
@@ -75,7 +77,7 @@ class Collection extends collection_1.default {
      * @param filter
      * @param options
      */
-    findOne(filter, options) {
+    async findOne(filter, options) {
         let requestOptions = undefined;
         if (options != null && options.sort != null) {
             requestOptions = { ...options, sort: processSortOption(options.sort) };
@@ -85,14 +87,17 @@ class Collection extends collection_1.default {
             delete requestOptions.sort;
         }
         filter = (0, serialize_1.serialize)(filter);
-        return this.collection.findOne(filter, requestOptions);
+        const doc = await this.collection.findOne(filter, requestOptions);
+        (0, deserializeDoc_1.default)(doc);
+        return doc;
     }
     /**
      * Insert a single document into the collection.
      * @param doc
      */
     insertOne(doc) {
-        return this.collection.insertOne((0, serialize_1.serialize)(doc));
+        doc = (0, serialize_1.serialize)(doc);
+        return this.collection.insertOne(doc);
     }
     /**
      * Insert multiple documents into the collection.
@@ -119,18 +124,20 @@ class Collection extends collection_1.default {
             delete requestOptions.sort;
         }
         filter = (0, serialize_1.serialize)(filter);
-        update = (0, serialize_1.serialize)(update);
         setDefaultIdForUpsert(filter, update, requestOptions, false);
+        update = (0, serialize_1.serialize)(update);
         // Weirdness to work around TypeScript, otherwise TypeScript fails with
         // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
         if (requestOptions == null) {
-            return this.collection.findOneAndUpdate(filter, update);
+            return this.collection.findOneAndUpdate(filter, update).then(doc => (0, deserializeDoc_1.default)(doc));
         }
         else if (requestOptions.includeResultMetadata) {
-            return this.collection.findOneAndUpdate(filter, update, { ...requestOptions, includeResultMetadata: true });
+            return this.collection.findOneAndUpdate(filter, update, { ...requestOptions, includeResultMetadata: true }).then(value => {
+                return { value: (0, deserializeDoc_1.default)(value) };
+            });
         }
         else {
-            return this.collection.findOneAndUpdate(filter, update, { ...requestOptions, includeResultMetadata: false });
+            return this.collection.findOneAndUpdate(filter, update, { ...requestOptions, includeResultMetadata: false }).then(doc => (0, deserializeDoc_1.default)(doc));
         }
     }
     /**
@@ -151,13 +158,15 @@ class Collection extends collection_1.default {
         // Weirdness to work around TypeScript, otherwise TypeScript fails with
         // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
         if (requestOptions == null) {
-            return this.collection.findOneAndDelete(filter);
+            return this.collection.findOneAndDelete(filter).then(doc => (0, deserializeDoc_1.default)(doc));
         }
         else if (requestOptions.includeResultMetadata) {
-            return this.collection.findOneAndDelete(filter, { ...requestOptions, includeResultMetadata: true });
+            return this.collection.findOneAndDelete(filter, { ...requestOptions, includeResultMetadata: true }).then(value => {
+                return { value: (0, deserializeDoc_1.default)(value) };
+            });
         }
         else {
-            return this.collection.findOneAndDelete(filter, { ...requestOptions, includeResultMetadata: false });
+            return this.collection.findOneAndDelete(filter, { ...requestOptions, includeResultMetadata: false }).then(doc => (0, deserializeDoc_1.default)(doc));
         }
     }
     /**
@@ -176,18 +185,20 @@ class Collection extends collection_1.default {
             delete requestOptions.sort;
         }
         filter = (0, serialize_1.serialize)(filter);
-        newDoc = (0, serialize_1.serialize)(newDoc);
         setDefaultIdForUpsert(filter, newDoc, requestOptions, true);
+        newDoc = (0, serialize_1.serialize)(newDoc);
         // Weirdness to work around TypeScript, otherwise TypeScript fails with
         // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
         if (requestOptions == null) {
-            return this.collection.findOneAndReplace(filter, newDoc);
+            return this.collection.findOneAndReplace(filter, newDoc).then(doc => (0, deserializeDoc_1.default)(doc));
         }
         else if (requestOptions.includeResultMetadata) {
-            return this.collection.findOneAndReplace(filter, newDoc, { ...requestOptions, includeResultMetadata: true });
+            return this.collection.findOneAndReplace(filter, newDoc, { ...requestOptions, includeResultMetadata: true }).then(value => {
+                return { value: (0, deserializeDoc_1.default)(value) };
+            });
         }
         else {
-            return this.collection.findOneAndReplace(filter, newDoc, { ...requestOptions, includeResultMetadata: false });
+            return this.collection.findOneAndReplace(filter, newDoc, { ...requestOptions, includeResultMetadata: false }).then(doc => (0, deserializeDoc_1.default)(doc));
         }
     }
     /**
@@ -236,8 +247,8 @@ class Collection extends collection_1.default {
             delete requestOptions.sort;
         }
         filter = (0, serialize_1.serialize)(filter);
-        update = (0, serialize_1.serialize)(update);
         setDefaultIdForUpsert(filter, update, requestOptions, false);
+        update = (0, serialize_1.serialize)(update);
         return this.collection.updateOne(filter, update, requestOptions);
     }
     /**
@@ -248,8 +259,8 @@ class Collection extends collection_1.default {
      */
     updateMany(filter, update, options) {
         filter = (0, serialize_1.serialize)(filter);
-        update = (0, serialize_1.serialize)(update);
         setDefaultIdForUpsert(filter, update, options, false);
+        update = (0, serialize_1.serialize)(update);
         return this.collection.updateMany(filter, update, options);
     }
     /**
@@ -264,7 +275,10 @@ class Collection extends collection_1.default {
      */
     runCommand(command) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return this.collection._httpClient.executeCommand(command);
+        return this.collection._httpClient.executeCommand(command, {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            timeoutManager: this.collection._httpClient.tm.single('runCommandTimeoutMS', 60000)
+        });
     }
     /**
      * Bulk write not supported.
@@ -395,7 +409,6 @@ function setDefaultIdForUpsert(filter, update, options, replace) {
         }
     }
 }
-exports.setDefaultIdForUpsert = setDefaultIdForUpsert;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function _updateHasKey(update, key) {
     for (const operator of Object.keys(update)) {

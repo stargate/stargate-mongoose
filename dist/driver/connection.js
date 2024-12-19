@@ -32,7 +32,6 @@ class Connection extends connection_1.default {
         this.admin = null;
         this.db = null;
         this.namespace = null;
-        this.config = null;
         this.baseUrl = null;
         this.baseApiPath = null;
     }
@@ -77,7 +76,7 @@ class Connection extends connection_1.default {
     }
     async listCollections() {
         await this._waitForClient();
-        return this.db.listCollections();
+        return this.db.listCollections({ nameOnly: false });
     }
     async runCommand(command) {
         await this._waitForClient();
@@ -130,6 +129,7 @@ class Connection extends connection_1.default {
             if (options?.isAstra) {
                 const client = new astra_db_ts_2.DataAPIClient(applicationToken);
                 const db = client.db(baseUrl, dbOptions);
+                db.useKeyspace(keyspaceName);
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 Object.assign(db._httpClient.baseHeaders, featureFlags);
                 return {
@@ -146,6 +146,7 @@ class Connection extends connection_1.default {
             }
             const client = new astra_db_ts_2.DataAPIClient(new astra_db_ts_2.UsernamePasswordTokenProvider(options.username, options.password), { environment: 'dse' });
             const db = client.db(baseUrl, dbOptions);
+            db.useKeyspace(keyspaceName);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             Object.assign(db._httpClient.baseHeaders, featureFlags);
             return {
