@@ -88,15 +88,22 @@ export class Collection extends MongooseCollection {
      * @param callback
      */
     find(filter: Record<string, unknown>, options?: FindOptions, callback?: NodeCallback<FindCursor<unknown>>) {
-        let requestOptions: FindOptionsInternal | undefined = undefined;
-        if (options != null && options.sort != null) {
-            requestOptions = { ...options, sort: processSortOption(options.sort) };
-        } else if (options != null && options.sort == null) {
-            requestOptions = { ...options, sort: undefined };
-            delete requestOptions.sort;
+        // Weirdness to work around astra-db-ts method overrides
+        if (options == null) {
+            filter = serialize(filter);
+            const cursor = this.collection.find(filter).map((doc: Record<string, unknown>) => deserializeDoc(doc));
+
+            if (callback != null) {
+                return callback(null, cursor);
+            }
+            return cursor;
         }
+
+        const requestOptions: FindOptionsInternal = options != null && options.sort != null
+            ? { ...options, sort: processSortOption(options.sort) }
+            : { ...options, sort: undefined };
         filter = serialize(filter);
-        const cursor = this.collection.find(filter, requestOptions).map(doc => deserializeDoc(doc));
+        const cursor = this.collection.find(filter, requestOptions).map((doc: Record<string, unknown>) => deserializeDoc(doc));
 
         if (callback != null) {
             return callback(null, cursor);
@@ -110,17 +117,20 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     async findOne(filter: Record<string, unknown>, options?: FindOneOptions) {
-        let requestOptions: FindOneOptionsInternal | undefined = undefined;
-        if (options != null && options.sort != null) {
-            requestOptions = { ...options, sort: processSortOption(options.sort) };
-        } else if (options != null && options.sort == null) {
-            requestOptions = { ...options, sort: undefined };
-            delete requestOptions.sort;
+        // Weirdness to work around astra-db-ts method overrides
+        if (options == null) {
+            filter = serialize(filter);
+            const doc = await this.collection.findOne(filter);
+            return deserializeDoc(doc);
         }
+
+        const requestOptions: FindOneOptionsInternal = options != null && options.sort != null
+            ? { ...options, sort: processSortOption(options.sort) }
+            : { ...options, sort: undefined };
+        
         filter = serialize(filter);
         const doc = await this.collection.findOne(filter, requestOptions);
-        deserializeDoc(doc);
-        return doc;
+        return deserializeDoc(doc);
     }
 
     /**
@@ -163,13 +173,13 @@ export class Collection extends MongooseCollection {
         // Weirdness to work around TypeScript, otherwise TypeScript fails with
         // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
         if (requestOptions == null) {
-            return this.collection.findOneAndUpdate(filter, update).then((doc: Record<string, unknown>) => deserializeDoc(doc));
+            return this.collection.findOneAndUpdate(filter, update).then((doc: Record<string, unknown> | null) => deserializeDoc(doc));
         } else if (options?.includeResultMetadata) {
-            return this.collection.findOneAndUpdate(filter, update, requestOptions).then((value: Record<string, unknown>) => {
+            return this.collection.findOneAndUpdate(filter, update, requestOptions).then((value: Record<string, unknown> | null) => {
                 return { value: deserializeDoc(value) };
             });
         } else {
-            return this.collection.findOneAndUpdate(filter, update, requestOptions).then((doc: Record<string, unknown>) => deserializeDoc(doc));
+            return this.collection.findOneAndUpdate(filter, update, requestOptions).then((doc: Record<string, unknown>  | null) => deserializeDoc(doc));
         }
     }
 
@@ -191,13 +201,13 @@ export class Collection extends MongooseCollection {
         // Weirdness to work around TypeScript, otherwise TypeScript fails with
         // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
         if (requestOptions == null) {
-            return this.collection.findOneAndDelete(filter).then((doc: Record<string, unknown>) => deserializeDoc(doc));
+            return this.collection.findOneAndDelete(filter).then((doc: Record<string, unknown>  | null) => deserializeDoc(doc));
         } else if (options?.includeResultMetadata) {
-            return this.collection.findOneAndDelete(filter, requestOptions).then((value: Record<string, unknown>) => {
+            return this.collection.findOneAndDelete(filter, requestOptions).then((value: Record<string, unknown>  | null) => {
                 return { value: deserializeDoc(value) };
             });
         } else {
-            return this.collection.findOneAndDelete(filter, requestOptions).then((doc: Record<string, unknown>) => deserializeDoc(doc));
+            return this.collection.findOneAndDelete(filter, requestOptions).then((doc: Record<string, unknown>  | null) => deserializeDoc(doc));
         }
     }
 
@@ -222,13 +232,13 @@ export class Collection extends MongooseCollection {
         // Weirdness to work around TypeScript, otherwise TypeScript fails with
         // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
         if (requestOptions == null) {
-            return this.collection.findOneAndReplace(filter, newDoc).then((doc: Record<string, unknown>) => deserializeDoc(doc));
+            return this.collection.findOneAndReplace(filter, newDoc).then((doc: Record<string, unknown> | null) => deserializeDoc(doc));
         } else if (options?.includeResultMetadata) {
-            return this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((value: Record<string, unknown>) => {
+            return this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((value: Record<string, unknown> | null) => {
                 return { value: deserializeDoc(value) };
             });
         } else {
-            return this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((doc: Record<string, unknown>) => deserializeDoc(doc));
+            return this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((doc: Record<string, unknown> | null) => deserializeDoc(doc));
         }
     }
 
