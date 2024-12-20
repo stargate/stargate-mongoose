@@ -572,7 +572,9 @@ describe('Mongoose Model API level tests', async () => {
         });
         it('API ops tests Model.syncIndexes()', async () => {
             const error: Error | null = await Product.syncIndexes().then(() => null, error => error);
-            assert.ok(error instanceof OperationNotSupportedError);
+            if (!(error instanceof OperationNotSupportedError)) {
+                throw error;
+            }
             //since listIndexes is invoked before syncIndexes, the error message will be related to listIndexes
             assert.strictEqual(error?.message, 'listIndexes() Not Implemented');
         });

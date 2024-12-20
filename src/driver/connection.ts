@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { Collection } from './collection';
-import { AstraAdmin, DataAPIDbAdmin, Db, RawDataAPIResponse } from '@datastax/astra-db-ts';
+import { AstraAdmin, DataAPIDbAdmin, RawDataAPIResponse } from '@datastax/astra-db-ts';
+import { Db } from './db';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
 import type { ConnectOptions, Mongoose, Model } from 'mongoose';
@@ -166,10 +167,9 @@ export class Connection extends MongooseConnection {
         const { client, db, admin } = (() => {
             if (options?.isAstra) {
                 const client = new DataAPIClient(applicationToken);
-                const db = client.db(baseUrl, dbOptions);
-                db.useKeyspace(keyspaceName);
+                const db = new Db(client.db(baseUrl, dbOptions), keyspaceName);
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                Object.assign((db as any)._httpClient.baseHeaders, featureFlags);
+                Object.assign(db.httpClient.baseHeaders, featureFlags);
                 return {
                     client,
                     db,
@@ -187,14 +187,12 @@ export class Connection extends MongooseConnection {
                 new UsernamePasswordTokenProvider(options.username, options.password),
                 { environment: 'dse' }
             );
-            const db = client.db(baseUrl, dbOptions);
-            db.useKeyspace(keyspaceName);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            Object.assign((db as any)._httpClient.baseHeaders, featureFlags);
+            const db = new Db(client.db(baseUrl, dbOptions), keyspaceName);
+            Object.assign(db.httpClient.baseHeaders, featureFlags);
             return {
                 client,
                 db,
-                admin: db.admin({
+                admin: db.astraDb.admin({
                     environment: 'dse',
                     adminToken: new UsernamePasswordTokenProvider(options.username, options.password)
                 })

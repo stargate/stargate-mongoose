@@ -41,8 +41,7 @@ export const Product = mongooseInstance.model('Product', productSchema);
 
 async function createNamespace() {
     const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (connection.db as any)._httpClient._request({
+    return connection.db!.httpClient._request({
         url: connection.baseUrl + '/' + connection.baseApiPath,
         method: 'POST',
         data: JSON.stringify({
@@ -50,8 +49,7 @@ async function createNamespace() {
                 name: connection.keyspaceName
             }
         }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        timeoutManager: (connection.db as any)._httpClient.tm.single('databaseAdminTimeoutMs', { timeout: 120_000 })
+        timeoutManager: connection.db!.httpClient.tm.single('databaseAdminTimeoutMs', { timeout: 120_000 })
     });
 }
 
