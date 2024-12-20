@@ -56,6 +56,8 @@ export async function createMongooseCollections() {
     await createNamespace();
 
     const connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+    const tables = await connection.listTables();
+    const tableNames = tables.map(t => t.name);
 
     if (useTables) {
         await connection.runCommand({
@@ -117,6 +119,17 @@ export async function createMongooseCollections() {
     } else {
         const collections = await mongooseInstance.connection.listCollections();
         const collectionNames = collections.map(({ name }) => name);
+
+        if (tableNames.includes(Cart.collection.collectionName)) {
+            await connection.runCommand({
+                dropTable: { name: Cart.collection.collectionName }
+            });
+        }
+        if (tableNames.includes(Product.collection.collectionName)) {
+            await connection.runCommand({
+                dropTable: { name: Product.collection.collectionName }
+            });
+        }
 
         if (!collectionNames.includes(Cart.collection.collectionName)) {
             await Cart.createCollection();
