@@ -60,12 +60,23 @@ describe('Driver based tests', async () => {
                 product1.expiryDate!.toISOString()
             );
 
-            const findOneAndReplaceResp = await Cart.findOneAndReplace({cartName: 'wewson'}, {
-                name: 'My Cart 2',
-                cartName: 'wewson1'
-            }, {returnDocument: 'after'}).exec();
-            assert.strictEqual(findOneAndReplaceResp!.name, 'My Cart 2');
-            assert.strictEqual(findOneAndReplaceResp!.cartName, 'wewson1');
+            if (!process.env.DATA_API_TABLES) {
+                const findOneAndReplaceResp = await Cart.findOneAndReplace({cartName: 'wewson'}, {
+                    name: 'My Cart 2',
+                    cartName: 'wewson1'
+                }, {returnDocument: 'after'}).exec();
+                assert.strictEqual(findOneAndReplaceResp!.name, 'My Cart 2');
+                assert.strictEqual(findOneAndReplaceResp!.cartName, 'wewson1');
+            } else {
+                await Cart.updateOne({_id: cart._id}, {
+                    name: 'My Cart 2',
+                    cartName: 'wewson1',
+                    products: null
+                });
+                const doc = await Cart.findOne({cartName: 'wewson1'}).orFail();
+                assert.strictEqual(doc!.name, 'My Cart 2');
+                assert.strictEqual(doc!.cartName, 'wewson1');
+            }
 
             const productNames: string[] = [];
             const cursor = await Product.find().cursor();

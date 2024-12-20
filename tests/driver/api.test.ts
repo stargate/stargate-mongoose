@@ -192,7 +192,11 @@ describe('Mongoose Model API level tests', async () => {
             assert.ok(error instanceof DataAPIResponseError);
             assert.strictEqual(error.errorDescriptors[0].message, 'Invalid filter expression: filter clause path (\'$where\') contains character(s) not allowed');
         });
-        it('API ops tests db.dropCollection() and Model.createCollection()', async () => {
+        it('API ops tests db.dropCollection() and Model.createCollection()', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             let collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
             assert.ok(collections.includes(Product.collection.collectionName));
             
@@ -240,7 +244,11 @@ describe('Mongoose Model API level tests', async () => {
             //cleanIndexes invokes listIndexes() which is not supported
             assert.strictEqual(error.message, 'listIndexes() Not Implemented');
         });
-        it('API ops tests Model.countDocuments()', async () => {
+        it('API ops tests Model.countDocuments()', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
             const countResp = await Product.countDocuments({name: 'Product 1'});
@@ -255,7 +263,11 @@ describe('Mongoose Model API level tests', async () => {
             });
             assert.strictEqual(createResp.name, 'Product for create');
         });
-        it('API ops tests Model.createCollection()', async () => {
+        it('API ops tests Model.createCollection()', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             await Product.createCollection();
         });
         //TODO - createIndex() error uncaught internally
@@ -274,7 +286,11 @@ describe('Mongoose Model API level tests', async () => {
             // @ts-expect-error
             assert.strictEqual(conn.db.name, parseUri(testClient!.uri).keyspaceName);
         });
-        it('API ops tests Model.deleteMany()', async () => {
+        it('API ops tests Model.deleteMany()', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
             let deleteManyResp = await Product.deleteMany({name: 'Product 1'});
@@ -295,8 +311,10 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests Model.deleteOne()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
-            const deleteOneResp = await Product.deleteOne({name: 'Product 1'});
-            assert.strictEqual(deleteOneResp.deletedCount, 1);
+            const deleteOneResp = await Product.deleteOne({_id: product1._id});
+            if (!process.env.DATA_API_TABLES) {
+                assert.strictEqual(deleteOneResp.deletedCount, 1);
+            }
             const findDeletedDoc = await Product.findOne({name: 'Product 1'});
             assert.strictEqual(findDeletedDoc, null);
         });
@@ -352,6 +370,10 @@ describe('Mongoose Model API level tests', async () => {
         });
         
         it('API ops tests Model.estimatedDocumentCount()', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
@@ -389,7 +411,11 @@ describe('Mongoose Model API level tests', async () => {
             const findResp = await Product.findById(product1._id);
             assert.strictEqual(findResp?.name, 'Product 1');
         });
-        it('API ops tests Model.findByIdAndDelete()', async () => {
+        it('API ops tests Model.findByIdAndDelete()', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
             const deleteResp = await Product.findByIdAndDelete(product1._id);
@@ -397,7 +423,11 @@ describe('Mongoose Model API level tests', async () => {
             const findDeletedDoc = await Product.findById(product1._id);
             assert.strictEqual(findDeletedDoc, null);
         });
-        it('API ops tests Model.findByIdAndUpdate()', async () => {
+        it('API ops tests Model.findByIdAndUpdate()', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1', url: 'http://product1.com'});
             await product1.save();
             const updateResp = await Product.findByIdAndUpdate(product1._id, {name: 'Product 2'});
@@ -413,7 +443,11 @@ describe('Mongoose Model API level tests', async () => {
             const findResp = await Product.findOne({category: 'cat 1'});
             assert.strictEqual(findResp?.category, 'cat 1');
         });
-        it('API ops tests Model.findOneAndDelete()', async () => {
+        it('API ops tests Model.findOneAndDelete()', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
@@ -424,7 +458,11 @@ describe('Mongoose Model API level tests', async () => {
             const findDeletedDoc = await Product.findOne({category: 'cat 1'});
             assert.strictEqual(findDeletedDoc, null);
         });
-        it('API ops tests Model.findOneAndUpdate()', async () => {
+        it('API ops tests Model.findOneAndUpdate()', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
@@ -539,7 +577,11 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(error?.message, 'listIndexes() Not Implemented');
         });
         //Mode.translateAliases is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.translateAliases
-        it('API ops tests Model.updateMany()', async () => {
+        it('API ops tests Model.updateMany()', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
@@ -566,11 +608,17 @@ describe('Mongoose Model API level tests', async () => {
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
             await Product.insertMany([product1, product2, product3]);
-            //UpdateOne
-            const updateOneResp: mongoose.UpdateWriteOpResult = await Product.updateOne({category: 'cat 1'}, {category: 'cat 3'});
-            assert.strictEqual(updateOneResp.matchedCount, 1);
-            assert.strictEqual(updateOneResp.modifiedCount, 1);
-            assert.strictEqual(updateOneResp.upsertedCount, 0);
+            if (process.env.DATA_API_TABLES) {
+                const updateOneResp: mongoose.UpdateWriteOpResult = await Product.updateOne({_id: product3._id}, {category: 'cat 3'});
+                assert.strictEqual(updateOneResp.matchedCount, 1);
+                assert.strictEqual(updateOneResp.modifiedCount, 1);
+                assert.strictEqual(updateOneResp.upsertedCount, 0);
+            } else {
+                const updateOneResp: mongoose.UpdateWriteOpResult = await Product.updateOne({category: 'cat 1'}, {category: 'cat 3'});
+                assert.strictEqual(updateOneResp.matchedCount, 1);
+                assert.strictEqual(updateOneResp.modifiedCount, 1);
+                assert.strictEqual(updateOneResp.upsertedCount, 0);
+            }
             const findUpdatedDoc = await Product.findOne({category: 'cat 3'});
             assert.strictEqual(findUpdatedDoc?.name, 'Product 3');
         });
@@ -623,20 +671,21 @@ describe('Mongoose Model API level tests', async () => {
         });
         it('API ops tests Query cursor', async () => {
             await Product.create(
+                // Product 01 -> Product 25
                 Array.from({ length: 25 }, (_, index) => ({
-                    name: `Product ${index + 1}`,
+                    name: `Product ${(index + 1).toString().padStart(2, '0')}`,
                     price: 10
                 }))
             );
 
-            let cursor = Product.find().sort({ product: 1 }).cursor();
+            let cursor = Product.find().sort({ name: 1 }).cursor();
             for (let i = 0; i < 20; ++i) {
                 const product = await cursor.next();
-                assert.equal(product?.name, `Product ${i + 1}`, 'Failed at index ' + i);
+                assert.equal(product?.name, `Product ${(i + 1).toString().padStart(2, '0')}`, 'Failed at index ' + i);
             }
             assert.equal(await cursor.next(), null);
 
-            cursor = await Product.find().sort({ product: 1 }).limit(20).cursor();
+            cursor = await Product.find().sort({ name: 1 }).limit(20).cursor();
             for (let i = 0; i < 20; ++i) {
                 await cursor.next();
             }
@@ -658,8 +707,13 @@ describe('Mongoose Model API level tests', async () => {
         });
         it('API ops tests connection.runCommand()', async () => {
             const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
-            const res = await connection.runCommand({ findCollections: {} });
-            assert.ok(res.status?.collections?.includes('carts'));
+            if (process.env.DATA_API_TABLES) {
+                const res = await connection.runCommand({ listTables: {} });
+                assert.ok(res.status?.tables?.includes('carts'));
+            } else {
+                const res = await connection.runCommand({ findCollections: {} });
+                assert.ok(res.status?.collections?.includes('carts'));
+            }
         });
         it('API ops tests collection.runCommand()', async () => {
             const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;

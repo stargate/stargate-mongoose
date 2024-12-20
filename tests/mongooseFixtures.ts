@@ -4,6 +4,8 @@ import * as StargateMongooseDriver from '../src/driver';
 import { parseUri } from '../src/driver/connection';
 import { plugins } from '../src/driver';
 
+const useTables = !!process.env.DATA_API_TABLES;
+
 const cartSchema = new Schema({
     name: String,
     cartName: {type: String, lowercase: true, unique: true, index: true},
@@ -20,7 +22,7 @@ export const productSchema = new Schema({
     isCertified: Boolean,
     category: String,
     tags: [{ _id: false, name: String }]
-});
+}, process.env.DATA_API_TABLES ? { versionKey: false } : {});
 
 export const mongooseInstance = new Mongoose();
 mongooseInstance.setDriver(StargateMongooseDriver);
@@ -53,17 +55,79 @@ async function createNamespace() {
 export async function createMongooseCollections() {
     await createNamespace();
 
-    const collections = await mongooseInstance.connection.listCollections();
-    const collectionNames = collections.map(({ name }) => name);
-    if (!collectionNames.includes(Cart.collection.collectionName)) {
-        await Cart.createCollection();
+    const connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+
+    if (useTables) {
+        await connection.runCommand({
+            dropTable: { name: Cart.collection.collectionName }
+        });
+        await connection.runCommand({
+            dropTable: { name: Product.collection.collectionName }
+        });
+        await connection.runCommand({
+            createTable: {
+                name: Cart.collection.collectionName,
+                definition: {
+                    primaryKey: '_id',
+                    columns: {
+                        _id: { type: 'text' },
+                        __v: { type: 'int' },
+                        name: { type: 'text' },
+                        cartName: { type: 'text' },
+                        products: {
+                            type: 'list',
+                            valueType: 'text'
+                        },
+                        user: {
+                            type: 'map',
+                            keyType: 'text',
+                            valueType: 'text'
+                        }
+                    }
+                }
+            }
+        });
+
+        await connection.runCommand({
+            createTable: {
+                name: Product.collection.collectionName,
+                definition: {
+                    primaryKey: '_id',
+                    columns: {
+                        _id: { type: 'text' },
+                        __v: { type: 'int' },
+                        __t: { type: 'text' },
+                        name: { type: 'text' },
+                        price: { type: 'decimal' },
+                        expiryDate: { type: 'timestamp' },
+                        isCertified: { type: 'boolean' },
+                        category: { type: 'text' },
+                        tags: {
+                            type: 'list',
+                            valueType: 'text'
+                        },
+                        // Discriminator values
+                        url: { type: 'text' },
+                        // Extra key for testing strict mode
+                        extraCol: { type: 'text' }
+                    }
+                }
+            }
+        });
     } else {
-        await Cart.deleteMany({});
-    }
-    if (!collectionNames.includes(Product.collection.collectionName)) {
-        await Product.createCollection();
-    } else {
-        await Product.deleteMany({});
+        const collections = await mongooseInstance.connection.listCollections();
+        const collectionNames = collections.map(({ name }) => name);
+
+        if (!collectionNames.includes(Cart.collection.collectionName)) {
+            await Cart.createCollection();
+        } else {
+            await Cart.deleteMany({});
+        }
+        if (!collectionNames.includes(Product.collection.collectionName)) {
+            await Product.createCollection();
+        } else {
+            await Product.deleteMany({});
+        }
     }
 }
 
@@ -74,7 +138,8 @@ before(async function connectMongooseFixtures() {
     } else {
         const options = {
             username: process.env.STARGATE_USERNAME,
-            password: process.env.STARGATE_PASSWORD
+            password: process.env.STARGATE_PASSWORD,
+            featureFlags: useTables ? ['Feature-Flag-tables'] : []
         };
         const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
         await mongooseInstance.connect(testClient!.uri, options);

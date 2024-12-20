@@ -57,21 +57,27 @@ describe('Options tests', async () => {
             assert.strictEqual(insertManyResp[1].name, 'Product 1');
             assert.strictEqual(insertManyResp[2].name, 'Product 3');
             //rawResult options should be cleaned up by stargate-mongoose, but 'upsert' should be preserved
-            const updateOneResp = await Product.updateOne({ name: 'Product 4' },
-                { $set : { isCertified : true }, $inc: { price: 5 } },
-                { upsert: true, rawResult: false, sort: { name : 1 } } as unknown as Record<string, never>
+            const updateOneResp = await Product.updateOne({ _id: new mongoose.Types.ObjectId() },
+                { $set: { isCertified: true, name: 'Product 4', price: 5 } },
+                { upsert: true, rawResult: false, setDefaultsOnInsert: false } as unknown as Record<string, never>
             );
-            assert.strictEqual(updateOneResp.matchedCount, 0);
-            assert.strictEqual(updateOneResp.modifiedCount, 0);
-            assert.strictEqual(updateOneResp.upsertedCount, 1);
-            assert.ok(updateOneResp.upsertedId);
+            if (!process.env.DATA_API_TABLES) {
+                assert.strictEqual(updateOneResp.matchedCount, 0);
+                assert.strictEqual(updateOneResp.modifiedCount, 0);
+                assert.strictEqual(updateOneResp.upsertedCount, 1);
+                assert.ok(updateOneResp.upsertedId);
+            }
             //find product 4
             const product4 = await Product.findOne({ name : 'Product 4' });
             assert.strictEqual(product4?.name, 'Product 4');
             assert.strictEqual(product4?.price, 5);
             assert.strictEqual(product4?.isCertified, true);
         });
-        it('should cleanup updateManyOptions', async () => {
+        it('should cleanup updateManyOptions', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             // @ts-expect-error
             const products: Product[] = [new Product({ name: 'Product 2', price: 10, isCertified: true, category: 'cat1' }), new Product({ name: 'Product 1', price: 10, isCertified: false, category: 'cat1' }), new Product({ name: 'Product 3', price: 10, isCertified: false, category: 'cat2' })];
             const insertManyResp = await Product.insertMany(products, { ordered: true, rawResult: false });
@@ -101,7 +107,7 @@ describe('Options tests', async () => {
             const product1 = new Product({ name: 'Product 1', price: 10, isCertified: true });
             await product1.save();
             //runValidations is not a flag supported by Data API, so it should be removed by stargate-mongoose
-            await Product.deleteOne({ name: 'Product 1' }, { runValidations: true } as unknown as Record<string, never>);
+            await Product.deleteOne({ _id: product1._id }, { runValidations: true } as unknown as Record<string, never>);
             const product1Deleted = await Product.findOne({ name: 'Product 1' });
             assert.strictEqual(product1Deleted, null);
         });
@@ -123,7 +129,11 @@ describe('Options tests', async () => {
             const findResp = await Product.find({ }, {}, { rawResult: false, limit : 30 });
             assert.strictEqual(findResp.length, 30);
         });
-        it('should cleanup findOneAndReplaceOptions', async () => {
+        it('should cleanup findOneAndReplaceOptions', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             //create 20 products using Array with id suffixed to prduct name
             const products: ReturnType<(typeof Product)['hydrate']>[] = [];
             for (let i = 0; i < 20; i++) {
@@ -143,7 +153,11 @@ describe('Options tests', async () => {
             assert.strictEqual(product25?.price,20);
             assert.strictEqual(product25?.name,'Product 25');
         });
-        it('should cleanup findOneAndDeleteOptions', async () => {
+        it('should cleanup findOneAndDeleteOptions', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             //create 20 products using Array with id suffixed to prduct name
             const products: ReturnType<(typeof Product)['hydrate']>[] = [];
             for (let i = 0; i < 20; i++) {
@@ -166,7 +180,11 @@ describe('Options tests', async () => {
             assert.strictEqual(product6?.isCertified, true);
             assert.strictEqual(product6?.category, 'cat 6');
         });
-        it('should cleanup findOneAndUpdateOptions', async () => {
+        it('should cleanup findOneAndUpdateOptions', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             //create 20 products using Array with id suffixed to product name
             const products: ReturnType<(typeof Product)['hydrate']>[] = [];
             for (let i = 0; i < 20; i++) {

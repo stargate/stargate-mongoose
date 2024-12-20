@@ -99,6 +99,11 @@ export class Connection extends MongooseConnection {
         return this.db!.listCollections({ nameOnly: false });
     }
 
+    async listTables() {
+        await this._waitForClient();
+        return this.db!.listTables();
+    }
+
     async runCommand(command: Record<string, unknown>): Promise<RawDataAPIResponse> {
         await this._waitForClient();
         return this.db!.command(command);
