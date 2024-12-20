@@ -622,7 +622,11 @@ describe('Mongoose Model API level tests', async () => {
             const findUpdatedDoc = await Product.findOne({category: 'cat 3'});
             assert.strictEqual(findUpdatedDoc?.name, 'Product 3');
         });
-        it('API ops tests Model.updateOne() $push document array', async () => {
+        it('API ops tests Model.updateOne() $push document array', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             const product1 = new Product({
                 name: 'Product 1',
                 price: 10,

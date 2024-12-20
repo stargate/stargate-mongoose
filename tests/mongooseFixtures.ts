@@ -21,7 +21,10 @@ export const productSchema = new Schema({
     expiryDate: Date,
     isCertified: Boolean,
     category: String,
-    tags: [{ _id: false, name: String }]
+    tags: {
+        type: [{ _id: false, name: String }],
+        ...(process.env.DATA_API_TABLES ? { default: undefined } : {})
+    }
 }, process.env.DATA_API_TABLES ? { versionKey: false } : {});
 
 export const mongooseInstance = new Mongoose();
@@ -104,10 +107,8 @@ export async function createMongooseCollections() {
                         expiryDate: { type: 'timestamp' },
                         isCertified: { type: 'boolean' },
                         category: { type: 'text' },
-                        tags: {
-                            type: 'list',
-                            valueType: 'text'
-                        },
+                        // `tags` omitted because no reasonable way to use document arrays in Data API tables
+                        // without converting to strings
                         // Discriminator values
                         url: { type: 'text' },
                         // Extra key for testing strict mode
