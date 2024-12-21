@@ -151,7 +151,7 @@ before(async function connectMongooseFixtures() {
         const options = {
             username: process.env.STARGATE_USERNAME,
             password: process.env.STARGATE_PASSWORD,
-            featureFlags: useTables ? ['Feature-Flag-tables'] : []
+            useTables
         };
         const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
         await mongooseInstance.connect(testClient!.uri, options);

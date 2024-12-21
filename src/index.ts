@@ -27,6 +27,7 @@ declare module 'mongodb' {
 
 declare module 'mongoose' {
   interface ConnectOptions {
+    useTables?: boolean;
     isAstra?: boolean;
     sanitizeFilter?: boolean;
     featureFlags?: string[];

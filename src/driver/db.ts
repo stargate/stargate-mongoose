@@ -15,72 +15,82 @@
 import { Db as AstraDb, RawDataAPIResponse } from '@datastax/astra-db-ts';
 
 export class Db {
-  astraDb: AstraDb;
-  useTables: boolean;
+    astraDb: AstraDb;
+    useTables: boolean;
 
-  constructor(astraDb: AstraDb, keyspaceName: string, useTables?: boolean) {
-      this.astraDb = astraDb;
-      astraDb.useKeyspace(keyspaceName);
-      this.useTables = !!useTables;
-  }
+    constructor(astraDb: AstraDb, keyspaceName: string, useTables?: boolean) {
+        this.astraDb = astraDb;
+        astraDb.useKeyspace(keyspaceName);
+        this.useTables = !!useTables;
+    }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get httpClient(): any {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (this.astraDb as any)._httpClient;
-  }
+    get httpClient(): any {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (this.astraDb as any)._httpClient;
+    }
 
-  /**
+    /**
    * Get a collection by name.
    * @param name The name of the collection.
    */
 
-  collection(name: string) {
-    return this.astraDb.collection(name);
-  }
+    collection(name: string) {
+        // if (this.useTables) {
+        //     return this.astraDb.table(name);
+        // }
+        return this.astraDb.collection(name);
+    }
 
-  /**
+    /**
    * Create a new collection with the specified name and options.
    * @param name The name of the collection to be created.
    * @param options Additional options for creating the collection.
    */
 
-  async createCollection(name: string, options?: Record<string, unknown>) {
-      return this.astraDb.createCollection(name, options);
-  }
+    async createCollection(name: string, options?: Record<string, unknown>) {
+        if (this.useTables) {
+            // No-op because Mongoose's `syncIndexes()` calls `createCollection()`
+            return;
+        }
+        return this.astraDb.createCollection(name, options);
+    }
 
-  /**
+    /**
    * Drop a collection by name.
    * @param name The name of the collection to be dropped.
    */
 
-  async dropCollection(name: string) {
-      return this.astraDb.dropCollection(name);
-  }
+    async dropCollection(name: string) {
+        if (this.useTables) {
+            throw new Error('Cannot dropCollection in tables mode');
+        }
+        return this.astraDb.dropCollection(name);
+    }
 
-  /**
+    /**
    * List all collections in the database.
    * @param options Additional options for listing collections.
    */
 
-  async listCollections(options: Record<string, unknown>) {
-      return this.astraDb.listCollections({ nameOnly: false });
-  }
+    async listCollections(options: Record<string, unknown>) {
+        return this.astraDb.listCollections({ nameOnly: false, ...options });
+    }
 
-  /**
+    /**
    * List all tables in the database.
    */
 
-  async listTables() {
-      return this.astraDb.listTables();
-  }
+    async listTables() {
+        return this.astraDb.listTables();
+    }
 
-  /**
+    /**
    * Execute a command against the database.
    * @param command The command to be executed.
    */
 
-  async command(command: Record<string, unknown>): Promise<RawDataAPIResponse> {
-      return this.astraDb.command(command);
-  }
+    async command(command: Record<string, unknown>): Promise<RawDataAPIResponse> {
+        return this.astraDb.command(command);
+    }
 }

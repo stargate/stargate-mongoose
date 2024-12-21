@@ -26,6 +26,7 @@ import {
 } from '@datastax/astra-db-ts';
 
 interface ConnectOptionsInternal extends ConnectOptions {
+    useTables?: boolean;
     isAstra?: boolean;
     _fireAndForget?: boolean;
     featureFlags?: string[];
@@ -167,8 +168,8 @@ export class Connection extends MongooseConnection {
         const { client, db, admin } = (() => {
             if (options?.isAstra) {
                 const client = new DataAPIClient(applicationToken);
-                const db = new Db(client.db(baseUrl, dbOptions), keyspaceName);
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const db = new Db(client.db(baseUrl, dbOptions), keyspaceName, options?.useTables);
+                 
                 Object.assign(db.httpClient.baseHeaders, featureFlags);
                 return {
                     client,
@@ -187,7 +188,7 @@ export class Connection extends MongooseConnection {
                 new UsernamePasswordTokenProvider(options.username, options.password),
                 { environment: 'dse' }
             );
-            const db = new Db(client.db(baseUrl, dbOptions), keyspaceName);
+            const db = new Db(client.db(baseUrl, dbOptions), keyspaceName, options?.useTables);
             Object.assign(db.httpClient.baseHeaders, featureFlags);
             return {
                 client,
