@@ -36,9 +36,9 @@ export class Db {
    */
 
     collection(name: string) {
-        // if (this.useTables) {
-        //     return this.astraDb.table(name);
-        // }
+        if (this.useTables) {
+            return this.astraDb.table(name);
+        }
         return this.astraDb.collection(name);
     }
 

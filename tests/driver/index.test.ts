@@ -93,11 +93,41 @@ describe('Driver based tests', async () => {
         });
         const Person = mongooseInstance.model('Person', personSchema, TEST_COLLECTION_NAME);
         before(async function () {
-            const collections = await mongooseInstance.connection.listCollections();
-            const collectionNames = collections.map(({ name }) => name);
-            if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
-                await Person.createCollection();
+            const connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+            const tables = await connection.listTables();
+            const tableNames = tables.map(t => t.name);
+
+            if (process.env.DATA_API_TABLES) {
+                await connection.runCommand({
+                    dropTable: { name: TEST_COLLECTION_NAME }
+                });
+                await connection.runCommand({
+                    createTable: {
+                        name: TEST_COLLECTION_NAME,
+                        definition: {
+                            primaryKey: '_id',
+                            columns: {
+                                _id: { type: 'text' },
+                                __v: { type: 'int' },
+                                name: { type: 'text' }
+                            }
+                        }
+                    }
+                });
+            } else {
+                if (tableNames.includes(TEST_COLLECTION_NAME)) {
+                    await connection.runCommand({
+                        dropTable: { name: TEST_COLLECTION_NAME }
+                    });
+                }
+
+                const collections = await mongooseInstance.connection.listCollections();
+                const collectionNames = collections.map(({ name }) => name);
+                if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
+                    await Person.createCollection();
+                }
             }
+            
         });
 
         after(async () => {

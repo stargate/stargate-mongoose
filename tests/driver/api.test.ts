@@ -81,7 +81,11 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(findResponseWithStrictQueryFalse[0].get('extraCol'), 'extra val1');
             assert.strictEqual(findResponseWithStrictQueryFalse[0].name, 'Product 1');
         });
-        it('Data type tests', async () => {
+        it('Data type tests', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            } 
             const modelName = 'User';
             const userSchema = new mongoose.Schema({
                 name: String,
