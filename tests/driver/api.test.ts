@@ -835,14 +835,19 @@ describe('Mongoose Model API level tests', async () => {
 
         before(async function() {
             const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
-            const collections = await connection.listCollections();
-            const vectorCollection = collections.find(coll => coll.name === 'vector');
-            if (!vectorCollection) {
-                await mongooseInstance.connection.dropCollection('vector');
-                await Vector.createCollection();
-            } else if (vectorCollection.definition?.vector?.dimension !== 2 || vectorCollection.definition?.vector?.metric !== 'cosine') {
-                await mongooseInstance.connection.dropCollection('vector');
-                await Vector.createCollection();
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            } else {
+                const collections = await connection.listCollections();
+                const vectorCollection = collections.find(coll => coll.name === 'vector');
+                if (!vectorCollection) {
+                    await mongooseInstance.connection.dropCollection('vector');
+                    await Vector.createCollection();
+                } else if (vectorCollection.definition?.vector?.dimension !== 2 || vectorCollection.definition?.vector?.metric !== 'cosine') {
+                    await mongooseInstance.connection.dropCollection('vector');
+                    await Vector.createCollection();
+                }
             }
         });
 
