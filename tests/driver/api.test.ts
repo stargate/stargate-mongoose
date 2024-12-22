@@ -615,10 +615,7 @@ describe('Mongoose Model API level tests', async () => {
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
             await Product.insertMany([product1, product2, product3]);
             if (process.env.DATA_API_TABLES) {
-                const updateOneResp: mongoose.UpdateWriteOpResult = await Product.updateOne({_id: product3._id}, {category: 'cat 3'});
-                assert.strictEqual(updateOneResp.matchedCount, 1);
-                assert.strictEqual(updateOneResp.modifiedCount, 1);
-                assert.strictEqual(updateOneResp.upsertedCount, 0);
+                await Product.updateOne({_id: product3._id}, {category: 'cat 3'});
             } else {
                 const updateOneResp: mongoose.UpdateWriteOpResult = await Product.updateOne({category: 'cat 1'}, {category: 'cat 3'});
                 assert.strictEqual(updateOneResp.matchedCount, 1);

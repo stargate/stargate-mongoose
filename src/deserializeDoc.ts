@@ -14,5 +14,10 @@ export default function deserializeDoc(doc: Record<string, unknown> | null) {
     if ('$vector' in doc && doc.$vector instanceof DataAPIVector) {
         doc.$vector = doc.$vector.asArray();
     }
+    for (const [key, value] of Object.entries(doc)) {
+        if (value instanceof Map) {
+            doc[key] = Object.fromEntries([...value.entries()]);
+        }
+    }
     return doc;
 }
