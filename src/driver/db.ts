@@ -92,6 +92,18 @@ export class Db {
     }
 
     /**
+     * Drop an index by name
+     * @param name 
+     */
+
+    async dropTableIndex(name: string) {
+        if (!this.useTables) {
+            throw new Error('Cannot dropIndex in collections mode');
+        }
+        return this.astraDb.dropTableIndex(name);
+    }
+
+    /**
      * List all collections in the database.
      * @param options Additional options for listing collections.
      */

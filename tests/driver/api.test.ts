@@ -240,13 +240,16 @@ describe('Mongoose Model API level tests', async () => {
             );
         });
         //castObject skipped as it is not making any database calls
-        it('API ops tests Model.cleanIndexes()', async () => {
-            // @ts-expect-error
-            const promise = Product.cleanIndexes();
-            const error: Error | null = await promise.then(() => null, (error: Error) => error);
-            assert.ok(error instanceof OperationNotSupportedError);
-            //cleanIndexes invokes listIndexes() which is not supported
-            assert.strictEqual(error.message, 'listIndexes() Not Implemented');
+        it('API ops tests Model.cleanIndexes()', async function() {
+            if (process.env.DATA_API_TABLES) {
+                await Product.cleanIndexes();
+            } else {
+                const promise = Product.cleanIndexes();
+                const error: Error | null = await promise.then(() => null, (error: Error) => error);
+                assert.ok(error instanceof OperationNotSupportedError);
+                //cleanIndexes invokes listIndexes() which is not supported
+                assert.strictEqual(error.message, 'listIndexes() Not Implemented');
+            }
         });
         it('API ops tests Model.countDocuments()', async function() {
             if (process.env.DATA_API_TABLES) {
@@ -323,10 +326,14 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(findDeletedDoc, null);
         });
         it('API ops tests Model.diffIndexes()', async () => {
-            const error: Error | null = await Product.diffIndexes().then(() => null, error => error);
-            assert.ok(error);
-            assert.ok(error instanceof OperationNotSupportedError);
-            assert.strictEqual(error.message, 'listIndexes() Not Implemented');
+            if (process.env.DATA_API_TABLES) {
+                await Product.diffIndexes();
+            } else {
+                const error: Error | null = await Product.diffIndexes().then(() => null, error => error);
+                assert.ok(error);
+                assert.ok(error instanceof OperationNotSupportedError);
+                assert.strictEqual(error.message, 'listIndexes() Not Implemented');
+            }
         });
         it('API ops tests Model.discriminator()', async () => {
             //Online products have URL
@@ -530,9 +537,16 @@ describe('Mongoose Model API level tests', async () => {
         });
         //Model.inspect can not be tested since it is a helper for console logging. More info here: https://mongoosejs.com/docs/api/model.html#Model.inspect()
         it('API ops tests Model.listIndexes()', async () => {
-            const error: Error | null = await Product.listIndexes().then(() => null, error => error);
-            assert.ok(error instanceof OperationNotSupportedError);
-            assert.strictEqual(error?.message, 'listIndexes() Not Implemented');
+            if (process.env.DATA_API_TABLES) {
+                const collection = Product.collection as unknown as StargateMongooseDriver.Collection;
+                await collection.createIndex('test_index', 'name');
+                const indexes = await Product.listIndexes();
+                assert.ok(indexes.map(index => index.name).includes('test_index'));
+            } else {
+                const error: Error | null = await Product.listIndexes().then(() => null, error => error);
+                assert.ok(error instanceof OperationNotSupportedError);
+                assert.strictEqual(error?.message, 'listIndexes() Not Implemented');
+            }
         });
         it('API ops tests Model.populate()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
@@ -575,12 +589,14 @@ describe('Mongoose Model API level tests', async () => {
             assert.throws(() => Product.startSession(), { message: 'startSession() Not Implemented' });
         });
         it('API ops tests Model.syncIndexes()', async () => {
-            const error: Error | null = await Product.syncIndexes().then(() => null, error => error);
-            if (!(error instanceof OperationNotSupportedError)) {
-                throw error;
+            if (process.env.DATA_API_TABLES) {
+                await Product.syncIndexes();
+            } else {
+                const error: Error | null = await Product.syncIndexes().then(() => null, error => error);
+                assert.ok(error instanceof OperationNotSupportedError);
+                //since listIndexes is invoked before syncIndexes, the error message will be related to listIndexes
+                assert.strictEqual(error?.message, 'listIndexes() Not Implemented');
             }
-            //since listIndexes is invoked before syncIndexes, the error message will be related to listIndexes
-            assert.strictEqual(error?.message, 'listIndexes() Not Implemented');
         });
         //Mode.translateAliases is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.translateAliases
         it('API ops tests Model.updateMany()', async function() {
