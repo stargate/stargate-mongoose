@@ -248,7 +248,7 @@ describe('Mongoose Model API level tests', async () => {
                 const error: Error | null = await promise.then(() => null, (error: Error) => error);
                 assert.ok(error instanceof OperationNotSupportedError);
                 //cleanIndexes invokes listIndexes() which is not supported
-                assert.strictEqual(error.message, 'listIndexes() Not Implemented');
+                assert.strictEqual(error.message, 'Cannot use listIndexes() with collections');
             }
         });
         it('API ops tests Model.countDocuments()', async function() {
@@ -284,7 +284,7 @@ describe('Mongoose Model API level tests', async () => {
                     Product.schema.index({name: 1});
                     await Product.createIndexes();
                 },
-                { message: 'createIndex() Not Implemented' }
+                { message: 'Cannot use createIndex() with collections' }
             );
         });
         it('API ops tests Model.db', async () => {
@@ -332,7 +332,7 @@ describe('Mongoose Model API level tests', async () => {
                 const error: Error | null = await Product.diffIndexes().then(() => null, error => error);
                 assert.ok(error);
                 assert.ok(error instanceof OperationNotSupportedError);
-                assert.strictEqual(error.message, 'listIndexes() Not Implemented');
+                assert.strictEqual(error.message, 'Cannot use listIndexes() with collections');
             }
         });
         it('API ops tests Model.discriminator()', async () => {
@@ -545,7 +545,7 @@ describe('Mongoose Model API level tests', async () => {
             } else {
                 const error: Error | null = await Product.listIndexes().then(() => null, error => error);
                 assert.ok(error instanceof OperationNotSupportedError);
-                assert.strictEqual(error?.message, 'listIndexes() Not Implemented');
+                assert.strictEqual(error?.message, 'Cannot use listIndexes() with collections');
             }
         });
         it('API ops tests Model.populate()', async () => {
@@ -595,7 +595,7 @@ describe('Mongoose Model API level tests', async () => {
                 const error: Error | null = await Product.syncIndexes().then(() => null, error => error);
                 assert.ok(error instanceof OperationNotSupportedError);
                 //since listIndexes is invoked before syncIndexes, the error message will be related to listIndexes
-                assert.strictEqual(error?.message, 'listIndexes() Not Implemented');
+                assert.strictEqual(error?.message, 'Cannot use listIndexes() with collections');
             }
         });
         //Mode.translateAliases is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.translateAliases
