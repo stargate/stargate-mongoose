@@ -232,15 +232,31 @@ describe('Driver based tests', async () => {
         it('handles reconnecting after disconnecting', async () => {
             const mongooseInstance = await createMongooseInstance();
             const TestModel = mongooseInstance.model('Person', Person.schema, TEST_COLLECTION_NAME);
-            const collectionNames = await TestModel.db.listCollections().then(collections => collections.map(c => c.name));
-            if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
-                await TestModel.createCollection();
+            if (process.env.DATA_API_TABLES) {
+                const db = TestModel.db as unknown as StargateMongooseDriver.Connection;
+                const tableNames = await db.listTables().then(t => t.map(t => t.name));
+                if (!tableNames.includes(TEST_COLLECTION_NAME)) {
+                    await db.createTable(TEST_COLLECTION_NAME, {
+                        primaryKey: '_id',
+                        columns: {
+                            _id: { type: 'text' },
+                            name: { type: 'text' }
+                        }
+                    });
+                }
+            } else {
+                const collectionNames = await TestModel.db.listCollections().then(collections => collections.map(c => c.name));
+                if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
+                    await TestModel.createCollection();
+                }
             }
             await TestModel.findOne();
 
             await mongooseInstance.disconnect();
 
-            const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
+            const options = isAstra
+                ? { isAstra: true, useTables: !!process.env.DATA_API_TABLES }
+                : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, useTables: !!process.env.DATA_API_TABLES };
             await mongooseInstance.connect(dbUri, options);
 
             // Should be able to execute query after reconnecting

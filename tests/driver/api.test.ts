@@ -724,10 +724,8 @@ describe('Mongoose Model API level tests', async () => {
         });
         it('API ops tests collection.runCommand()', async () => {
             const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const res = await (connection.db.collection('carts') as any)._httpClient.executeCommand({ find: {} }, {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                timeoutManager: (connection.db.collection('carts') as any)._httpClient.tm.single('runCommandTimeoutMS', 60_000)
+            const res = await connection.db!.collection('carts')._httpClient.executeCommand({ find: {} }, {
+                timeoutManager: connection.db!.collection('carts')._httpClient.tm.single('runCommandTimeoutMS', 60_000)
             });
             assert.ok(Array.isArray(res.data.documents));
         });

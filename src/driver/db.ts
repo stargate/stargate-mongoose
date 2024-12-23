@@ -24,10 +24,8 @@ export class Db {
         this.useTables = !!useTables;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    get httpClient(): any {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (this.astraDb as any)._httpClient;
+    get httpClient() {
+        return this.astraDb._httpClient;
     }
 
     /**

@@ -342,10 +342,8 @@ export class Collection extends MongooseCollection {
      * @param command
      */
     runCommand(command: Record<string, unknown>) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (this.collection as any)._httpClient.executeCommand(command, {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            timeoutManager: (this.collection as any)._httpClient.tm.single('runCommandTimeoutMS', 60_000)
+        return this.collection._httpClient.executeCommand(command, {
+            timeoutManager: this.collection._httpClient.tm.single('runCommandTimeoutMS', 60_000)
         });
     }
 
