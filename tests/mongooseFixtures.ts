@@ -61,12 +61,8 @@ export async function createMongooseCollections() {
     const tableNames = tables.map(t => t.name);
 
     if (useTables) {
-        await connection.runCommand({
-            dropTable: { name: Cart.collection.collectionName }
-        });
-        await connection.runCommand({
-            dropTable: { name: Product.collection.collectionName }
-        });
+        await connection.db!.dropTable(Cart.collection.collectionName);
+        await connection.db!.dropTable(Product.collection.collectionName);
         await connection.runCommand({
             createTable: {
                 name: Cart.collection.collectionName,

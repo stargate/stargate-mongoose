@@ -57,9 +57,9 @@ export class Db {
     }
 
     /**
-   * Drop a collection by name.
-   * @param name The name of the collection to be dropped.
-   */
+     * Drop a collection by name.
+     * @param name The name of the collection to be dropped.
+     */
 
     async dropCollection(name: string) {
         if (this.useTables) {
@@ -69,26 +69,41 @@ export class Db {
     }
 
     /**
-   * List all collections in the database.
-   * @param options Additional options for listing collections.
-   */
+     * Drop a table by name. This function does **not** throw an error if the table does not exist.
+     * @param name
+     */
+
+    async dropTable(name: string) {
+        return this.astraDb.dropTable(name).catch(err => {
+            // For consistency with Mongoose, ignore errors if the table does not exist.
+            if (err.errorDescriptors?.[0].errorCode === 'CANNOT_DROP_UNKNOWN_TABLE') {
+                return;
+            }
+            throw err;
+        });
+    }
+
+    /**
+     * List all collections in the database.
+     * @param options Additional options for listing collections.
+     */
 
     async listCollections(options: Record<string, unknown>) {
         return this.astraDb.listCollections({ nameOnly: false, ...options });
     }
 
     /**
-   * List all tables in the database.
-   */
+     * List all tables in the database.
+     */
 
     async listTables() {
         return this.astraDb.listTables();
     }
 
     /**
-   * Execute a command against the database.
-   * @param command The command to be executed.
-   */
+     * Execute a command against the database.
+     * @param command The command to be executed.
+     */
 
     async command(command: Record<string, unknown>): Promise<RawDataAPIResponse> {
         return this.astraDb.command(command);

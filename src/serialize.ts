@@ -1,17 +1,32 @@
+// Copyright DataStax, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import { DataAPITimestamp } from '@datastax/astra-db-ts';
 import { Binary, ObjectId, UUID } from 'bson';
 import mongoose from 'mongoose';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function serialize(data: Record<string, any>): Record<string, any> {
+export function serialize(data: Record<string, any>, useTables?: boolean): Record<string, any> {
     return data != null
-        ? applyTransforms(data)
+        ? serializeValue(data, useTables)
         : data;
 }
 
 // Mongoose relies on certain values getting transformed into their BSON equivalents,
 // most notably subdocuments and document arrays. Otherwise `$push` on a document array fails.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyTransforms(data: any): any {
+function serializeValue(data: any, useTables?: boolean): any {
     if (data == null) {
         return data;
     }
@@ -23,6 +38,10 @@ function applyTransforms(data: any): any {
     }
     if (typeof data.toBSON === 'function') {
         data = data.toBSON();
+    }
+
+    if (useTables && data instanceof Date) {
+        return new DataAPITimestamp(data);
     }
 
     if (data instanceof ObjectId) {
@@ -43,13 +62,13 @@ function applyTransforms(data: any): any {
     } else if (data instanceof UUID) {
         return data.toString();
     } else if (Array.isArray(data)) {
-        return data.map(el => applyTransforms(el));
+        return data.map(el => serializeValue(el, useTables));
     } else if (data._bsontype == null) {
         for (const key of Object.keys(data)) {
             if (data[key] == null) {
                 continue;
             } else {
-                data[key] = applyTransforms(data[key]);
+                data[key] = serializeValue(data[key], useTables);
             }
         }
         return data;

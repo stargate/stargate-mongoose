@@ -48,12 +48,16 @@ type UpdateOneOptions = Omit<UpdateOneOptionsInternal, 'sort'> & { sort?: Mongoo
 type NodeCallback<ResultType = unknown> = (err: Error | null, res: ResultType | null) => unknown;
 
 /**
- * Collection operations supported by the driver.
+ * Collection operations supported by the driver. This class is called "Collection" for consistency with Mongoose, because
+ * in Mongoose a Collection is the interface that Models and Queries use to communicate with the database. However, from
+ * an Astra perspective, this class can be a wrapper around a Collection **or** a Table depending on the corresponding db's
+ * `useTables` option.
  */
 export class Collection extends MongooseCollection {
     debugType = 'StargateMongooseCollection';
     _collection?: AstraCollection;
     _closed: boolean;
+    useTables: boolean = false;
 
     constructor(name: string, conn: Connection, options?: { modelName?: string | null }) {
         super(name, conn, options);
@@ -69,6 +73,7 @@ export class Collection extends MongooseCollection {
         const collection = this.conn.db.collection(this.name);
         Object.assign(collection._httpClient.baseHeaders, this.conn.featureFlags);
         this._collection = collection;
+        this.useTables = this.conn.db.useTables;
         return collection;
     }
 
@@ -77,6 +82,9 @@ export class Collection extends MongooseCollection {
      * @param filter
      */
     countDocuments(filter: Record<string, unknown>) {
+        if (this.useTables) {
+            throw new OperationNotSupportedError('Cannot use countDocuments() with tables');
+        }
         filter = serialize(filter);
         return this.collection.countDocuments(filter, 1000);
     }
@@ -90,7 +98,7 @@ export class Collection extends MongooseCollection {
     find(filter: Record<string, unknown>, options?: FindOptions, callback?: NodeCallback<FindCursor<unknown>>) {
         // Weirdness to work around astra-db-ts method overrides
         if (options == null) {
-            filter = serialize(filter);
+            filter = serialize(filter, this.useTables);
             const cursor = this.collection.find(filter).map((doc: Record<string, unknown>) => deserializeDoc(doc));
 
             if (callback != null) {
@@ -102,7 +110,7 @@ export class Collection extends MongooseCollection {
         const requestOptions: FindOptionsInternal = options != null && options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
-        filter = serialize(filter);
+        filter = serialize(filter, this.useTables);
         const cursor = this.collection.find(filter, requestOptions).map((doc: Record<string, unknown>) => deserializeDoc(doc));
 
         if (callback != null) {
@@ -119,7 +127,7 @@ export class Collection extends MongooseCollection {
     async findOne(filter: Record<string, unknown>, options?: FindOneOptions) {
         // Weirdness to work around astra-db-ts method overrides
         if (options == null) {
-            filter = serialize(filter);
+            filter = serialize(filter, this.useTables);
             const doc = await this.collection.findOne(filter);
             return deserializeDoc(doc);
         }
@@ -128,7 +136,7 @@ export class Collection extends MongooseCollection {
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
         
-        filter = serialize(filter);
+        filter = serialize(filter, this.useTables);
         const doc = await this.collection.findOne(filter, requestOptions);
         return deserializeDoc(doc);
     }
@@ -138,7 +146,7 @@ export class Collection extends MongooseCollection {
      * @param doc
      */
     insertOne(doc: Record<string, unknown>) {
-        doc = serialize(doc);
+        doc = serialize(doc, this.useTables);
         return this.collection.insertOne(doc);
     }
 
@@ -148,7 +156,7 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     async insertMany(documents: Record<string, unknown>[], options?: CollectionInsertManyOptions): Promise<CollectionInsertManyResult<Record<string, unknown>>> {
-        documents = documents.map(doc => serialize(doc));
+        documents = documents.map(doc => serialize(doc, this.useTables));
         return this.collection.insertMany(documents, options);
     }
 
@@ -159,6 +167,9 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     async findOneAndUpdate(filter: Record<string, unknown>, update: Record<string, unknown>, options?: FindOneAndUpdateOptions) {
+        if (this.useTables) {
+            throw new OperationNotSupportedError('Cannot use findOneAndUpdate() with tables');
+        }
         let requestOptions: FindOneAndUpdateOptionsInternal | undefined = undefined;
         if (options != null && options.sort != null) {
             requestOptions = { ...options, sort: processSortOption(options.sort) };
@@ -189,6 +200,9 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     async findOneAndDelete(filter: Record<string, unknown>, options?: FindOneAndDeleteOptions) {
+        if (this.useTables) {
+            throw new OperationNotSupportedError('Cannot use findOneAndDelete() with tables');
+        }
         let requestOptions: FindOneAndDeleteOptionsInternal | undefined = undefined;
         if (options != null && options.sort != null) {
             requestOptions = { ...options, sort: processSortOption(options.sort) };
@@ -218,6 +232,9 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     async findOneAndReplace(filter: Record<string, unknown>, newDoc: Record<string, unknown>, options?: FindOneAndReplaceOptions) {
+        if (this.useTables) {
+            throw new OperationNotSupportedError('Cannot use findOneAndReplace() with tables');
+        }
         let requestOptions: FindOneAndReplaceOptionsInternal | undefined = undefined;
         if (options != null && options.sort != null) {
             requestOptions = { ...options, sort: processSortOption(options.sort) };
@@ -247,7 +264,7 @@ export class Collection extends MongooseCollection {
      * @param filter
      */
     deleteMany(filter: Record<string, unknown>) {
-        filter = serialize(filter);
+        filter = serialize(filter, this.useTables);
         return this.collection.deleteMany(filter);
     }
 
@@ -265,7 +282,7 @@ export class Collection extends MongooseCollection {
             requestOptions = { ...options, sort: undefined };
             delete requestOptions.sort;
         } 
-        filter = serialize(filter);
+        filter = serialize(filter, this.useTables);
         const promise = this.collection.deleteOne(filter, requestOptions);
         if (callback != null) {
             promise.then((res: CollectionDeleteOneResult) => callback(null, res), (err: Error) => callback(err, null));
@@ -288,10 +305,14 @@ export class Collection extends MongooseCollection {
             requestOptions = { ...options, sort: undefined };
             delete requestOptions.sort;
         }
-        filter = serialize(filter);
+        filter = serialize(filter, this.useTables);
         setDefaultIdForUpsert(filter, update, requestOptions, false);
-        update = serialize(update);
-        return this.collection.updateOne(filter, update, requestOptions);
+        update = serialize(update, this.useTables);
+        return this.collection.updateOne(filter, update, requestOptions).then(res => {
+            // Mongoose currently has a bug where null response from updateOne() throws an error that we can't
+            // catch here for unknown reasons. See Automattic/mongoose#15126
+            return res ?? {};
+        });
     }
 
     /**
@@ -301,9 +322,9 @@ export class Collection extends MongooseCollection {
      * @param options
      */
     updateMany(filter: Record<string, unknown>, update: Record<string, unknown>, options?: CollectionUpdateManyOptions) {
-        filter = serialize(filter);
+        filter = serialize(filter, this.useTables);
         setDefaultIdForUpsert(filter, update, options, false);
-        update = serialize(update);
+        update = serialize(update, this.useTables);
         return this.collection.updateMany(filter, update, options);
     }
 
@@ -311,6 +332,9 @@ export class Collection extends MongooseCollection {
      * Get the estimated number of documents in a collection based on collection metadata
      */
     estimatedDocumentCount() {
+        if (this.useTables) {
+            throw new OperationNotSupportedError('Cannot use estimatedDocumentCount() with tables');
+        }
         return this.collection.estimatedDocumentCount();
     }
 
