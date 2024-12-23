@@ -71,7 +71,6 @@ export class Collection extends MongooseCollection {
         }
         // Cache because @datastax/astra-db-ts doesn't
         const collection = this.conn.db.collection(this.name);
-        Object.assign(collection._httpClient.baseHeaders, this.conn.featureFlags);
         this._collection = collection;
         this.useTables = this.conn.db.useTables;
         return collection;

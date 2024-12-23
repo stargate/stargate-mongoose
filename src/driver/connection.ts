@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Collection } from './collection';
-import { AstraAdmin, DataAPIDbAdmin, RawDataAPIResponse } from '@datastax/astra-db-ts';
+import { AstraAdmin, CreateTableDefinition, DataAPIDbAdmin, RawDataAPIResponse } from '@datastax/astra-db-ts';
 import { Db } from './db';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
@@ -29,7 +29,6 @@ interface ConnectOptionsInternal extends ConnectOptions {
     useTables?: boolean;
     isAstra?: boolean;
     _fireAndForget?: boolean;
-    featureFlags?: string[];
     username?: string;
     password?: string;
     autoIndex?: boolean;
@@ -78,9 +77,19 @@ export class Connection extends MongooseConnection {
         return this.db!.createCollection(name, options);
     }
 
+    async createTable(name: string, definition: CreateTableDefinition) {
+        await this._waitForClient();
+        return this.db!.createTable(name, definition);
+    }
+
     async dropCollection(name: string) {
         await this._waitForClient();
         return this.db!.dropCollection(name);
+    }
+
+    async dropTable(name: string) {
+        await this._waitForClient();
+        return this.db!.dropTable(name);
     }
 
     async createNamespace(namespace: string) {
@@ -155,11 +164,6 @@ export class Connection extends MongooseConnection {
 
         const { baseUrl, keyspaceName, applicationToken, baseApiPath } = parseUri(uri);
 
-        const featureFlags: Record<string, 'true'> | null = Array.isArray(options && options.featureFlags)
-            ? (options.featureFlags ?? []).reduce((obj: Record<string, 'true'>, key: string) => Object.assign(obj, { [key]: 'true' }), {})
-            : null;
-        this.featureFlags = featureFlags;
-
         const dbOptions = {
             namespace: keyspaceName,
             dataApiPath: baseApiPath
@@ -170,7 +174,6 @@ export class Connection extends MongooseConnection {
                 const client = new DataAPIClient(applicationToken);
                 const db = new Db(client.db(baseUrl, dbOptions), keyspaceName, options?.useTables);
                  
-                Object.assign(db.httpClient.baseHeaders, featureFlags);
                 return {
                     client,
                     db,
@@ -189,7 +192,6 @@ export class Connection extends MongooseConnection {
                 { environment: 'dse' }
             );
             const db = new Db(client.db(baseUrl, dbOptions), keyspaceName, options?.useTables);
-            Object.assign(db.httpClient.baseHeaders, featureFlags);
             return {
                 client,
                 db,

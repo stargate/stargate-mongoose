@@ -61,54 +61,43 @@ export async function createMongooseCollections() {
     const tableNames = tables.map(t => t.name);
 
     if (useTables) {
-        await connection.db!.dropTable(Cart.collection.collectionName);
-        await connection.db!.dropTable(Product.collection.collectionName);
-        await connection.runCommand({
-            createTable: {
-                name: Cart.collection.collectionName,
-                definition: {
-                    primaryKey: '_id',
-                    columns: {
-                        _id: { type: 'text' },
-                        __v: { type: 'int' },
-                        name: { type: 'text' },
-                        cartName: { type: 'text' },
-                        products: {
-                            type: 'list',
-                            valueType: 'text'
-                        },
-                        user: {
-                            type: 'map',
-                            keyType: 'text',
-                            valueType: 'text'
-                        }
-                    }
+        await connection.dropTable(Cart.collection.collectionName);
+        await connection.dropTable(Product.collection.collectionName);
+        await connection.createTable(Cart.collection.collectionName, {
+            primaryKey: '_id',
+            columns: {
+                _id: { type: 'text' },
+                __v: { type: 'int' },
+                name: { type: 'text' },
+                cartName: { type: 'text' },
+                products: {
+                    type: 'list',
+                    valueType: 'text'
+                },
+                user: {
+                    type: 'map',
+                    keyType: 'text',
+                    valueType: 'text'
                 }
             }
         });
-
-        await connection.runCommand({
-            createTable: {
-                name: Product.collection.collectionName,
-                definition: {
-                    primaryKey: '_id',
-                    columns: {
-                        _id: { type: 'text' },
-                        __v: { type: 'int' },
-                        __t: { type: 'text' },
-                        name: { type: 'text' },
-                        price: { type: 'decimal' },
-                        expiryDate: { type: 'timestamp' },
-                        isCertified: { type: 'boolean' },
-                        category: { type: 'text' },
-                        // `tags` omitted because no reasonable way to use document arrays in Data API tables
-                        // without converting to strings
-                        // Discriminator values
-                        url: { type: 'text' },
-                        // Extra key for testing strict mode
-                        extraCol: { type: 'text' }
-                    }
-                }
+        await connection.createTable(Product.collection.collectionName, {
+            primaryKey: '_id',
+            columns: {
+                _id: { type: 'text' },
+                __v: { type: 'int' },
+                __t: { type: 'text' },
+                name: { type: 'text' },
+                price: { type: 'decimal' },
+                expiryDate: { type: 'timestamp' },
+                isCertified: { type: 'boolean' },
+                category: { type: 'text' },
+                // `tags` omitted because no reasonable way to use document arrays in Data API tables
+                // without converting to strings
+                // Discriminator values
+                url: { type: 'text' },
+                // Extra key for testing strict mode
+                extraCol: { type: 'text' }
             }
         });
     } else {
@@ -116,14 +105,10 @@ export async function createMongooseCollections() {
         const collectionNames = collections.map(({ name }) => name);
 
         if (tableNames.includes(Cart.collection.collectionName)) {
-            await connection.runCommand({
-                dropTable: { name: Cart.collection.collectionName }
-            });
+            await connection.dropTable(Cart.collection.collectionName);
         }
         if (tableNames.includes(Product.collection.collectionName)) {
-            await connection.runCommand({
-                dropTable: { name: Product.collection.collectionName }
-            });
+            await connection.dropTable(Product.collection.collectionName);
         }
 
         if (!collectionNames.includes(Cart.collection.collectionName)) {
@@ -147,7 +132,6 @@ before(async function connectMongooseFixtures() {
         const options = {
             username: process.env.STARGATE_USERNAME,
             password: process.env.STARGATE_PASSWORD,
-            featureFlags: useTables ? ['Feature-Flag-tables'] : [],
             useTables
         };
         const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;

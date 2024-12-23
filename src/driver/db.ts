@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Db as AstraDb, RawDataAPIResponse } from '@datastax/astra-db-ts';
+import { Db as AstraDb, CreateTableDefinition, RawDataAPIResponse } from '@datastax/astra-db-ts';
 
 export class Db {
     astraDb: AstraDb;
@@ -31,9 +31,9 @@ export class Db {
     }
 
     /**
-   * Get a collection by name.
-   * @param name The name of the collection.
-   */
+     * Get a collection by name.
+     * @param name The name of the collection.
+     */
 
     collection(name: string) {
         if (this.useTables) {
@@ -43,10 +43,10 @@ export class Db {
     }
 
     /**
-   * Create a new collection with the specified name and options.
-   * @param name The name of the collection to be created.
-   * @param options Additional options for creating the collection.
-   */
+     * Create a new collection with the specified name and options.
+     * @param name The name of the collection to be created.
+     * @param options Additional options for creating the collection.
+     */
 
     async createCollection(name: string, options?: Record<string, unknown>) {
         if (this.useTables) {
@@ -54,6 +54,16 @@ export class Db {
             return;
         }
         return this.astraDb.createCollection(name, options);
+    }
+
+    /**
+     * Create a new table with the specified name and definition
+     * @param name 
+     * @param definition
+     */
+
+    async createTable(name: string, definition: CreateTableDefinition) {
+        return this.astraDb.createTable(name, { definition });
     }
 
     /**

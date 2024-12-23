@@ -741,8 +741,7 @@ describe('Mongoose Model API level tests', async () => {
             mongoose.set('autoIndex', false);
             const options = {
                 username: process.env.STARGATE_USERNAME,
-                password: process.env.STARGATE_PASSWORD,
-                featureFlags: ['Feature-Flag-tables']
+                password: process.env.STARGATE_PASSWORD
             };
             await mongoose.connect(testClient!.uri, options as mongoose.ConnectOptions);
             const connection: StargateMongooseDriver.Connection = mongoose.connection as unknown as StargateMongooseDriver.Connection;
