@@ -24,6 +24,9 @@ export class Db {
         this.useTables = !!useTables;
     }
 
+    /**
+     * Return the raw HTTP client used by astra-db-ts to talk to the db.
+     */
     get httpClient() {
         return this.astraDb._httpClient;
     }
@@ -32,7 +35,6 @@ export class Db {
      * Get a collection by name.
      * @param name The name of the collection.
      */
-
     collection(name: string) {
         if (this.useTables) {
             return this.astraDb.table(name);
@@ -45,7 +47,6 @@ export class Db {
      * @param name The name of the collection to be created.
      * @param options Additional options for creating the collection.
      */
-
     async createCollection(name: string, options?: Record<string, unknown>) {
         if (this.useTables) {
             // No-op because Mongoose's `syncIndexes()` calls `createCollection()`
@@ -68,7 +69,6 @@ export class Db {
      * Drop a collection by name.
      * @param name The name of the collection to be dropped.
      */
-
     async dropCollection(name: string) {
         if (this.useTables) {
             throw new Error('Cannot dropCollection in tables mode');
@@ -80,7 +80,6 @@ export class Db {
      * Drop a table by name. This function does **not** throw an error if the table does not exist.
      * @param name
      */
-
     async dropTable(name: string) {
         return this.astraDb.dropTable(name).catch(err => {
             // For consistency with Mongoose, ignore errors if the table does not exist.
@@ -95,7 +94,6 @@ export class Db {
      * Drop an index by name
      * @param name 
      */
-
     async dropTableIndex(name: string) {
         if (!this.useTables) {
             throw new Error('Cannot dropIndex in collections mode');
@@ -107,7 +105,6 @@ export class Db {
      * List all collections in the database.
      * @param options Additional options for listing collections.
      */
-
     async listCollections(options: Record<string, unknown>) {
         return this.astraDb.listCollections({ nameOnly: false, ...options });
     }
@@ -115,7 +112,6 @@ export class Db {
     /**
      * List all tables in the database.
      */
-
     async listTables() {
         return this.astraDb.listTables();
     }
@@ -124,7 +120,6 @@ export class Db {
      * Execute a command against the database.
      * @param command The command to be executed.
      */
-
     async command(command: Record<string, unknown>): Promise<RawDataAPIResponse> {
         return this.astraDb.command(command);
     }
