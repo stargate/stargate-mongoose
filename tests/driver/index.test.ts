@@ -265,7 +265,11 @@ describe('Driver based tests', async () => {
             await mongooseInstance.disconnect();
         });
           
-        it('handles listCollections()', async () => {
+        it('handles listCollections()', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
             const collections = await mongooseInstance!.connection.listCollections();
             const collectionNames = collections.map(({ name }) => name);
             assert.ok(typeof collectionNames[0] === 'string', collectionNames.join(','));

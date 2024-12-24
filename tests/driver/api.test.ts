@@ -852,6 +852,7 @@ describe('Mongoose Model API level tests', async () => {
                 this.skip();
                 return;
             } else {
+                await connection.dropTable('vector');
                 const collections = await connection.listCollections();
                 const vectorCollection = collections.find(coll => coll.name === 'vector');
                 if (!vectorCollection) {
