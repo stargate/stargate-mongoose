@@ -44,9 +44,8 @@ describe('tables vector search', function() {
             return;
         }
 
-        const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
-        await connection.dropTable('vector');
-        await connection.createTable('vector', {
+        await mongooseInstance.connection.dropTable('vector');
+        await mongooseInstance.connection.createTable('vector', {
             primaryKey: '_id',
             columns: {
                 _id: {
@@ -62,7 +61,7 @@ describe('tables vector search', function() {
             }
         });
 
-        await connection.collection('vector').runCommand({
+        await mongooseInstance.connection.collection('vector').runCommand({
             createVectorIndex: {
                 name: 'vectortables',
                 definition: {
@@ -150,8 +149,7 @@ describe('tables vector search', function() {
         await Vector.
             updateOne(
                 { _id: vectorIds[0] },
-                { $unset: { vector: 1 } },
-                { returnDocument: 'after' }
+                { $unset: { vector: 1 } }
             ).
             orFail();
         const doc = await Vector.findOne({ _id: vectorIds[0] }).orFail();

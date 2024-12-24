@@ -27,7 +27,7 @@ export const productSchema = new Schema({
     }
 }, process.env.DATA_API_TABLES ? { versionKey: false } : {});
 
-export const mongooseInstance = new Mongoose();
+export const mongooseInstance = new Mongoose() as unknown as Omit<Mongoose, 'connection'> & { connection: StargateMongooseDriver.Connection };
 mongooseInstance.setDriver(StargateMongooseDriver);
 mongooseInstance.set('autoCreate', false);
 mongooseInstance.set('autoIndex', false);
@@ -40,7 +40,7 @@ export const Cart = mongooseInstance.model('Cart', cartSchema);
 export const Product = mongooseInstance.model('Product', productSchema);
 
 async function createNamespace() {
-    const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
+    const connection = mongooseInstance.connection;
     return connection.db!.httpClient._request({
         url: connection.baseUrl + '/' + connection.baseApiPath,
         method: 'POST',
@@ -56,14 +56,13 @@ async function createNamespace() {
 export async function createMongooseCollections() {
     await createNamespace();
 
-    const connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
-    const tables = await connection.listTables();
+    const tables = await mongooseInstance.connection.listTables();
     const tableNames = tables.map(t => t.name);
 
     if (useTables) {
-        await connection.dropTable(Cart.collection.collectionName);
-        await connection.dropTable(Product.collection.collectionName);
-        await connection.createTable(Cart.collection.collectionName, {
+        await mongooseInstance.connection.dropTable(Cart.collection.collectionName);
+        await mongooseInstance.connection.dropTable(Product.collection.collectionName);
+        await mongooseInstance.connection.createTable(Cart.collection.collectionName, {
             primaryKey: '_id',
             columns: {
                 _id: { type: 'text' },
@@ -81,7 +80,7 @@ export async function createMongooseCollections() {
                 }
             }
         });
-        await connection.createTable(Product.collection.collectionName, {
+        await mongooseInstance.connection.createTable(Product.collection.collectionName, {
             primaryKey: '_id',
             columns: {
                 _id: { type: 'text' },
@@ -105,10 +104,10 @@ export async function createMongooseCollections() {
         const collectionNames = collections.map(({ name }) => name);
 
         if (tableNames.includes(Cart.collection.collectionName)) {
-            await connection.dropTable(Cart.collection.collectionName);
+            await mongooseInstance.connection.dropTable(Cart.collection.collectionName);
         }
         if (tableNames.includes(Product.collection.collectionName)) {
-            await connection.dropTable(Product.collection.collectionName);
+            await mongooseInstance.connection.dropTable(Product.collection.collectionName);
         }
 
         if (!collectionNames.includes(Cart.collection.collectionName)) {
@@ -134,10 +133,9 @@ before(async function connectMongooseFixtures() {
             password: process.env.STARGATE_PASSWORD,
             useTables
         };
-        const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
         await mongooseInstance.connect(testClient!.uri, options);
         const keyspace = parseUri(testClient!.uri).keyspaceName;
-        await connection.createNamespace(keyspace);
+        await mongooseInstance.connection.createNamespace(keyspace);
     }
 });
 

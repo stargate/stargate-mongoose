@@ -729,19 +729,17 @@ describe('Mongoose Model API level tests', async () => {
             assert.ok(databases.includes(mongooseInstance.connection.db.name));
         });
         it('API ops tests connection.runCommand()', async () => {
-            const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
             if (process.env.DATA_API_TABLES) {
-                const res = await connection.runCommand({ listTables: {} });
+                const res = await mongooseInstance.connection.runCommand({ listTables: {} });
                 assert.ok(res.status?.tables?.includes('carts'));
             } else {
-                const res = await connection.runCommand({ findCollections: {} });
+                const res = await mongooseInstance.connection.runCommand({ findCollections: {} });
                 assert.ok(res.status?.collections?.includes('carts'));
             }
         });
         it('API ops tests collection.runCommand()', async () => {
-            const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
-            const res = await connection.db!.collection('carts')._httpClient.executeCommand({ find: {} }, {
-                timeoutManager: connection.db!.collection('carts')._httpClient.tm.single('runCommandTimeoutMS', 60_000)
+            const res = await mongooseInstance.connection.db!.collection('carts')._httpClient.executeCommand({ find: {} }, {
+                timeoutManager: mongooseInstance.connection.db!.collection('carts')._httpClient.tm.single('runCommandTimeoutMS', 60_000)
             });
             assert.ok(Array.isArray(res.data.documents));
         });
@@ -749,7 +747,7 @@ describe('Mongoose Model API level tests', async () => {
             if (testClient!.isAstra) {
                 return this.skip();
             }
-            const mongoose = new mongooseInstance.Mongoose();
+            const mongoose = new mongooseInstance.Mongoose() ;
             mongoose.setDriver(StargateMongooseDriver);
             mongoose.set('autoCreate', false);
             mongoose.set('autoIndex', false);
@@ -847,13 +845,12 @@ describe('Mongoose Model API level tests', async () => {
         );
 
         before(async function() {
-            const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
             if (process.env.DATA_API_TABLES) {
                 this.skip();
                 return;
             } else {
-                await connection.dropTable('vector');
-                const collections = await connection.listCollections();
+                await mongooseInstance.connection.dropTable('vector');
+                const collections = await mongooseInstance.connection.listCollections();
                 const vectorCollection = collections.find(coll => coll.name === 'vector');
                 if (!vectorCollection) {
                     await mongooseInstance.connection.dropCollection('vector');
@@ -1067,8 +1064,7 @@ describe('Mongoose Model API level tests', async () => {
         });
 
         it('contains vector options in listCollections() output with `explain`', async function() {
-            const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
-            const collections = await connection.listCollections();
+            const collections = await mongooseInstance.connection.listCollections();
             const collection = collections.find(collection => collection.name === 'vector');
             assert.ok(collection, 'Collection named "vector" not found');
             assert.deepStrictEqual(collection.definition, {

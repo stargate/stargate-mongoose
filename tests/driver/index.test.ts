@@ -93,13 +93,12 @@ describe('Driver based tests', async () => {
         });
         const Person = mongooseInstance.model('Person', personSchema, TEST_COLLECTION_NAME);
         before(async function () {
-            const connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
-            const tables = await connection.listTables();
+            const tables = await mongooseInstance.connection.listTables();
             const tableNames = tables.map(t => t.name);
 
             if (process.env.DATA_API_TABLES) {
-                await connection.dropTable(TEST_COLLECTION_NAME);
-                await connection.createTable(TEST_COLLECTION_NAME, {
+                await mongooseInstance.connection.dropTable(TEST_COLLECTION_NAME);
+                await mongooseInstance.connection.createTable(TEST_COLLECTION_NAME, {
                     primaryKey: '_id',
                     columns: {
                         _id: { type: 'text' },
@@ -109,7 +108,7 @@ describe('Driver based tests', async () => {
                 });
             } else {
                 if (tableNames.includes(TEST_COLLECTION_NAME)) {
-                    await connection.dropTable(TEST_COLLECTION_NAME);
+                    await mongooseInstance.connection.dropTable(TEST_COLLECTION_NAME);
                 }
 
                 const collections = await mongooseInstance.connection.listCollections();
