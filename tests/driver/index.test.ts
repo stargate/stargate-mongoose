@@ -98,27 +98,18 @@ describe('Driver based tests', async () => {
             const tableNames = tables.map(t => t.name);
 
             if (process.env.DATA_API_TABLES) {
-                await connection.runCommand({
-                    dropTable: { name: TEST_COLLECTION_NAME }
-                });
-                await connection.runCommand({
-                    createTable: {
-                        name: TEST_COLLECTION_NAME,
-                        definition: {
-                            primaryKey: '_id',
-                            columns: {
-                                _id: { type: 'text' },
-                                __v: { type: 'int' },
-                                name: { type: 'text' }
-                            }
-                        }
+                await connection.dropTable(TEST_COLLECTION_NAME);
+                await connection.createTable(TEST_COLLECTION_NAME, {
+                    primaryKey: '_id',
+                    columns: {
+                        _id: { type: 'text' },
+                        __v: { type: 'int' },
+                        name: { type: 'text' }
                     }
                 });
             } else {
                 if (tableNames.includes(TEST_COLLECTION_NAME)) {
-                    await connection.runCommand({
-                        dropTable: { name: TEST_COLLECTION_NAME }
-                    });
+                    await connection.dropTable(TEST_COLLECTION_NAME);
                 }
 
                 const collections = await mongooseInstance.connection.listCollections();
@@ -132,6 +123,9 @@ describe('Driver based tests', async () => {
 
         after(async () => {
             await Person.deleteMany({});
+            if (!process.env.DATA_API_TABLES) {
+                await mongooseInstance.connection.dropCollection(TEST_COLLECTION_NAME);
+            }
         });
 
         it('handles find cursors', async () => {

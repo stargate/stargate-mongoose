@@ -837,7 +837,7 @@ describe('Mongoose Model API level tests', async () => {
             },
             {
                 collectionOptions: { vector: { dimension: 2, metric: 'cosine' } },
-                autoCreate: true
+                autoCreate: false
             }
         );
         const Vector = mongooseInstance.model(

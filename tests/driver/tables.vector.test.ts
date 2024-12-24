@@ -14,7 +14,7 @@
 
 import assert from 'assert';
 import * as StargateMongooseDriver from '../../src/driver';
-import { Product, Cart, mongooseInstance, productSchema } from '../mongooseFixtures';
+import { mongooseInstance } from '../mongooseFixtures';
 import { once } from 'events';
 import { Schema, Types } from 'mongoose';
 import { FindCursor } from '@datastax/astra-db-ts';
@@ -32,17 +32,16 @@ describe('tables vector search', function() {
             versionKey: false
         }
     );
-    mongooseInstance.deleteModel(/Vector/);
     const Vector = mongooseInstance.model(
-        'Vector',
+        'VectorTable',
         vectorSchema,
         'vector'
     );
 
     before(async function() {
         if (!process.env.DATA_API_TABLES) {
-          this.skip();
-          return;
+            this.skip();
+            return;
         }
 
         const connection: StargateMongooseDriver.Connection = mongooseInstance.connection as unknown as StargateMongooseDriver.Connection;
