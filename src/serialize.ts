@@ -49,6 +49,9 @@ function serializeValue(data: any, useTables?: boolean): any {
     } else if (data instanceof mongoose.Types.Decimal128) {
         //Decimal128 handling
         return Number(data.toString());
+    } else if (data instanceof Date) {
+        // Rely on astra driver to serialize dates
+        return data;
     } else if (data instanceof Map) {
         return Object.fromEntries(data.entries());
     } else if (data instanceof Binary) {
@@ -56,7 +59,8 @@ function serializeValue(data: any, useTables?: boolean): any {
             // UUIDs, no need for explicit `instanceof UUID` check because bson UUID extends Binary
             return data.toString('hex').replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
         }
-        return data.toString('hex');
+        // Store as JSON serialized buffer so Mongoose can deserialize properly.
+        return { type: 'Buffer', data: [...data.buffer] };
     } else if (Array.isArray(data)) {
         return data.map(el => serializeValue(el, useTables));
     } else if (data._bsontype == null) {

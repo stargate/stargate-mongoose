@@ -25,7 +25,7 @@ import {OperationNotSupportedError} from '../../src/driver';
 import { Product, Cart, mongooseInstance, productSchema } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
 import { FindCursor, DataAPIResponseError } from '@datastax/astra-db-ts';
-import { UUID } from 'bson';
+import { Long, UUID } from 'bson';
 
 describe('Mongoose Model API level tests', async () => {
     afterEach(async () => {
@@ -92,7 +92,6 @@ describe('Mongoose Model API level tests', async () => {
                 name: String,
                 age: Number,
                 dob: Date,
-                encData: Buffer,
                 isCertified: Boolean,
                 mixedData: mongoose.Schema.Types.Mixed,
                 employee: mongoose.Schema.Types.ObjectId,
@@ -109,6 +108,8 @@ describe('Mongoose Model API level tests', async () => {
                 uniqueId: Schema.Types.UUID,
                 category: BigInt,
                 documentArray: [{ name: String }],
+                buf: Buffer,
+                long: BigInt,
                 willBeNull: String
             });
             await mongooseInstance.connection.dropTable(TEST_COLLECTION_NAME);
@@ -127,7 +128,6 @@ describe('Mongoose Model API level tests', async () => {
                 name: 'User 1',
                 age: 10,
                 dob: dobVal,
-                //encData: Buffer.from('test'),
                 isCertified: true,
                 mixedData: {a: 1, b: 'test'},
                 employee: employeeIdVal,
@@ -144,6 +144,8 @@ describe('Mongoose Model API level tests', async () => {
                 uniqueId: new UUID(uniqueIdVal),
                 category: BigInt(100),
                 documentArray: [{ name: 'test document array' }],
+                buf: Buffer.from('hello', 'utf8'),
+                long: new Long(99n),
                 willBeNull: null
             }).save();
             assert.strictEqual(saveResponse.name, 'User 1');
@@ -164,6 +166,8 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(saveResponse.uniqueId!.toString(), uniqueIdVal.toString());
             assert.strictEqual(saveResponse.category!.toString(), '100');
             assert.strictEqual(saveResponse.documentArray[0].name, 'test document array');
+            assert.strictEqual(saveResponse.buf!.toString('utf8'), 'hello');
+            assert.strictEqual(saveResponse.long!.toString(), '99');
             assert.strictEqual(saveResponse.willBeNull, null);
             //get record using findOne and verify results
             const findOneResponse = await User.findOne({name: 'User 1'}).orFail();
@@ -185,6 +189,8 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(findOneResponse.uniqueId!.toString(), uniqueIdVal.toString());
             assert.strictEqual(findOneResponse.category!.toString(), '100');
             assert.strictEqual(findOneResponse.documentArray[0].name, 'test document array');
+            assert.strictEqual(findOneResponse.buf!.toString('utf8'), 'hello');
+            assert.strictEqual(findOneResponse.long!.toString(), '99');
             assert.strictEqual(findOneResponse.willBeNull, null);
         });
     });
