@@ -17,7 +17,7 @@ import {
     testClient,
     TEST_COLLECTION_NAME
 } from '../fixtures';
-import mongoose, { Schema, InferSchemaType, InsertManyResult } from 'mongoose';
+import mongoose, { Schema, InferSchemaType, InsertManyResult, Mongoose } from 'mongoose';
 import { once } from 'events';
 import * as StargateMongooseDriver from '../../src/driver';
 import {randomUUID} from 'crypto';
@@ -538,7 +538,7 @@ describe('Mongoose Model API level tests', async () => {
         //Model.inspect can not be tested since it is a helper for console logging. More info here: https://mongoosejs.com/docs/api/model.html#Model.inspect()
         it('API ops tests Model.listIndexes()', async () => {
             if (process.env.DATA_API_TABLES) {
-                const collection = Product.collection as unknown as StargateMongooseDriver.Collection;
+                const collection = mongooseInstance.connection.collection(Product.collection.collectionName);
                 await collection.createIndex('test_index', 'name');
                 const indexes = await Product.listIndexes();
                 assert.ok(indexes.map(index => index.name).includes('test_index'));
@@ -747,7 +747,7 @@ describe('Mongoose Model API level tests', async () => {
             if (testClient!.isAstra) {
                 return this.skip();
             }
-            const mongoose = new mongooseInstance.Mongoose() ;
+            const mongoose = new mongooseInstance.Mongoose() as unknown as Omit<Mongoose, 'connection'> & { connection: StargateMongooseDriver.Connection };
             mongoose.setDriver(StargateMongooseDriver);
             mongoose.set('autoCreate', false);
             mongoose.set('autoIndex', false);
@@ -756,8 +756,7 @@ describe('Mongoose Model API level tests', async () => {
                 password: process.env.STARGATE_PASSWORD
             };
             await mongoose.connect(testClient!.uri, options as mongoose.ConnectOptions);
-            const connection: StargateMongooseDriver.Connection = mongoose.connection as unknown as StargateMongooseDriver.Connection;
-            await connection.runCommand({
+            await mongoose.connection.runCommand({
                 dropTable: { name: 'bots' }
             }).catch(err => {
                 // Ignore if table doesn't already exist
@@ -766,7 +765,7 @@ describe('Mongoose Model API level tests', async () => {
                 }
                 throw err;
             });
-            const res = await connection.runCommand({
+            const res = await mongoose.connection.runCommand({
                 createTable: {
                     name: 'bots',
                     definition: {
@@ -793,7 +792,7 @@ describe('Mongoose Model API level tests', async () => {
                 vector: [Number]
             }, { versionKey: false }));
 
-            const collection = Bot.collection as unknown as StargateMongooseDriver.Collection;
+            const collection = mongoose.connection.collection(Bot.collection.collectionName);
             await collection.runCommand({
                 createVectorIndex: {
                     name: 'vector',
@@ -818,7 +817,7 @@ describe('Mongoose Model API level tests', async () => {
             // assert.deepStrictEqual(closest.get('$sortVector'), [9.9, -9.9]);
             assert.equal(typeof closest.get('$similarity'), 'number');
 
-            await connection.runCommand({
+            await mongoose.connection.runCommand({
                 dropTable: {
                     name: 'bots'
                 }

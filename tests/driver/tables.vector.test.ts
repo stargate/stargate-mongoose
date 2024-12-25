@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import assert from 'assert';
-import * as StargateMongooseDriver from '../../src/driver';
 import { mongooseInstance } from '../mongooseFixtures';
 import { once } from 'events';
 import { Schema, Types } from 'mongoose';

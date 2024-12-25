@@ -226,10 +226,9 @@ describe('Driver based tests', async () => {
             const mongooseInstance = await createMongooseInstance();
             const TestModel = mongooseInstance.model('Person', Person.schema, TEST_COLLECTION_NAME);
             if (process.env.DATA_API_TABLES) {
-                const db = TestModel.db as unknown as StargateMongooseDriver.Connection;
-                const tableNames = await db.listTables().then(t => t.map(t => t.name));
+                const tableNames = await mongooseInstance.connection.listTables().then(t => t.map(t => t.name));
                 if (!tableNames.includes(TEST_COLLECTION_NAME)) {
-                    await db.createTable(TEST_COLLECTION_NAME, {
+                    await mongooseInstance.connection.createTable(TEST_COLLECTION_NAME, {
                         primaryKey: '_id',
                         columns: {
                             _id: { type: 'text' },
@@ -238,7 +237,7 @@ describe('Driver based tests', async () => {
                     });
                 }
             } else {
-                const collectionNames = await TestModel.db.listCollections().then(collections => collections.map(c => c.name));
+                const collectionNames = await mongooseInstance.connection.listCollections().then(collections => collections.map(c => c.name));
                 if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
                     await TestModel.createCollection();
                 }
@@ -269,7 +268,7 @@ describe('Driver based tests', async () => {
         });
 
         async function createMongooseInstance() {
-            const mongooseInstance = new mongoose.Mongoose();
+            const mongooseInstance = new mongoose.Mongoose() as unknown as Omit<mongoose.Mongoose, 'connection'> & { connection: StargateMongooseDriver.Connection };
             mongooseInstance.setDriver(StargateMongooseDriver);
             mongooseInstance.set('autoCreate', false);
             mongooseInstance.set('autoIndex', false);
