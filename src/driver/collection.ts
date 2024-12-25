@@ -33,7 +33,7 @@ import {
     CreateTableIndexOptions
 } from '@datastax/astra-db-ts';
 import { serialize } from '../serialize';
-import deserializeDoc from 'src/deserializeDoc';
+import deserializeDoc from '../deserializeDoc';
 import { Types } from 'mongoose';
 import { Db } from './db';
 

@@ -21,7 +21,7 @@ exports.setDefaultIdForUpsert = setDefaultIdForUpsert;
 const collection_1 = __importDefault(require("mongoose/lib/collection"));
 const astra_db_ts_1 = require("@datastax/astra-db-ts");
 const serialize_1 = require("../serialize");
-const deserializeDoc_1 = __importDefault(require("src/deserializeDoc"));
+const deserializeDoc_1 = __importDefault(require("../deserializeDoc"));
 const mongoose_1 = require("mongoose");
 /**
  * Collection operations supported by the driver. This class is called "Collection" for consistency with Mongoose, because
