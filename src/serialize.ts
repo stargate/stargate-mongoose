@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { DataAPITimestamp } from '@datastax/astra-db-ts';
-import { Binary, ObjectId, UUID } from 'bson';
+import { Binary, ObjectId } from 'bson';
 import mongoose from 'mongoose';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,8 +46,6 @@ function serializeValue(data: any, useTables?: boolean): any {
 
     if (data instanceof ObjectId) {
         return data.toHexString();
-    } else if (data instanceof BigInt) {
-        return data.toString();
     } else if (data instanceof mongoose.Types.Decimal128) {
         //Decimal128 handling
         return Number(data.toString());
@@ -55,21 +53,15 @@ function serializeValue(data: any, useTables?: boolean): any {
         return Object.fromEntries(data.entries());
     } else if (data instanceof Binary) {
         if (data.sub_type === 3 || data.sub_type === 4) {
-            // UUIDs
+            // UUIDs, no need for explicit `instanceof UUID` check because bson UUID extends Binary
             return data.toString('hex').replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
         }
         return data.toString('hex');
-    } else if (data instanceof UUID) {
-        return data.toString();
     } else if (Array.isArray(data)) {
         return data.map(el => serializeValue(el, useTables));
     } else if (data._bsontype == null) {
         for (const key of Object.keys(data)) {
-            if (data[key] == null) {
-                continue;
-            } else {
-                data[key] = serializeValue(data[key], useTables);
-            }
+            data[key] = serializeValue(data[key], useTables);
         }
         return data;
     }

@@ -25,6 +25,7 @@ import {OperationNotSupportedError} from '../../src/driver';
 import { Product, Cart, mongooseInstance, productSchema } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
 import { FindCursor, DataAPIResponseError } from '@datastax/astra-db-ts';
+import { UUID } from 'bson';
 
 describe('Mongoose Model API level tests', async () => {
     afterEach(async () => {
@@ -107,8 +108,10 @@ describe('Mongoose Model API level tests', async () => {
                 },
                 uniqueId: Schema.Types.UUID,
                 category: BigInt,
-                documentArray: [{ name: String }]
+                documentArray: [{ name: String }],
+                willBeNull: String
             });
+            await mongooseInstance.connection.dropTable(TEST_COLLECTION_NAME);
             const User = mongooseInstance.model(modelName, userSchema, TEST_COLLECTION_NAME);
             const collectionNames = await User.db.listCollections().then(collections => collections.map(c => c.name));
             if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
@@ -138,9 +141,10 @@ describe('Mongoose Model API level tests', async () => {
                         state: 'state 1'
                     }
                 },
-                uniqueId: uniqueIdVal,
+                uniqueId: new UUID(uniqueIdVal),
                 category: BigInt(100),
-                documentArray: [{ name: 'test document array' }]
+                documentArray: [{ name: 'test document array' }],
+                willBeNull: null
             }).save();
             assert.strictEqual(saveResponse.name, 'User 1');
             assert.strictEqual(saveResponse.age, 10);
@@ -160,6 +164,7 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(saveResponse.uniqueId!.toString(), uniqueIdVal.toString());
             assert.strictEqual(saveResponse.category!.toString(), '100');
             assert.strictEqual(saveResponse.documentArray[0].name, 'test document array');
+            assert.strictEqual(saveResponse.willBeNull, null);
             //get record using findOne and verify results
             const findOneResponse = await User.findOne({name: 'User 1'}).orFail();
             assert.strictEqual(findOneResponse.name, 'User 1');
@@ -180,6 +185,7 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(findOneResponse.uniqueId!.toString(), uniqueIdVal.toString());
             assert.strictEqual(findOneResponse.category!.toString(), '100');
             assert.strictEqual(findOneResponse.documentArray[0].name, 'test document array');
+            assert.strictEqual(findOneResponse.willBeNull, null);
         });
     });
     describe('API tests', () => {
