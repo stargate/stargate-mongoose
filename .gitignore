@@ -3,6 +3,7 @@ node_modules
 .env
 .nyc_output
 .vscode
-dist
+# Temporarily commented out for dev purposes
+# dist
 package-lock.json
 .idea
