@@ -653,6 +653,12 @@ describe('Mongoose Model API level tests', async () => {
             const findUpdatedDoc = await Product.findOne({category: 'cat 3'});
             assert.strictEqual(findUpdatedDoc?.name, 'Product 3');
         });
+        it('API ops tests Model.updateOne() with upsert', async function() {
+            const _id = new mongoose.Types.ObjectId();
+            await Product.updateOne({ _id }, { name: 'Product upsert' }, { upsert: true });
+            const doc = await Product.findOne({ _id }).orFail();
+            assert.strictEqual(doc.name, 'Product upsert');
+        });
         it('API ops tests Model.updateOne() $push document array', async function() {
             if (process.env.DATA_API_TABLES) {
                 this.skip();

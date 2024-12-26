@@ -59,14 +59,13 @@ export class Collection extends MongooseCollection {
     debugType = 'StargateMongooseCollection';
     _collection?: AstraCollection | AstraTable<Record<string, unknown>>;
     _closed: boolean;
-    useTables: boolean = false;
 
     constructor(name: string, conn: Connection, options?: { modelName?: string | null }) {
         super(name, conn, options);
         this._closed = false;
     }
 
-    //getter for collection
+    // Get the collection or table. Cache the result so we don't recreate collection/table every time.
     get collection(): AstraCollection | AstraTable<Record<string, unknown>> {
         if (this._collection != null) {
             return this._collection;
@@ -75,8 +74,12 @@ export class Collection extends MongooseCollection {
         // Cache because @datastax/astra-db-ts doesn't
         const collection = db.collection(this.name);
         this._collection = collection;
-        this.useTables = this.conn.db.useTables;
         return collection;
+    }
+
+    // Get whether the underlying Astra store is a table or a collection
+    get useTables() {
+        return this.conn.db.useTables;
     }
 
     /**

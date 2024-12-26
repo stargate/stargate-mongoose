@@ -1,4 +1,4 @@
-import { DataAPIVector } from '@datastax/astra-db-ts';
+import { DataAPIBlob, DataAPIVector } from '@datastax/astra-db-ts';
 
 /**
  * Transforms astra-db-ts document results into something Mongoose can deserialize:
@@ -17,6 +17,9 @@ export default function deserializeDoc(doc: Record<string, unknown> | null) {
     for (const [key, value] of Object.entries(doc)) {
         if (value instanceof DataAPIVector) {
             doc[key] = value.asArray();
+        }
+        if (value instanceof DataAPIBlob) {
+            doc[key] = value.asBuffer();
         }
         if (value instanceof Map) {
             doc[key] = Object.fromEntries([...value.entries()]);

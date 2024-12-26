@@ -31,6 +31,9 @@ function serializeValue(data: any, useTables?: boolean): any {
         return data;
     }
     if (typeof data === 'bigint') {
+        if (useTables) {
+            throw new Error('Cannot serialize BigInt in tables mode');
+        }
         return data.toString();
     }
     if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
@@ -59,16 +62,18 @@ function serializeValue(data: any, useTables?: boolean): any {
             // UUIDs, no need for explicit `instanceof UUID` check because bson UUID extends Binary
             return data.toString('hex').replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
         }
+        // Tables support `$binary` for storing blobs, but collections do not.
+        if (useTables) {
+            return { $binary: data.toString('base64') };
+        }
         // Store as JSON serialized buffer so Mongoose can deserialize properly.
         return { type: 'Buffer', data: [...data.buffer] };
     } else if (Array.isArray(data)) {
         return data.map(el => serializeValue(el, useTables));
-    } else if (data._bsontype == null) {
+    } else {
         for (const key of Object.keys(data)) {
             data[key] = serializeValue(data[key], useTables);
         }
         return data;
     }
-
-    return data;
 }
