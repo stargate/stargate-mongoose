@@ -9,13 +9,21 @@ import type { Schema, Query } from 'mongoose';
 export function handleVectorFieldsProjection(this: Query<unknown, unknown>, schema: Schema) {
     schema.pre(['find', 'findOne', 'findOneAndUpdate', 'findOneAndReplace', 'findOneAndDelete'], function() {
         const projection = this.projection();
+        const $vector = this.model.schema.paths['$vector'];
+        const $vectorize = this.model.schema.paths['$vectorize'];
+
         if (projection != null) {
             if (Object.keys(projection).length === 1 && projection['*']) {
+                // If schema has `select: true` for $vector or $vectorize, select: '*' will break with
+                // "wildcard ('*') only allowed as the only root-level path" error because Mongoose will
+                // add `$vector: 1` or `$vectorize: 1`. As a workaround, replace '*: 1' with including
+                // vector and vectorize.
+                if ($vector?.options?.select || $vectorize?.options?.select) {
+                    this.projection({ $vector: 1, $vectorize: 1 });
+                }
                 return;
             }
         }
-        const $vector = this.model.schema.paths['$vector'];
-        const $vectorize = this.model.schema.paths['$vectorize'];
         if ($vector?.options?.select && (projection == null || !('$vector' in projection))) {
             this.projection({ ...projection, $vector: 1 });
         }

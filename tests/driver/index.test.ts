@@ -67,6 +67,14 @@ describe('Driver based tests', async () => {
                 }, {returnDocument: 'after'}).exec();
                 assert.strictEqual(findOneAndReplaceResp!.name, 'My Cart 2');
                 assert.strictEqual(findOneAndReplaceResp!.cartName, 'wewson1');
+
+                const withMetadata = await Cart.findOneAndReplace(
+                    {cartName: 'wewson1'},
+                    {name: 'My Cart 3', cartName: 'wewson1'},
+                    {returnDocument: 'after', includeResultMetadata: true}
+                ).exec();
+                assert.strictEqual(withMetadata.value!.name, 'My Cart 3');
+                assert.strictEqual(withMetadata.value!.cartName, 'wewson1');
             } else {
                 await Cart.updateOne({_id: cart._id}, {
                     name: 'My Cart 2',

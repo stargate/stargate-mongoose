@@ -14,11 +14,9 @@
 
 import assert from 'assert';
 import { mongooseInstance } from '../mongooseFixtures';
-import { once } from 'events';
 import { Schema, Types } from 'mongoose';
-import { FindCursor } from '@datastax/astra-db-ts';
 import { randomUUID } from 'crypto';
-import { Long, UUID } from 'bson';
+import { UUID } from 'bson';
 
 const TEST_TABLE_NAME = 'table1';
 

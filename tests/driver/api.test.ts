@@ -427,6 +427,11 @@ describe('Mongoose Model API level tests', async () => {
                 assert.strictEqual(nameArray.has(doc.name), true);
                 nameArray.delete(doc.name);
             }
+
+            // Supports callbacks because some older versions of Mongoose require callbacks.
+            /*await new Promise((resolve, reject) => {
+
+            });*/
         });
         it('API ops tests Model.findById()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
@@ -480,6 +485,34 @@ describe('Mongoose Model API level tests', async () => {
             //check if it exists again
             const findDeletedDoc = await Product.findOne({category: 'cat 1'});
             assert.strictEqual(findDeletedDoc, null);
+
+            const withMetadata = await Product.findOneAndDelete(
+                {name: 'Product 1'},
+                {includeResultMetadata: true}
+            );
+            assert.strictEqual(withMetadata.value!.name, 'Product 1');
+            assert.strictEqual(withMetadata.value!.category, 'cat 2');
+        });
+        it('API ops tests Model.findOneAndReplace()', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
+            const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
+            const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
+            await Product.insertMany([product1, product2, product3]);
+            const replaceResp = await Product.findOneAndReplace({category: 'cat 1'}, {name: 'Product 17'}, {returnDocument: 'after'});
+            assert.strictEqual(replaceResp!.category, undefined);
+            assert.strictEqual(replaceResp!.name, 'Product 17');
+
+            const withMetadata = await Product.findOneAndReplace(
+                {name: 'Product 17'},
+                { category: 'cat 3', name: 'Product 18'},
+                {includeResultMetadata: true, returnDocument: 'after'}
+            );
+            assert.strictEqual(withMetadata.value!.name, 'Product 18');
+            assert.strictEqual(withMetadata.value!.category, 'cat 3');
         });
         it('API ops tests Model.findOneAndUpdate()', async function() {
             if (process.env.DATA_API_TABLES) {
@@ -494,6 +527,13 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(updateResp?.category, 'cat 1');
             const findOneResp = await Product.findOne({category: 'cat 1'});
             assert.strictEqual(findOneResp?.name, 'Product 4');
+
+            const withMetadata = await Product.findOneAndUpdate(
+                {category: 'cat 1'},
+                {name: 'Product 42'},
+                {includeResultMetadata: true, returnDocument: 'after'}
+            );
+            assert.strictEqual(withMetadata.value!.name, 'Product 42');
         });
         it('API ops tests Model.insertMany()', async () => {
             const product1Id = new mongoose.Types.ObjectId('0'.repeat(24));
@@ -922,6 +962,12 @@ describe('Mongoose Model API level tests', async () => {
             const res = await Vector.find({}, null, { includeSimilarity: true }).sort({ $vector: { $meta: [1, 99] } });
             assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 1', 'Test vector 2']);
             assert.deepStrictEqual(res.map(doc => doc.get('$similarity')), [1, 0.51004946]);
+        });
+
+        it('works with select: *', async function() {
+            const res = await Vector.findOne({}, { '*': 1 }).sort({ $vector: { $meta: [1, 99] } }).orFail();
+            assert.strictEqual(res.name, 'Test vector 1');
+            assert.deepStrictEqual(res.$vector, [1, 100]);
         });
 
         it('supports sort() with includeSortVector in find()', async function() {
