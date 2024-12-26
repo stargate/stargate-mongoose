@@ -68,7 +68,7 @@ export class Connection extends MongooseConnection {
             const shouldWaitForClient = (this.readyState === STATES.connecting || this.readyState === STATES.disconnected) && this._shouldBufferCommands();
             if (shouldWaitForClient) {
                 this._queue.push({ fn: resolve });
-            } else if (this.readyState === STATES.disconnected && this.db == null) {
+            } else if (this.readyState === STATES.disconnected) {
                 reject(new Error('Connection is disconnected'));
             } else {
                 resolve();

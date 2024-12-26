@@ -49,8 +49,7 @@ export class Db {
      */
     async createCollection(name: string, options?: Record<string, unknown>) {
         if (this.useTables) {
-            // No-op because Mongoose's `syncIndexes()` calls `createCollection()`
-            return;
+            throw new Error('Cannot createCollection in tables mode');
         }
         return this.astraDb.createCollection(name, options);
     }
@@ -96,7 +95,7 @@ export class Db {
      */
     async dropTableIndex(name: string) {
         if (!this.useTables) {
-            throw new Error('Cannot dropIndex in collections mode');
+            throw new Error('Cannot dropTableIndex in collections mode');
         }
         return this.astraDb.dropTableIndex(name);
     }

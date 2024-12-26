@@ -513,6 +513,14 @@ describe('Mongoose Model API level tests', async () => {
             );
             assert.strictEqual(withMetadata.value!.name, 'Product 18');
             assert.strictEqual(withMetadata.value!.category, 'cat 3');
+
+            let doc = await Product.findOneAndReplace({_id: product2._id}, {name: 'Product 19'}, {returnDocument: 'after'});
+            assert.strictEqual(doc!.name, 'Product 19');
+            assert.strictEqual(doc!.category, undefined);
+
+            doc = await Product.findOneAndReplace({name: 'Product 19'}, {_id: product2._id, name: 'Product 20'}, {returnDocument: 'after', upsert: true});
+            assert.strictEqual(doc!.name, 'Product 20');
+            assert.strictEqual(doc!.category, undefined);
         });
         it('API ops tests Model.findOneAndUpdate()', async function() {
             if (process.env.DATA_API_TABLES) {
@@ -642,7 +650,7 @@ describe('Mongoose Model API level tests', async () => {
         });
         it('API ops tests Model.syncIndexes()', async () => {
             if (process.env.DATA_API_TABLES) {
-                await Product.syncIndexes();
+                await assert.rejects(Product.syncIndexes(), /Cannot createCollection in tables mode/);
             } else {
                 const error: Error | null = await Product.syncIndexes().then(() => null, error => error);
                 assert.ok(error instanceof OperationNotSupportedError);
@@ -696,8 +704,19 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests Model.updateOne() with upsert', async function() {
             const _id = new mongoose.Types.ObjectId();
             await Product.updateOne({ _id }, { name: 'Product upsert' }, { upsert: true });
-            const doc = await Product.findOne({ _id }).orFail();
+            let doc = await Product.findOne({ _id }).orFail();
             assert.strictEqual(doc.name, 'Product upsert');
+
+            if (!process.env.DATA_API_TABLES) {
+                await Product.updateOne(
+                    { name: 'test product 1' },
+                    { $set: { name: 'Product upsert 2', price: 16 } },
+                    { upsert: true, setDefaultsOnInsert: false }
+                );
+                doc = await Product.findOne({ name: 'Product upsert 2' }).orFail();
+                assert.strictEqual(doc.name, 'Product upsert 2');
+                assert.strictEqual(doc.price, 16);
+            }
         });
         it('API ops tests Model.updateOne() $push document array', async function() {
             if (process.env.DATA_API_TABLES) {
@@ -881,6 +900,71 @@ describe('Mongoose Model API level tests', async () => {
                 }
             });
             await mongoose.disconnect();
+        });
+        it('API ops tests createConnection() with uri and options', async function() {
+            const connection = mongooseInstance.createConnection(testClient!.uri, testClient!.options) as unknown as StargateMongooseDriver.Connection;
+            await connection.asPromise();
+            const promise = process.env.DATA_API_TABLES ? connection.listTables() : connection.listCollections();
+            assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
+
+            await assert.rejects(
+                mongooseInstance.createConnection('invalid url', testClient!.options).asPromise(),
+                /Invalid URL/
+            );
+
+            await assert.rejects(
+                mongooseInstance.createConnection('', testClient!.options).asPromise(),
+                /Invalid URI: keyspace is required/
+            );
+
+            await assert.rejects(
+                mongooseInstance.createConnection('http://localhost:8181', testClient!.options).asPromise(),
+                /Invalid URI: keyspace is required/
+            );
+
+            await assert.rejects(
+                mongooseInstance.createConnection('https://apps.astra.datastax.com/api/json/v1/test?applicationToken=test1&applicationToken=test2', testClient!.options).asPromise(),
+                /Invalid URI: multiple application tokens/
+            );
+
+            await assert.rejects(
+                mongooseInstance.createConnection('https://apps.astra.datastax.com/api/json/v1/test?authHeaderName=test1&authHeaderName=test2', testClient!.options).asPromise(),
+                /Invalid URI: multiple application auth header names/
+            );
+        });
+        it('API ops tests createConnection() with queueing', async function() {
+            const connection = mongooseInstance.createConnection() as unknown as StargateMongooseDriver.Connection;
+            const promise = process.env.DATA_API_TABLES ? connection.listTables() : connection.listCollections();
+
+            await connection.openUri(testClient!.uri, testClient!.options);
+            assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
+        });
+        it('API ops tests createConnection() with no buffering', async function() {
+            const connection = mongooseInstance.createConnection(testClient!.uri, { ...testClient!.options, bufferCommands: false }) as unknown as StargateMongooseDriver.Connection;
+            await connection.asPromise();
+            await connection.close();
+            await assert.rejects(connection.listCollections(), /Connection is disconnected/);
+        });
+        it('API ops tests dropIndex()', async function() {
+            if (process.env.DATA_API_TABLES) {
+                const collection = mongooseInstance.connection.collection(Product.collection.collectionName);
+                await collection.createIndex('test_index', 'name');
+                let indexes = await Product.listIndexes();
+                assert.ok(indexes.map(index => index.name).includes('test_index'));
+
+                await collection.dropIndex('test_index');
+                indexes = await Product.listIndexes();
+                assert.ok(!indexes.map(index => index.name).includes('test_index'));
+            } else {
+                await assert.rejects(
+                    mongooseInstance.connection.collection(Product.collection.collectionName).dropIndex('sample index name'),
+                    /Cannot use dropIndex\(\) with collections/
+                );
+                await assert.rejects(
+                    mongooseInstance.connection.db!.dropTableIndex(Product.collection.collectionName),
+                    /Cannot dropTableIndex in collections mode/
+                );
+            }
         });
     });
 

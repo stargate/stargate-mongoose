@@ -21,6 +21,19 @@ import { UUID } from 'bson';
 const TEST_TABLE_NAME = 'table1';
 
 describe('tables', function() {
+    it('createTable() and dropTable()', async function() {
+        await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+
+        await mongooseInstance.connection.createTable(TEST_TABLE_NAME, { primaryKey: '_id', columns: { _id: 'text' } });
+        const tableNames = await mongooseInstance.connection.listTables().then(tables => tables.map(t => t.name));
+        assert.ok(tableNames.includes(TEST_TABLE_NAME));
+        await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+
+        // Dropping non-existent table is a no-op
+        await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+
+        await assert.rejects(mongooseInstance.connection.dropTable(''), /^DataAPI.*Error/);
+    });
     it('Data type tests', async function() {
         if (!process.env.DATA_API_TABLES) {
             this.skip();

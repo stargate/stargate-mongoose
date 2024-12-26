@@ -24,11 +24,15 @@ export function handleVectorFieldsProjection(this: Query<unknown, unknown>, sche
                 return;
             }
         }
-        if ($vector?.options?.select && (projection == null || !('$vector' in projection))) {
+        if ($vector?.options?.select && projectionDoesNotHaveProperty(projection, '$vector')) {
             this.projection({ ...projection, $vector: 1 });
         }
-        if ($vectorize?.options?.select && (projection == null || !('$vectorize' in projection))) {
+        if ($vectorize?.options?.select && projectionDoesNotHaveProperty(projection, '$vectorize')) {
             this.projection({ ...projection, $vectorize: 1 });
         }
     });
+}
+
+function projectionDoesNotHaveProperty(projection: Record<string, unknown>, property: string) {
+    return projection == null || !(property in projection);
 }

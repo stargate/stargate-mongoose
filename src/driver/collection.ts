@@ -17,7 +17,6 @@ import type { Connection } from './connection';
 import {
     Collection as AstraCollection,
     CollectionDeleteOneOptions as DeleteOneOptionsInternal,
-    CollectionDeleteOneResult,
     CollectionFindOptions as FindOptionsInternal,
     CollectionFindOneAndDeleteOptions as FindOneAndDeleteOptionsInternal,
     CollectionFindOneAndReplaceOptions as FindOneAndReplaceOptionsInternal,
@@ -45,8 +44,6 @@ type FindOneAndDeleteOptions = Omit<FindOneAndDeleteOptionsInternal, 'sort'> & {
 type FindOneAndReplaceOptions = Omit<FindOneAndReplaceOptionsInternal, 'sort'> & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
 type DeleteOneOptions = Omit<DeleteOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
 type UpdateOneOptions = Omit<UpdateOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
-
-type NodeCallback<ResultType = unknown> = (err: Error | null, res: ResultType | null) => unknown;
 
 /**
  * Collection operations supported by the driver. This class is called "Collection" for consistency with Mongoose, because
@@ -107,12 +104,9 @@ export class Collection extends MongooseCollection {
         
         // Weirdness to work around astra-db-ts method overrides: `find()` with `projection: never` means we need a separate branch
         if (this.collection instanceof AstraTable) {
-            const cursor = this.collection.find(filter, requestOptions).map((doc: Record<string, unknown>) => deserializeDoc(doc));
-
-            return cursor;
+            return this.collection.find(filter, requestOptions).map((doc: Record<string, unknown>) => deserializeDoc(doc));
         } else {
-            const cursor = this.collection.find(filter, requestOptions).map((doc: Record<string, unknown>) => deserializeDoc(doc));
-            return cursor;
+            return this.collection.find(filter, requestOptions).map((doc: Record<string, unknown>) => deserializeDoc(doc));
         }
     }
 
@@ -137,11 +131,9 @@ export class Collection extends MongooseCollection {
 
         // Weirdness to work around astra-db-ts method overrides: `findOne()` with `projection: never` means we need a separate branch
         if (this.collection instanceof AstraTable) {
-            const doc = await this.collection.findOne(filter, requestOptions);
-            return deserializeDoc(doc);
+            return this.collection.findOne(filter, requestOptions).then(doc => deserializeDoc(doc));
         } else {
-            const doc = await this.collection.findOne(filter, requestOptions);
-            return deserializeDoc(doc);
+            return this.collection.findOne(filter, requestOptions).then(doc => deserializeDoc(doc));
         }
     }
 
@@ -266,17 +258,12 @@ export class Collection extends MongooseCollection {
      * @param options
      * @param callback
      */
-    deleteOne(filter: Record<string, unknown>, options: DeleteOneOptions, callback?: NodeCallback<CollectionDeleteOneResult | void>) {
+    deleteOne(filter: Record<string, unknown>, options: DeleteOneOptions) {
         const requestOptions: DeleteOneOptionsInternal = options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
         filter = serialize(filter, this.useTables);
-        const promise = this.collection.deleteOne(filter, requestOptions);
-        if (callback != null) {
-            promise.then((res: CollectionDeleteOneResult | void) => callback(null, res), (err: Error) => callback(err, null));
-        }
-
-        return promise;
+        return this.collection.deleteOne(filter, requestOptions);
     }
 
     /**
@@ -351,15 +338,6 @@ export class Collection extends MongooseCollection {
      */
     aggregate(_pipeline: Record<string, unknown>[], _options?: Record<string, unknown>) {
         throw new OperationNotSupportedError('aggregate() Not Implemented');
-    }
-
-    /**
-     * Bulk Save not supported.
-     * @param docs
-     * @param options
-     */
-    bulkSave(_docs: Record<string, unknown>[], _options?: Record<string, unknown>) {
-        throw new OperationNotSupportedError('bulkSave() Not Implemented');
     }
 
     /**

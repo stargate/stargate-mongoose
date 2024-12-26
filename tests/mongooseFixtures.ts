@@ -25,7 +25,7 @@ export const productSchema = new Schema({
         type: [{ _id: false, name: String }],
         ...(process.env.DATA_API_TABLES ? { default: undefined } : {})
     }
-}, process.env.DATA_API_TABLES ? { versionKey: false } : {});
+}, { versionKey: false });
 
 export const mongooseInstance = new Mongoose() as unknown as Omit<Mongoose, 'connection'> & { connection: StargateMongooseDriver.Connection };
 mongooseInstance.setDriver(StargateMongooseDriver);
@@ -126,14 +126,9 @@ export async function createMongooseCollections() {
 before(async function connectMongooseFixtures() {
     if (isAstra) {
     // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
-        await mongooseInstance.connect(testClient.uri, {isAstra: true});
+        await mongooseInstance.connect(testClient.uri, testClient.options);
     } else {
-        const options = {
-            username: process.env.STARGATE_USERNAME,
-            password: process.env.STARGATE_PASSWORD,
-            useTables
-        };
-        await mongooseInstance.connect(testClient!.uri, options);
+        await mongooseInstance.connect(testClient!.uri, testClient!.options);
         const keyspace = parseUri(testClient!.uri).keyspaceName;
         await mongooseInstance.connection.createNamespace(keyspace);
     }
