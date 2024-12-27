@@ -16,6 +16,9 @@ import { Db as AstraDb, CreateTableDefinition, RawDataAPIResponse } from '@datas
 
 export class Db {
     astraDb: AstraDb;
+    // Whether we're using "tables mode" or "collections mode". If tables mode, then `collection()` returns
+    // a Table instance, **not** a Collection instance. Also, if tables mode, `createCollection()` throws an
+    // error for Mongoose `syncIndexes()` compatibility reasons.
     useTables: boolean;
 
     constructor(astraDb: AstraDb, keyspaceName: string, useTables?: boolean) {
@@ -69,9 +72,6 @@ export class Db {
      * @param name The name of the collection to be dropped.
      */
     async dropCollection(name: string) {
-        if (this.useTables) {
-            throw new Error('Cannot dropCollection in tables mode');
-        }
         return this.astraDb.dropCollection(name);
     }
 
@@ -87,17 +87,6 @@ export class Db {
             }
             throw err;
         });
-    }
-
-    /**
-     * Drop an index by name
-     * @param name 
-     */
-    async dropTableIndex(name: string) {
-        if (!this.useTables) {
-            throw new Error('Cannot dropTableIndex in collections mode');
-        }
-        return this.astraDb.dropTableIndex(name);
     }
 
     /**

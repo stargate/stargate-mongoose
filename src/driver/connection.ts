@@ -81,7 +81,7 @@ export class Connection extends MongooseConnection {
      * @param name
      * @param options
      */
-    collection(name: string, options?: { modelName?: string }) {
+    collection(name: string, options?: { modelName?: string }): Collection {
         if (!(name in this.collections)) {
             this.collections[name] = new Collection(name, this, options);
         }
@@ -235,20 +235,15 @@ export class Connection extends MongooseConnection {
         const { client, db, admin } = (() => {
             if (options?.isAstra) {
                 const client = new DataAPIClient(applicationToken);
-                const db = new Db(client.db(baseUrl, dbOptions), keyspaceName, options?.useTables);
-                 
                 return {
                     client,
-                    db,
+                    db: new Db(client.db(baseUrl, dbOptions), keyspaceName, options?.useTables),
                     admin: client.admin({ adminToken: applicationToken })
                 };
             }
 
-            if (options?.username == null) {
-                throw new Error('Username and password are required when connecting to Astra');
-            }
-            if (options?.password == null) {
-                throw new Error('Username and password are required when connecting to Astra');
+            if (options?.username == null || options?.password == null) {
+                throw new Error('Username and password are required when connecting to self-hosted DSE');
             }
             const client = new DataAPIClient(
                 new UsernamePasswordTokenProvider(options.username, options.password),

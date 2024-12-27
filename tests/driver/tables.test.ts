@@ -34,6 +34,35 @@ describe('tables', function() {
 
         await assert.rejects(mongooseInstance.connection.dropTable(''), /^DataAPI.*Error/);
     });
+    it('schema indexes', async function() {
+        if (!process.env.DATA_API_TABLES) {
+            this.skip();
+            return;
+        }
+
+        await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+        await mongooseInstance.connection.createTable(TEST_TABLE_NAME, { primaryKey: '_id', columns: { _id: 'text', testProperty: 'text' } });
+
+        const testSchema = new Schema({ testProperty: { type: String, index: true } });
+        const TestModel = mongooseInstance.model('Test', testSchema, TEST_TABLE_NAME);
+        await TestModel.createIndexes();
+        let indexes = await mongooseInstance.connection.collection(TEST_TABLE_NAME).listIndexes().toArray();
+        assert.ok(indexes.find(index => index.name === 'testProperty'));
+
+        await mongooseInstance.connection.collection(TEST_TABLE_NAME).dropIndex('testProperty');
+
+        mongooseInstance.deleteModel(/Test/);
+        const testSchema2 = new Schema({ testProperty: { type: String } });
+        testSchema2.index({ testProperty: 1 }, { name: 'my_index_2' });
+        const TestModel2 = mongooseInstance.model('Test', testSchema2, TEST_TABLE_NAME);
+        await TestModel2.createIndexes();
+        indexes = await mongooseInstance.connection.collection(TEST_TABLE_NAME).listIndexes().toArray();
+        assert.ok(indexes.find(index => index.name === 'my_index_2'));
+
+        await mongooseInstance.connection.collection(TEST_TABLE_NAME).dropIndex('my_index_2');
+
+        await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+    });
     it('Data type tests', async function() {
         if (!process.env.DATA_API_TABLES) {
             this.skip();

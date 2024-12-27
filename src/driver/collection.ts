@@ -348,7 +348,7 @@ export class Collection extends MongooseCollection {
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use listIndexes() with collections');
         }
-        return new AsyncCursorPlaceholder(
+        return new AsyncCursorPlaceholder<{ name: string, key: Record<string, never> }>(
             this.collection.listIndexes({ nameOnly: true }).then(indexes => indexes.map(name => ({ name, key: {} })))
         );
     }
@@ -360,11 +360,15 @@ export class Collection extends MongooseCollection {
      * @param column
      * @param options
      */
-    async createIndex(name: string, column: string, options?: CreateTableIndexOptions) {
+    async createIndex(indexSpec: Record<string, boolean>, options?: CreateTableIndexOptions & { name?: string }) {
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use createIndex() with collections');
         }
-        return this.collection.createIndex(name, column, options);
+        if (Object.keys(indexSpec).length !== 1) {
+            throw new TypeError('createIndex indexSpec must have exactly 1 key');
+        }
+        const [column] = Object.keys(indexSpec);
+        return this.collection.createIndex(options?.name ?? column, column, options);
     }
 
     /**
@@ -377,7 +381,7 @@ export class Collection extends MongooseCollection {
             throw new OperationNotSupportedError('Cannot use dropIndex() with collections');
         }
         const db = this.conn.db as Db;
-        await db.dropTableIndex(name);
+        await db.astraDb.dropTableIndex(name);
     }
 
     /**
@@ -470,10 +474,10 @@ function _updateHasKey(update: Record<string, any>, key: string) {
  * Mongoose expects listIndexes() to return a cursor but Astra returns an array.
  */
 
-class AsyncCursorPlaceholder {
-    promise: Promise<Array<unknown>>;
+class AsyncCursorPlaceholder<ValueType = unknown> {
+    promise: Promise<Array<ValueType>>;
 
-    constructor(promise: Promise<Array<unknown>>) {
+    constructor(promise: Promise<Array<ValueType>>) {
         this.promise = promise;
     }
 

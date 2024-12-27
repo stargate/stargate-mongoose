@@ -24,7 +24,7 @@ import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '../../src/driver';
 import { Product, Cart, mongooseInstance, productSchema } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
-import { FindCursor, DataAPIResponseError } from '@datastax/astra-db-ts';
+import { FindCursor, DataAPIResponseError, DataAPIClient } from '@datastax/astra-db-ts';
 import { Long, UUID } from 'bson';
 
 describe('Mongoose Model API level tests', async () => {
@@ -289,15 +289,22 @@ describe('Mongoose Model API level tests', async () => {
             }
             await Product.createCollection();
         });
-        //TODO - createIndex() error uncaught internally
         it('API ops tests Model.createIndexes()', async () => {
-            await assert.rejects(
-                async () => {
-                    Product.schema.index({name: 1});
-                    await Product.createIndexes();
-                },
-                { message: 'Cannot use createIndex() with collections' }
-            );
+            if (process.env.DATA_API_TABLES) {
+                Product.schema.index({name: 1});
+                await Product.createIndexes();
+                const indexes = await mongooseInstance.connection.collection(Product.collection.collectionName).listIndexes().toArray();
+                assert.ok(indexes.find(index => index.name === 'name'));
+                await mongooseInstance.connection.collection(Product.collection.collectionName).dropIndex('name');
+            } else {
+                await assert.rejects(
+                    async () => {
+                        Product.schema.index({name: 1});
+                        await Product.createIndexes();
+                    },
+                    { message: 'Cannot use createIndex() with collections' }
+                );
+            } 
         });
         it('API ops tests Model.db', async () => {
             const conn = Product.db as unknown as StargateMongooseDriver.Connection;
@@ -599,9 +606,10 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests Model.listIndexes()', async () => {
             if (process.env.DATA_API_TABLES) {
                 const collection = mongooseInstance.connection.collection(Product.collection.collectionName);
-                await collection.createIndex('test_index', 'name');
+                await collection.createIndex({ name: true }, { name: 'test_index'});
                 const indexes = await Product.listIndexes();
                 assert.ok(indexes.map(index => index.name).includes('test_index'));
+                await collection.dropIndex('test_index');
             } else {
                 const error: Error | null = await Product.listIndexes().then(() => null, error => error);
                 assert.ok(error instanceof OperationNotSupportedError);
@@ -931,6 +939,16 @@ describe('Mongoose Model API level tests', async () => {
                 mongooseInstance.createConnection('https://apps.astra.datastax.com/api/json/v1/test?authHeaderName=test1&authHeaderName=test2', testClient!.options).asPromise(),
                 /Invalid URI: multiple application auth header names/
             );
+
+            if (!testClient?.isAstra) {
+                // Omit username and password from options
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const { username: _username, password: _password, ...options } = testClient!.options;
+                await assert.rejects(
+                    mongooseInstance.createConnection(testClient!.uri, options).asPromise(),
+                    /Username and password are required when connecting to self-hosted DSE/
+                );
+            }
         });
         it('API ops tests createConnection() with queueing', async function() {
             const connection = mongooseInstance.createConnection() as unknown as StargateMongooseDriver.Connection;
@@ -948,7 +966,7 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests dropIndex()', async function() {
             if (process.env.DATA_API_TABLES) {
                 const collection = mongooseInstance.connection.collection(Product.collection.collectionName);
-                await collection.createIndex('test_index', 'name');
+                await collection.createIndex({ name: true }, { name: 'test_index' });
                 let indexes = await Product.listIndexes();
                 assert.ok(indexes.map(index => index.name).includes('test_index'));
 
@@ -960,11 +978,13 @@ describe('Mongoose Model API level tests', async () => {
                     mongooseInstance.connection.collection(Product.collection.collectionName).dropIndex('sample index name'),
                     /Cannot use dropIndex\(\) with collections/
                 );
-                await assert.rejects(
-                    mongooseInstance.connection.db!.dropTableIndex(Product.collection.collectionName),
-                    /Cannot dropTableIndex in collections mode/
-                );
             }
+        });
+        it('API ops tests setClient()', async function() {
+            assert.throws(
+                () => mongooseInstance.connection.setClient(mongooseInstance.connection.client as DataAPIClient),
+                /SetClient not supported/
+            );
         });
     });
 
