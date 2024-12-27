@@ -22,6 +22,7 @@ import {
     CollectionFindOneAndReplaceOptions as FindOneAndReplaceOptionsInternal,
     CollectionFindOneAndUpdateOptions as FindOneAndUpdateOptionsInternal,
     CollectionFindOneOptions as FindOneOptionsInternal,
+    CollectionReplaceOneOptions,
     CollectionUpdateManyOptions,
     CollectionUpdateOneOptions as UpdateOneOptionsInternal,
     CollectionInsertManyOptions,
@@ -43,6 +44,7 @@ type FindOneAndUpdateOptions = Omit<FindOneAndUpdateOptionsInternal, 'sort'> & {
 type FindOneAndDeleteOptions = Omit<FindOneAndDeleteOptionsInternal, 'sort'> & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
 type FindOneAndReplaceOptions = Omit<FindOneAndReplaceOptionsInternal, 'sort'> & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
 type DeleteOneOptions = Omit<DeleteOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
+type ReplaceOneOptions = Omit<CollectionReplaceOneOptions, 'sort'> & { sort?: MongooseSortOption };
 type UpdateOneOptions = Omit<UpdateOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
 
 /**
@@ -267,6 +269,26 @@ export class Collection extends MongooseCollection {
     }
 
     /**
+     * Update a single document in a collection that matches the given filter, replacing it with `replacement`.
+     * Converted to a `findOneAndReplace()` under the hood.
+     * @param filter
+     * @param replacement
+     * @param options
+     */
+    replaceOne(filter: Record<string, unknown>, replacement: Record<string, unknown>, options: ReplaceOneOptions) {
+        if (this.collection instanceof AstraTable) {
+            throw new OperationNotSupportedError('Cannot use replaceOne() with tables');
+        }
+        const requestOptions: CollectionReplaceOneOptions = options.sort != null
+            ? { ...options, sort: processSortOption(options.sort) }
+            : { ...options, sort: undefined };
+        filter = serialize(filter);
+        setDefaultIdForUpsert(filter, replacement, requestOptions, true);
+        replacement = serialize(replacement);
+        return this.collection.replaceOne(filter, replacement, requestOptions);
+    }
+
+    /**
      * Update a single document in a collection that matches the given filter.
      * @param filter
      * @param update
@@ -396,13 +418,6 @@ export class Collection extends MongooseCollection {
      */
     distinct() {
         throw new OperationNotSupportedError('distinct() Not Implemented');
-    }
-
-    /**
-     * Replace one operation not supported.
-     */
-    replaceOne() {
-        throw new OperationNotSupportedError('replaceOne() Not Implemented');
     }
 }
 

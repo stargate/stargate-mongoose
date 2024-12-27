@@ -639,14 +639,31 @@ describe('Mongoose Model API level tests', async () => {
             const findDeletedDoc = await Product.findOne({name: 'Product 1'});
             assert.strictEqual(findDeletedDoc, null);
         });
-        it('API ops tests Model.replaceOne()', async () => {
+        it('API ops tests Model.replaceOne()', async function() {
+            if (process.env.DATA_API_TABLES) {
+                await assert.rejects(
+                    Product.replaceOne({category: 'cat 1'}, {name: 'Product 4'}),
+                    /Cannot use replaceOne\(\) with tables/
+                );
+                return;
+            }
+
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
             await Product.insertMany([product1, product2, product3]);
-            const error: Error | null = await Product.replaceOne({category: 'cat 1'}, {name: 'Product 4'}).then(() => null, error => error);
-            assert.ok(error instanceof OperationNotSupportedError);
-            assert.strictEqual(error.message, 'replaceOne() Not Implemented');
+            const resp = await Product.replaceOne({category: 'cat 1'}, {name: 'Product 4'});
+            assert.equal(resp.modifiedCount, 1);
+
+            const doc = await Product.findOne({name: 'Product 4'});
+            assert.ok(doc);
+            assert.strictEqual(doc.category, undefined);
+
+            await Product.replaceOne({category: 'cat 2'}, {name: 'Product 5', category: 'cat 3'}, {sort:{name: 1}});
+            const cat2 = await Product.findOne({category: 'cat 2'}).orFail();
+            assert.equal(cat2.name, 'Product 2');
+            const replaced = await Product.findOne({name: 'Product 5'}).orFail();
+            assert.equal(replaced.category, 'cat 3');
         });
         //Model.schema() is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.schema
         it('API ops tests Model.startSession()', async () => {
