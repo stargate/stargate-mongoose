@@ -3,7 +3,7 @@ node_modules
 .env
 .nyc_output
 .vscode
-dist
+# dist
 package-lock.json
 .idea
 coverage
