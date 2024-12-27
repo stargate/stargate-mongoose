@@ -370,8 +370,8 @@ export class Collection extends MongooseCollection {
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use listIndexes() with collections');
         }
-        return new AsyncCursorPlaceholder<{ name: string, key: Record<string, never> }>(
-            this.collection.listIndexes({ nameOnly: true }).then(indexes => indexes.map(name => ({ name, key: {} })))
+        return new AsyncCursorPlaceholder<{ name: string, key: Record<string, 1> }>(
+            this.collection.listIndexes({ nameOnly: true }).then(indexes => indexes.map(name => ({ name, key: { [name]: 1 } })))
         );
     }
 

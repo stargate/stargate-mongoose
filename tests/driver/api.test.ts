@@ -254,8 +254,24 @@ describe('Mongoose Model API level tests', async () => {
         //castObject skipped as it is not making any database calls
         it('API ops tests Model.cleanIndexes()', async function() {
             if (process.env.DATA_API_TABLES) {
-                await Product.cleanIndexes();
+                const collection = mongooseInstance.connection.collection(Product.collection.collectionName);
+                // @ts-expect-error
+                Product.schema._indexes = [];
+                Product.schema.index({name: 1});
+                await collection.createIndex({ name: true });
+                await collection.createIndex({ price: true }, { name: 'will_drop_index' });
+                // @ts-expect-error
+                const droppedIndexes: string[] = await Product.cleanIndexes();
+
+                // Drop "will_drop_index" because not in schema, but keep index on `name`
+                assert.deepStrictEqual(droppedIndexes, ['will_drop_index']);
+
+                await collection.dropIndex('name');
+
+                // @ts-expect-error
+                Product.schema._indexes = [];
             } else {
+                // @ts-expect-error
                 const promise = Product.cleanIndexes();
                 const error: Error | null = await promise.then(() => null, (error: Error) => error);
                 assert.ok(error instanceof OperationNotSupportedError);
@@ -291,11 +307,15 @@ describe('Mongoose Model API level tests', async () => {
         });
         it('API ops tests Model.createIndexes()', async () => {
             if (process.env.DATA_API_TABLES) {
+                // @ts-expect-error
+                Product.schema._indexes = [];
                 Product.schema.index({name: 1});
                 await Product.createIndexes();
                 const indexes = await mongooseInstance.connection.collection(Product.collection.collectionName).listIndexes().toArray();
                 assert.ok(indexes.find(index => index.name === 'name'));
                 await mongooseInstance.connection.collection(Product.collection.collectionName).dropIndex('name');
+                // @ts-expect-error
+                Product.schema._indexes = [];
             } else {
                 await assert.rejects(
                     async () => {
@@ -606,7 +626,7 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests Model.listIndexes()', async () => {
             if (process.env.DATA_API_TABLES) {
                 const collection = mongooseInstance.connection.collection(Product.collection.collectionName);
-                await collection.createIndex({ name: true }, { name: 'test_index'});
+                await collection.createIndex({ name: true }, { name: 'test_index' });
                 const indexes = await Product.listIndexes();
                 assert.ok(indexes.map(index => index.name).includes('test_index'));
                 await collection.dropIndex('test_index');
