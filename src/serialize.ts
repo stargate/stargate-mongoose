@@ -31,8 +31,10 @@ function serializeValue(data: any, useTables?: boolean): any {
         return data;
     }
     if (typeof data === 'bigint') {
+        // TODO(vkarpov15): it would be great to have some way to avoid converting BigInt to number here,
+        // because otherwise we lose precision.
         if (useTables) {
-            throw new Error('Cannot serialize BigInt in tables mode');
+            return Number(data);
         }
         return data.toString();
     }

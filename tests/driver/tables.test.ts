@@ -81,7 +81,6 @@ describe('tables', function() {
             uniqueId: Schema.Types.UUID,
             category: BigInt,
             buf: Buffer,
-            long: BigInt,
             willBeNull: String
         }, { versionKey: false });
         await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
@@ -98,6 +97,7 @@ describe('tables', function() {
                 salary: 'decimal',
                 favorites: { type: 'map', keyType: 'text', valueType: 'text' },
                 uniqueId: { type: 'uuid' },
+                category: { type: 'varint' },
                 buf: { type: 'blob' },
                 willBeNull: { type: 'text' }
             }
@@ -126,7 +126,7 @@ describe('tables', function() {
                 }
             },
             uniqueId: new UUID(uniqueIdVal),
-            documentArray: [{ name: 'test document array' }],
+            category: 42n,
             buf: Buffer.from('hello', 'utf8'),
             willBeNull: null
         }).save();
@@ -141,6 +141,7 @@ describe('tables', function() {
         assert.strictEqual(saveResponse.favorites!.get('food'), 'pizza');
         assert.strictEqual(saveResponse.favorites!.get('drink'), 'cola');
         assert.strictEqual(saveResponse.uniqueId!.toString(), uniqueIdVal.toString());
+        assert.strictEqual(saveResponse.category, 42n);
         assert.strictEqual(saveResponse.buf!.toString('utf8'), 'hello');
         assert.strictEqual(saveResponse.willBeNull, null);
         //get record using findOne and verify results
@@ -156,6 +157,7 @@ describe('tables', function() {
         assert.strictEqual(findOneResponse.favorites!.get('food'), 'pizza');
         assert.strictEqual(findOneResponse.favorites!.get('drink'), 'cola');
         assert.strictEqual(findOneResponse.uniqueId!.toString(), uniqueIdVal.toString());
+        assert.strictEqual(findOneResponse.category, 42n);
         assert.strictEqual(findOneResponse.buf!.toString('utf8'), 'hello');
         assert.strictEqual(findOneResponse.willBeNull, null);
     });
