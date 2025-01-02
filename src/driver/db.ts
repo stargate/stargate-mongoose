@@ -38,11 +38,11 @@ export class Db {
      * Get a collection by name.
      * @param name The name of the collection.
      */
-    collection(name: string) {
+    collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string) {
         if (this.useTables) {
-            return this.astraDb.table(name);
+            return this.astraDb.table<DocType>(name);
         }
-        return this.astraDb.collection(name);
+        return this.astraDb.collection<DocType>(name);
     }
 
     /**

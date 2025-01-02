@@ -1,5 +1,5 @@
 import { isAstra, testClient } from './fixtures';
-import { Schema, Mongoose } from 'mongoose';
+import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 import * as StargateMongooseDriver from '../src/driver';
 import { parseUri } from '../src/driver/connection';
 import { plugins } from '../src/driver';
@@ -38,6 +38,8 @@ for (const plugin of plugins) {
 
 export const Cart = mongooseInstance.model('Cart', cartSchema);
 export const Product = mongooseInstance.model('Product', productSchema);
+export type ProductHydratedDoc = ReturnType<(typeof Product)['hydrate']>;
+export type ProductRawDoc = SubdocsToPOJOs<InferSchemaType<typeof productSchema>>;
 
 async function createNamespace() {
     const connection = mongooseInstance.connection;

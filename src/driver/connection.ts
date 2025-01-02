@@ -81,9 +81,9 @@ export class Connection extends MongooseConnection {
      * @param name
      * @param options
      */
-    collection(name: string, options?: { modelName?: string }): Collection {
+    collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: { modelName?: string }): Collection<DocType> {
         if (!(name in this.collections)) {
-            this.collections[name] = new Collection(name, this, options);
+            this.collections[name] = new Collection<DocType>(name, this, options);
         }
         return super.collection(name, options);
     }

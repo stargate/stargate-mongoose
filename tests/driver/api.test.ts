@@ -22,7 +22,7 @@ import { once } from 'events';
 import * as StargateMongooseDriver from '../../src/driver';
 import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '../../src/driver';
-import { Product, Cart, mongooseInstance, productSchema } from '../mongooseFixtures';
+import { Product, Cart, mongooseInstance, productSchema, ProductRawDoc } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
 import { FindCursor, DataAPIResponseError, DataAPIClient } from '@datastax/astra-db-ts';
 import { Long, UUID } from 'bson';
@@ -839,7 +839,7 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests Model.db.collection()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
             await product1.save();
-            const res = await Product.db.collection('products').findOne();
+            const res = await mongooseInstance.connection.collection<ProductRawDoc>('products').findOne({});
             assert.equal(res!.name, 'Product 1');
         });
         it.skip('API ops tests connection.listDatabases()', async () => {
@@ -859,10 +859,8 @@ describe('Mongoose Model API level tests', async () => {
                 assert.ok(res.status?.collections?.includes('carts'));
             }
         });
-        it('API ops tests collection.runCommand()', async () => {
-            const res = await mongooseInstance.connection.db!.collection('carts')._httpClient.executeCommand({ find: {} }, {
-                timeoutManager: mongooseInstance.connection.db!.collection('carts')._httpClient.tm.single('runCommandTimeoutMS', 60_000)
-            });
+        it('API ops tests collection.runCommand()', async function() {
+            const res = await mongooseInstance.connection.collection('carts').runCommand({ find: {} });
             assert.ok(Array.isArray(res.data.documents));
         });
         it('API ops tests feature flags', async function() {

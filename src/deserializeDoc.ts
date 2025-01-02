@@ -10,7 +10,7 @@ import { DataAPIBlob, DataAPIVector } from '@datastax/astra-db-ts';
  * @returns void
  */
 
-export default function deserializeDoc(doc: Record<string, unknown> | null) {
+export default function deserializeDoc<DocType extends Record<string, unknown> = Record<string, unknown>>(doc: Record<string, unknown> | null): DocType | null {
     if (doc == null) {
         return doc;
     }
@@ -25,5 +25,5 @@ export default function deserializeDoc(doc: Record<string, unknown> | null) {
             doc[key] = Object.fromEntries([...value.entries()]);
         }
     }
-    return doc;
+    return doc as DocType;
 }
