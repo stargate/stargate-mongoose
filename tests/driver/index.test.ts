@@ -125,7 +125,7 @@ describe('Driver based tests', async () => {
                     await Person.createCollection();
                 }
             }
-            
+
         });
 
         after(async () => {
@@ -264,7 +264,7 @@ describe('Driver based tests', async () => {
 
             await mongooseInstance.disconnect();
         });
-          
+
         it('handles listCollections()', async function() {
             if (process.env.DATA_API_TABLES) {
                 this.skip();
@@ -294,7 +294,7 @@ describe('Driver based tests', async () => {
             mongooseInstance.set('autoCreate', false);
             mongooseInstance.set('autoIndex', false);
             const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
-            
+
             await mongooseInstance.connect(dbUri, options);
 
             await assert.rejects(

@@ -103,7 +103,7 @@ describe('tables', function() {
             }
         });
         const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
-        
+
         const employeeIdVal = new Types.ObjectId();
         //generate a random uuid
         const uniqueIdVal = randomUUID();

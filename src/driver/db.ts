@@ -59,7 +59,7 @@ export class Db {
 
     /**
      * Create a new table with the specified name and definition
-     * @param name 
+     * @param name
      * @param definition
      */
 

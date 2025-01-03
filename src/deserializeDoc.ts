@@ -2,11 +2,11 @@ import { DataAPIBlob, DataAPIVector } from '@datastax/astra-db-ts';
 
 /**
  * Transforms astra-db-ts document results into something Mongoose can deserialize:
- * 
+ *
  * 1. DataAPIVector -> array
  * 2. Map -> POJO since Mongoose doesn't expect maps from the underlying driver
- * 
- * @param doc 
+ *
+ * @param doc
  * @returns void
  */
 

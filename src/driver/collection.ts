@@ -112,7 +112,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
         filter = serialize(filter, this.useTables);
-        
+
         // Weirdness to work around astra-db-ts method overrides: `find()` with `projection: never` means we need a separate branch
         if (this.collection instanceof AstraTable) {
             return this.collection.find(filter as TableFilter<DocType>, requestOptions).map(doc => deserializeDoc<DocType>(doc));
@@ -139,7 +139,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         const requestOptions: FindOneOptionsInternal = options != null && options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
-        
+
         filter = serialize(filter, this.useTables);
 
         // Weirdness to work around astra-db-ts method overrides: `findOne()` with `projection: never` means we need a separate branch
@@ -170,7 +170,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         } else {
             return this.collection.insertMany(documents as DocType[], options);
         }
-        
+
     }
 
     /**
@@ -388,7 +388,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
     /**
      * Create a new index
-     * 
+     *
      * @param name
      * @param column
      * @param options
@@ -406,7 +406,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
     /**
      * Drop an existin index
-     * 
+     *
      * @param name
      */
     async dropIndex(name: string) {
@@ -448,7 +448,7 @@ function processSortOption(sort: MongooseSortOption): SortOptionInternal {
             result[key] = $meta as unknown as SortDirection;
         }
     }
-    
+
     return result;
 }
 

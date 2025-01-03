@@ -86,7 +86,7 @@ describe('Mongoose Model API level tests', async () => {
             if (process.env.DATA_API_TABLES) {
                 this.skip();
                 return;
-            } 
+            }
             const modelName = 'User';
             const userSchema = new mongoose.Schema({
                 name: String,
@@ -215,7 +215,7 @@ describe('Mongoose Model API level tests', async () => {
             }
             let collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
             assert.ok(collections.includes(Product.collection.collectionName));
-            
+
             await Product.db.dropCollection(Product.collection.collectionName);
             collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
             assert.ok(!collections.includes(Product.collection.collectionName));
@@ -275,7 +275,7 @@ describe('Mongoose Model API level tests', async () => {
                         name: 'will_drop_index',
                         definition: { column: 'price', options: {} },
                         key: { price: 1 }
-                    }                      
+                    }
                 ]);
 
                 const droppedIndexes = await Product.cleanIndexes();
@@ -292,7 +292,7 @@ describe('Mongoose Model API level tests', async () => {
                             options: { ascii: false, caseSensitive: true, normalize: false }
                         },
                         key: { name: 1 }
-                    }                      
+                    }
                 ]);
 
                 await collection.dropIndex('name');
@@ -352,7 +352,7 @@ describe('Mongoose Model API level tests', async () => {
                     },
                     { message: 'Cannot use createIndex() with collections' }
                 );
-            } 
+            }
         });
         it('API ops tests Model.db', async () => {
             const conn = Product.db as unknown as StargateMongooseDriver.Connection;
@@ -378,7 +378,7 @@ describe('Mongoose Model API level tests', async () => {
             deleteManyResp = await Product.deleteMany({});
             // Deleted an unknown number of rows
             assert.strictEqual(deleteManyResp.deletedCount, -1);
-            
+
             const count = await Product.countDocuments();
             assert.strictEqual(count, 0);
         });
@@ -446,7 +446,7 @@ describe('Mongoose Model API level tests', async () => {
             assert.ok(err instanceof OperationNotSupportedError);
             assert.strictEqual(err.message, 'distinct() Not Implemented');
         });
-        
+
         it('API ops tests Model.estimatedDocumentCount()', async function() {
             if (process.env.DATA_API_TABLES) {
                 this.skip();
@@ -456,7 +456,7 @@ describe('Mongoose Model API level tests', async () => {
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
             await Product.create([product1, product2, product3]);
-            
+
             const count = await Product.estimatedDocumentCount();
             assert.equal(typeof count, 'number');
             assert.ok(count >= 0);
@@ -664,7 +664,7 @@ describe('Mongoose Model API level tests', async () => {
                             options: { ascii: false, caseSensitive: true, normalize: false }
                         },
                         key: { name: 1 }
-                    }   
+                    }
                 ]);
                 await collection.dropIndex('test_index');
             } else {
@@ -815,7 +815,7 @@ describe('Mongoose Model API level tests', async () => {
             await Product.create(product1);
             //UpdateOne
             await Product.updateOne({ _id: product1._id }, { $push: { tags: { name: 'Home & Garden' } } });
-            
+
             const { tags } = await Product.findById(product1._id).orFail();
             assert.deepStrictEqual(tags.toObject(), [{ name: 'Electronics' }, { name: 'Home & Garden' }]);
         });
@@ -828,7 +828,7 @@ describe('Mongoose Model API level tests', async () => {
             await cart.save();
             //UpdateOne
             await Cart.updateOne({ _id: cart._id }, { $set: { user: { name: 'test updated subdoc' } } });
-          
+
             const doc = await Cart.findById(cart._id).orFail();
             assert.deepStrictEqual(doc.toObject().user, { name: 'test updated subdoc' });
         });
@@ -1048,7 +1048,7 @@ describe('Mongoose Model API level tests', async () => {
                             options: { ascii: false, caseSensitive: true, normalize: false }
                         },
                         key: { name: 1 }
-                    }   
+                    }
                 ]);
 
                 await collection.dropIndex('test_index');
@@ -1160,10 +1160,10 @@ describe('Mongoose Model API level tests', async () => {
                 .find({}, null, { includeSortVector: true })
                 .sort({ $vector: { $meta: [1, 99] } })
                 .cursor();
-            
+
             await once(cursor, 'cursor');
             const rawCursor = (cursor as unknown as { cursor: FindCursor<unknown> }).cursor;
-            assert.deepStrictEqual(await rawCursor.getSortVector().then(vec => vec?.asArray()), [1, 99]);            
+            assert.deepStrictEqual(await rawCursor.getSortVector().then(vec => vec?.asArray()), [1, 99]);
         });
 
         it('supports sort() and similarity score with $meta with findOne()', async function() {

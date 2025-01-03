@@ -55,7 +55,7 @@ export class Connection extends MongooseConnection {
     /**
      * Helper borrowed from Mongoose to wait for the connection to finish connecting. Because Mongoose
      * supports creating a new connection, registering some models, and connecting to the database later.
-     * 
+     *
      * #### Example:
      *     const conn = mongoose.createConnection();
      *     // This may call `createCollection()` internally depending on `autoCreate` option, even though
@@ -174,7 +174,7 @@ export class Connection extends MongooseConnection {
     /**
      * Logic for creating a connection to Data API. Mongoose calls `openUri()` internally when the
      * user calls `mongoose.create()` or `mongoose.createConnection(uri)`
-     * 
+     *
      * @param uri the connection string
      * @param options
      */
@@ -316,7 +316,7 @@ interface ParsedUri {
     applicationToken?: string;
     authHeaderName?: string;
   }
-  
+
 // Parse a connection URI in the format of: https://${baseUrl}/${baseAPIPath}/${keyspace}?applicationToken=${applicationToken}
 export const parseUri = (uri: string): ParsedUri => {
     const parsedUrl = url.parse(uri, true);
@@ -342,7 +342,7 @@ export const parseUri = (uri: string): ParsedUri => {
         authHeaderName
     };
 };
-  
+
 // Removes the last part of the api path (which is assumed as the keyspace name). for example below are the sample input => output from this function
 //  /v1/testks1 => v1
 //  /apis/v1/testks1 => apis/v1
