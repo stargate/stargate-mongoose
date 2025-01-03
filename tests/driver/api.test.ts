@@ -260,18 +260,46 @@ describe('Mongoose Model API level tests', async () => {
                 Product.schema.index({name: 1});
                 await collection.createIndex({ name: true });
                 await collection.createIndex({ price: true }, { name: 'will_drop_index' });
-                // @ts-expect-error
-                const droppedIndexes: string[] = await Product.cleanIndexes();
+
+                let indexes = await Product.listIndexes();
+                assert.deepStrictEqual(indexes, [
+                    {
+                        name: 'name',
+                        definition: {
+                            column: 'name',
+                            options: { ascii: false, caseSensitive: true, normalize: false }
+                        },
+                        key: { name: 1 }
+                    },
+                    {
+                        name: 'will_drop_index',
+                        definition: { column: 'price', options: {} },
+                        key: { price: 1 }
+                    }                      
+                ]);
+
+                const droppedIndexes = await Product.cleanIndexes();
 
                 // Drop "will_drop_index" because not in schema, but keep index on `name`
                 assert.deepStrictEqual(droppedIndexes, ['will_drop_index']);
+
+                indexes = await Product.listIndexes();
+                assert.deepStrictEqual(indexes, [
+                    {
+                        name: 'name',
+                        definition: {
+                            column: 'name',
+                            options: { ascii: false, caseSensitive: true, normalize: false }
+                        },
+                        key: { name: 1 }
+                    }                      
+                ]);
 
                 await collection.dropIndex('name');
 
                 // @ts-expect-error
                 Product.schema._indexes = [];
             } else {
-                // @ts-expect-error
                 const promise = Product.cleanIndexes();
                 const error: Error | null = await promise.then(() => null, (error: Error) => error);
                 assert.ok(error instanceof OperationNotSupportedError);
@@ -628,7 +656,16 @@ describe('Mongoose Model API level tests', async () => {
                 const collection = mongooseInstance.connection.collection(Product.collection.collectionName);
                 await collection.createIndex({ name: true }, { name: 'test_index' });
                 const indexes = await Product.listIndexes();
-                assert.ok(indexes.map(index => index.name).includes('test_index'));
+                assert.deepStrictEqual(indexes, [
+                    {
+                        name: 'test_index',
+                        definition: {
+                            column: 'name',
+                            options: { ascii: false, caseSensitive: true, normalize: false }
+                        },
+                        key: { name: 1 }
+                    }   
+                ]);
                 await collection.dropIndex('test_index');
             } else {
                 const error: Error | null = await Product.listIndexes().then(() => null, error => error);
@@ -1003,11 +1040,20 @@ describe('Mongoose Model API level tests', async () => {
                 const collection = mongooseInstance.connection.collection(Product.collection.collectionName);
                 await collection.createIndex({ name: true }, { name: 'test_index' });
                 let indexes = await Product.listIndexes();
-                assert.ok(indexes.map(index => index.name).includes('test_index'));
+                assert.deepStrictEqual(indexes, [
+                    {
+                        name: 'test_index',
+                        definition: {
+                            column: 'name',
+                            options: { ascii: false, caseSensitive: true, normalize: false }
+                        },
+                        key: { name: 1 }
+                    }   
+                ]);
 
                 await collection.dropIndex('test_index');
                 indexes = await Product.listIndexes();
-                assert.ok(!indexes.map(index => index.name).includes('test_index'));
+                assert.deepStrictEqual(indexes, []);
             } else {
                 await assert.rejects(
                     mongooseInstance.connection.collection(Product.collection.collectionName).dropIndex('sample index name'),

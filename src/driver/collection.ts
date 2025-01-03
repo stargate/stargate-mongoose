@@ -30,7 +30,9 @@ import {
     Sort as SortOptionInternal,
     Table as AstraTable,
     TableFilter,
-    CreateTableIndexOptions
+    CreateTableIndexOptions,
+    TableIndexOptions,
+    TableVectorIndexOptions
 } from '@datastax/astra-db-ts';
 import { serialize } from '../serialize';
 import deserializeDoc from '../deserializeDoc';
@@ -46,6 +48,12 @@ type FindOneAndReplaceOptions = Omit<FindOneAndReplaceOptionsInternal, 'sort'> &
 type DeleteOneOptions = Omit<DeleteOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
 type ReplaceOneOptions = Omit<CollectionReplaceOneOptions, 'sort'> & { sort?: MongooseSortOption };
 type UpdateOneOptions = Omit<UpdateOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
+
+interface StargateMongooseIndexDescription {
+    name: string,
+    definition: { column: string, options?: TableIndexOptions | TableVectorIndexOptions },
+    key: Record<string, 1>
+}
 
 /**
  * Collection operations supported by the driver. This class is called "Collection" for consistency with Mongoose, because
@@ -372,8 +380,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use listIndexes() with collections');
         }
-        return new AsyncCursorPlaceholder<{ name: string, key: Record<string, 1> }>(
-            this.collection.listIndexes({ nameOnly: true }).then(indexes => indexes.map(name => ({ name, key: { [name]: 1 } })))
+        // Mongoose uses the `key` property of an index for index diffing in `cleanIndexes()` and `syncIndexes()`.
+        return new AsyncCursorPlaceholder<StargateMongooseIndexDescription>(
+            this.collection.listIndexes().then(indexes => indexes.map(index => ({ ...index, key: { [index.definition.column]: 1 } })))
         );
     }
 
