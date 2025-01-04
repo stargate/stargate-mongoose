@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Db as AstraDb, CreateTableDefinition, RawDataAPIResponse } from '@datastax/astra-db-ts';
+import { Db as AstraDb, CreateTableDefinition, ListTablesOptions, RawDataAPIResponse } from '@datastax/astra-db-ts';
 
 export class Db {
     astraDb: AstraDb;
@@ -100,8 +100,11 @@ export class Db {
     /**
      * List all tables in the database.
      */
-    async listTables() {
-        return this.astraDb.listTables();
+    async listTables(options: ListTablesOptions) {
+        if (options.nameOnly) {
+            return this.astraDb.listTables({ ...options, nameOnly: true });
+        }
+        return this.astraDb.listTables({ ...options, nameOnly: false });
     }
 
     /**

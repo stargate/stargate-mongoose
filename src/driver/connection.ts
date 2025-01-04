@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Collection } from './collection';
-import { AstraAdmin, CreateTableDefinition, DataAPIDbAdmin, RawDataAPIResponse } from '@datastax/astra-db-ts';
+import { AstraAdmin, CreateTableDefinition, DataAPIDbAdmin, ListTablesOptions, RawDataAPIResponse, TableDescriptor } from '@datastax/astra-db-ts';
 import { Db } from './db';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
@@ -157,9 +157,16 @@ export class Connection extends MongooseConnection {
     /**
      * List all tables in the database
      */
-    async listTables() {
+
+    async listTables(options: ListTablesOptions & { nameOnly: true }): Promise<string[]>;
+    async listTables(options: ListTablesOptions & { nameOnly: false }): Promise<TableDescriptor[]>;
+
+    async listTables(options: ListTablesOptions) {
         await this._waitForClient();
-        return this.db!.listTables();
+        if (options.nameOnly) {
+            return this.db!.listTables({ ...options, nameOnly: true });
+        }
+        return this.db!.listTables({ ...options, nameOnly: false });
     }
 
     /**

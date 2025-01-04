@@ -58,8 +58,7 @@ async function createNamespace() {
 export async function createMongooseCollections() {
     await createNamespace();
 
-    const tables = await mongooseInstance.connection.listTables();
-    const tableNames = tables.map(t => t.name);
+    const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });
 
     if (useTables) {
         await mongooseInstance.connection.dropTable(Cart.collection.collectionName);

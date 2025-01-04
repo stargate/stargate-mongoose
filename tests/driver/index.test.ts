@@ -101,8 +101,7 @@ describe('Driver based tests', async () => {
         });
         const Person = mongooseInstance.model('Person', personSchema, TEST_COLLECTION_NAME);
         before(async function () {
-            const tables = await mongooseInstance.connection.listTables();
-            const tableNames = tables.map(t => t.name);
+            const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });
 
             if (process.env.DATA_API_TABLES) {
                 await mongooseInstance.connection.dropTable(TEST_COLLECTION_NAME);
@@ -234,7 +233,7 @@ describe('Driver based tests', async () => {
             const mongooseInstance = await createMongooseInstance();
             const TestModel = mongooseInstance.model('Person', Person.schema, TEST_COLLECTION_NAME);
             if (process.env.DATA_API_TABLES) {
-                const tableNames = await mongooseInstance.connection.listTables().then(t => t.map(t => t.name));
+                const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });
                 if (!tableNames.includes(TEST_COLLECTION_NAME)) {
                     await mongooseInstance.connection.createTable(TEST_COLLECTION_NAME, {
                         primaryKey: '_id',

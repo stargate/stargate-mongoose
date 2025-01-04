@@ -496,7 +496,8 @@ function _updateHasKey(update: Record<string, any>, key: string) {
 }
 
 /**
- * Mongoose expects listIndexes() to return a cursor but Astra returns an array.
+ * Mongoose expects listIndexes() to return a cursor but Astra returns an array. Mongoose itself doesn't support
+ * returning a cursor from Model.listIndexes(), so all we need to return is an object with a toArray() function.
  */
 
 class AsyncCursorPlaceholder<ValueType = unknown> {

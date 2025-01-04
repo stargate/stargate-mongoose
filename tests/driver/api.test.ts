@@ -984,7 +984,7 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests createConnection() with uri and options', async function() {
             const connection = mongooseInstance.createConnection(testClient!.uri, testClient!.options) as unknown as StargateMongooseDriver.Connection;
             await connection.asPromise();
-            const promise = process.env.DATA_API_TABLES ? connection.listTables() : connection.listCollections();
+            const promise = process.env.DATA_API_TABLES ? connection.listTables({ nameOnly: false }) : connection.listCollections();
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
 
             await assert.rejects(
@@ -1024,7 +1024,7 @@ describe('Mongoose Model API level tests', async () => {
         });
         it('API ops tests createConnection() with queueing', async function() {
             const connection = mongooseInstance.createConnection() as unknown as StargateMongooseDriver.Connection;
-            const promise = process.env.DATA_API_TABLES ? connection.listTables() : connection.listCollections();
+            const promise = process.env.DATA_API_TABLES ? connection.listTables({ nameOnly: false }) : connection.listCollections();
 
             await connection.openUri(testClient!.uri, testClient!.options);
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));

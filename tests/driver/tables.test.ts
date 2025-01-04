@@ -25,7 +25,7 @@ describe('tables', function() {
         await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
 
         await mongooseInstance.connection.createTable(TEST_TABLE_NAME, { primaryKey: '_id', columns: { _id: 'text' } });
-        const tableNames = await mongooseInstance.connection.listTables().then(tables => tables.map(t => t.name));
+        const tableNames = await mongooseInstance.connection.listTables({ nameOnly: false }).then(tables => tables.map(t => t.name));
         assert.ok(tableNames.includes(TEST_TABLE_NAME));
         await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
 
