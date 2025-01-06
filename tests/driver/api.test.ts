@@ -114,7 +114,7 @@ describe('Mongoose Model API level tests', async () => {
             });
             await mongooseInstance.connection.dropTable(TEST_COLLECTION_NAME);
             const User = mongooseInstance.model(modelName, userSchema, TEST_COLLECTION_NAME);
-            const collectionNames = await User.db.listCollections().then(collections => collections.map(c => c.name));
+            const collectionNames = await mongooseInstance.connection.listCollections({ nameOnly: true });
             if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
                 await User.createCollection();
             } else {
@@ -984,7 +984,7 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests createConnection() with uri and options', async function() {
             const connection = mongooseInstance.createConnection(testClient!.uri, testClient!.options) as unknown as StargateMongooseDriver.Connection;
             await connection.asPromise();
-            const promise = process.env.DATA_API_TABLES ? connection.listTables({ nameOnly: false }) : connection.listCollections();
+            const promise = process.env.DATA_API_TABLES ? connection.listTables({ nameOnly: false }) : connection.listCollections({ nameOnly: false });
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
 
             await assert.rejects(
@@ -1024,7 +1024,7 @@ describe('Mongoose Model API level tests', async () => {
         });
         it('API ops tests createConnection() with queueing', async function() {
             const connection = mongooseInstance.createConnection() as unknown as StargateMongooseDriver.Connection;
-            const promise = process.env.DATA_API_TABLES ? connection.listTables({ nameOnly: false }) : connection.listCollections();
+            const promise = process.env.DATA_API_TABLES ? connection.listTables({ nameOnly: false }) : connection.listCollections({ nameOnly: false });
 
             await connection.openUri(testClient!.uri, testClient!.options);
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
@@ -1033,7 +1033,7 @@ describe('Mongoose Model API level tests', async () => {
             const connection = mongooseInstance.createConnection(testClient!.uri, { ...testClient!.options, bufferCommands: false }) as unknown as StargateMongooseDriver.Connection;
             await connection.asPromise();
             await connection.close();
-            await assert.rejects(connection.listCollections(), /Connection is disconnected/);
+            await assert.rejects(connection.listCollections({}), /Connection is disconnected/);
         });
         it('API ops tests dropIndex()', async function() {
             if (process.env.DATA_API_TABLES) {
@@ -1092,7 +1092,7 @@ describe('Mongoose Model API level tests', async () => {
                 return;
             } else {
                 await mongooseInstance.connection.dropTable('vector');
-                const collections = await mongooseInstance.connection.listCollections();
+                const collections = await mongooseInstance.connection.listCollections({ nameOnly: false });
                 const vectorCollection = collections.find(coll => coll.name === 'vector');
                 if (!vectorCollection) {
                     await mongooseInstance.connection.dropCollection('vector');

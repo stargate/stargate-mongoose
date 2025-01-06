@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Collection } from './collection';
-import { AstraAdmin, CreateTableDefinition, DataAPIDbAdmin, ListTablesOptions, RawDataAPIResponse, TableDescriptor } from '@datastax/astra-db-ts';
+import { AstraAdmin, CollectionDescriptor, CreateTableDefinition, DataAPIDbAdmin, ListCollectionsOptions, ListTablesOptions, RawDataAPIResponse, TableDescriptor } from '@datastax/astra-db-ts';
 import { Db } from './db';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
@@ -149,9 +149,16 @@ export class Connection extends MongooseConnection {
     /**
      * List all collections in the database
      */
-    async listCollections() {
+
+    async listCollections(options: ListCollectionsOptions & { nameOnly: true }): Promise<string[]>;
+    async listCollections(options?: ListCollectionsOptions & { nameOnly?: false }): Promise<CollectionDescriptor[]>;
+
+    async listCollections(options?: ListCollectionsOptions) {
         await this._waitForClient();
-        return this.db!.listCollections({ nameOnly: false });
+        if (options?.nameOnly) {
+            return this.db!.listCollections({ ...options, nameOnly: true });
+        }
+        return this.db!.listCollections({ ...options, nameOnly: false });
     }
 
     /**
@@ -159,11 +166,11 @@ export class Connection extends MongooseConnection {
      */
 
     async listTables(options: ListTablesOptions & { nameOnly: true }): Promise<string[]>;
-    async listTables(options: ListTablesOptions & { nameOnly: false }): Promise<TableDescriptor[]>;
+    async listTables(options?: ListTablesOptions & { nameOnly?: false }): Promise<TableDescriptor[]>;
 
-    async listTables(options: ListTablesOptions) {
+    async listTables(options?: ListTablesOptions) {
         await this._waitForClient();
-        if (options.nameOnly) {
+        if (options?.nameOnly) {
             return this.db!.listTables({ ...options, nameOnly: true });
         }
         return this.db!.listTables({ ...options, nameOnly: false });

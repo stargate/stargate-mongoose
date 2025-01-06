@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Db as AstraDb, CreateTableDefinition, ListTablesOptions, RawDataAPIResponse } from '@datastax/astra-db-ts';
+import { Db as AstraDb, CreateTableDefinition, ListCollectionsOptions, ListTablesOptions, RawDataAPIResponse } from '@datastax/astra-db-ts';
 
 export class Db {
     astraDb: AstraDb;
@@ -93,8 +93,11 @@ export class Db {
      * List all collections in the database.
      * @param options Additional options for listing collections.
      */
-    async listCollections(options: Record<string, unknown>) {
-        return this.astraDb.listCollections({ nameOnly: false, ...options });
+    async listCollections(options: ListCollectionsOptions) {
+        if (options.nameOnly) {
+            return this.astraDb.listCollections({ ...options, nameOnly: true });
+        }
+        return this.astraDb.listCollections({ ...options, nameOnly: false });
     }
 
     /**
