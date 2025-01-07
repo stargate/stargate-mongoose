@@ -223,7 +223,7 @@ describe('Driver based tests', async () => {
             const Person = mongooseInstance!.model('Person');
             await Person.init();
             await Person.deleteMany({});
-            await assert.throws(
+            assert.throws(
                 () => Person.watch([{$match: {name: 'John'}}]),
                 /watch\(\) Not Implemented/
             );
@@ -272,6 +272,31 @@ describe('Driver based tests', async () => {
             const collections = await mongooseInstance!.connection.listCollections();
             const collectionNames = collections.map(({ name }) => name);
             assert.ok(typeof collectionNames[0] === 'string', collectionNames.join(','));
+        });
+
+        it('handles enableBigNumbers in collections', async function() {
+            if (process.env.DATA_API_TABLES) {
+                this.skip();
+                return;
+            }
+            delete mongooseInstance.connection.collections[Product.collection.collectionName];
+            const bigNumbersProductSchema = Product.schema.clone().add({ price: BigInt }).set('serdes', { enableBigNumbers: true });
+            const BigNumbersProduct = mongooseInstance.model('BigNumbersProduct', bigNumbersProductSchema, Product.collection.collectionName);
+
+            const _id = new mongoose.Types.ObjectId();
+            const collection = mongooseInstance.connection.db!.collection(Product.collection.collectionName, { serdes: { enableBigNumbers: true } });
+            await collection.insertOne({
+                _id: _id.toString(),
+                name: 'Very expensive product',
+                // MAX_SAFE_INTEGER + 8
+                price: BigInt('9007199254740999')
+            });
+
+            const rawDoc = await collection.findOne({ _id: _id.toString() });
+            assert.strictEqual(rawDoc!.price, '9007199254740999');
+
+            const mongooseDoc = await BigNumbersProduct.findOne({ _id }).orFail();
+            assert.strictEqual(mongooseDoc.price, BigInt('9007199254740999'));
         });
 
         async function createMongooseInstance() {

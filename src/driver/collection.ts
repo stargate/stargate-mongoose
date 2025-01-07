@@ -31,12 +31,14 @@ import {
     Table as AstraTable,
     TableFilter,
     CreateTableIndexOptions,
+    TableOptions,
     TableIndexOptions,
-    TableVectorIndexOptions
+    TableVectorIndexOptions,
+    CollectionOptions
 } from '@datastax/astra-db-ts';
 import { serialize } from '../serialize';
 import deserializeDoc from '../deserializeDoc';
-import { Types } from 'mongoose';
+import { SchemaOptions, Types } from 'mongoose';
 
 export type MongooseSortOption = Record<string, 1 | -1 | { $meta: Array<number> } | { $meta: string }>;
 
@@ -55,6 +57,13 @@ interface StargateMongooseIndexDescription {
     key: Record<string, 1>
 }
 
+export interface MongooseCollectionOptions {
+    schemaUserProvidedOptions?: SchemaOptions,
+    capped?: boolean,
+    modelName?: string,
+    autoCreate?: boolean
+}
+
 /**
  * Collection operations supported by the driver. This class is called "Collection" for consistency with Mongoose, because
  * in Mongoose a Collection is the interface that Models and Queries use to communicate with the database. However, from
@@ -66,11 +75,13 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     _collection?: AstraCollection<DocType> | AstraTable<DocType>;
     _closed: boolean;
     connection: Connection;
+    options?: (TableOptions | CollectionOptions) & MongooseCollectionOptions;
 
-    constructor(name: string, conn: Connection, options?: { modelName?: string | null }) {
+    constructor(name: string, conn: Connection, options?: (TableOptions | CollectionOptions) & MongooseCollectionOptions) {
         super(name, conn, options);
         this.connection = conn;
         this._closed = false;
+        this.options = options;
     }
 
     // Get the collection or table. Cache the result so we don't recreate collection/table every time.
@@ -78,8 +89,14 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this._collection != null) {
             return this._collection;
         }
+
+        const collectionOptions = this.options?.schemaUserProvidedOptions?.serdes
+            // Type coercion because `collection<>` method below doesn't know whether we're creating a
+            // Astra Table or Astra Collection until runtime
+            ? { serdes: this.options.schemaUserProvidedOptions.serdes } as unknown as Record<string, never>
+            : {};
         // Cache because @datastax/astra-db-ts doesn't
-        const collection = this.connection.db!.collection<DocType>(this.name);
+        const collection = this.connection.db!.collection<DocType>(this.name, collectionOptions);
         this._collection = collection;
         return collection;
     }

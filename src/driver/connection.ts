@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Collection } from './collection';
+import { Collection, MongooseCollectionOptions } from './collection';
 import { AstraAdmin, CollectionDescriptor, CreateTableDefinition, DataAPIDbAdmin, ListCollectionsOptions, ListTablesOptions, RawDataAPIResponse, TableDescriptor } from '@datastax/astra-db-ts';
-import { Db } from './db';
+import { CollectionsDb, TablesDb } from './db';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
 import type { ConnectOptions, Mongoose, Model } from 'mongoose';
@@ -42,7 +42,7 @@ export class Connection extends MongooseConnection {
     initialConnection: Promise<Connection> | null = null;
     client: DataAPIClient | null = null;
     admin: AstraAdmin | DataAPIDbAdmin | null = null;
-    db: Db | null = null;
+    db: CollectionsDb | TablesDb | null = null;
     namespace: string | null = null;
     config?: ConnectOptionsInternal;
     baseUrl: string | null = null;
@@ -81,7 +81,7 @@ export class Connection extends MongooseConnection {
      * @param name
      * @param options
      */
-    collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: { modelName?: string }): Collection<DocType> {
+    collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: MongooseCollectionOptions): Collection<DocType> {
         if (!(name in this.collections)) {
             this.collections[name] = new Collection<DocType>(name, this, options);
         }
@@ -251,7 +251,9 @@ export class Connection extends MongooseConnection {
                 const client = new DataAPIClient(applicationToken);
                 return {
                     client,
-                    db: new Db(client.db(baseUrl, dbOptions), keyspaceName, options?.useTables),
+                    db: options.useTables
+                        ? new TablesDb(client.db(baseUrl, dbOptions), keyspaceName)
+                        : new CollectionsDb(client.db(baseUrl, dbOptions), keyspaceName),
                     admin: client.admin({ adminToken: applicationToken })
                 };
             }
@@ -263,7 +265,9 @@ export class Connection extends MongooseConnection {
                 new UsernamePasswordTokenProvider(options.username, options.password),
                 { environment: 'dse' }
             );
-            const db = new Db(client.db(baseUrl, dbOptions), keyspaceName, options?.useTables);
+            const db = options?.useTables
+                ? new TablesDb(client.db(baseUrl, dbOptions), keyspaceName)
+                : new CollectionsDb(client.db(baseUrl, dbOptions), keyspaceName);
             return {
                 client,
                 db,

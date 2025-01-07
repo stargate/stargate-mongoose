@@ -12,31 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CollectionIndexingOptions, CollectionVectorOptions } from '@datastax/astra-db-ts';
+import { CollectionIndexingOptions, CollectionSerDesConfig, CollectionVectorOptions, TableSerDesConfig } from '@datastax/astra-db-ts';
 
 export * as driver from './driver';
 export { default as createAstraUri } from './createAstraUri';
 
 declare module 'mongodb' {
-  interface CreateCollectionOptions {
-    vector?: CollectionVectorOptions;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    indexing?: CollectionIndexingOptions<any>;
-  }
+    interface CreateCollectionOptions {
+        vector?: CollectionVectorOptions;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        indexing?: CollectionIndexingOptions<any>;
+    }
 }
 
 declare module 'mongoose' {
-  interface ConnectOptions {
-    useTables?: boolean;
-    isAstra?: boolean;
-    sanitizeFilter?: boolean;
-    username?: string;
-    password?: string;
-  }
+    interface ConnectOptions {
+        useTables?: boolean;
+        isAstra?: boolean;
+        sanitizeFilter?: boolean;
+        username?: string;
+        password?: string;
+    }
 
-  interface InsertManyOptions {
-    returnDocumentResponses?: boolean;
-  }
+    interface InsertManyOptions {
+        returnDocumentResponses?: boolean;
+    }
 
-  function setDriver<T = Mongoose>(driver: unknown): T;
+    interface SchemaOptions {
+        serdes?: CollectionSerDesConfig | TableSerDesConfig
+    }
+
+    function setDriver<T = Mongoose>(driver: unknown): T;
 }

@@ -12,9 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Db as AstraDb, CreateTableDefinition, ListCollectionsOptions, ListTablesOptions, RawDataAPIResponse } from '@datastax/astra-db-ts';
+import {
+    Db as AstraDb,
+    Collection as AstraCollection,
+    CollectionOptions,
+    CreateTableDefinition,
+    ListCollectionsOptions,
+    ListTablesOptions,
+    RawDataAPIResponse,
+    Table as AstraTable,
+    TableOptions,
+    Collection
+} from '@datastax/astra-db-ts';
 
-export class Db {
+export abstract class BaseDb {
     astraDb: AstraDb;
     // Whether we're using "tables mode" or "collections mode". If tables mode, then `collection()` returns
     // a Table instance, **not** a Collection instance. Also, if tables mode, `createCollection()` throws an
@@ -38,24 +49,14 @@ export class Db {
      * Get a collection by name.
      * @param name The name of the collection.
      */
-    collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string) {
-        if (this.useTables) {
-            return this.astraDb.table<DocType>(name);
-        }
-        return this.astraDb.collection<DocType>(name);
-    }
+    abstract collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options: Record<string, unknown>): AstraCollection | AstraTable<DocType>;
 
     /**
      * Create a new collection with the specified name and options.
      * @param name The name of the collection to be created.
      * @param options Additional options for creating the collection.
      */
-    async createCollection(name: string, options?: Record<string, unknown>) {
-        if (this.useTables) {
-            throw new Error('Cannot createCollection in tables mode');
-        }
-        return this.astraDb.createCollection(name, options);
-    }
+    abstract createCollection(name: string, options?: Record<string, unknown>): Promise<Collection>;
 
     /**
      * Create a new table with the specified name and definition
@@ -116,5 +117,41 @@ export class Db {
      */
     async command(command: Record<string, unknown>): Promise<RawDataAPIResponse> {
         return this.astraDb.command(command);
+    }
+}
+
+export class CollectionsDb extends BaseDb {
+    constructor(astraDb: AstraDb, keyspaceName: string) {
+        super(astraDb, keyspaceName, false);
+    }
+
+    /**
+     * Get a collection by name.
+     * @param name The name of the collection.
+     */
+    collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options: CollectionOptions) {
+        return this.astraDb.collection<DocType>(name, options);
+    }
+
+    async createCollection(name: string, options?: Record<string, unknown>) {
+        return this.astraDb.createCollection(name, options);
+    }
+}
+
+export class TablesDb extends BaseDb {
+    constructor(astraDb: AstraDb, keyspaceName: string) {
+        super(astraDb, keyspaceName, true);
+    }
+
+    /**
+     * Get a collection by name.
+     * @param name The name of the collection.
+     */
+    collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options: TableOptions) {
+        return this.astraDb.table<DocType>(name, options);
+    }
+
+    async createCollection(_name: string, _options?: Record<string, unknown>): Promise<Collection> {
+        throw new Error('Cannot createCollection in tables mode');
     }
 }
