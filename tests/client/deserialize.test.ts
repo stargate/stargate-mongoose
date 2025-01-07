@@ -14,7 +14,7 @@
 
 import { ObjectId } from 'bson';
 import assert from 'assert';
-import { deserialize } from '@/src/client/deserialize';
+import { deserialize } from '../../src/client/deserialize';
 
 describe('StargateMongoose - client.deserialize', () => {
     describe('deserialize', () => {

@@ -35,7 +35,7 @@ import {
     UpdateManyOptions,
     UpdateOneOptions,
     UpdateOneOptionsForDataAPI
-} from '@/src/collections/options';
+} from '../collections/options';
 import { DataAPIDeleteResult } from '../collections/collection';
 
 import { version } from 'mongoose';
@@ -263,7 +263,7 @@ export class Collection extends MongooseCollection {
      * @param options
      * @param callback
      */
-    deleteOne(filter: Record<string, unknown>, options?: DeleteOneOptions, callback?: NodeCallback<DataAPIDeleteResult>) {    
+    deleteOne(filter: Record<string, unknown>, options?: DeleteOneOptions, callback?: NodeCallback<DataAPIDeleteResult>) {
         let requestOptions: DeleteOneOptionsForDataAPI | undefined = undefined;
         if (options != null && options.sort != null) {
             requestOptions = { ...options, sort: processSortOption(options.sort) };
@@ -271,7 +271,7 @@ export class Collection extends MongooseCollection {
             requestOptions = { ...options, sort: undefined };
             delete requestOptions.sort;
         }
-        
+
         const promise = this.collection.deleteOne(filter, requestOptions);
 
         if (callback != null) {
@@ -386,10 +386,10 @@ export class Collection extends MongooseCollection {
 
     /**
      * Create index not supported.
-     * 
+     *
      * Async because Mongoose `createIndexes()` throws an unhandled error if `createIndex()` throws a sync error
      * See Automattic/mongoose#14995
-     * 
+     *
      * @param fieldOrSpec
      * @param options
      */
@@ -433,7 +433,7 @@ function processSortOption(sort: SortOption): SortOptionInternal {
             result[key] = $meta;
         }
     }
-    
+
     return result;
 }
 

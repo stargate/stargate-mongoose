@@ -13,11 +13,11 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { Db } from '@/src/collections/db';
-import { FindCursor } from '@/src/collections/cursor';
-import { Collection } from '@/src/collections/collection';
-import { Client } from '@/src/collections/client';
-import { testClient, sampleUsersList, TEST_COLLECTION_NAME } from '@/tests/fixtures';
+import { Db } from '../../src/collections/db';
+import { FindCursor } from '../../src/collections/cursor';
+import { Collection } from '../../src/collections/collection';
+import { Client } from '../../src/collections/client';
+import { testClient, sampleUsersList, TEST_COLLECTION_NAME } from '../fixtures';
 
 describe(`StargateMongoose - ${testClient} Connection - collections.cursor`, async () => {
     let astraClient: Client | null;

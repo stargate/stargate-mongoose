@@ -13,15 +13,15 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { Db } from '@/src/collections/db';
-import { Client } from '@/src/collections/client';
-import { parseUri, createNamespace } from '@/src/collections/utils';
-import { testClient, TEST_COLLECTION_NAME } from '@/tests/fixtures';
-import { createMongooseCollections } from '@/tests/mongooseFixtures';
-import {HTTPClient} from '@/src/client';
+import { Db } from '../../src/collections/db';
+import { Client } from '../../src/collections/client';
+import { parseUri, createNamespace } from '../../src/collections/utils';
+import { testClient, TEST_COLLECTION_NAME } from '../fixtures';
+import { createMongooseCollections } from '../mongooseFixtures';
+import {HTTPClient} from '../../src/client';
 import { randomBytes } from 'crypto';
 import mongoose from 'mongoose';
-import { StargateServerError } from '@/src/client/httpClient';
+import { StargateServerError } from '../../src/client/httpClient';
 
 const randString = (length: number) => randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length);
 
@@ -144,23 +144,23 @@ describe('StargateMongoose - collections.Db', async () => {
             try {
                 let collections = await db.findCollections().then(res => res.status.collections);
                 assert.ok(!collections.includes(collectionName));
-    
+
                 const res = await db.createCollection(
                     collectionName,
                     { indexing: { deny: ['description'] } }
                 );
                 assert.ok(res);
                 assert.strictEqual(res.status.ok, 1);
-    
+
                 collections = await db.findCollections().then(res => res.status.collections);
                 assert.ok(collections.includes(collectionName));
-    
+
                 await db.collection(collectionName).insertOne({ name: 'test', description: 'test' });
                 await assert.rejects(
                     () => db.collection(collectionName).findOne({ description: 'test' }),
                     /filter path 'description' is not indexed/
                 );
-    
+
                 const doc = await db.collection(collectionName).findOne({ name: 'test' });
                 assert.equal(doc!.description, 'test');
             } finally {
@@ -175,17 +175,17 @@ describe('StargateMongoose - collections.Db', async () => {
             try {
                 let collections = await db.findCollections().then(res => res.status.collections);
                 assert.ok(!collections.includes(collectionName));
-  
+
                 const res = await db.createCollection(
                     collectionName,
                     { defaultId: { type: 'objectId' } }
                 );
                 assert.ok(res);
                 assert.strictEqual(res.status.ok, 1);
-  
+
                 collections = await db.findCollections().then(res => res.status.collections);
                 assert.ok(collections.includes(collectionName));
-  
+
                 const { insertedId } = await db.collection(collectionName).insertOne({ name: 'test' });
                 assert.ok(insertedId instanceof mongoose.Types.ObjectId);
 
@@ -230,7 +230,7 @@ describe('StargateMongoose - collections.Db', async () => {
                 return this.skip();
             }
             const db = new Db(httpClient, keyspaceName);
-            
+
             await db.createCollection(`test_db_collection_${suffix}`);
             const res = await db.dropDatabase();
             assert.strictEqual(res.status?.ok, 1);

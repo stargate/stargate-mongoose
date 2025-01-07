@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { Client, ClientOptions } from '@/src/collections/client';
+import { Client, ClientOptions } from '../src/collections/client';
 
 export const TEST_COLLECTION_NAME = 'collection1';
 

@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { Client } from '@/src/collections/client';
-import { testClient } from '@/tests/fixtures';
-import { parseUri } from '@/src/collections/utils';
+import { Client } from '../../src/collections/client';
+import { testClient } from '../../tests/fixtures';
+import { parseUri } from '../../src/collections/utils';
 
 const localBaseUrl = 'http://localhost:8181';
 
@@ -158,7 +158,7 @@ describe('StargateMongoose clients test', () => {
             const AUTH_TOKEN_TO_CHECK = '123';
             const KEYSPACE_TO_CHECK = 'testks1';
             const AUTH_HEADER_NAME_TO_CHECK = 'x-token';
-      
+
             const client = await Client.connect(baseUrl + '/' + KEYSPACE_TO_CHECK, {
                 applicationToken: AUTH_TOKEN_TO_CHECK,
                 authHeaderName: AUTH_HEADER_NAME_TO_CHECK,

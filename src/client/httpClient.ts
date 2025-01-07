@@ -14,13 +14,13 @@
 
 import http from 'http';
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { logger, setLevel } from '@/src/logger';
+import { logger, setLevel } from '../logger';
 import { inspect } from 'util';
 import { LIB_NAME, LIB_VERSION } from '../version';
 import { getStargateAccessToken } from '../collections/utils';
 import http2 from 'http2';
 import { StargateMongooseError } from '../collections/collection';
-import { deserialize } from './deserialize'; 
+import { deserialize } from './deserialize';
 import { serialize } from './serialize';
 
 const REQUESTED_WITH = LIB_NAME + '/' + LIB_VERSION;
@@ -138,7 +138,7 @@ class HTTP2Session {
         }
     }
 
-    request(path: string, token: string, body: Record<string, unknown>, timeout: number, additionalParams: Record<string, unknown>): Promise<{ status: number, data: Record<string, unknown> }> { 
+    request(path: string, token: string, body: Record<string, unknown>, timeout: number, additionalParams: Record<string, unknown>): Promise<{ status: number, data: Record<string, unknown> }> {
         return new Promise((resolve, reject) => {
             if (!this.closed && this.session.closed) {
                 this._createSession();
@@ -150,7 +150,7 @@ class HTTP2Session {
             if (logger.isLevelEnabled('http')) {
                 logger.http(`--- request POST ${this.origin}${path} ${serialize(body, true)}`);
             }
-            
+
             const timer = setTimeout(
                 () => {
                     if (!done) {
