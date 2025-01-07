@@ -14,8 +14,8 @@
 
 import { Types } from 'mongoose';
 import url from 'url';
-import { logger } from '@/src/logger';
-import { HTTPClient, handleIfErrorResponse } from '@/src/client/httpClient';
+import { logger } from '../logger';
+import { HTTPClient, handleIfErrorResponse } from '../client/httpClient';
 
 interface ParsedUri {
   baseUrl: string;

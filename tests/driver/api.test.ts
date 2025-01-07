@@ -13,19 +13,19 @@
 // limitations under the License.
 
 import assert from 'assert';
-import {Db} from '@/src/collections/db';
-import {Client} from '@/src/collections/client';
+import {Db} from '../../src/collections/db';
+import {Client} from '../../src/collections/client';
 import {
     testClient,
     TEST_COLLECTION_NAME
-} from '@/tests/fixtures';
+} from '../../tests/fixtures';
 import mongoose, { Schema, InferSchemaType, InsertManyResult } from 'mongoose';
 import { once } from 'events';
-import * as StargateMongooseDriver from '@/src/driver';
+import * as StargateMongooseDriver from '../../src/driver';
 import {randomUUID} from 'crypto';
-import {OperationNotSupportedError} from '@/src/driver';
-import { Product, Cart, mongooseInstance, productSchema } from '@/tests/mongooseFixtures';
-import { StargateServerError } from '@/src/client/httpClient';
+import {OperationNotSupportedError} from '../../src/driver';
+import { Product, Cart, mongooseInstance, productSchema } from '../mongooseFixtures';
+import { StargateServerError } from '../../src/client/httpClient';
 
 describe('Mongoose Model API level tests', async () => {
     let astraClient: Client | null;
@@ -336,13 +336,13 @@ describe('Mongoose Model API level tests', async () => {
             assert.ok(err instanceof OperationNotSupportedError);
             assert.strictEqual(err.message, 'distinct() Not Implemented');
         });
-        
+
         it('API ops tests Model.estimatedDocumentCount()', async function() {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
             await Product.create([product1, product2, product3]);
-            
+
             const count = await Product.estimatedDocumentCount();
             assert.equal(typeof count, 'number');
             assert.ok(count >= 0);
@@ -578,7 +578,7 @@ describe('Mongoose Model API level tests', async () => {
             await Product.create(product1);
             //UpdateOne
             await Product.updateOne({ _id: product1._id }, { $push: { tags: { name: 'Home & Garden' } } });
-            
+
             const { tags } = await Product.findById(product1._id).orFail();
             assert.deepStrictEqual(tags.toObject(), [{ name: 'Electronics' }, { name: 'Home & Garden' }]);
         });
@@ -591,7 +591,7 @@ describe('Mongoose Model API level tests', async () => {
             await cart.save();
             //UpdateOne
             await Cart.updateOne({ _id: cart._id }, { $set: { user: { name: 'test updated subdoc' } } });
-          
+
             const { user } = await Cart.findById(cart._id).orFail();
             assert.deepStrictEqual(user.toObject(), { name: 'test updated subdoc' });
         });
@@ -834,9 +834,9 @@ describe('Mongoose Model API level tests', async () => {
                 .find({}, null, { includeSortVector: true })
                 .sort({ $vector: { $meta: [1, 99] } })
                 .cursor();
-            
+
             await once(cursor, 'cursor');
-            assert.deepStrictEqual(await cursor.cursor.getSortVector(), [1, 99]);            
+            assert.deepStrictEqual(await cursor.cursor.getSortVector(), [1, 99]);
         });
 
         it('supports sort() and similarity score with $meta with findOne()', async function() {

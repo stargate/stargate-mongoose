@@ -14,13 +14,13 @@
 
 import assert from 'assert';
 import mongoose from 'mongoose';
-import * as StargateMongooseDriver from '@/src/driver';
-import { testClient, TEST_COLLECTION_NAME } from '@/tests/fixtures';
-import { logger } from '@/src/logger';
-import { parseUri } from '@/src/collections/utils';
-import { HTTPClient } from '@/src/client';
-import { Client } from '@/src/collections';
-import { Product, Cart, mongooseInstance } from '@/tests/mongooseFixtures';
+import * as StargateMongooseDriver from '../../src/driver';
+import { testClient, TEST_COLLECTION_NAME } from '../fixtures';
+import { logger } from '../../src/logger';
+import { parseUri } from '../../src/collections/utils';
+import { HTTPClient } from '../../src/client';
+import { Client } from '../../src/collections';
+import { Product, Cart, mongooseInstance } from '../mongooseFixtures';
 
 describe('Driver based tests', async () => {
     let dbUri: string;
@@ -238,7 +238,7 @@ describe('Driver based tests', async () => {
 
             await mongooseInstance.disconnect();
         });
-          
+
         it('handles listCollections()', async () => {
             const collections = await mongooseInstance!.connection.listCollections();
             const collectionNames = collections.map(({ name }) => name);
@@ -265,7 +265,7 @@ describe('Driver based tests', async () => {
             mongooseInstance.set('autoCreate', false);
             mongooseInstance.set('autoIndex', false);
             const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
-            
+
             //split dbUri by / and replace last element with newKeyspaceName
             const dbUriSplit = dbUri.split('/');
             const token = parseUri(dbUri).applicationToken;

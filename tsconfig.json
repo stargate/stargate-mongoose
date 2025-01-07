@@ -10,11 +10,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": true,
-    "paths": {
-      "@/src/*": ["./src/*"],
-      "@/tests/*": ["./tests/*"]
-    }
+    "skipLibCheck": true
   },
   "include": ["tests/**/*", "src/**/*"]
 }
