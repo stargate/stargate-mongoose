@@ -26,6 +26,7 @@ import {
     CollectionUpdateManyOptions,
     CollectionUpdateOneOptions as UpdateOneOptionsInternal,
     CollectionInsertManyOptions,
+    DataAPIResponseError,
     SortDirection,
     Sort as SortOptionInternal,
     Table as AstraTable,
@@ -410,7 +411,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param column
      * @param options
      */
-    async createIndex(indexSpec: Record<string, boolean>, options?: CreateTableIndexOptions & { name?: string }) {
+    async createIndex(indexSpec: Record<string, boolean>, options?: CreateTableIndexOptions & { name?: string }): Promise<void> {
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use createIndex() with collections');
         }
@@ -418,7 +419,16 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             throw new TypeError('createIndex indexSpec must have exactly 1 key');
         }
         const [column] = Object.keys(indexSpec);
-        return this.collection.createIndex(options?.name ?? column, column, options);
+        return this.collection.createIndex(options?.name ?? column, column, options).catch((error: Error) => {
+            if (error instanceof DataAPIResponseError) {
+                // This error occurs if we try to create an index that already exists with same name and options.
+                // Ignore this error for Mongoose compatibility.
+                if (error.errorDescriptors?.[0]?.errorCode === 'CANNOT_ADD_EXISTING_INDEX') {
+                    return;
+                }
+            }
+            throw error;
+        });
     }
 
     /**

@@ -732,7 +732,67 @@ describe('Mongoose Model API level tests', async () => {
         });
         it('API ops tests Model.syncIndexes()', async () => {
             if (process.env.DATA_API_TABLES) {
-                await assert.rejects(Product.syncIndexes(), /Cannot createCollection in tables mode/);
+                const collection = mongooseInstance.connection.collection(Product.collection.collectionName);
+                await collection.createIndex({ category: true }, { name: 'will_drop_index' });
+                await collection.createIndex({ price: true });
+
+                const testProductSchema = new mongooseInstance.Schema({
+                    name: { type: String, index: true }, // Index doesn't exist in db, will create
+                    price: { type: Number, index: true }, // Index exists in db
+                    expiryDate: Date,
+                    isCertified: Boolean,
+                    category: String // Index exists in db but not in schema, will drop
+                });
+                const ProductIndexModel = mongooseInstance.model('ProductIndexes', testProductSchema, Product.collection.collectionName);
+
+                const stringIndexOptions = { ascii: false, caseSensitive: true, normalize: false };
+                let indexes = await ProductIndexModel.listIndexes();
+                assert.deepStrictEqual(indexes, [
+                    {
+                        name: 'will_drop_index',
+                        definition: {
+                            column: 'category',
+                            options: stringIndexOptions
+                        },
+                        key: { category: 1 }
+                    },
+                    {
+                        name: 'price',
+                        definition: {
+                            column: 'price',
+                            options: {}
+                        },
+                        key: { price: 1 }
+                    }
+                ]);
+
+                const droppedIndexes = await ProductIndexModel.syncIndexes();
+
+                // Drop "will_drop_index" because not in schema, but keep index on `price`
+                assert.deepStrictEqual(droppedIndexes, ['will_drop_index']);
+
+                indexes = await ProductIndexModel.listIndexes();
+                assert.deepStrictEqual(indexes, [
+                    {
+                        name: 'name',
+                        definition: {
+                            column: 'name',
+                            options: stringIndexOptions
+                        },
+                        key: { name: 1 }
+                    },
+                    {
+                        name: 'price',
+                        definition: {
+                            column: 'price',
+                            options: {}
+                        },
+                        key: { price: 1 }
+                    }
+                ]);
+
+                await collection.dropIndex('name');
+                await collection.dropIndex('price');
             } else {
                 const error: Error | null = await Product.syncIndexes().then(() => null, error => error);
                 assert.ok(error instanceof OperationNotSupportedError);

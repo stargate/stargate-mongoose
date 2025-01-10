@@ -151,7 +151,8 @@ export class TablesDb extends BaseDb {
         return this.astraDb.table<DocType>(name, options);
     }
 
-    async createCollection(_name: string, _options?: Record<string, unknown>): Promise<Collection> {
-        throw new Error('Cannot createCollection in tables mode');
+    async createCollection(name: string, _options?: Record<string, unknown>): Promise<Collection> {
+        // throw new Error('Cannot createCollection in tables mode');
+        return this.astraDb.collection(name);
     }
 }
