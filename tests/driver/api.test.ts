@@ -747,15 +747,7 @@ describe('Mongoose Model API level tests', async () => {
 
                 const stringIndexOptions = { ascii: false, caseSensitive: true, normalize: false };
                 let indexes = await ProductIndexModel.listIndexes();
-                assert.deepStrictEqual(indexes, [
-                    {
-                        name: 'will_drop_index',
-                        definition: {
-                            column: 'category',
-                            options: stringIndexOptions
-                        },
-                        key: { category: 1 }
-                    },
+                assert.deepStrictEqual(indexes.sort((i1, i2) => i1.name.localeCompare(i2.name)), [
                     {
                         name: 'price',
                         definition: {
@@ -763,6 +755,14 @@ describe('Mongoose Model API level tests', async () => {
                             options: {}
                         },
                         key: { price: 1 }
+                    },
+                    {
+                        name: 'will_drop_index',
+                        definition: {
+                            column: 'category',
+                            options: stringIndexOptions
+                        },
+                        key: { category: 1 }
                     }
                 ]);
 
