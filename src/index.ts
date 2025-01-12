@@ -16,6 +16,7 @@ import { CollectionIndexingOptions, CollectionSerDesConfig, CollectionVectorOpti
 
 export * as driver from './driver';
 export { default as createAstraUri } from './createAstraUri';
+export { default as tableDefinitionFromSchema } from './tableDefinitionFromSchema';
 
 declare module 'mongodb' {
     interface CreateCollectionOptions {

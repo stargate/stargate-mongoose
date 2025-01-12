@@ -3,6 +3,7 @@ import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 import * as StargateMongooseDriver from '../src/driver';
 import { parseUri } from '../src/driver/connection';
 import { plugins } from '../src/driver';
+import tableDefinitionFromSchema from '../src/tableDefinitionFromSchema';
 
 const useTables = !!process.env.DATA_API_TABLES;
 
@@ -63,24 +64,7 @@ export async function createMongooseCollections() {
     if (useTables) {
         await mongooseInstance.connection.dropTable(Cart.collection.collectionName);
         await mongooseInstance.connection.dropTable(Product.collection.collectionName);
-        await mongooseInstance.connection.createTable(Cart.collection.collectionName, {
-            primaryKey: '_id',
-            columns: {
-                _id: { type: 'text' },
-                __v: { type: 'int' },
-                name: { type: 'text' },
-                cartName: { type: 'text' },
-                products: {
-                    type: 'list',
-                    valueType: 'text'
-                },
-                user: {
-                    type: 'map',
-                    keyType: 'text',
-                    valueType: 'text'
-                }
-            }
-        });
+        await mongooseInstance.connection.createTable(Cart.collection.collectionName, tableDefinitionFromSchema(Cart.schema));
         await mongooseInstance.connection.createTable(Product.collection.collectionName, {
             primaryKey: '_id',
             columns: {

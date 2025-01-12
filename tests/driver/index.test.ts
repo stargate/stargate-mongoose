@@ -17,6 +17,7 @@ import mongoose from 'mongoose';
 import * as StargateMongooseDriver from '../../src/driver';
 import { testClient, TEST_COLLECTION_NAME } from '../fixtures';
 import { Product, Cart, mongooseInstance } from '../mongooseFixtures';
+import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
 
 describe('Driver based tests', async () => {
     let dbUri: string;
@@ -105,14 +106,7 @@ describe('Driver based tests', async () => {
 
             if (process.env.DATA_API_TABLES) {
                 await mongooseInstance.connection.dropTable(TEST_COLLECTION_NAME);
-                await mongooseInstance.connection.createTable(TEST_COLLECTION_NAME, {
-                    primaryKey: '_id',
-                    columns: {
-                        _id: { type: 'text' },
-                        __v: { type: 'int' },
-                        name: { type: 'text' }
-                    }
-                });
+                await mongooseInstance.connection.createTable(TEST_COLLECTION_NAME, tableDefinitionFromSchema(personSchema));
             } else {
                 if (tableNames.includes(TEST_COLLECTION_NAME)) {
                     await mongooseInstance.connection.dropTable(TEST_COLLECTION_NAME);
@@ -235,13 +229,7 @@ describe('Driver based tests', async () => {
             if (process.env.DATA_API_TABLES) {
                 const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });
                 if (!tableNames.includes(TEST_COLLECTION_NAME)) {
-                    await mongooseInstance.connection.createTable(TEST_COLLECTION_NAME, {
-                        primaryKey: '_id',
-                        columns: {
-                            _id: { type: 'text' },
-                            name: { type: 'text' }
-                        }
-                    });
+                    await mongooseInstance.connection.createTable(TEST_COLLECTION_NAME, tableDefinitionFromSchema(Person.schema));
                 }
             } else {
                 const collectionNames = await mongooseInstance.connection.listCollections().then(collections => collections.map(c => c.name));

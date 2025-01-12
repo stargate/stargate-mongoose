@@ -51,7 +51,7 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "test": "env TEST_DOC_DB=dataapi ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts",
+    "test": "env TEST_DOC_DB=dataapi ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts tests/*.test.ts",
     "test-astra": "env TEST_DOC_DB=astra nyc --check-coverage --reporter=text --reporter=lcov ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts",
     "test-dataapi": "env TEST_DOC_DB=dataapi nyc --check-coverage --reporter=text --reporter=lcov ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts",
     "preinstall": "npm run update-version-file",

@@ -17,6 +17,7 @@ import { mongooseInstance } from '../mongooseFixtures';
 import { Schema, Types } from 'mongoose';
 import { randomUUID } from 'crypto';
 import { UUID } from 'bson';
+import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
 
 const TEST_TABLE_NAME = 'table1';
 
@@ -41,9 +42,10 @@ describe('tables', function() {
         }
 
         await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
-        await mongooseInstance.connection.createTable(TEST_TABLE_NAME, { primaryKey: '_id', columns: { _id: 'text', testProperty: 'text' } });
 
         const testSchema = new Schema({ testProperty: { type: String, index: true } });
+        await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(testSchema));
+
         const TestModel = mongooseInstance.model('Test', testSchema, TEST_TABLE_NAME);
         await TestModel.createIndexes();
         let indexes = await mongooseInstance.connection.collection(TEST_TABLE_NAME).listIndexes().toArray();
