@@ -79,24 +79,26 @@ describe('tables', function() {
             employee: Schema.Types.ObjectId,
             friends: [String],
             salary: Schema.Types.Decimal128,
-            favorites: Map,
+            favorites: { type: Map, of: String },
             uniqueId: Schema.Types.UUID,
             category: BigInt,
             buf: Buffer,
             willBeNull: String
         }, { versionKey: false });
         await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
-        await mongooseInstance.connection.createTable(TEST_TABLE_NAME, {
+        const tableDefinition = tableDefinitionFromSchema(userSchema);
+        assert.deepStrictEqual(tableDefinition, {
             primaryKey: '_id',
             columns: {
-                _id: 'text',
-                name: 'text',
-                age: 'int',
-                dob: 'timestamp',
-                isCertified: 'boolean',
-                employee: 'text',
+                _id: { type: 'text' },
+                __v: { type: 'int' },
+                name: { type: 'text' },
+                age: { type: 'double' },
+                dob: { type: 'timestamp' },
+                isCertified: { type: 'boolean' },
+                employee: { type: 'text' },
                 friends: { type: 'list', valueType: 'text' },
-                salary: 'decimal',
+                salary: { type: 'decimal' },
                 favorites: { type: 'map', keyType: 'text', valueType: 'text' },
                 uniqueId: { type: 'uuid' },
                 category: { type: 'varint' },
@@ -104,6 +106,7 @@ describe('tables', function() {
                 willBeNull: { type: 'text' }
             }
         });
+        await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
         const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
 
         const employeeIdVal = new Types.ObjectId();
