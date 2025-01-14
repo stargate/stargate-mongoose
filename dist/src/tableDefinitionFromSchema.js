@@ -26,11 +26,11 @@ function tableDefinitionFromSchema(schema) {
     for (const path of Object.keys(schema.paths)) {
         const schemaType = schema.paths[path];
         const type = mongooseTypeToDataAPIType(schemaType.instance);
-        const isNested = path.indexOf('.') !== -1;
-        if (isNested) {
+        const isNestedOrMap = path.indexOf('.') !== -1;
+        if (isNestedOrMap) {
             const split = schemaType.path.split('.');
             if (split.length > 2) {
-                throw new Error(`Cannot convert schema with 3-level deep nested path ${path} to Data API table definition`);
+                throw new Error(`Cannot convert schema to Data API table definition: schemas with 3-level deep nested path ${path} are not supported`);
             }
             const nestedPath = split[0];
             if (schemaTypesForNestedPath[nestedPath] == null) {
@@ -43,11 +43,11 @@ function tableDefinitionFromSchema(schema) {
         }
         else if (schemaType.instance === 'Array') {
             if (schemaType.schema) {
-                throw new Error(`Cannot convert schema with DocumentArray ${path} to Data API table definition`);
+                throw new Error(`Cannot convert schema to Data API table definition: DocumentArray ${path} is not supported`);
             }
             const valueType = mongooseTypeToDataAPIType(schemaType.getEmbeddedSchemaType()?.instance ?? '');
             if (valueType == null) {
-                throw new Error(`Unknown array type at path ${path}`);
+                throw new Error(`Cannot convert schema to Data API table definition: unsupported array type at path ${path}`);
             }
             tableDefinition.columns[path] = { type: 'list', valueType };
         }
@@ -56,11 +56,11 @@ function tableDefinitionFromSchema(schema) {
             for (const path of Object.keys(schemaType.schema.paths)) {
                 const isNested = path.indexOf('.') !== -1;
                 if (isNested) {
-                    throw new Error(`Cannot convert schema with nested path underneath subdocument at path ${path} to Data API table definition`);
+                    throw new Error(`Cannot convert schema to Data API table definition: unsupported nested path underneath subdocument at path ${path}`);
                 }
                 const type = mongooseTypeToDataAPIType(schemaType.schema.paths[path].instance);
                 if (type == null) {
-                    throw new Error(`Unknown type in subdocument at path ${path}`);
+                    throw new Error(`Cannot convert schema to Data API table definition: unsupported type in subdocument at path ${path}`);
                 }
                 dataAPITypes.add(type);
             }
@@ -70,21 +70,26 @@ function tableDefinitionFromSchema(schema) {
             }
             else {
                 if (dataAPITypes.has('blob')) {
-                    throw new Error(`Cannot convert subdocument with Buffer at ${path} to Data API Table definition`);
+                    throw new Error(`Cannot convert schema to Data API table definition: subdocuments with Buffer at ${path} are not supported`);
                 }
                 tableDefinition.columns[path] = { type: 'map', keyType: 'text', valueType: 'text' };
             }
+        }
+        else if (schemaType.instance === 'Map') {
+            // Maps are handled by the isNestedOrMap code path
+            continue;
         }
         else {
             throw new Error(`Unknown type at path ${path}`);
         }
     }
+    // Also handles maps
     for (const nestedPath of Object.keys(schemaTypesForNestedPath)) {
         const dataAPITypes = new Set();
         for (const schemaType of schemaTypesForNestedPath[nestedPath]) {
             const type = mongooseTypeToDataAPIType(schemaType.instance);
             if (type == null) {
-                throw new Error(`Unknown type in nested path at path ${schemaType.path}`);
+                throw new Error(`Cannot convert schema to Data API table definition: unsupported type at path ${schemaType.path}`);
             }
             dataAPITypes.add(type);
         }
@@ -94,7 +99,7 @@ function tableDefinitionFromSchema(schema) {
         }
         else {
             if (dataAPITypes.has('blob')) {
-                throw new Error(`Cannot convert nested path with Buffer at ${nestedPath} to Data API Table definition`);
+                throw new Error(`Cannot convert schema to Data API table definition: nested paths with Buffer at ${nestedPath} are not supported`);
             }
             tableDefinition.columns[nestedPath] = { type: 'map', keyType: 'text', valueType: 'text' };
         }
@@ -125,6 +130,9 @@ function mongooseTypeToDataAPIType(type) {
     }
     else if (type === 'ObjectId') {
         return 'text';
+    }
+    else if (type === 'UUID') {
+        return 'uuid';
     }
     return null;
 }

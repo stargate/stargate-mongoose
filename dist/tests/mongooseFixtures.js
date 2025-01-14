@@ -64,8 +64,7 @@ exports.productSchema = new mongoose_1.Schema({
         ...(process.env.DATA_API_TABLES ? { default: undefined } : {})
     }
 }, { versionKey: false });
-exports.mongooseInstance = new mongoose_1.Mongoose();
-exports.mongooseInstance.setDriver(StargateMongooseDriver);
+exports.mongooseInstance = new mongoose_1.Mongoose().setDriver(StargateMongooseDriver);
 exports.mongooseInstance.set('autoCreate', false);
 exports.mongooseInstance.set('autoIndex', false);
 for (const plugin of driver_1.plugins) {

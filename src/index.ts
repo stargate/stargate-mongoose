@@ -18,6 +18,11 @@ export * as driver from './driver';
 export { default as createAstraUri } from './createAstraUri';
 export { default as tableDefinitionFromSchema } from './tableDefinitionFromSchema';
 
+import * as StargateMongooseDriver from './driver';
+import type { Mongoose } from 'mongoose';
+
+export type StargateMongoose = Omit<Mongoose, 'connection'> & { connection: StargateMongooseDriver.Connection };
+
 declare module 'mongodb' {
     interface CreateCollectionOptions {
         vector?: CollectionVectorOptions;
@@ -43,5 +48,5 @@ declare module 'mongoose' {
         serdes?: CollectionSerDesConfig | TableSerDesConfig
     }
 
-    function setDriver<T = Mongoose>(driver: unknown): T;
+    function setDriver(driver: typeof StargateMongooseDriver): StargateMongoose;
 }

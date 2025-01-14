@@ -71,24 +71,26 @@ describe('tables', function () {
             employee: mongoose_1.Schema.Types.ObjectId,
             friends: [String],
             salary: mongoose_1.Schema.Types.Decimal128,
-            favorites: Map,
+            favorites: { type: Map, of: String },
             uniqueId: mongoose_1.Schema.Types.UUID,
             category: BigInt,
             buf: Buffer,
             willBeNull: String
         }, { versionKey: false });
         await mongooseFixtures_1.mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
-        await mongooseFixtures_1.mongooseInstance.connection.createTable(TEST_TABLE_NAME, {
+        const tableDefinition = (0, tableDefinitionFromSchema_1.default)(userSchema);
+        assert_1.default.deepStrictEqual(tableDefinition, {
             primaryKey: '_id',
             columns: {
-                _id: 'text',
-                name: 'text',
-                age: 'int',
-                dob: 'timestamp',
-                isCertified: 'boolean',
-                employee: 'text',
+                _id: { type: 'text' },
+                __v: { type: 'int' },
+                name: { type: 'text' },
+                age: { type: 'double' },
+                dob: { type: 'timestamp' },
+                isCertified: { type: 'boolean' },
+                employee: { type: 'text' },
                 friends: { type: 'list', valueType: 'text' },
-                salary: 'decimal',
+                salary: { type: 'decimal' },
                 favorites: { type: 'map', keyType: 'text', valueType: 'text' },
                 uniqueId: { type: 'uuid' },
                 category: { type: 'varint' },
@@ -96,6 +98,7 @@ describe('tables', function () {
                 willBeNull: { type: 'text' }
             }
         });
+        await mongooseFixtures_1.mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
         const User = mongooseFixtures_1.mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
         const employeeIdVal = new mongoose_1.Types.ObjectId();
         //generate a random uuid

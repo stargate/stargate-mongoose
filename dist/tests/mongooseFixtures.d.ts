@@ -1,5 +1,4 @@
-import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
-import * as StargateMongooseDriver from '../src/driver';
+import { Schema, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 export declare const productSchema: Schema<any, import("mongoose").Model<any, any, any, any, any, any>, {}, {}, {}, {}, {
     versionKey: false;
 }, {
@@ -55,9 +54,7 @@ export declare const productSchema: Schema<any, import("mongoose").Model<any, an
 } & {
     __v: number;
 }>;
-export declare const mongooseInstance: Omit<Mongoose, "connection"> & {
-    connection: StargateMongooseDriver.Connection;
-};
+export declare const mongooseInstance: import("../src").StargateMongoose;
 export declare const Cart: import("mongoose").Model<{
     products: import("mongoose").Types.ObjectId[];
     name?: string | null | undefined;

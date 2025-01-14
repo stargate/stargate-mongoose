@@ -28,8 +28,7 @@ export const productSchema = new Schema({
     }
 }, { versionKey: false });
 
-export const mongooseInstance = new Mongoose() as unknown as Omit<Mongoose, 'connection'> & { connection: StargateMongooseDriver.Connection };
-mongooseInstance.setDriver(StargateMongooseDriver);
+export const mongooseInstance = new Mongoose().setDriver(StargateMongooseDriver);
 mongooseInstance.set('autoCreate', false);
 mongooseInstance.set('autoIndex', false);
 
