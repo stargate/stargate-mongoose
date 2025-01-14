@@ -47,6 +47,7 @@ export class Connection extends MongooseConnection {
     config?: ConnectOptionsInternal;
     baseUrl: string | null = null;
     baseApiPath: string | null = null;
+    models: Record<string, Model<unknown>> = {};
 
     constructor(base: Mongoose) {
         super(base);

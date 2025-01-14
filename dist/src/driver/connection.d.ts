@@ -2,7 +2,7 @@ import { Collection, MongooseCollectionOptions } from './collection';
 import { AstraAdmin, CollectionDescriptor, CreateTableDefinition, DataAPIDbAdmin, ListCollectionsOptions, ListTablesOptions, RawDataAPIResponse, TableDescriptor } from '@datastax/astra-db-ts';
 import { CollectionsDb, TablesDb } from './db';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
-import type { ConnectOptions, Mongoose } from 'mongoose';
+import type { ConnectOptions, Mongoose, Model } from 'mongoose';
 import { DataAPIClient } from '@datastax/astra-db-ts';
 interface ConnectOptionsInternal extends ConnectOptions {
     useTables?: boolean;
@@ -25,6 +25,7 @@ export declare class Connection extends MongooseConnection {
     config?: ConnectOptionsInternal;
     baseUrl: string | null;
     baseApiPath: string | null;
+    models: Record<string, Model<unknown>>;
     constructor(base: Mongoose);
     /**
      * Helper borrowed from Mongoose to wait for the connection to finish connecting. Because Mongoose
