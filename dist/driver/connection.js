@@ -35,6 +35,7 @@ class Connection extends connection_1.default {
         this.namespace = null;
         this.baseUrl = null;
         this.baseApiPath = null;
+        this.models = {};
     }
     /**
      * Helper borrowed from Mongoose to wait for the connection to finish connecting. Because Mongoose
