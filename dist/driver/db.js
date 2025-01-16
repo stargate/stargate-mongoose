@@ -93,7 +93,7 @@ class CollectionsDb extends BaseDb {
     collection(name, options) {
         return this.astraDb.collection(name, options);
     }
-    async createCollection(name, options) {
+    createCollection(name, options) {
         return this.astraDb.createCollection(name, options);
     }
 }
@@ -109,9 +109,10 @@ class TablesDb extends BaseDb {
     collection(name, options) {
         return this.astraDb.table(name, options);
     }
-    async createCollection(name, _options) {
+    createCollection(name, _options) {
         // throw new Error('Cannot createCollection in tables mode');
-        return this.astraDb.collection(name);
+        // Temporary workaround for Mongoose calling `createCollection` in syncIndexes(), should be fixed in Mongoose 8.10
+        return Promise.resolve(this.astraDb.collection(name));
     }
 }
 exports.TablesDb = TablesDb;

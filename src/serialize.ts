@@ -18,9 +18,7 @@ import mongoose from 'mongoose';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function serialize(data: Record<string, any>, useTables?: boolean): Record<string, any> {
-    return data != null
-        ? serializeValue(data, useTables)
-        : data;
+    return serializeValue(data, useTables);
 }
 
 // Mongoose relies on certain values getting transformed into their BSON equivalents,

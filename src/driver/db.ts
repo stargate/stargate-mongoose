@@ -133,7 +133,7 @@ export class CollectionsDb extends BaseDb {
         return this.astraDb.collection<DocType>(name, options);
     }
 
-    async createCollection(name: string, options?: Record<string, unknown>) {
+    createCollection(name: string, options?: Record<string, unknown>) {
         return this.astraDb.createCollection(name, options);
     }
 }
@@ -151,8 +151,9 @@ export class TablesDb extends BaseDb {
         return this.astraDb.table<DocType>(name, options);
     }
 
-    async createCollection(name: string, _options?: Record<string, unknown>): Promise<Collection> {
+    createCollection(name: string, _options?: Record<string, unknown>) {
         // throw new Error('Cannot createCollection in tables mode');
-        return this.astraDb.collection(name);
+        // Temporary workaround for Mongoose calling `createCollection` in syncIndexes(), should be fixed in Mongoose 8.10
+        return Promise.resolve(this.astraDb.collection(name));
     }
 }

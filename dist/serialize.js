@@ -22,9 +22,7 @@ const bson_1 = require("bson");
 const mongoose_1 = __importDefault(require("mongoose"));
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function serialize(data, useTables) {
-    return data != null
-        ? serializeValue(data, useTables)
-        : data;
+    return serializeValue(data, useTables);
 }
 // Mongoose relies on certain values getting transformed into their BSON equivalents,
 // most notably subdocuments and document arrays. Otherwise `$push` on a document array fails.

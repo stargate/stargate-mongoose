@@ -71,5 +71,5 @@ export declare class TablesDb extends BaseDb {
      * @param name The name of the collection.
      */
     collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options: TableOptions): AstraTable<DocType, Partial<import("@datastax/astra-db-ts").FoundRow<DocType>>, import("@datastax/astra-db-ts").FoundRow<DocType>>;
-    createCollection(name: string, _options?: Record<string, unknown>): Promise<Collection>;
+    createCollection(name: string, _options?: Record<string, unknown>): Promise<AstraCollection<import("@datastax/astra-db-ts").SomeDoc, import("@datastax/astra-db-ts").FoundDoc<import("@datastax/astra-db-ts").SomeDoc>>>;
 }
