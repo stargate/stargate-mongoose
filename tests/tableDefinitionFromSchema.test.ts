@@ -17,11 +17,16 @@ import assert from 'assert';
 import tableDefinitionFromSchema from '../src/tableDefinitionFromSchema';
 
 describe('tableDefinitionFromSchema', () => {
-    it('generates table definition from schema with number, string and date fields', () => {
+    it('generates table definition from schema with all data types', () => {
         const testSchema = new Schema({
             name: String,
             age: Number,
-            createdAt: Date
+            createdAt: Date,
+            enabled: Boolean,
+            decimal: 'Decimal128',
+            counter: BigInt,
+            binData: Buffer,
+            testId: 'UUID'
         });
 
         const result = tableDefinitionFromSchema(testSchema);
@@ -33,7 +38,12 @@ describe('tableDefinitionFromSchema', () => {
                 '__v': { type: 'int' },
                 'name': { type: 'text' },
                 'age': { type: 'double' },
-                'createdAt': { type: 'timestamp' }
+                'createdAt': { type: 'timestamp' },
+                'enabled': { type: 'boolean' },
+                'decimal': { type: 'decimal' },
+                'counter': { type: 'varint' },
+                'binData': { type: 'blob' },
+                'testId': { type: 'uuid' }
             }
         });
     });
@@ -132,6 +142,152 @@ describe('tableDefinitionFromSchema', () => {
                 '__v': { type: 'int' },
                 'user': { type: 'map', keyType: 'text', valueType: 'text' }
             }
+        });
+    });
+
+    it('handles Mongoose maps', () => {
+        const testSchema = new Schema({
+            myMap: {
+                type: Map,
+                of: 'Decimal128'
+            }
+        });
+
+        const result = tableDefinitionFromSchema(testSchema);
+
+        assert.deepStrictEqual(result, {
+            primaryKey: '_id',
+            columns: {
+                '_id': { type: 'text' },
+                '__v': { type: 'int' },
+                'myMap': { type: 'map', keyType: 'text', valueType: 'decimal' }
+            }
+        });
+    });
+
+    it('throws on 3 level deep nested path', () => {
+        const testSchema = new Schema({
+            foo: {
+                bar: {
+                    baz: String
+                }
+            }
+        });
+
+        assert.throws(() => {
+            tableDefinitionFromSchema(testSchema);
+        }, {
+            message: 'Cannot convert schema to Data API table definition: schemas with 3-level deep nested path foo.bar.baz are not supported'
+        });
+    });
+
+    it('throws on document array', () => {
+        const testSchema = new Schema({
+            documents: [new Schema({
+                name: String
+            })]
+        });
+
+        assert.throws(() => {
+            tableDefinitionFromSchema(testSchema);
+        }, {
+            message: 'Cannot convert schema to Data API table definition: DocumentArray "documents" is not supported'
+        });
+    });
+
+    it('throws on array of custom schematype', () => {
+        const testSchema = new Schema({
+            arr: ['Mixed']
+        });
+
+        assert.throws(() => {
+            tableDefinitionFromSchema(testSchema);
+        }, {
+            message: 'Cannot convert schema to Data API table definition: unsupported array type at path "arr"'
+        });
+    });
+
+    it('throws on nested paths in subdocuments', () => {
+        const testSchema = new Schema({
+            subdoc: new Schema({
+                nested: {
+                    field: String
+                }
+            }, { _id: false })
+        });
+
+        assert.throws(() => {
+            tableDefinitionFromSchema(testSchema);
+        }, {
+            message: 'Cannot convert schema to Data API table definition: unsupported nested path underneath subdocument at path "subdoc.nested.field"'
+        });
+    });
+
+    it('throws on subdoc with mixed subpath', () => {
+        const testSchema = new Schema({
+            subdoc: new Schema({
+                test: 'Mixed'
+            })
+        });
+
+        assert.throws(() => {
+            tableDefinitionFromSchema(testSchema);
+        }, {
+            message: 'Cannot convert schema to Data API table definition: unsupported type in subdocument at path "subdoc.test"'
+        });
+    });
+
+    it('throws on subdoc with buffer', () => {
+        const testSchema = new Schema({
+            subdoc: new Schema({
+                test: Buffer
+            })
+        });
+
+        assert.throws(() => {
+            tableDefinitionFromSchema(testSchema);
+        }, {
+            message: 'Cannot convert schema to Data API table definition: subdocuments with Buffer at "subdoc" are not supported'
+        });
+    });
+
+    it('throws on Mixed path', () => {
+        const testSchema = new Schema({
+            test: 'Mixed'
+        });
+
+        assert.throws(() => {
+            tableDefinitionFromSchema(testSchema);
+        }, {
+            message: 'Cannot convert schema to Data API table definition: unsupported type at path "test"'
+        });
+    });
+
+    it('throws on nested Mixed path', () => {
+        const testSchema = new Schema({
+            nested: {
+                test: 'Mixed'
+            }
+        });
+
+        assert.throws(() => {
+            tableDefinitionFromSchema(testSchema);
+        }, {
+            message: 'Cannot convert schema to Data API table definition: unsupported type at path "nested.test"'
+        });
+    });
+
+    it('throws on nested Buffer path', () => {
+        const testSchema = new Schema({
+            nested: {
+                test: 'Buffer'
+            }
+        });
+
+        assert.throws(() => {
+            tableDefinitionFromSchema(testSchema);
+        }, {
+            message: 'Cannot convert schema to Data API table definition: nested paths with Buffer at "nested" are not supported'
         });
     });
 });
