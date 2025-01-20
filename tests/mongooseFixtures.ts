@@ -44,7 +44,7 @@ let lastConnectionOptions: ConnectOptions | null = null;
 
 async function createNamespace() {
     const connection = mongooseInstance.connection;
-    return connection.createNamespace(connection.keyspaceName);
+    return connection.createNamespace(connection.namespace);
 }
 
 export async function createMongooseCollections(useTables: boolean) {
@@ -112,18 +112,10 @@ export async function createMongooseCollections(useTables: boolean) {
     }
 }
 
-before(async function connectMongooseFixtures() {
-    if (isAstra) {
-    // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
-        await mongooseInstance.connect(testClient.uri, testClient.options);
-    } else {
-        await mongooseInstance.connect(testClient!.uri, testClient!.options);
-        const keyspace = parseUri(testClient!.uri).keyspaceName;
-        await mongooseInstance.connection.createNamespace(keyspace);
-    }
+before(async function() {
+    this.timeout(120_000);
+    await createMongooseCollections();
 });
-
-before(createMongooseCollections);
 
 after(async function disconnectMongooseFixtures() {
     await mongooseInstance.disconnect();
