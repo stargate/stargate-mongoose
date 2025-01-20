@@ -22,12 +22,17 @@ import { once } from 'events';
 import * as StargateMongooseDriver from '../../src/driver';
 import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '../../src/driver';
-import { Product, Cart, mongooseInstance, productSchema, ProductRawDoc } from '../mongooseFixtures';
+import { Product, Cart, mongooseInstance, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
 import { FindCursor, DataAPIResponseError, DataAPIClient } from '@datastax/astra-db-ts';
 import { Long, UUID } from 'bson';
 
-describe('Mongoose Model API level tests', async () => {
+describe('COLLECTIONS: mongoose Model API level tests with collections', async () => {
+    before(async function() {
+        this.timeout(120_000);
+        await createMongooseCollections(false);
+    });
+
     afterEach(async () => {
         await Promise.all([Product.deleteMany({}), Cart.deleteMany({})]);
     });
@@ -83,10 +88,6 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(findResponseWithStrictQueryFalse[0].name, 'Product 1');
         });
         it('Data type tests', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             const modelName = 'User';
             const userSchema = new mongoose.Schema({
                 name: String,
@@ -209,10 +210,6 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(error.errorDescriptors[0].message, 'Invalid filter expression: filter clause path (\'$where\') contains character(s) not allowed');
         });
         it('API ops tests db.dropCollection() and Model.createCollection()', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             let collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
             assert.ok(collections.includes(Product.collection.collectionName));
 
@@ -253,65 +250,13 @@ describe('Mongoose Model API level tests', async () => {
         });
         //castObject skipped as it is not making any database calls
         it('API ops tests Model.cleanIndexes()', async function() {
-            if (process.env.DATA_API_TABLES) {
-                const collection = mongooseInstance.connection.collection(Product.collection.collectionName);
-                // @ts-expect-error
-                Product.schema._indexes = [];
-                Product.schema.index({name: 1});
-                await collection.createIndex({ name: true });
-                await collection.createIndex({ price: true }, { name: 'will_drop_index' });
-
-                let indexes = await Product.listIndexes();
-                assert.deepStrictEqual(indexes, [
-                    {
-                        name: 'name',
-                        definition: {
-                            column: 'name',
-                            options: { ascii: false, caseSensitive: true, normalize: false }
-                        },
-                        key: { name: 1 }
-                    },
-                    {
-                        name: 'will_drop_index',
-                        definition: { column: 'price', options: {} },
-                        key: { price: 1 }
-                    }
-                ]);
-
-                const droppedIndexes = await Product.cleanIndexes();
-
-                // Drop "will_drop_index" because not in schema, but keep index on `name`
-                assert.deepStrictEqual(droppedIndexes, ['will_drop_index']);
-
-                indexes = await Product.listIndexes();
-                assert.deepStrictEqual(indexes, [
-                    {
-                        name: 'name',
-                        definition: {
-                            column: 'name',
-                            options: { ascii: false, caseSensitive: true, normalize: false }
-                        },
-                        key: { name: 1 }
-                    }
-                ]);
-
-                await collection.dropIndex('name');
-
-                // @ts-expect-error
-                Product.schema._indexes = [];
-            } else {
-                const promise = Product.cleanIndexes();
-                const error: Error | null = await promise.then(() => null, (error: Error) => error);
-                assert.ok(error instanceof OperationNotSupportedError);
-                //cleanIndexes invokes listIndexes() which is not supported
-                assert.strictEqual(error.message, 'Cannot use listIndexes() with collections');
-            }
+            const promise = Product.cleanIndexes();
+            const error: Error | null = await promise.then(() => null, (error: Error) => error);
+            assert.ok(error instanceof OperationNotSupportedError);
+            //cleanIndexes invokes listIndexes() which is not supported
+            assert.strictEqual(error.message, 'Cannot use listIndexes() with collections');
         });
         it('API ops tests Model.countDocuments()', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
             const countResp = await Product.countDocuments({name: 'Product 1'});
@@ -327,32 +272,16 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(createResp.name, 'Product for create');
         });
         it('API ops tests Model.createCollection()', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             await Product.createCollection();
         });
         it('API ops tests Model.createIndexes()', async () => {
-            if (process.env.DATA_API_TABLES) {
-                // @ts-expect-error
-                Product.schema._indexes = [];
-                Product.schema.index({name: 1});
-                await Product.createIndexes();
-                const indexes = await mongooseInstance.connection.collection(Product.collection.collectionName).listIndexes().toArray();
-                assert.ok(indexes.find(index => index.name === 'name'));
-                await mongooseInstance.connection.collection(Product.collection.collectionName).dropIndex('name');
-                // @ts-expect-error
-                Product.schema._indexes = [];
-            } else {
-                await assert.rejects(
-                    async () => {
-                        Product.schema.index({name: 1});
-                        await Product.createIndexes();
-                    },
-                    { message: 'Cannot use createIndex() with collections' }
-                );
-            }
+            await assert.rejects(
+                async () => {
+                    Product.schema.index({name: 1});
+                    await Product.createIndexes();
+                },
+                { message: 'Cannot use createIndex() with collections' }
+            );
         });
         it('API ops tests Model.db', async () => {
             const conn = Product.db as unknown as StargateMongooseDriver.Connection;
@@ -361,10 +290,6 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(conn.db.name, parseUri(testClient!.uri).keyspaceName);
         });
         it('API ops tests Model.deleteMany()', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
             let deleteManyResp = await Product.deleteMany({name: 'Product 1'});
@@ -386,25 +311,23 @@ describe('Mongoose Model API level tests', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
             const deleteOneResp = await Product.deleteOne({_id: product1._id});
-            if (!process.env.DATA_API_TABLES) {
-                assert.strictEqual(deleteOneResp.deletedCount, 1);
-            }
             const findDeletedDoc = await Product.findOne({name: 'Product 1'});
+            assert.strictEqual(deleteOneResp.deletedCount, 1);
             assert.strictEqual(findDeletedDoc, null);
         });
         it('API ops tests Model.diffIndexes()', async () => {
-            if (process.env.DATA_API_TABLES) {
-                await Product.diffIndexes();
-            } else {
-                const error: Error | null = await Product.diffIndexes().then(() => null, error => error);
-                assert.ok(error);
-                assert.ok(error instanceof OperationNotSupportedError);
-                assert.strictEqual(error.message, 'Cannot use listIndexes() with collections');
-            }
+            const error: Error | null = await Product.diffIndexes().then(() => null, error => error);
+            assert.ok(error);
+            assert.ok(error instanceof OperationNotSupportedError);
+            assert.strictEqual(error.message, 'Cannot use listIndexes() with collections');
         });
         it('API ops tests Model.discriminator()', async () => {
             //Online products have URL
-            const OnlineProduct = Product.discriminator<InferSchemaType<typeof productSchema> & { url: string }>('OnlineProduct', new Schema({url: String}));
+            const OnlineProduct = Product.discriminator<InferSchemaType<typeof productSchema> & { url: string }>(
+                'OnlineProduct',
+                new Schema({url: String}),
+                { overwriteModels: true }
+            );
             const regularProduct = new Product({
                 name: 'Product 1',
                 price: 10,
@@ -448,10 +371,6 @@ describe('Mongoose Model API level tests', async () => {
         });
 
         it('API ops tests Model.estimatedDocumentCount()', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
@@ -495,10 +414,6 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(findResp?.name, 'Product 1');
         });
         it('API ops tests Model.findByIdAndDelete()', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
             const deleteResp = await Product.findByIdAndDelete(product1._id);
@@ -507,10 +422,6 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(findDeletedDoc, null);
         });
         it('API ops tests Model.findByIdAndUpdate()', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1', url: 'http://product1.com'});
             await product1.save();
             const updateResp = await Product.findByIdAndUpdate(product1._id, {name: 'Product 2'});
@@ -527,10 +438,6 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(findResp?.category, 'cat 1');
         });
         it('API ops tests Model.findOneAndDelete()', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
@@ -549,10 +456,6 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(withMetadata.value!.category, 'cat 2');
         });
         it('API ops tests Model.findOneAndReplace()', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
@@ -578,10 +481,6 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(doc!.category, undefined);
         });
         it('API ops tests Model.findOneAndUpdate()', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
@@ -652,26 +551,9 @@ describe('Mongoose Model API level tests', async () => {
         });
         //Model.inspect can not be tested since it is a helper for console logging. More info here: https://mongoosejs.com/docs/api/model.html#Model.inspect()
         it('API ops tests Model.listIndexes()', async () => {
-            if (process.env.DATA_API_TABLES) {
-                const collection = mongooseInstance.connection.collection(Product.collection.collectionName);
-                await collection.createIndex({ name: true }, { name: 'test_index' });
-                const indexes = await Product.listIndexes();
-                assert.deepStrictEqual(indexes, [
-                    {
-                        name: 'test_index',
-                        definition: {
-                            column: 'name',
-                            options: { ascii: false, caseSensitive: true, normalize: false }
-                        },
-                        key: { name: 1 }
-                    }
-                ]);
-                await collection.dropIndex('test_index');
-            } else {
-                const error: Error | null = await Product.listIndexes().then(() => null, error => error);
-                assert.ok(error instanceof OperationNotSupportedError);
-                assert.strictEqual(error?.message, 'Cannot use listIndexes() with collections');
-            }
+            const error: Error | null = await Product.listIndexes().then(() => null, error => error);
+            assert.ok(error instanceof OperationNotSupportedError);
+            assert.strictEqual(error?.message, 'Cannot use listIndexes() with collections');
         });
         it('API ops tests Model.populate()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
@@ -697,14 +579,6 @@ describe('Mongoose Model API level tests', async () => {
             assert.strictEqual(findDeletedDoc, null);
         });
         it('API ops tests Model.replaceOne()', async function() {
-            if (process.env.DATA_API_TABLES) {
-                await assert.rejects(
-                    Product.replaceOne({category: 'cat 1'}, {name: 'Product 4'}),
-                    /Cannot use replaceOne\(\) with tables/
-                );
-                return;
-            }
-
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
@@ -731,81 +605,13 @@ describe('Mongoose Model API level tests', async () => {
             assert.throws(() => Product.startSession(), { message: 'startSession() Not Implemented' });
         });
         it('API ops tests Model.syncIndexes()', async () => {
-            if (process.env.DATA_API_TABLES) {
-                const collection = mongooseInstance.connection.collection(Product.collection.collectionName);
-                await collection.createIndex({ category: true }, { name: 'will_drop_index' });
-                await collection.createIndex({ price: true });
-
-                const testProductSchema = new mongooseInstance.Schema({
-                    name: { type: String, index: true }, // Index doesn't exist in db, will create
-                    price: { type: Number, index: true }, // Index exists in db
-                    expiryDate: Date,
-                    isCertified: Boolean,
-                    category: String // Index exists in db but not in schema, will drop
-                });
-                const ProductIndexModel = mongooseInstance.model('ProductIndexes', testProductSchema, Product.collection.collectionName);
-
-                const stringIndexOptions = { ascii: false, caseSensitive: true, normalize: false };
-                let indexes = await ProductIndexModel.listIndexes();
-                assert.deepStrictEqual(indexes.sort((i1, i2) => i1.name.localeCompare(i2.name)), [
-                    {
-                        name: 'price',
-                        definition: {
-                            column: 'price',
-                            options: {}
-                        },
-                        key: { price: 1 }
-                    },
-                    {
-                        name: 'will_drop_index',
-                        definition: {
-                            column: 'category',
-                            options: stringIndexOptions
-                        },
-                        key: { category: 1 }
-                    }
-                ]);
-
-                const droppedIndexes = await ProductIndexModel.syncIndexes();
-
-                // Drop "will_drop_index" because not in schema, but keep index on `price`
-                assert.deepStrictEqual(droppedIndexes, ['will_drop_index']);
-
-                indexes = await ProductIndexModel.listIndexes();
-                assert.deepStrictEqual(indexes, [
-                    {
-                        name: 'name',
-                        definition: {
-                            column: 'name',
-                            options: stringIndexOptions
-                        },
-                        key: { name: 1 }
-                    },
-                    {
-                        name: 'price',
-                        definition: {
-                            column: 'price',
-                            options: {}
-                        },
-                        key: { price: 1 }
-                    }
-                ]);
-
-                await collection.dropIndex('name');
-                await collection.dropIndex('price');
-            } else {
-                const error: Error | null = await Product.syncIndexes().then(() => null, error => error);
-                assert.ok(error instanceof OperationNotSupportedError);
-                //since listIndexes is invoked before syncIndexes, the error message will be related to listIndexes
-                assert.strictEqual(error?.message, 'Cannot use listIndexes() with collections');
-            }
+            const error: Error | null = await Product.syncIndexes().then(() => null, error => error);
+            assert.ok(error instanceof OperationNotSupportedError);
+            //since listIndexes is invoked before syncIndexes, the error message will be related to listIndexes
+            assert.strictEqual(error?.message, 'Cannot use listIndexes() with collections');
         });
         //Mode.translateAliases is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.translateAliases
         it('API ops tests Model.updateMany()', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
@@ -832,14 +638,10 @@ describe('Mongoose Model API level tests', async () => {
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
             await Product.insertMany([product1, product2, product3]);
-            if (process.env.DATA_API_TABLES) {
-                await Product.updateOne({_id: product3._id}, {category: 'cat 3'});
-            } else {
-                const updateOneResp: mongoose.UpdateWriteOpResult = await Product.updateOne({category: 'cat 1'}, {category: 'cat 3'});
-                assert.strictEqual(updateOneResp.matchedCount, 1);
-                assert.strictEqual(updateOneResp.modifiedCount, 1);
-                assert.strictEqual(updateOneResp.upsertedCount, 0);
-            }
+            const updateOneResp: mongoose.UpdateWriteOpResult = await Product.updateOne({category: 'cat 1'}, {category: 'cat 3'});
+            assert.strictEqual(updateOneResp.matchedCount, 1);
+            assert.strictEqual(updateOneResp.modifiedCount, 1);
+            assert.strictEqual(updateOneResp.upsertedCount, 0);
             const findUpdatedDoc = await Product.findOne({category: 'cat 3'});
             assert.strictEqual(findUpdatedDoc?.name, 'Product 3');
         });
@@ -849,22 +651,16 @@ describe('Mongoose Model API level tests', async () => {
             let doc = await Product.findOne({ _id }).orFail();
             assert.strictEqual(doc.name, 'Product upsert');
 
-            if (!process.env.DATA_API_TABLES) {
-                await Product.updateOne(
-                    { name: 'test product 1' },
-                    { $set: { name: 'Product upsert 2', price: 16 } },
-                    { upsert: true, setDefaultsOnInsert: false }
-                );
-                doc = await Product.findOne({ name: 'Product upsert 2' }).orFail();
-                assert.strictEqual(doc.name, 'Product upsert 2');
-                assert.strictEqual(doc.price, 16);
-            }
+            await Product.updateOne(
+                { name: 'test product 1' },
+                { $set: { name: 'Product upsert 2', price: 16 } },
+                { upsert: true, setDefaultsOnInsert: false }
+            );
+            doc = await Product.findOne({ name: 'Product upsert 2' }).orFail();
+            assert.strictEqual(doc.name, 'Product upsert 2');
+            assert.strictEqual(doc.price, 16);
         });
         it('API ops tests Model.updateOne() $push document array', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             const product1 = new Product({
                 name: 'Product 1',
                 price: 10,
@@ -877,6 +673,7 @@ describe('Mongoose Model API level tests', async () => {
             await Product.updateOne({ _id: product1._id }, { $push: { tags: { name: 'Home & Garden' } } });
 
             const { tags } = await Product.findById(product1._id).orFail();
+            assert.ok(Array.isArray(tags));
             assert.deepStrictEqual(tags.toObject(), [{ name: 'Electronics' }, { name: 'Home & Garden' }]);
         });
         it('API ops tests Model.updateOne() $set subdocument', async () => {
@@ -948,13 +745,8 @@ describe('Mongoose Model API level tests', async () => {
             assert.ok(databases.includes(mongooseInstance.connection.db.name));
         });
         it('API ops tests connection.runCommand()', async () => {
-            if (process.env.DATA_API_TABLES) {
-                const res = await mongooseInstance.connection.runCommand({ listTables: {} });
-                assert.ok(res.status?.tables?.includes('carts'));
-            } else {
-                const res = await mongooseInstance.connection.runCommand({ findCollections: {} });
-                assert.ok(res.status?.collections?.includes('carts'));
-            }
+            const res = await mongooseInstance.connection.runCommand({ findCollections: {} });
+            assert.ok(res.status?.collections?.includes('carts'));
         });
         it('API ops tests collection.runCommand()', async function() {
             const res = await mongooseInstance.connection.collection('carts').runCommand({ find: {} });
@@ -1044,7 +836,7 @@ describe('Mongoose Model API level tests', async () => {
         it('API ops tests createConnection() with uri and options', async function() {
             const connection = mongooseInstance.createConnection(testClient!.uri, testClient!.options) as unknown as StargateMongooseDriver.Connection;
             await connection.asPromise();
-            const promise = process.env.DATA_API_TABLES ? connection.listTables({ nameOnly: false }) : connection.listCollections({ nameOnly: false });
+            const promise = connection.listCollections({ nameOnly: false });
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
 
             await assert.rejects(
@@ -1084,7 +876,7 @@ describe('Mongoose Model API level tests', async () => {
         });
         it('API ops tests createConnection() with queueing', async function() {
             const connection = mongooseInstance.createConnection() as unknown as StargateMongooseDriver.Connection;
-            const promise = process.env.DATA_API_TABLES ? connection.listTables({ nameOnly: false }) : connection.listCollections({ nameOnly: false });
+            const promise = connection.listCollections({ nameOnly: false });
 
             await connection.openUri(testClient!.uri, testClient!.options);
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
@@ -1096,30 +888,10 @@ describe('Mongoose Model API level tests', async () => {
             await assert.rejects(connection.listCollections({}), /Connection is disconnected/);
         });
         it('API ops tests dropIndex()', async function() {
-            if (process.env.DATA_API_TABLES) {
-                const collection = mongooseInstance.connection.collection(Product.collection.collectionName);
-                await collection.createIndex({ name: true }, { name: 'test_index' });
-                let indexes = await Product.listIndexes();
-                assert.deepStrictEqual(indexes, [
-                    {
-                        name: 'test_index',
-                        definition: {
-                            column: 'name',
-                            options: { ascii: false, caseSensitive: true, normalize: false }
-                        },
-                        key: { name: 1 }
-                    }
-                ]);
-
-                await collection.dropIndex('test_index');
-                indexes = await Product.listIndexes();
-                assert.deepStrictEqual(indexes, []);
-            } else {
-                await assert.rejects(
-                    mongooseInstance.connection.collection(Product.collection.collectionName).dropIndex('sample index name'),
-                    /Cannot use dropIndex\(\) with collections/
-                );
-            }
+            await assert.rejects(
+                mongooseInstance.connection.collection(Product.collection.collectionName).dropIndex('sample index name'),
+                /Cannot use dropIndex\(\) with collections/
+            );
         });
         it('API ops tests setClient()', async function() {
             assert.throws(
@@ -1147,20 +919,15 @@ describe('Mongoose Model API level tests', async () => {
         );
 
         before(async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            } else {
-                await mongooseInstance.connection.dropTable('vector');
-                const collections = await mongooseInstance.connection.listCollections({ nameOnly: false });
-                const vectorCollection = collections.find(coll => coll.name === 'vector');
-                if (!vectorCollection) {
-                    await mongooseInstance.connection.dropCollection('vector');
-                    await Vector.createCollection();
-                } else if (vectorCollection.definition?.vector?.dimension !== 2 || vectorCollection.definition?.vector?.metric !== 'cosine') {
-                    await mongooseInstance.connection.dropCollection('vector');
-                    await Vector.createCollection();
-                }
+            await mongooseInstance.connection.dropTable('vector');
+            const collections = await mongooseInstance.connection.listCollections({ nameOnly: false });
+            const vectorCollection = collections.find(coll => coll.name === 'vector');
+            if (!vectorCollection) {
+                await mongooseInstance.connection.dropCollection('vector');
+                await Vector.createCollection();
+            } else if (vectorCollection.definition?.vector?.dimension !== 2 || vectorCollection.definition?.vector?.metric !== 'cosine') {
+                await mongooseInstance.connection.dropCollection('vector');
+                await Vector.createCollection();
             }
         });
 

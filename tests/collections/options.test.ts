@@ -14,9 +14,14 @@
 
 import assert from 'assert';
 import mongoose from 'mongoose';
-import { Product } from '../../tests/mongooseFixtures';
+import { Product, createMongooseCollections } from '../../tests/mongooseFixtures';
 
 describe('Options tests', async () => {
+    before(async function() {
+        this.timeout(120_000);
+        await createMongooseCollections(false);
+    });
+
     beforeEach(async function() {
         await Product.deleteMany({});
     });

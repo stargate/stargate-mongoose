@@ -1,11 +1,10 @@
-import { isAstra, testClient } from './fixtures';
+import { testClient } from './fixtures';
 import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 import * as StargateMongooseDriver from '../src/driver';
-import { parseUri } from '../src/driver/connection';
 import { plugins } from '../src/driver';
 import tableDefinitionFromSchema from '../src/tableDefinitionFromSchema';
 
-const useTables = !!process.env.DATA_API_TABLES;
+import type { ConnectOptions } from 'mongoose';
 
 const cartSchema = new Schema({
     name: String,
@@ -24,7 +23,7 @@ export const productSchema = new Schema({
     category: String,
     tags: {
         type: [{ _id: false, name: String }],
-        ...(process.env.DATA_API_TABLES ? { default: undefined } : {})
+        default: undefined
     }
 }, { versionKey: false });
 
@@ -41,22 +40,28 @@ export const Product = mongooseInstance.model('Product', productSchema);
 export type ProductHydratedDoc = ReturnType<(typeof Product)['hydrate']>;
 export type ProductRawDoc = SubdocsToPOJOs<InferSchemaType<typeof productSchema>>;
 
+let lastConnectionOptions: ConnectOptions | null = null;
+
 async function createNamespace() {
     const connection = mongooseInstance.connection;
-    return connection.db!.httpClient._request({
-        url: connection.baseUrl + '/' + connection.baseApiPath,
-        method: 'POST',
-        data: JSON.stringify({
-            createNamespace: {
-                name: connection.keyspaceName
-            }
-        }),
-        timeoutManager: connection.db!.httpClient.tm.single('databaseAdminTimeoutMs', { timeout: 120_000 })
-    });
+    return connection.createNamespace(connection.keyspaceName);
 }
 
-export async function createMongooseCollections() {
+export async function createMongooseCollections(useTables: boolean) {
+    if (lastConnectionOptions?.useTables === useTables) {
+        return;
+    }
+    await mongooseInstance.connection.close();
+    await mongooseInstance.connection.openUri(testClient!.uri, { ...testClient!.options, useTables });
+    lastConnectionOptions = { ...testClient!.options, useTables };
+
     await createNamespace();
+
+    for (const Model of Object.values(mongooseInstance.connection.models)) {
+        // Bust collection cache, because otherwise models will keep a table/collection even if we switched modes
+        // @ts-expect-error
+        delete Model.collection._collection;
+    }
 
     const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });
 
@@ -106,19 +111,6 @@ export async function createMongooseCollections() {
         }
     }
 }
-
-before(async function connectMongooseFixtures() {
-    if (isAstra) {
-    // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
-        await mongooseInstance.connect(testClient.uri, testClient.options);
-    } else {
-        await mongooseInstance.connect(testClient!.uri, testClient!.options);
-        const keyspace = parseUri(testClient!.uri).keyspaceName;
-        await mongooseInstance.connection.createNamespace(keyspace);
-    }
-});
-
-before(createMongooseCollections);
 
 after(async function disconnectMongooseFixtures() {
     await mongooseInstance.disconnect();

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { mongooseInstance } from '../mongooseFixtures';
+import { mongooseInstance, createMongooseCollections } from '../mongooseFixtures';
 import { Schema, Types } from 'mongoose';
 import { randomUUID } from 'crypto';
 import { UUID } from 'bson';
@@ -21,7 +21,11 @@ import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
 
 const TEST_TABLE_NAME = 'table1';
 
-describe('tables', function() {
+describe('TABLES: basic operations and data types', function() {
+    before(async () => {
+        await createMongooseCollections(true);
+    });
+
     it('createTable() and dropTable()', async function() {
         await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
 
@@ -36,11 +40,6 @@ describe('tables', function() {
         await assert.rejects(mongooseInstance.connection.dropTable(''), /^DataAPI.*Error/);
     });
     it('schema indexes', async function() {
-        if (!process.env.DATA_API_TABLES) {
-            this.skip();
-            return;
-        }
-
         await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
 
         const testSchema = new Schema({ testProperty: { type: String, index: true } });
@@ -65,11 +64,20 @@ describe('tables', function() {
 
         await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
     });
+    it('fails to create compound index', async function() {
+        await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+
+        const testSchema = new Schema({ testProperty: String, otherTestProperty: String });
+        testSchema.index({ testProperty: 1, otherTestProperty: 1 });
+
+        mongooseInstance.connection.deleteModel(/Test/);
+        const TestModel = mongooseInstance.model('Test', testSchema, TEST_TABLE_NAME);
+        await assert.rejects(
+            TestModel.createIndexes(),
+            { message: 'createIndex indexSpec must have exactly 1 key' }
+        );
+    });
     it('Data type tests', async function() {
-        if (!process.env.DATA_API_TABLES) {
-            this.skip();
-            return;
-        }
         const modelName = 'User';
         const userSchema = new Schema({
             name: String,
@@ -107,6 +115,7 @@ describe('tables', function() {
             }
         });
         await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
+        mongooseInstance.deleteModel(/User/);
         const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
 
         const employeeIdVal = new Types.ObjectId();

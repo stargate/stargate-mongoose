@@ -16,10 +16,15 @@ import assert from 'assert';
 import mongoose from 'mongoose';
 import * as StargateMongooseDriver from '../../src/driver';
 import { testClient, TEST_COLLECTION_NAME } from '../fixtures';
-import { Product, Cart, mongooseInstance } from '../mongooseFixtures';
+import { Product, Cart, mongooseInstance, createMongooseCollections } from '../mongooseFixtures';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
 
-describe('Driver based tests', async () => {
+describe('COLLECTIONS: driver based tests', async () => {
+    before(async function() {
+        this.timeout(120_000);
+        await createMongooseCollections(false);
+    });
+
     let dbUri: string;
     let isAstra: boolean;
     before(async function () {
@@ -61,31 +66,20 @@ describe('Driver based tests', async () => {
                 product1.expiryDate!.toISOString()
             );
 
-            if (!process.env.DATA_API_TABLES) {
-                const findOneAndReplaceResp = await Cart.findOneAndReplace({cartName: 'wewson'}, {
-                    name: 'My Cart 2',
-                    cartName: 'wewson1'
-                }, {returnDocument: 'after'}).exec();
-                assert.strictEqual(findOneAndReplaceResp!.name, 'My Cart 2');
-                assert.strictEqual(findOneAndReplaceResp!.cartName, 'wewson1');
+            const findOneAndReplaceResp = await Cart.findOneAndReplace({cartName: 'wewson'}, {
+                name: 'My Cart 2',
+                cartName: 'wewson1'
+            }, {returnDocument: 'after'}).exec();
+            assert.strictEqual(findOneAndReplaceResp!.name, 'My Cart 2');
+            assert.strictEqual(findOneAndReplaceResp!.cartName, 'wewson1');
 
-                const withMetadata = await Cart.findOneAndReplace(
-                    {cartName: 'wewson1'},
-                    {name: 'My Cart 3', cartName: 'wewson1'},
-                    {returnDocument: 'after', includeResultMetadata: true}
-                ).exec();
-                assert.strictEqual(withMetadata.value!.name, 'My Cart 3');
-                assert.strictEqual(withMetadata.value!.cartName, 'wewson1');
-            } else {
-                await Cart.updateOne({_id: cart._id}, {
-                    name: 'My Cart 2',
-                    cartName: 'wewson1',
-                    products: null
-                });
-                const doc = await Cart.findOne({cartName: 'wewson1'}).orFail();
-                assert.strictEqual(doc!.name, 'My Cart 2');
-                assert.strictEqual(doc!.cartName, 'wewson1');
-            }
+            const withMetadata = await Cart.findOneAndReplace(
+                {cartName: 'wewson1'},
+                {name: 'My Cart 3', cartName: 'wewson1'},
+                {returnDocument: 'after', includeResultMetadata: true}
+            ).exec();
+            assert.strictEqual(withMetadata.value!.name, 'My Cart 3');
+            assert.strictEqual(withMetadata.value!.cartName, 'wewson1');
 
             const productNames: string[] = [];
             const cursor = await Product.find().cursor();
@@ -100,32 +94,16 @@ describe('Driver based tests', async () => {
         const personSchema = new mongooseInstance.Schema({
             name: { type: String, required: true }
         });
+        mongooseInstance.deleteModel(/Person/);
         const Person = mongooseInstance.model('Person', personSchema, TEST_COLLECTION_NAME);
         before(async function () {
-            const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });
-
-            if (process.env.DATA_API_TABLES) {
-                await mongooseInstance.connection.dropTable(TEST_COLLECTION_NAME);
-                await mongooseInstance.connection.createTable(TEST_COLLECTION_NAME, tableDefinitionFromSchema(personSchema));
-            } else {
-                if (tableNames.includes(TEST_COLLECTION_NAME)) {
-                    await mongooseInstance.connection.dropTable(TEST_COLLECTION_NAME);
-                }
-
-                const collections = await mongooseInstance.connection.listCollections();
-                const collectionNames = collections.map(({ name }) => name);
-                if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
-                    await Person.createCollection();
-                }
-            }
-
+            await mongooseInstance.connection.dropTable(TEST_COLLECTION_NAME);
+            await mongooseInstance.connection.createTable(TEST_COLLECTION_NAME, tableDefinitionFromSchema(personSchema));
         });
 
         after(async () => {
             await Person.deleteMany({});
-            if (!process.env.DATA_API_TABLES) {
-                await mongooseInstance.connection.dropCollection(TEST_COLLECTION_NAME);
-            }
+            await mongooseInstance.connection.dropCollection(TEST_COLLECTION_NAME);
         });
 
         it('handles find cursors', async () => {
@@ -223,50 +201,13 @@ describe('Driver based tests', async () => {
             );
         });
 
-        it('handles reconnecting after disconnecting', async () => {
-            const mongooseInstance = await createMongooseInstance();
-            const TestModel = mongooseInstance.model('Person', Person.schema, TEST_COLLECTION_NAME);
-            if (process.env.DATA_API_TABLES) {
-                const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });
-                if (!tableNames.includes(TEST_COLLECTION_NAME)) {
-                    await mongooseInstance.connection.createTable(TEST_COLLECTION_NAME, tableDefinitionFromSchema(Person.schema));
-                }
-            } else {
-                const collectionNames = await mongooseInstance.connection.listCollections().then(collections => collections.map(c => c.name));
-                if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
-                    await TestModel.createCollection();
-                }
-            }
-            await TestModel.findOne();
-
-            await mongooseInstance.disconnect();
-
-            const options = isAstra
-                ? { isAstra: true, useTables: !!process.env.DATA_API_TABLES }
-                : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD, useTables: !!process.env.DATA_API_TABLES };
-            await mongooseInstance.connect(dbUri, options);
-
-            // Should be able to execute query after reconnecting
-            await TestModel.findOne();
-
-            await mongooseInstance.disconnect();
-        });
-
         it('handles listCollections()', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             const collections = await mongooseInstance!.connection.listCollections();
             const collectionNames = collections.map(({ name }) => name);
             assert.ok(typeof collectionNames[0] === 'string', collectionNames.join(','));
         });
 
         it('handles enableBigNumbers in collections', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             delete mongooseInstance.connection.collections[Product.collection.collectionName];
             const bigNumbersProductSchema = Product.schema.clone().add({ price: BigInt }).set('serdes', { enableBigNumbers: true });
             const BigNumbersProduct = mongooseInstance.model('BigNumbersProduct', bigNumbersProductSchema, Product.collection.collectionName);
@@ -286,18 +227,6 @@ describe('Driver based tests', async () => {
             const mongooseDoc = await BigNumbersProduct.findOne({ _id }).orFail();
             assert.strictEqual(mongooseDoc.price, BigInt('9007199254740999'));
         });
-
-        async function createMongooseInstance() {
-            const mongooseInstance = new mongoose.Mongoose() as unknown as Omit<mongoose.Mongoose, 'connection'> & { connection: StargateMongooseDriver.Connection };
-            mongooseInstance.setDriver(StargateMongooseDriver);
-            mongooseInstance.set('autoCreate', false);
-            mongooseInstance.set('autoIndex', false);
-
-            const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
-            await mongooseInstance.connect(dbUri, options);
-
-            return mongooseInstance;
-        }
     });
     describe('namespace management tests', () => {
         it('should fail when dropDatabase is called', async () => {

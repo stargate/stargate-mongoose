@@ -13,12 +13,12 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { mongooseInstance } from '../mongooseFixtures';
+import { mongooseInstance, createMongooseCollections } from '../mongooseFixtures';
 import { once } from 'events';
 import { Schema, Types } from 'mongoose';
 import { FindCursor } from '@datastax/astra-db-ts';
 
-describe('tables vector search', function() {
+describe('TABLES: vector search', function() {
     let vectorIds: Types.ObjectId[] = [];
     const vectorSchema = new Schema(
         {
@@ -37,12 +37,11 @@ describe('tables vector search', function() {
         'vector'
     );
 
-    before(async function() {
-        if (!process.env.DATA_API_TABLES) {
-            this.skip();
-            return;
-        }
+    before(async () => {
+        await createMongooseCollections(true);
+    });
 
+    before(async function() {
         await mongooseInstance.connection.dropTable('vector');
         await mongooseInstance.connection.createTable('vector', {
             primaryKey: '_id',

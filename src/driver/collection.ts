@@ -183,12 +183,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async insertMany(documents: Record<string, unknown>[], options?: CollectionInsertManyOptions) {
         documents = documents.map(doc => serialize(doc, this.useTables));
-        if (this instanceof AstraTable) {
-            return this.collection.insertMany(documents as DocType[], options);
-        } else {
-            return this.collection.insertMany(documents as DocType[], options);
-        }
-
+        return this.collection.insertMany(documents as DocType[], options);
     }
 
     /**

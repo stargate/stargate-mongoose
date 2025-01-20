@@ -131,13 +131,21 @@ export class Connection extends MongooseConnection {
      * Create a new namespace in the database
      * @param namespace The name of the namespace to create
      */
-    async createNamespace(namespace: string) {
+    async createNamespace(name: string) {
         await this._waitForClient();
         if (this.admin instanceof AstraAdmin) {
             throw new Error('Cannot createNamespace() in Astra');
         }
-        // Use createKeyspace because createNamespace is deprecated
-        return this.admin!.createKeyspace(namespace);
+        return this.db!.httpClient._request({
+            url: this.baseUrl + '/' + this.baseApiPath,
+            method: 'POST',
+            data: JSON.stringify({
+                createNamespace: {
+                    name
+                }
+            }),
+            timeoutManager: this.db!.httpClient.tm.single('databaseAdminTimeoutMs', { timeout: 120_000 })
+        });
     }
 
     /**
@@ -210,8 +218,8 @@ export class Connection extends MongooseConnection {
             bufferCommands: options?.bufferCommands
         };
 
-        for (const model of Object.values(this.models) as Model<unknown>[]) {
-            model.init().catch(() => {});
+        for (const model of Object.values(this.models)) {
+            model.init();
         }
 
         this.initialConnection = this.createClient(uri, options)
