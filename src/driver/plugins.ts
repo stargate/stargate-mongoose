@@ -1,20 +1,38 @@
 import type { Schema, Query } from 'mongoose';
 
+/**
+ * Mongoose plugin to handle adding `$vector` to the projection by default if `$vector` has `select: true`.
+ * Because `$vector` is deselected by default, this plugin makes it possible for the user to include `$vector`
+ * by default from their schema.
+ */
+
 export function handleVectorFieldsProjection(this: Query<unknown, unknown>, schema: Schema) {
     schema.pre(['find', 'findOne', 'findOneAndUpdate', 'findOneAndReplace', 'findOneAndDelete'], function() {
         const projection = this.projection();
+        const $vector = this.model.schema.paths['$vector'];
+        const $vectorize = this.model.schema.paths['$vectorize'];
+
         if (projection != null) {
             if (Object.keys(projection).length === 1 && projection['*']) {
+                // If schema has `select: true` for $vector or $vectorize, select: '*' will break with
+                // "wildcard ('*') only allowed as the only root-level path" error because Mongoose will
+                // add `$vector: 1` or `$vectorize: 1`. As a workaround, replace '*: 1' with including
+                // vector and vectorize.
+                if ($vector?.options?.select || $vectorize?.options?.select) {
+                    this.projection({ $vector: 1, $vectorize: 1 });
+                }
                 return;
             }
         }
-        const $vector = this.model.schema.paths['$vector'];
-        const $vectorize = this.model.schema.paths['$vectorize'];
-        if ($vector?.options?.select && (projection == null || !('$vector' in projection))) {
+        if ($vector?.options?.select && projectionDoesNotHaveProperty(projection, '$vector')) {
             this.projection({ ...projection, $vector: 1 });
         }
-        if ($vectorize?.options?.select && (projection == null || !('$vectorize' in projection))) {
+        if ($vectorize?.options?.select && projectionDoesNotHaveProperty(projection, '$vectorize')) {
             this.projection({ ...projection, $vectorize: 1 });
         }
     });
+}
+
+function projectionDoesNotHaveProperty(projection: Record<string, unknown>, property: string) {
+    return projection == null || !(property in projection);
 }
