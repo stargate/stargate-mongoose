@@ -112,6 +112,19 @@ export async function createMongooseCollections(useTables: boolean) {
     }
 }
 
+before(async function connectMongooseFixtures() {
+    if (isAstra) {
+    // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
+        await mongooseInstance.connect(testClient.uri, testClient.options);
+    } else {
+        await mongooseInstance.connect(testClient!.uri, testClient!.options);
+        const keyspace = parseUri(testClient!.uri).keyspaceName;
+        await mongooseInstance.connection.createNamespace(keyspace);
+    }
+});
+
+before(createMongooseCollections);
+
 after(async function disconnectMongooseFixtures() {
     await mongooseInstance.disconnect();
 });
