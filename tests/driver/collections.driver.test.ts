@@ -209,11 +209,16 @@ describe('COLLECTIONS: driver based tests', async () => {
 
         it('handles enableBigNumbers in collections', async function() {
             delete mongooseInstance.connection.collections[Product.collection.collectionName];
-            const bigNumbersProductSchema = Product.schema.clone().add({ price: BigInt }).set('serdes', { enableBigNumbers: true });
+            const bigNumbersProductSchema = Product.schema.clone()
+                .add({ price: BigInt })
+                .set('serdes', { enableBigNumbers: () => 'number_or_string' });
             const BigNumbersProduct = mongooseInstance.model('BigNumbersProduct', bigNumbersProductSchema, Product.collection.collectionName);
 
             const _id = new mongoose.Types.ObjectId();
-            const collection = mongooseInstance.connection.db!.collection(Product.collection.collectionName, { serdes: { enableBigNumbers: true } });
+            const collection = mongooseInstance.connection.db!.collection(
+                Product.collection.collectionName,
+                { serdes: { enableBigNumbers: () => 'number_or_string' } }
+            );
             await collection.insertOne({
                 _id: _id.toString(),
                 name: 'Very expensive product',

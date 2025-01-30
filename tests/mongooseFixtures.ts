@@ -44,7 +44,7 @@ let lastConnectionOptions: ConnectOptions | null = null;
 
 async function createNamespace() {
     const connection = mongooseInstance.connection;
-    return connection.createNamespace(connection.namespace);
+    return connection.createNamespace(connection.namespace as string);
 }
 
 export async function createMongooseCollections(useTables: boolean) {
@@ -114,7 +114,7 @@ export async function createMongooseCollections(useTables: boolean) {
 
 before(async function() {
     this.timeout(120_000);
-    await createMongooseCollections();
+    await createMongooseCollections(false);
 });
 
 after(async function disconnectMongooseFixtures() {

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { DataAPITimestamp } from '@datastax/astra-db-ts';
 import { Binary, ObjectId } from 'bson';
 import mongoose from 'mongoose';
 
@@ -39,10 +38,6 @@ function serializeValue(data: any, useTables?: boolean): any {
     }
     if (typeof data.toBSON === 'function') {
         data = data.toBSON();
-    }
-
-    if (useTables && data instanceof Date) {
-        return new DataAPITimestamp(data);
     }
 
     if (data instanceof ObjectId) {

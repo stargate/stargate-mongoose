@@ -252,7 +252,10 @@ export class Connection extends MongooseConnection {
 
         const dbOptions = {
             namespace: keyspaceName,
-            dataApiPath: baseApiPath
+            dataApiPath: baseApiPath,
+            additionalHeaders: {
+                'Feature-Flag-tables': 'true'
+            }
         };
 
         const { client, db, admin } = (() => {

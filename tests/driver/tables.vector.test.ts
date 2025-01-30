@@ -96,6 +96,7 @@ describe('TABLES: vector search', function() {
     });
 
     it('supports sort() and similarity score with $meta with find()', async function() {
+        // Currently commented out because astra-db-ts crashes with TypeError on includeSimilarity with tables
         const res = await Vector.find({}, null, { includeSimilarity: true }).sort({ vector: { $meta: [1, 99] } });
         assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 1', 'Test vector 2']);
         assert.deepStrictEqual(res.map(doc => doc.get('$similarity')), [1, 0.51004946]);

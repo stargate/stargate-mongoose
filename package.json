@@ -82,7 +82,7 @@
     "typescript-eslint": "~8.11"
   },
   "dependencies": {
-    "@datastax/astra-db-ts": "2.0.0-preview.0"
+    "@datastax/astra-db-ts": "2.0.0-preview.3"
   },
   "peerDependencies": {
     "mongoose": "^8.9.0"
