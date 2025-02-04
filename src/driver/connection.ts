@@ -195,6 +195,18 @@ export class Connection extends MongooseConnection {
     }
 
     /**
+     * List all keyspaces. Only available in local Data API, not Astra. Called "listDatabases" for Mongoose compatibility
+     */
+
+    async listDatabases(): Promise<{ databases: { name: string }[] }> {
+        if (this.admin instanceof AstraAdmin) {
+            throw new Error('Cannot listDatabases in Astra');
+        }
+        await this._waitForClient();
+        return { databases: await this.admin!.listKeyspaces().then(keyspaces => keyspaces.map(name => ({ name }))) };
+    }
+
+    /**
      * Logic for creating a connection to Data API. Mongoose calls `openUri()` internally when the
      * user calls `mongoose.create()` or `mongoose.createConnection(uri)`
      *

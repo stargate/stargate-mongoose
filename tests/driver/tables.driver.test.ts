@@ -27,11 +27,8 @@ describe('TABLES: driver based tests', async () => {
     let dbUri: string;
     let isAstra: boolean;
     before(async function () {
-        if (testClient == null) {
-            return this.skip();
-        }
-        dbUri = testClient.uri;
-        isAstra = testClient.isAstra;
+        dbUri = testClient!.uri;
+        isAstra = testClient!.isAstra;
     });
     describe('StargateMongoose - index', () => {
         it('should leverage astradb', async function () {

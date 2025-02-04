@@ -231,13 +231,12 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         //Model.applyDefaults is skipped, because it is not making any db calls
         //TODO - Skipping /node_modules/mongoose/lib/model.js:3442:74
         //Model.bulkSave() error:  TypeError: Cannot read properties of undefined (reading 'find')
-        it.skip('API ops tests Model.bulkSave()', async () => {
+        it('API ops tests Model.bulkSave()', async () => {
             const product2 = new Product({name: 'Product 2', price: 20, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 30, isCertified: true, category: 'cat 3'});
-            await Product.bulkSave([product2, product3]);
             await assert.rejects(
                 Product.bulkSave([product2, product3]),
-                { message: 'bulkSave() Not Implemented' }
+                { message: 'bulkWrite() Not Implemented' }
             );
         });
         it('API ops tests Model.bulkWrite()', async () => {
@@ -736,13 +735,15 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             const res = await mongooseInstance.connection.collection<ProductRawDoc>('products').findOne({});
             assert.equal(res!.name, 'Product 1');
         });
-        it.skip('API ops tests connection.listDatabases()', async () => {
+        it('API ops tests connection.listDatabases()', async function() {
+            if (testClient!.isAstra) {
+                return this.skip();
+            }
             const { databases } = await mongooseInstance!.connection.listDatabases();
             assert.ok(Array.isArray(databases));
-            // @ts-expect-error
-            assert.ok(mongooseInstance.connection.db.name);
-            // @ts-expect-error
-            assert.ok(databases.includes(mongooseInstance.connection.db.name));
+            assert.ok(mongooseInstance.connection.namespace);
+
+            assert.ok(databases.find(db => db.name === mongooseInstance.connection.namespace));
         });
         it('API ops tests connection.runCommand()', async () => {
             const res = await mongooseInstance.connection.runCommand({ findCollections: {} });

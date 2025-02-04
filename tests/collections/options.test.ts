@@ -79,10 +79,6 @@ describe('Options tests', async () => {
             assert.strictEqual(product4?.isCertified, true);
         });
         it('should cleanup updateManyOptions', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             // @ts-expect-error
             const products: Product[] = [new Product({ name: 'Product 2', price: 10, isCertified: true, category: 'cat1' }), new Product({ name: 'Product 1', price: 10, isCertified: false, category: 'cat1' }), new Product({ name: 'Product 3', price: 10, isCertified: false, category: 'cat2' })];
             const insertManyResp = await Product.insertMany(products, { ordered: true, rawResult: false });
@@ -135,10 +131,6 @@ describe('Options tests', async () => {
             assert.strictEqual(findResp.length, 30);
         });
         it('should cleanup findOneAndReplaceOptions', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             //create 20 products using Array with id suffixed to prduct name
             const products: ReturnType<(typeof Product)['hydrate']>[] = [];
             for (let i = 0; i < 20; i++) {
@@ -159,10 +151,6 @@ describe('Options tests', async () => {
             assert.strictEqual(product25?.name,'Product 25');
         });
         it('should cleanup findOneAndDeleteOptions', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             //create 20 products using Array with id suffixed to prduct name
             const products: ReturnType<(typeof Product)['hydrate']>[] = [];
             for (let i = 0; i < 20; i++) {
@@ -186,10 +174,6 @@ describe('Options tests', async () => {
             assert.strictEqual(product6?.category, 'cat 6');
         });
         it('should cleanup findOneAndUpdateOptions', async function() {
-            if (process.env.DATA_API_TABLES) {
-                this.skip();
-                return;
-            }
             //create 20 products using Array with id suffixed to product name
             const products: ReturnType<(typeof Product)['hydrate']>[] = [];
             for (let i = 0; i < 20; i++) {

@@ -562,14 +562,6 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             const res = await mongooseInstance.connection.collection<ProductRawDoc>('products').findOne({});
             assert.equal(res!.name, 'Product 1');
         });
-        it.skip('API ops tests connection.listDatabases()', async () => {
-            const { databases } = await mongooseInstance!.connection.listDatabases();
-            assert.ok(Array.isArray(databases));
-            // @ts-expect-error
-            assert.ok(mongooseInstance.connection.db.name);
-            // @ts-expect-error
-            assert.ok(databases.includes(mongooseInstance.connection.db.name));
-        });
         it('API ops tests connection.runCommand()', async () => {
             const res = await mongooseInstance.connection.runCommand({ listTables: {} });
             assert.ok(res.status?.tables?.includes('carts'));
