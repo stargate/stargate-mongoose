@@ -429,7 +429,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                 expiryDate: Date,
                 isCertified: Boolean,
                 category: String // Index exists in db but not in schema, will drop
-            });
+            }, { autoCreate: false, autoIndex: false });
             const ProductIndexModel = mongooseInstance.model('ProductIndexes', testProductSchema, Product.collection.collectionName);
 
             const stringIndexOptions = { ascii: false, caseSensitive: true, normalize: false };

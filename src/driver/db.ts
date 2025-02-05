@@ -152,9 +152,7 @@ export class TablesDb extends BaseDb {
         return this.astraDb.table<DocType>(name, options);
     }
 
-    createCollection(name: string, _options?: Record<string, unknown>) {
-        // throw new Error('Cannot createCollection in tables mode');
-        // Temporary workaround for Mongoose calling `createCollection` in syncIndexes(), should be fixed in Mongoose 8.10
-        return Promise.resolve(this.astraDb.collection(name));
+    createCollection(_name: string, _options?: Record<string, unknown>): Promise<Collection<Record<string, never>>> {
+        throw new Error('Cannot createCollection in tables mode');
     }
 }
