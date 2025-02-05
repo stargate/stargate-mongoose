@@ -263,7 +263,6 @@ export class Connection extends MongooseConnection {
         const { baseUrl, keyspaceName, applicationToken, baseApiPath } = parseUri(uri);
 
         const dbOptions = {
-            namespace: keyspaceName,
             dataApiPath: baseApiPath,
             additionalHeaders: {
                 'Feature-Flag-tables': 'true'

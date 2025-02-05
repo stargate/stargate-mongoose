@@ -216,18 +216,23 @@ describe('COLLECTIONS: driver based tests', async () => {
                 Product.collection.collectionName,
                 { serdes: { enableBigNumbers: () => 'number_or_string' } }
             );
-            await collection.insertOne({
-                _id: _id.toString(),
-                name: 'Very expensive product',
-                // MAX_SAFE_INTEGER + 8
-                price: BigInt('9007199254740999')
-            });
+            try {
+                await collection.insertOne({
+                    _id: _id.toString(),
+                    name: 'Very expensive product',
+                    // MAX_SAFE_INTEGER + 8
+                    price: BigInt('9007199254740999')
+                });
 
-            const rawDoc = await collection.findOne({ _id: _id.toString() });
-            assert.strictEqual(rawDoc!.price, '9007199254740999');
+                const rawDoc = await collection.findOne({ _id: _id.toString() });
+                assert.strictEqual(rawDoc!.price, '9007199254740999');
 
-            const mongooseDoc = await BigNumbersProduct.findOne({ _id }).orFail();
-            assert.strictEqual(mongooseDoc.price, BigInt('9007199254740999'));
+                const mongooseDoc = await BigNumbersProduct.findOne({ _id }).orFail();
+                assert.strictEqual(mongooseDoc.price, BigInt('9007199254740999'));
+            } finally {
+                // Make sure to clean up the collection so we don't have the `serdes` option leaking to other tests
+                delete mongooseInstance.connection.collections[Product.collection.collectionName];
+            }
         });
     });
     describe('namespace management tests', () => {
