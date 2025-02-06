@@ -112,11 +112,6 @@ export async function createMongooseCollections(useTables: boolean) {
     }
 }
 
-before(async function() {
-    this.timeout(120_000);
-    await createMongooseCollections(false);
-});
-
 after(async function disconnectMongooseFixtures() {
     await mongooseInstance.disconnect();
 });
