@@ -43,25 +43,23 @@ describe('TABLES: vector search', function() {
 
     before(async function() {
         const existingTables = await mongooseInstance.connection.listTables();
-        if (existingTables.find(t => t.name === 'vector_table')) {
-            return;
-        }
-        await mongooseInstance.connection.dropTable('vector_table');
-        await mongooseInstance.connection.createTable('vector_table', {
-            primaryKey: '_id',
-            columns: {
-                _id: {
-                    type: 'text'
-                },
-                name: {
-                    type: 'text'
-                },
-                vector: {
-                    type: 'vector',
-                    dimension: 2
+        if (!existingTables.find(t => t.name === 'vector_table')) {
+            await mongooseInstance.connection.createTable('vector_table', {
+                primaryKey: '_id',
+                columns: {
+                    _id: {
+                        type: 'text'
+                    },
+                    name: {
+                        type: 'text'
+                    },
+                    vector: {
+                        type: 'vector',
+                        dimension: 2
+                    }
                 }
-            }
-        });
+            });
+        }
 
         await mongooseInstance.connection.collection('vector_table').runCommand({
             createVectorIndex: {
