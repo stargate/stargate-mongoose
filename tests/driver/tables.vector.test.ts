@@ -34,7 +34,7 @@ describe('TABLES: vector search', function() {
     const Vector = mongooseInstance.model(
         'VectorTable',
         vectorSchema,
-        'vector'
+        'vector_table'
     );
 
     before(async () => {
@@ -42,8 +42,20 @@ describe('TABLES: vector search', function() {
     });
 
     before(async function() {
-        await mongooseInstance.connection.dropTable('vector');
-        await mongooseInstance.connection.createTable('vector', {
+        const existingTables = await mongooseInstance.connection.listTables();
+        if (existingTables.find(t => t.name === 'vector_table')) {
+          await mongooseInstance.connection.collection('vector_table').runCommand({
+              createVectorIndex: {
+                  name: 'vectortables',
+                  definition: {
+                      column: 'vector'
+                  }
+              }
+          });
+            return;
+        }
+        await mongooseInstance.connection.dropTable('vector_table');
+        await mongooseInstance.connection.createTable('vector_table', {
             primaryKey: '_id',
             columns: {
                 _id: {
@@ -59,7 +71,7 @@ describe('TABLES: vector search', function() {
             }
         });
 
-        await mongooseInstance.connection.collection('vector').runCommand({
+        await mongooseInstance.connection.collection('vector_table').runCommand({
             createVectorIndex: {
                 name: 'vectortables',
                 definition: {

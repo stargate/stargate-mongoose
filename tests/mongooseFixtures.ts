@@ -55,7 +55,10 @@ export async function createMongooseCollections(useTables: boolean) {
     await mongooseInstance.connection.openUri(testClient!.uri, { ...testClient!.options, useTables });
     lastConnectionOptions = { ...testClient!.options, useTables };
 
-    await createNamespace();
+    const { databases } = await mongooseInstance.connection.listDatabases();
+    if (!databases.find(db => db.name === mongooseInstance.connection.namespace)) {
+        await createNamespace();
+    }
 
     for (const Model of Object.values(mongooseInstance.connection.models)) {
         // Bust collection cache, because otherwise models will keep a table/collection even if we switched modes
@@ -64,30 +67,39 @@ export async function createMongooseCollections(useTables: boolean) {
     }
 
     const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });
+    const collectionNames = await mongooseInstance.connection.listCollections({ nameOnly: true });
 
     if (useTables) {
-        await mongooseInstance.connection.dropTable(Cart.collection.collectionName);
-        await mongooseInstance.connection.dropTable(Product.collection.collectionName);
-        await mongooseInstance.connection.createTable(Cart.collection.collectionName, tableDefinitionFromSchema(Cart.schema));
-        await mongooseInstance.connection.createTable(Product.collection.collectionName, {
-            primaryKey: '_id',
-            columns: {
-                _id: { type: 'text' },
-                __v: { type: 'int' },
-                __t: { type: 'text' },
-                name: { type: 'text' },
-                price: { type: 'decimal' },
-                expiryDate: { type: 'timestamp' },
-                isCertified: { type: 'boolean' },
-                category: { type: 'text' },
-                // `tags` omitted because no reasonable way to use document arrays in Data API tables
-                // without converting to strings
-                // Discriminator values
-                url: { type: 'text' },
-                // Extra key for testing strict mode
-                extraCol: { type: 'text' }
-            }
-        });
+        if (collectionNames.includes(Cart.collection.collectionName)) {
+            await mongooseInstance.connection.dropCollection(Cart.collection.collectionName);
+        }
+        if (collectionNames.includes(Product.collection.collectionName)) {
+            await mongooseInstance.connection.dropCollection(Product.collection.collectionName);
+        }
+        if (!tableNames.includes(Cart.collection.collectionName)) {
+            await mongooseInstance.connection.createTable(Cart.collection.collectionName, tableDefinitionFromSchema(Cart.schema));
+        }
+        if (!tableNames.includes(Product.collection.collectionName)) {
+            await mongooseInstance.connection.createTable(Product.collection.collectionName, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    __v: { type: 'int' },
+                    __t: { type: 'text' },
+                    name: { type: 'text' },
+                    price: { type: 'decimal' },
+                    expiryDate: { type: 'timestamp' },
+                    isCertified: { type: 'boolean' },
+                    category: { type: 'text' },
+                    // `tags` omitted because no reasonable way to use document arrays in Data API tables
+                    // without converting to strings
+                    // Discriminator values
+                    url: { type: 'text' },
+                    // Extra key for testing strict mode
+                    extraCol: { type: 'text' }
+                }
+            });
+        }
     } else {
         const collections = await mongooseInstance.connection.listCollections();
         const collectionNames = collections.map(({ name }) => name);
