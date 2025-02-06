@@ -886,7 +886,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             const connection = mongooseInstance.createConnection(testClient!.uri, { ...testClient!.options, bufferCommands: false }) as unknown as StargateMongooseDriver.Connection;
             await connection.asPromise();
             await connection.close();
-            await assert.rejects(connection.listCollections({}), /Connection is disconnected/);
+            await assert.rejects(connection.listCollections({}), /Connection is not connected/);
         });
         it('API ops tests dropIndex()', async function() {
             await assert.rejects(

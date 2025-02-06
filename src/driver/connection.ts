@@ -64,17 +64,13 @@ export class Connection extends MongooseConnection {
      *     conn.model('Test', mongoose.Schema({ name: String }));
      *     await conn.openUri(uri);
      */
-    _waitForClient() {
-        return new Promise<void>((resolve, reject) => {
-            const shouldWaitForClient = (this.readyState === STATES.connecting || this.readyState === STATES.disconnected) && this._shouldBufferCommands();
-            if (shouldWaitForClient) {
-                this._queue.push({ fn: resolve });
-            } else if (this.readyState === STATES.disconnected) {
-                reject(new Error('Connection is disconnected'));
-            } else {
-                resolve();
-            }
-        });
+    async _waitForClient() {
+        const shouldWaitForClient = (this.readyState === STATES.connecting || this.readyState === STATES.disconnected) && this._shouldBufferCommands();
+        if (shouldWaitForClient) {
+            await this._waitForConnect();
+        } else if (this.readyState !== STATES.connected) {
+            throw new Error('Connection is not connected');
+        }
     }
 
     /**

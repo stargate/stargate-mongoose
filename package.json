@@ -85,7 +85,7 @@
     "@datastax/astra-db-ts": "2.0.0-preview.3"
   },
   "peerDependencies": {
-    "mongoose": "^8.9.0"
+    "mongoose": "^8.10.0"
   },
   "engines": {
     "node": ">=18.0.0"
