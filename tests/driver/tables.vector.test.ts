@@ -44,14 +44,6 @@ describe('TABLES: vector search', function() {
     before(async function() {
         const existingTables = await mongooseInstance.connection.listTables();
         if (existingTables.find(t => t.name === 'vector_table')) {
-          await mongooseInstance.connection.collection('vector_table').runCommand({
-              createVectorIndex: {
-                  name: 'vectortables',
-                  definition: {
-                      column: 'vector'
-                  }
-              }
-          });
             return;
         }
         await mongooseInstance.connection.dropTable('vector_table');
