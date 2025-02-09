@@ -15,18 +15,23 @@
 import assert from 'assert';
 import mongoose from 'mongoose';
 import * as StargateMongooseDriver from '../../src/driver';
-import { testClient, TEST_COLLECTION_NAME } from '../fixtures';
-import { Product, Cart, mongooseInstance, createMongooseCollections } from '../mongooseFixtures';
+import { testClient, TEST_TABLE_NAME } from '../fixtures';
+import { CartModelType, ProductModelType, createMongooseCollections } from '../mongooseFixtures';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
+import type { StargateMongoose } from '../../src';
 
 describe('TABLES: driver based tests', async () => {
-    before(async () => {
-        await createMongooseCollections(true);
+    let Product: ProductModelType;
+    let Cart: CartModelType;
+    let mongooseInstance: StargateMongoose;
+
+    before(async function createTables() {
+        ({ Product, Cart, mongooseInstance } = await createMongooseCollections(true));
     });
 
     let dbUri: string;
     let isAstra: boolean;
-    before(async function () {
+    before(function () {
         dbUri = testClient!.uri;
         isAstra = testClient!.isAstra;
     });
@@ -81,14 +86,25 @@ describe('TABLES: driver based tests', async () => {
         });
     });
     describe('Mongoose API', () => {
-        const personSchema = new mongooseInstance.Schema({
+        const personSchema = new mongoose.Schema({
             name: { type: String, required: true }
         });
-        mongooseInstance.deleteModel(/Person/);
-        const Person = mongooseInstance.model('Person', personSchema, TEST_COLLECTION_NAME);
+        let Person: mongoose.Model<mongoose.InferSchemaType<typeof personSchema>>;
         before(async function () {
-            await mongooseInstance.connection.dropTable(TEST_COLLECTION_NAME);
-            await mongooseInstance.connection.createTable(TEST_COLLECTION_NAME, tableDefinitionFromSchema(personSchema));
+            mongooseInstance.deleteModel(/Person/);
+            Person = mongooseInstance.model('Person', personSchema, TEST_TABLE_NAME);
+
+            const tables = await mongooseInstance.connection.listTables();
+            const table = tables.find(table => table.name === TEST_TABLE_NAME);
+            if (table == null) {
+                await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(personSchema));
+            } else {
+                const columns = tableDefinitionFromSchema(personSchema).columns;
+                if (Object.keys(columns).find(columnName => !table.definition.columns[columnName])) {
+                    await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+                    await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(personSchema));
+                }
+            }
         });
 
         after(async () => {

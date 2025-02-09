@@ -4,8 +4,6 @@ import * as StargateMongooseDriver from '../src/driver';
 import { plugins } from '../src/driver';
 import tableDefinitionFromSchema from '../src/tableDefinitionFromSchema';
 
-import type { ConnectOptions } from 'mongoose';
-
 const cartSchema = new Schema({
     name: String,
     cartName: {type: String, lowercase: true, unique: true, index: true},
@@ -37,10 +35,21 @@ for (const plugin of plugins) {
 
 export const Cart = mongooseInstance.model('Cart', cartSchema);
 export const Product = mongooseInstance.model('Product', productSchema);
+export type CartModelType = typeof Cart;
+export type ProductModelType = typeof Product;
 export type ProductHydratedDoc = ReturnType<(typeof Product)['hydrate']>;
 export type ProductRawDoc = SubdocsToPOJOs<InferSchemaType<typeof productSchema>>;
 
-let lastConnectionOptions: ConnectOptions | null = null;
+export const mongooseInstanceTables = new Mongoose().setDriver(StargateMongooseDriver);
+mongooseInstanceTables.set('autoCreate', false);
+mongooseInstanceTables.set('autoIndex', false);
+
+for (const plugin of plugins) {
+    mongooseInstanceTables.plugin(plugin);
+}
+
+export const CartTablesModel = mongooseInstanceTables.model('Cart', cartSchema, 'carts_table');
+export const ProductTablesModel = mongooseInstanceTables.model('Product', productSchema, 'products_table');
 
 async function createNamespace() {
     const connection = mongooseInstance.connection;
@@ -48,39 +57,29 @@ async function createNamespace() {
 }
 
 export async function createMongooseCollections(useTables: boolean) {
-    if (lastConnectionOptions?.useTables === useTables) {
-        return;
-    }
-    await mongooseInstance.connection.close();
-    await mongooseInstance.connection.openUri(testClient!.uri, { ...testClient!.options, useTables });
-    lastConnectionOptions = { ...testClient!.options, useTables };
+    await mongooseInstance.connection.openUri(testClient!.uri, { ...testClient!.options });
+    await mongooseInstanceTables.connection.openUri(testClient!.uri, { ...testClient!.options, useTables: true });
 
     const { databases } = await mongooseInstance.connection.listDatabases();
     if (!databases.find(db => db.name === mongooseInstance.connection.namespace)) {
         await createNamespace();
     }
 
-    for (const Model of Object.values(mongooseInstance.connection.models)) {
-        // Bust collection cache, because otherwise models will keep a table/collection even if we switched modes
-        // @ts-expect-error
-        delete Model.collection._collection;
-    }
-
     const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });
     const collectionNames = await mongooseInstance.connection.listCollections({ nameOnly: true });
 
     if (useTables) {
-        if (collectionNames.includes(Cart.collection.collectionName)) {
-            await mongooseInstance.connection.dropCollection(Cart.collection.collectionName);
+        if (collectionNames.includes(CartTablesModel.collection.collectionName)) {
+            await mongooseInstance.connection.dropCollection(CartTablesModel.collection.collectionName);
         }
-        if (collectionNames.includes(Product.collection.collectionName)) {
-            await mongooseInstance.connection.dropCollection(Product.collection.collectionName);
+        if (collectionNames.includes(ProductTablesModel.collection.collectionName)) {
+            await mongooseInstance.connection.dropCollection(ProductTablesModel.collection.collectionName);
         }
-        if (!tableNames.includes(Cart.collection.collectionName)) {
-            await mongooseInstance.connection.createTable(Cart.collection.collectionName, tableDefinitionFromSchema(Cart.schema));
+        if (!tableNames.includes(CartTablesModel.collection.collectionName)) {
+            await mongooseInstance.connection.createTable(CartTablesModel.collection.collectionName, tableDefinitionFromSchema(CartTablesModel.schema));
         }
-        if (!tableNames.includes(Product.collection.collectionName)) {
-            await mongooseInstance.connection.createTable(Product.collection.collectionName, {
+        if (!tableNames.includes(ProductTablesModel.collection.collectionName)) {
+            await mongooseInstance.connection.createTable(ProductTablesModel.collection.collectionName, {
                 primaryKey: '_id',
                 columns: {
                     _id: { type: 'text' },
@@ -100,6 +99,8 @@ export async function createMongooseCollections(useTables: boolean) {
                 }
             });
         }
+
+        return { mongooseInstance: mongooseInstanceTables, Product: ProductTablesModel, Cart: CartTablesModel };
     } else {
         const collections = await mongooseInstance.connection.listCollections();
         const collectionNames = collections.map(({ name }) => name);
@@ -121,6 +122,8 @@ export async function createMongooseCollections(useTables: boolean) {
         } else {
             await Product.deleteMany({});
         }
+
+        return { mongooseInstance, Product, Cart };
     }
 }
 

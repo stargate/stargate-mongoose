@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { mongooseInstance, createMongooseCollections } from '../mongooseFixtures';
+import { mongooseInstanceTables as mongooseInstance, createMongooseCollections } from '../mongooseFixtures';
 import { once } from 'events';
-import { Schema, Types } from 'mongoose';
+import { InferSchemaType, Model, Schema, Types } from 'mongoose';
 import { FindCursor } from '@datastax/astra-db-ts';
 
 describe('TABLES: vector search', function() {
@@ -31,17 +31,19 @@ describe('TABLES: vector search', function() {
             versionKey: false
         }
     );
-    const Vector = mongooseInstance.model(
-        'VectorTable',
-        vectorSchema,
-        'vector_table'
-    );
+    let Vector: Model<InferSchemaType<typeof vectorSchema>>;
 
     before(async () => {
         await createMongooseCollections(true);
     });
 
     before(async function() {
+        Vector = mongooseInstance.model(
+            'VectorTable',
+            vectorSchema,
+            'vector_table'
+        );
+
         const existingTables = await mongooseInstance.connection.listTables();
         if (!existingTables.find(t => t.name === 'vector_table')) {
             await mongooseInstance.connection.createTable('vector_table', {
@@ -59,16 +61,16 @@ describe('TABLES: vector search', function() {
                     }
                 }
             });
-        }
 
-        await mongooseInstance.connection.collection('vector_table').runCommand({
-            createVectorIndex: {
-                name: 'vectortables',
-                definition: {
-                    column: 'vector'
+            await mongooseInstance.connection.collection('vector_table').runCommand({
+                createVectorIndex: {
+                    name: 'vectortables',
+                    definition: {
+                        column: 'vector'
+                    }
                 }
-            }
-        });
+            });
+        }
     });
 
     beforeEach(async function() {

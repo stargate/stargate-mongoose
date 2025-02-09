@@ -15,6 +15,7 @@
 import assert from 'assert';
 
 export const TEST_COLLECTION_NAME = 'collection1';
+export const TEST_TABLE_NAME = 'table1';
 
 export const sleep = async (ms = 100) => new Promise(resolve => setTimeout(resolve, ms));
 

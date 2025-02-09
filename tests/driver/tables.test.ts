@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { mongooseInstance, createMongooseCollections } from '../mongooseFixtures';
+import { mongooseInstanceTables as mongooseInstance, createMongooseCollections } from '../mongooseFixtures';
 import { Schema, Types } from 'mongoose';
 import { randomUUID } from 'crypto';
 import { UUID } from 'bson';
@@ -61,12 +61,8 @@ describe('TABLES: basic operations and data types', function() {
         assert.ok(indexes.find(index => index.name === 'my_index_2'));
 
         await mongooseInstance.connection.collection(TEST_TABLE_NAME).dropIndex('my_index_2');
-
-        await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
     });
     it('fails to create compound index', async function() {
-        await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
-
         const testSchema = new Schema({ testProperty: String, otherTestProperty: String });
         testSchema.index({ testProperty: 1, otherTestProperty: 1 });
 

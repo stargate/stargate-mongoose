@@ -17,20 +17,25 @@ import {
     testClient,
     TEST_COLLECTION_NAME
 } from '../fixtures';
-import mongoose, { Schema, InferSchemaType, InsertManyResult, Mongoose } from 'mongoose';
+import mongoose, { Schema, InferSchemaType, InsertManyResult, Model } from 'mongoose';
 import { once } from 'events';
 import * as StargateMongooseDriver from '../../src/driver';
 import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '../../src/driver';
-import { Product, Cart, mongooseInstance, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
+import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
 import { FindCursor, DataAPIResponseError, DataAPIClient } from '@datastax/astra-db-ts';
 import { Long, UUID } from 'bson';
+import type { StargateMongoose } from '../../src';
 
 describe('COLLECTIONS: mongoose Model API level tests with collections', async () => {
+    let Product: ProductModelType;
+    let Cart: CartModelType;
+    let mongooseInstance: StargateMongoose;
+
     before(async function() {
         this.timeout(120_000);
-        await createMongooseCollections(false);
+        ({ Product, Cart, mongooseInstance } = await createMongooseCollections(false));
     });
 
     afterEach(async () => {
@@ -113,7 +118,6 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 long: BigInt,
                 willBeNull: String
             });
-            await mongooseInstance.connection.dropTable(TEST_COLLECTION_NAME);
             const User = mongooseInstance.model(modelName, userSchema, TEST_COLLECTION_NAME);
             const collectionNames = await mongooseInstance.connection.listCollections({ nameOnly: true });
             if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
@@ -832,18 +836,18 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 autoCreate: false
             }
         );
-        const Vector = mongooseInstance.model(
-            'Vector',
-            vectorSchema,
-            'vector'
-        );
+        let Vector: Model<InferSchemaType<typeof vectorSchema>>;
 
         before(async function() {
-            await mongooseInstance.connection.dropTable('vector');
+            Vector = mongooseInstance.model(
+                'Vector',
+                vectorSchema,
+                'vector'
+            );
+
             const collections = await mongooseInstance.connection.listCollections({ nameOnly: false });
             const vectorCollection = collections.find(coll => coll.name === 'vector');
             if (!vectorCollection) {
-                await mongooseInstance.connection.dropCollection('vector');
                 await Vector.createCollection();
             } else if (vectorCollection.definition?.vector?.dimension !== 2 || vectorCollection.definition?.vector?.metric !== 'cosine') {
                 await mongooseInstance.connection.dropCollection('vector');

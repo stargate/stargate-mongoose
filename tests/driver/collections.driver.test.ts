@@ -16,13 +16,17 @@ import assert from 'assert';
 import mongoose from 'mongoose';
 import * as StargateMongooseDriver from '../../src/driver';
 import { testClient, TEST_COLLECTION_NAME } from '../fixtures';
-import { Product, Cart, mongooseInstance, createMongooseCollections } from '../mongooseFixtures';
-import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
+import { CartModelType, ProductModelType, createMongooseCollections } from '../mongooseFixtures';
+import type { StargateMongoose } from '../../src';
 
 describe('COLLECTIONS: driver based tests', async () => {
+    let Product: ProductModelType;
+    let Cart: CartModelType;
+    let mongooseInstance: StargateMongoose;
+
     before(async function() {
         this.timeout(120_000);
-        await createMongooseCollections(false);
+        ({ Product, Cart, mongooseInstance } = await createMongooseCollections(false));
     });
 
     let dbUri: string;
@@ -88,19 +92,22 @@ describe('COLLECTIONS: driver based tests', async () => {
         });
     });
     describe('Mongoose API', () => {
-        const personSchema = new mongooseInstance.Schema({
+        const personSchema = new mongoose.Schema({
             name: { type: String, required: true }
         });
-        mongooseInstance.deleteModel(/Person/);
-        const Person = mongooseInstance.model('Person', personSchema, TEST_COLLECTION_NAME);
+        let Person: mongoose.Model<mongoose.InferSchemaType<typeof personSchema>>;
         before(async function () {
-            await mongooseInstance.connection.dropTable(TEST_COLLECTION_NAME);
-            await mongooseInstance.connection.createTable(TEST_COLLECTION_NAME, tableDefinitionFromSchema(personSchema));
+            mongooseInstance.deleteModel(/Person/);
+            Person = mongooseInstance.model('Person', personSchema, TEST_COLLECTION_NAME);
+
+            const collectionNames = await mongooseInstance.connection.listCollections({ nameOnly: true });
+            if (!collectionNames.includes(TEST_COLLECTION_NAME)) {
+                await mongooseInstance.connection.createCollection(TEST_COLLECTION_NAME);
+            }
         });
 
         after(async () => {
             await Person.deleteMany({});
-            await mongooseInstance.connection.dropCollection(TEST_COLLECTION_NAME);
         });
 
         it('handles find cursors', async () => {

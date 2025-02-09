@@ -16,16 +16,21 @@ import assert from 'assert';
 import {
     testClient
 } from '../fixtures';
-import mongoose, { Schema, InferSchemaType, InsertManyResult, Mongoose } from 'mongoose';
+import mongoose, { Schema, InferSchemaType, InsertManyResult } from 'mongoose';
 import * as StargateMongooseDriver from '../../src/driver';
 import {OperationNotSupportedError} from '../../src/driver';
-import { Product, Cart, mongooseInstance, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
+import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
 import { DataAPIResponseError, DataAPIClient } from '@datastax/astra-db-ts';
+import type { StargateMongoose } from '../../src';
 
 describe('TABLES: Mongoose Model API level tests', async () => {
+    let Product: ProductModelType;
+    let Cart: CartModelType;
+    let mongooseInstance: StargateMongoose;
+
     before(async () => {
-        await createMongooseCollections(true);
+        ({ Product, Cart, mongooseInstance } = await createMongooseCollections(true));
     });
 
     afterEach(async () => {
@@ -559,12 +564,12 @@ describe('TABLES: Mongoose Model API level tests', async () => {
         it('API ops tests Model.db.collection()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
             await product1.save();
-            const res = await mongooseInstance.connection.collection<ProductRawDoc>('products').findOne({});
+            const res = await mongooseInstance.connection.collection<ProductRawDoc>(Product.collection.collectionName).findOne({});
             assert.equal(res!.name, 'Product 1');
         });
         it('API ops tests connection.runCommand()', async () => {
             const res = await mongooseInstance.connection.runCommand({ listTables: {} });
-            assert.ok(res.status?.tables?.includes('carts'));
+            assert.ok(res.status?.tables?.includes(Cart.collection.collectionName));
         });
         it('API ops tests collection.runCommand()', async function() {
             const res = await mongooseInstance.connection.collection('carts').runCommand({ find: {} });
