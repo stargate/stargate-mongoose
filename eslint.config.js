@@ -49,7 +49,8 @@ module.exports = [
             ],
             'quotes': ['warn', 'single'],
             'prefer-const': 'warn',
-            'no-extra-semi': 'warn'
+            'no-extra-semi': 'warn',
+            'no-trailing-spaces': 'warn'
         }
     },
     {

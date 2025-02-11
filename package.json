@@ -51,11 +51,11 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "test": "env TEST_DOC_DB=dataapi ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts",
-    "test-astra": "env TEST_DOC_DB=astra nyc ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts",
-    "test-dataapi": "env TEST_DOC_DB=dataapi nyc ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts",
+    "test": "env TEST_DOC_DB=dataapi ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts tests/*.test.ts",
+    "test-astra": "env TEST_DOC_DB=astra nyc --check-coverage --reporter=text --reporter=lcov ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts tests/*.test.ts",
+    "test-dataapi": "env TEST_DOC_DB=dataapi nyc --check-coverage --reporter=text --reporter=lcov ts-mocha --forbid-only --paths -p tsconfig.json tests/**/*.test.ts tests/*.test.ts",
     "preinstall": "npm run update-version-file",
-    "build": "npm run update-version-file && tsc --project tsconfig.build.json && tscpaths -p tsconfig.build.json -s ./src -o ./dist",
+    "build": "npm run update-version-file && tsc --project tsconfig.build.json",
     "build:docs": "jsdoc2md -t APIReference.hbs --files src/**/*.ts --configure ./jsdoc2md.json > APIReference.md",
     "update-version-file": "node -p \"'export const LIB_NAME = \\'' + require('./package.json').name + '\\';'\" > src/version.ts && node -p \"'export const LIB_VERSION = \\'' + require('./package.json').version + '\\';'\" >> src/version.ts"
   },
@@ -69,31 +69,25 @@
     "@babel/plugin-proposal-object-rest-spread": "^7.18.0",
     "@babel/preset-env": "^7.18.2",
     "@babel/preset-typescript": "^7.17.12",
-    "@types/mocha": "^9.1.1",
-    "@types/node": "^17.0.36",
-    "@types/sinon": "10.0.15",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^18.19.67",
     "dotenv": "^16.0.1",
     "eslint": "~9.13",
     "jsdoc-babel": "^0.5.0",
     "jsdoc-to-markdown": "^7.1.1",
-    "mongoose": "^8.4.0",
-    "nyc": "^15.1.0",
-    "sinon": "15.2.0",
+    "mongoose": "^8.10.0",
+    "nyc": "^17.1.0",
     "ts-mocha": "^10.0.0",
-    "ts-node": "^10.8.1",
-    "tscpaths": "^0.0.9",
-    "tsconfig-paths": "^4.0.0",
-    "typescript": "^4.7.2",
+    "typescript": "5.x",
     "typescript-eslint": "~8.11"
   },
   "dependencies": {
-    "axios": "^1.4.0",
-    "winston": "^3.7.2"
+    "@datastax/astra-db-ts": "2.0.0-preview.5"
   },
   "peerDependencies": {
-    "mongoose": "^7.5.0 || ^8.0.0"
+    "mongoose": "^8.10.0"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18.0.0"
   }
 }
