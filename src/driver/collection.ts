@@ -402,8 +402,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     /**
      * Create a new index
      *
-     * @param name
-     * @param column
+     * @param spec MongoDB-style index spec for Mongoose compatibility
      * @param options
      */
     async createIndex(indexSpec: Record<string, boolean>, options?: CreateTableIndexOptions & { name?: string }): Promise<void> {
@@ -423,6 +422,28 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
                 }
             }
             throw error;
+        });
+    }
+
+    /**
+     * Create a new vector index
+     *
+     * @param name
+     * @param column
+     * @param options
+     */
+    async createVectorIndex(name: string, column: string, options?: { metric: string, sourceModel?: string }): Promise<void> {
+        if (this.collection instanceof AstraCollection) {
+            throw new OperationNotSupportedError('Cannot use createVectorIndex() with collections');
+        }
+        return this.runCommand({
+            createVectorIndex: {
+                name,
+                definition: {
+                    column,
+                    ...(options ? { options } : {})
+                }
+            }
         });
     }
 

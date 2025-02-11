@@ -290,4 +290,16 @@ describe('tableDefinitionFromSchema', () => {
             message: 'Cannot convert schema to Data API table definition: nested paths with Buffer at "nested" are not supported'
         });
     });
+
+    it('throws on non-number array with dimension option', () => {
+        const testSchema = new Schema({
+            arr: { type: [String], dimension: 2 }
+        });
+
+        assert.throws(() => {
+            tableDefinitionFromSchema(testSchema);
+        }, {
+            message: 'Cannot convert schema to Data API table definition: vector column at "arr" must be an array of numbers'
+        });
+    });
 });

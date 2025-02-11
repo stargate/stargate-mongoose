@@ -12,17 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import assert from 'assert';
-import { mongooseInstanceTables as mongooseInstance, createMongooseCollections } from '../mongooseFixtures';
-import { once } from 'events';
-import { InferSchemaType, Model, Schema, Types } from 'mongoose';
 import { FindCursor } from '@datastax/astra-db-ts';
+import { InferSchemaType, Model, Schema, Types } from 'mongoose';
+import assert from 'assert';
+import { createMongooseCollections, mongooseInstanceTables as mongooseInstance } from '../mongooseFixtures';
+import { once } from 'events';
+import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
 
 describe('TABLES: vector search', function() {
     let vectorIds: Types.ObjectId[] = [];
     const vectorSchema = new Schema(
         {
-            vector: { type: [Number], default: () => void 0 },
+            vector: { type: [Number], default: () => void 0, dimension: 2 },
             name: 'String'
         },
         {
@@ -46,30 +47,9 @@ describe('TABLES: vector search', function() {
 
         const existingTables = await mongooseInstance.connection.listTables();
         if (!existingTables.find(t => t.name === 'vector_table')) {
-            await mongooseInstance.connection.createTable('vector_table', {
-                primaryKey: '_id',
-                columns: {
-                    _id: {
-                        type: 'text'
-                    },
-                    name: {
-                        type: 'text'
-                    },
-                    vector: {
-                        type: 'vector',
-                        dimension: 2
-                    }
-                }
-            });
+            await mongooseInstance.connection.createTable('vector_table', tableDefinitionFromSchema(vectorSchema));
 
-            await mongooseInstance.connection.collection('vector_table').runCommand({
-                createVectorIndex: {
-                    name: 'vectortables',
-                    definition: {
-                        column: 'vector'
-                    }
-                }
-            });
+            await mongooseInstance.connection.collection('vector_table').createVectorIndex('vectortables', 'vector');
         }
     });
 
