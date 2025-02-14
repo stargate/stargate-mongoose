@@ -100,7 +100,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             await product1.save();
             const error: Error | null = await Product.$where('this.name === "Product 1"').exec().then(() => null, error => error);
             assert.ok(error instanceof DataAPIResponseError);
-            assert.strictEqual(error.errorDescriptors[0].message, 'Invalid filter expression: filter clause path (\'$where\') contains character(s) not allowed');
+            assert.strictEqual(error.errorDescriptors[0].message, 'Invalid filter expression: filter clause path (\'$where\') cannot start with `$`');
         });
         it('API ops tests Model.aggregate()', async () => {
             //Model.aggregate()
@@ -134,11 +134,16 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                         column: 'name',
                         options: { ascii: false, caseSensitive: true, normalize: false }
                     },
+                    indexType: 'regular',
                     key: { name: 1 }
                 },
                 {
                     name: 'will_drop_index',
-                    definition: { column: 'price', options: {} },
+                    definition: {
+                        column: 'price',
+                        options: { ascii: false, caseSensitive: true, normalize: false }
+                    },
+                    indexType: 'regular',
                     key: { price: 1 }
                 }
             ]);
@@ -156,6 +161,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                         column: 'name',
                         options: { ascii: false, caseSensitive: true, normalize: false }
                     },
+                    indexType: 'regular',
                     key: { name: 1 }
                 }
             ]);
@@ -374,6 +380,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                         column: 'name',
                         options: { ascii: false, caseSensitive: true, normalize: false }
                     },
+                    indexType: 'regular',
                     key: { name: 1 }
                 }
             ]);
@@ -444,8 +451,9 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                     name: 'price',
                     definition: {
                         column: 'price',
-                        options: {}
+                        options: stringIndexOptions
                     },
+                    indexType: 'regular',
                     key: { price: 1 }
                 },
                 {
@@ -454,37 +462,42 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                         column: 'category',
                         options: stringIndexOptions
                     },
+                    indexType: 'regular',
                     key: { category: 1 }
                 }
             ]);
 
-            const droppedIndexes = await ProductIndexModel.syncIndexes();
+            try {
+                const droppedIndexes = await ProductIndexModel.syncIndexes();
 
-            // Drop "will_drop_index" because not in schema, but keep index on `price`
-            assert.deepStrictEqual(droppedIndexes, ['will_drop_index']);
+                // Drop "will_drop_index" because not in schema, but keep index on `price`
+                assert.deepStrictEqual(droppedIndexes, ['will_drop_index']);
 
-            indexes = await ProductIndexModel.listIndexes();
-            assert.deepStrictEqual(indexes, [
-                {
-                    name: 'name',
-                    definition: {
-                        column: 'name',
-                        options: stringIndexOptions
+                indexes = await ProductIndexModel.listIndexes();
+                assert.deepStrictEqual(indexes, [
+                    {
+                        name: 'name',
+                        definition: {
+                            column: 'name',
+                            options: stringIndexOptions
+                        },
+                        indexType: 'regular',
+                        key: { name: 1 }
                     },
-                    key: { name: 1 }
-                },
-                {
-                    name: 'price',
-                    definition: {
-                        column: 'price',
-                        options: {}
-                    },
-                    key: { price: 1 }
-                }
-            ]);
-
-            await collection.dropIndex('name');
-            await collection.dropIndex('price');
+                    {
+                        name: 'price',
+                        definition: {
+                            column: 'price',
+                            options: stringIndexOptions
+                        },
+                        indexType: 'regular',
+                        key: { price: 1 }
+                    }
+                ]);
+            } finally {
+                await collection.dropIndex('name').catch(() => {});
+                await collection.dropIndex('price').catch(() => {});
+            }
         });
         it('API ops tests Model.updateOne()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
@@ -640,6 +653,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                         column: 'name',
                         options: { ascii: false, caseSensitive: true, normalize: false }
                     },
+                    indexType: 'regular',
                     key: { name: 1 }
                 }
             ]);
