@@ -54,13 +54,13 @@ export default function tableDefinitionFromSchema(schema: Schema): CreateTableDe
                     throw new Error(`Cannot convert schema to Data API table definition: vector column at "${path}" must be an array of numbers`);
                 }
                 tableDefinition.columns[path] = { type: 'vector', dimension: schemaType.options.dimension };
+            } else {
+                const valueType = mongooseTypeToDataAPIType(embeddedSchemaType.instance);
+                if (valueType == null) {
+                    throw new Error(`Cannot convert schema to Data API table definition: unsupported array type at path "${path}"`);
+                }
+                tableDefinition.columns[path] = { type: 'list', valueType };
             }
-
-            const valueType = mongooseTypeToDataAPIType(embeddedSchemaType.instance);
-            if (valueType == null) {
-                throw new Error(`Cannot convert schema to Data API table definition: unsupported array type at path "${path}"`);
-            }
-            tableDefinition.columns[path] = { type: 'list', valueType };
         } else if (schemaType.instance === 'Embedded') {
             const dataAPITypes: Set<AllowedDataAPITypes> = new Set();
             for (const subpath of Object.keys(schemaType.schema.paths)) {
