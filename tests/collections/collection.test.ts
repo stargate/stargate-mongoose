@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { Db } from '@/src/collections/db';
-import { Collection, StargateMongooseError } from '@/src/collections/collection';
-import { Client } from '@/src/collections/client';
+import { Db } from '../../src/collections/db';
+import { Collection, StargateMongooseError } from '../../src/collections/collection';
+import { Client } from '../../src/collections/client';
 import {
     testClient,
     testClientName,
@@ -25,8 +25,8 @@ import {
     createSampleDoc3WithMultiLevel,
     createSampleDocWithMultiLevelWithId,
     TEST_COLLECTION_NAME
-} from '@/tests/fixtures';
-import { StargateServerError } from '@/src/client/httpClient';
+} from '../../tests/fixtures';
+import { StargateServerError } from '../../src/client/httpClient';
 
 describe(`StargateMongoose - ${testClientName} Connection - collections.collection`, async () => {
     const isAstra: boolean = testClientName === 'astra';
@@ -131,7 +131,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             const error: Error | null = await collection.insertOne(docToInsert).then(() => null, error => error);
             assert.ok(error instanceof StargateServerError);
             assert.strictEqual(
-                error.errors[0].message, 
+                error.errors[0].message,
                 'Document size limitation violated: number of properties an indexable Object (property \'null\') has (1002) exceeds maximum allowed (1000)'
             );
         });
@@ -1603,7 +1603,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             });
         });
         it('should rename a field when $rename is used in update and updateMany', async () => {
-            const numDocs = 19;  
+            const numDocs = 19;
             const docList = Array.from({ length: numDocs }, () => ({
                 _id: 'id',
                 username: 'username',

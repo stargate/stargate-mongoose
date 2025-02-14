@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Client } from '@/src/collections/client';
+import { Client } from '../collections/client';
 import { Collection } from './collection';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES, Model, Mongoose, ConnectOptions } from 'mongoose';

@@ -14,9 +14,9 @@
 
 import { Db } from './db';
 import { createNamespace, executeOperation, parseUri } from './utils';
-import { HTTPClient } from '@/src/client';
-import { logger } from '@/src/logger';
-import {OperationNotSupportedError} from '@/src/driver';
+import { HTTPClient } from '../client';
+import { logger } from '../logger';
+import {OperationNotSupportedError} from '../driver';
 import { retainNoOptions } from './options';
 
 export interface ClientOptions {
