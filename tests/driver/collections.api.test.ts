@@ -211,7 +211,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             await product1.save();
             const error: Error | null = await Product.$where('this.name === "Product 1"').exec().then(() => null, error => error);
             assert.ok(error instanceof DataAPIResponseError);
-            assert.strictEqual(error.errorDescriptors[0].message, 'Invalid filter expression: filter clause path (\'$where\') contains character(s) not allowed');
+            assert.strictEqual(error.errorDescriptors[0].message, 'Invalid filter expression: filter clause path (\'$where\') cannot start with `$`');
         });
         it('API ops tests db.dropCollection() and Model.createCollection()', async function() {
             let collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
