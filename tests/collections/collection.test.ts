@@ -93,7 +93,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             } else {
                 assert.strictEqual(
                     error.errors[0].message,
-                    'Document size limitation violated: indexed String value (property \'username\') length (1048576 bytes) exceeds maximum allowed (8000 bytes)'
+                    'Document size limitation violated: indexed String value (field \'username\') length (1048576 bytes) exceeds maximum allowed (8000 bytes)'
                 );
             }
         });
@@ -102,7 +102,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             const docToInsert = { [fieldName]: 'value' };
             const error: Error | null = await collection.insertOne(docToInsert).then(() => null, error => error);
             assert.ok(error instanceof StargateServerError);
-            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: property path length (1001) exceeds maximum allowed (1000) (path ends with \''+ fieldName +'\')');
+            assert.strictEqual(error.errors[0].message, 'Document size limitation violated: field path length (1001) exceeds maximum allowed (1000) (path ends with \''+ fieldName +'\')');
         });
         it('Should fail if the string field value is > 16000', async () => {
             const _string16klength = new Array(16001).fill('a').join('');
@@ -111,7 +111,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.ok(error instanceof StargateServerError);
             assert.strictEqual(
                 error.errors[0].message,
-                'Document size limitation violated: indexed String value (property \'username\') length (16001 bytes) exceeds maximum allowed (8000 bytes)'
+                'Document size limitation violated: indexed String value (field \'username\') length (16001 bytes) exceeds maximum allowed (8000 bytes)'
             );
         });
         it('Should fail if an array field size is > 10000', async () => {
@@ -120,7 +120,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.ok(error instanceof StargateServerError);
             assert.strictEqual(
                 error.errors[0].message,
-                'Document size limitation violated: number of elements an indexable Array (property \'tags\') has (10001) exceeds maximum allowed (1000)'
+                'Document size limitation violated: number of elements an indexable Array (field \'tags\') has (10001) exceeds maximum allowed (1000)'
             );
         });
         it('Should fail if a doc contains more than 1000 properties', async () => {
@@ -132,7 +132,7 @@ describe(`StargateMongoose - ${testClientName} Connection - collections.collecti
             assert.ok(error instanceof StargateServerError);
             assert.strictEqual(
                 error.errors[0].message,
-                'Document size limitation violated: number of properties an indexable Object (property \'null\') has (1002) exceeds maximum allowed (1000)'
+                'Document size limitation violated: number of properties an indexable Object (field \'null\') has (1002) exceeds maximum allowed (1000)'
             );
         });
     });

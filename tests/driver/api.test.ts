@@ -202,7 +202,7 @@ describe('Mongoose Model API level tests', async () => {
             const error: Error | null = await Product.$where('this.name === "Product 1"').exec().then(() => null, error => error);
             assert.ok(error);
             assert.ok(error instanceof StargateServerError);
-            assert.strictEqual(error.errors[0].message, 'Invalid filter expression: filter clause path (\'$where\') contains character(s) not allowed');
+            assert.strictEqual(error.errors[0].message, 'Invalid filter expression: filter clause path (\'$where\') cannot start with `$`');
         });
         it('API ops tests Model.aggregate()', async () => {
             //Model.aggregate()
