@@ -147,7 +147,7 @@ describe('TABLES: driver based tests', async () => {
             assert.deepEqual(names.map(doc => doc.name).sort(), ['Joe']);
         });
 
-        it.skip('handles populate()', async () => {
+        it('handles populate()', async () => {
             // Skip for now because populate is blocked by stargate/data-api#1532
             const Product = mongooseInstance!.model('Product');
             await Promise.all([Cart!.deleteMany({}), Product.deleteMany({})]);

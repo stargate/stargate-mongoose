@@ -386,8 +386,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             ]);
             await collection.dropIndex('test_index');
         });
-        it.skip('API ops tests Model.populate()', async () => {
-            // Skip for now because populate is blocked by stargate/data-api#1532
+        it('API ops tests Model.populate()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
             const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'});
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});

@@ -432,19 +432,11 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param column
      * @param options
      */
-    async createVectorIndex(name: string, column: string, options?: { metric: string, sourceModel?: string }): Promise<void> {
+    async createVectorIndex(name: string, column: string, options?: { metric: 'cosine' | 'euclidean' | 'dot_product', sourceModel?: string }): Promise<void> {
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use createVectorIndex() with collections');
         }
-        return this.runCommand({
-            createVectorIndex: {
-                name,
-                definition: {
-                    column,
-                    ...(options ? { options } : {})
-                }
-            }
-        });
+        return this.collection.createVectorIndex(name, column, { options, ifNotExists: true });
     }
 
     /**
