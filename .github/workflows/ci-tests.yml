@@ -14,10 +14,7 @@ jobs:
       STARGATE_AUTH_URL: http://localhost:8081/v1/auth
       STARGATE_USERNAME: cassandra
       STARGATE_PASSWORD: cassandra
-    steps:      
-      - name: disable and stop mono-xsp4.service
-        run: |
-          sudo kill -9 $(sudo lsof -t -i:8084)
+    steps:
       - uses: actions/checkout@v3
       - name: Set up Data API
         run: |
@@ -32,24 +29,21 @@ jobs:
         with:
           node-version: 16.15.0
       - name: setup project
-        run: npm i      
+        run: npm i
       - name: run tests
         run: |
           npm run test
   e2e:
     runs-on: ubuntu-latest
     needs: tests
-    steps:      
-      - name: disable and stop mono-xsp4.service
-        run: |
-          sudo kill -9 $(sudo lsof -t -i:8084)
+    steps:
       - uses: actions/checkout@v3
       - name: Setting up the node version
         uses: actions/setup-node@v3
         with:
           node-version: 16.15.0
       - name: setup project
-        run: npm i   
+        run: npm i
       - name: build
         run: npm run build
       - name: pack

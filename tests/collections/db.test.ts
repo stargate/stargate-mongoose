@@ -246,9 +246,10 @@ describe('StargateMongoose - collections.Db', async () => {
     });
 
     describe('createDatabase', () => {
-        after(async () => {
+        after(async function () {
+            this.timeout(120_000);
             if (isAstra) {
-                return;
+                return this.skip();
             }
             const keyspaceName = parseUri(dbUri).keyspaceName;
             await createNamespace(httpClient, keyspaceName);
