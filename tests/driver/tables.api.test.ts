@@ -31,6 +31,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
 
     before(async () => {
         ({ Product, Cart, mongooseInstance } = await createMongooseCollections(true));
+        await Product.cleanIndexes();
     });
 
     afterEach(async () => {
@@ -141,7 +142,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                     name: 'will_drop_index',
                     definition: {
                         column: 'price',
-                        options: { ascii: false, caseSensitive: true, normalize: false }
+                        options: {}
                     },
                     indexType: 'regular',
                     key: { price: 1 }
@@ -450,7 +451,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                     name: 'price',
                     definition: {
                         column: 'price',
-                        options: stringIndexOptions
+                        options: {}
                     },
                     indexType: 'regular',
                     key: { price: 1 }
@@ -487,7 +488,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                         name: 'price',
                         definition: {
                             column: 'price',
-                            options: stringIndexOptions
+                            options: {}
                         },
                         indexType: 'regular',
                         key: { price: 1 }

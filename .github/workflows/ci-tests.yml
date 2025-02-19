@@ -15,10 +15,6 @@ jobs:
       STARGATE_USERNAME: cassandra
       STARGATE_PASSWORD: cassandra
     steps:
-      - name: disable and stop mono-xsp4.service
-        run: |
-          sudo systemctl stop mono-xsp4.service || true
-          sudo systemctl disable mono-xsp4.service || true
       - uses: actions/checkout@v3
       - name: Set up Data API
         run: |
@@ -41,10 +37,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: tests
     steps:
-      - name: disable and stop mono-xsp4.service
-        run: |
-          sudo systemctl stop mono-xsp4.service || true
-          sudo systemctl disable mono-xsp4.service || true
       - uses: actions/checkout@v3
       - name: Setting up the node version
         uses: actions/setup-node@v3
