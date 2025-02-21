@@ -1,8 +1,8 @@
-import { isAstra, testClient } from './fixtures';
-import { Schema, Mongoose } from 'mongoose';
+import { testClient } from './fixtures';
+import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 import * as StargateMongooseDriver from '../src/driver';
-import { parseUri, createNamespace } from '../src/collections/utils';
 import { plugins } from '../src/driver';
+import tableDefinitionFromSchema from '../src/tableDefinitionFromSchema';
 
 const cartSchema = new Schema({
     name: String,
@@ -19,11 +19,13 @@ export const productSchema = new Schema({
     expiryDate: Date,
     isCertified: Boolean,
     category: String,
-    tags: [{ _id: false, name: String }]
-});
+    tags: {
+        type: [{ _id: false, name: String }],
+        default: undefined
+    }
+}, { versionKey: false });
 
-export const mongooseInstance = new Mongoose();
-mongooseInstance.setDriver(StargateMongooseDriver);
+export const mongooseInstance = new Mongoose().setDriver(StargateMongooseDriver);
 mongooseInstance.set('autoCreate', false);
 mongooseInstance.set('autoIndex', false);
 
@@ -33,37 +35,97 @@ for (const plugin of plugins) {
 
 export const Cart = mongooseInstance.model('Cart', cartSchema);
 export const Product = mongooseInstance.model('Product', productSchema);
+export type CartModelType = typeof Cart;
+export type ProductModelType = typeof Product;
+export type ProductHydratedDoc = ReturnType<(typeof Product)['hydrate']>;
+export type ProductRawDoc = SubdocsToPOJOs<InferSchemaType<typeof productSchema>>;
 
-export async function createMongooseCollections() {
-    const collections = await mongooseInstance.connection.listCollections();
-    const collectionNames = collections.map(({ name }) => name);
-    if (!collectionNames.includes(Cart.collection.collectionName)) {
-        await Cart.createCollection();
-    }
-    if (!collectionNames.includes(Product.collection.collectionName)) {
-        await Product.createCollection();
-    }
+export const mongooseInstanceTables = new Mongoose().setDriver(StargateMongooseDriver);
+mongooseInstanceTables.set('autoCreate', false);
+mongooseInstanceTables.set('autoIndex', false);
+
+for (const plugin of plugins) {
+    mongooseInstanceTables.plugin(plugin);
 }
 
-before(async function connectMongooseFixtures() {
-    if (isAstra) {
-    // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
-        await mongooseInstance.connect(testClient.uri, {isAstra: true});
-    } else {
-        const options = {
-            username: process.env.STARGATE_USERNAME,
-            password: process.env.STARGATE_PASSWORD,
-            logSkippedOptions: true
-        };
-        // @ts-expect-error - these are config options supported by stargate-mongoose but not mongoose
-        await mongooseInstance.connect(testClient.uri, options);
-        const client = await testClient.client;
-        const keyspace = parseUri(testClient!.uri).keyspaceName;
-        await createNamespace(client.httpClient, keyspace);
-    }
-});
+export const CartTablesModel = mongooseInstanceTables.model('Cart', cartSchema, 'carts_table');
+export const ProductTablesModel = mongooseInstanceTables.model('Product', productSchema, 'products_table');
 
-before(createMongooseCollections);
+async function createNamespace() {
+    const connection = mongooseInstance.connection;
+    return connection.createNamespace(connection.namespace as string);
+}
+
+export async function createMongooseCollections(useTables: boolean) {
+    await mongooseInstance.connection.openUri(testClient!.uri, { ...testClient!.options });
+    await mongooseInstanceTables.connection.openUri(testClient!.uri, { ...testClient!.options, useTables: true });
+
+    const { databases } = await mongooseInstance.connection.listDatabases();
+    if (!databases.find(db => db.name === mongooseInstance.connection.namespace)) {
+        await createNamespace();
+    }
+
+    const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });
+    const collectionNames = await mongooseInstance.connection.listCollections({ nameOnly: true });
+
+    if (useTables) {
+        if (collectionNames.includes(CartTablesModel.collection.collectionName)) {
+            await mongooseInstance.connection.dropCollection(CartTablesModel.collection.collectionName);
+        }
+        if (collectionNames.includes(ProductTablesModel.collection.collectionName)) {
+            await mongooseInstance.connection.dropCollection(ProductTablesModel.collection.collectionName);
+        }
+        if (!tableNames.includes(CartTablesModel.collection.collectionName)) {
+            await mongooseInstance.connection.createTable(CartTablesModel.collection.collectionName, tableDefinitionFromSchema(CartTablesModel.schema));
+        }
+        if (!tableNames.includes(ProductTablesModel.collection.collectionName)) {
+            await mongooseInstance.connection.createTable(ProductTablesModel.collection.collectionName, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    __v: { type: 'int' },
+                    __t: { type: 'text' },
+                    name: { type: 'text' },
+                    price: { type: 'decimal' },
+                    expiryDate: { type: 'timestamp' },
+                    isCertified: { type: 'boolean' },
+                    category: { type: 'text' },
+                    // `tags` omitted because no reasonable way to use document arrays in Data API tables
+                    // without converting to strings
+                    // Discriminator values
+                    url: { type: 'text' },
+                    // Extra key for testing strict mode
+                    extraCol: { type: 'text' }
+                }
+            });
+        }
+
+        return { mongooseInstance: mongooseInstanceTables, Product: ProductTablesModel, Cart: CartTablesModel };
+    } else {
+        const collections = await mongooseInstance.connection.listCollections();
+        const collectionNames = collections.map(({ name }) => name);
+
+        if (tableNames.includes(Cart.collection.collectionName)) {
+            await mongooseInstance.connection.dropTable(Cart.collection.collectionName);
+        }
+        if (tableNames.includes(Product.collection.collectionName)) {
+            await mongooseInstance.connection.dropTable(Product.collection.collectionName);
+        }
+
+        if (!collectionNames.includes(Cart.collection.collectionName)) {
+            await Cart.createCollection();
+        } else {
+            await Cart.deleteMany({});
+        }
+        if (!collectionNames.includes(Product.collection.collectionName)) {
+            await Product.createCollection();
+        } else {
+            await Product.deleteMany({});
+        }
+
+        return { mongooseInstance, Product, Cart };
+    }
+}
 
 after(async function disconnectMongooseFixtures() {
     await mongooseInstance.disconnect();
