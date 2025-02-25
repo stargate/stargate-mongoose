@@ -138,4 +138,12 @@ describe('TABLES: vector search', function() {
         assert.deepStrictEqual(doc.vector, null);
         assert.strictEqual(doc.name, 'Test vector 1');
     });
+
+    it('reports error if saving vector with wrong dimension', async function () {
+        const doc = new Vector({
+            name: 'Test vector wrong dimension',
+            vector: [1, 2, 3]
+        });
+        await assert.rejects(() => doc.save(), /Array must be of length 2/);
+    });
 });

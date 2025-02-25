@@ -1,4 +1,4 @@
-import type { Schema, Query } from 'mongoose';
+import type { Schema, SchemaType } from 'mongoose';
 
 /**
  * Mongoose plugin to handle adding `$vector` to the projection by default if `$vector` has `select: true`.
@@ -6,7 +6,7 @@ import type { Schema, Query } from 'mongoose';
  * by default from their schema.
  */
 
-export function handleVectorFieldsProjection(this: Query<unknown, unknown>, schema: Schema) {
+export function handleVectorFieldsProjection(schema: Schema) {
     schema.pre(['find', 'findOne', 'findOneAndUpdate', 'findOneAndReplace', 'findOneAndDelete'], function() {
         const projection = this.projection();
         const $vector = this.model.schema.paths['$vector'];
@@ -35,4 +35,23 @@ export function handleVectorFieldsProjection(this: Query<unknown, unknown>, sche
 
 function projectionDoesNotHaveProperty(projection: Record<string, unknown>, property: string) {
     return projection == null || !(property in projection);
+}
+
+/**
+ * Mongoose plugin to validate arrays of numbers that have a `dimension` property. Ensure that the array
+ * is either nullish or has a length equal to the dimension.
+ */
+
+export function addVectorDimensionValidator(schema: Schema) {
+    schema.eachPath((_path: string, schemaType: SchemaType) => {
+        if (schemaType.instance === 'Array' && schemaType.getEmbeddedSchemaType()?.instance === 'Number' && typeof schemaType.options?.dimension === 'number') {
+            const dimension = schemaType.options?.dimension;
+            schemaType.validate((value: number[] | null) => {
+                if (value == null) {
+                    return true;
+                }
+                return value.length === dimension;
+            }, `Array must be of length ${dimension}, got value {VALUE}`);
+        }
+    });
 }
