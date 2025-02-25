@@ -102,9 +102,11 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         return collection;
     }
 
-    // Get whether the underlying Astra store is a table or a collection
+    // Get whether the underlying Astra store is a table or a collection. `connection.db` may be `null` if
+    // the connection has never been opened (`mongoose.connect()` or `openUri()` never called), so in that
+    // case we default to `useTables: false`.
     get useTables() {
-        return this.conn.db.useTables;
+        return this.connection.db?.useTables;
     }
 
     /**
