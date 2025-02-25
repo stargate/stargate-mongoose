@@ -26,7 +26,9 @@ describe('tableDefinitionFromSchema', () => {
             decimal: 'Decimal128',
             counter: BigInt,
             binData: Buffer,
-            testId: 'UUID'
+            testId: 'UUID',
+            myint: 'Int32',
+            mydouble: 'Double'
         });
 
         const result = tableDefinitionFromSchema(testSchema);
@@ -43,7 +45,9 @@ describe('tableDefinitionFromSchema', () => {
                 'decimal': { type: 'decimal' },
                 'counter': { type: 'varint' },
                 'binData': { type: 'blob' },
-                'testId': { type: 'uuid' }
+                'testId': { type: 'uuid' },
+                'myint': { type: 'int' },
+                'mydouble': { type: 'double' }
             }
         });
     });

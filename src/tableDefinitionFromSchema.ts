@@ -15,7 +15,7 @@
 import { CreateTableDefinition } from '@datastax/astra-db-ts';
 import { Schema, SchemaType } from 'mongoose';
 
-type AllowedDataAPITypes = 'text' | 'double' | 'timestamp' | 'boolean' | 'decimal' | 'varint' | 'blob' | 'uuid';
+type AllowedDataAPITypes = 'text' | 'double' | 'timestamp' | 'boolean' | 'decimal' | 'varint' | 'blob' | 'uuid' | 'int';
 
 export default function tableDefinitionFromSchema(schema: Schema): CreateTableDefinition {
     const tableDefinition: CreateTableDefinition = {
@@ -134,6 +134,10 @@ function mongooseTypeToDataAPIType(type: string): AllowedDataAPITypes | null {
         return 'text';
     } else if (type === 'UUID') {
         return 'uuid';
+    } else if (type === 'Int32') {
+        return 'int';
+    } else if (type === 'Double') {
+        return 'double';
     }
     return null;
 }

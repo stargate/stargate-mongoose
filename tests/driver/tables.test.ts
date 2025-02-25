@@ -87,7 +87,9 @@ describe('TABLES: basic operations and data types', function() {
             uniqueId: Schema.Types.UUID,
             category: BigInt,
             buf: Buffer,
-            willBeNull: String
+            willBeNull: String,
+            count: 'Int32',
+            walletBalance: 'Double'
         }, { versionKey: false });
         await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
         const tableDefinition = tableDefinitionFromSchema(userSchema);
@@ -107,7 +109,9 @@ describe('TABLES: basic operations and data types', function() {
                 uniqueId: { type: 'uuid' },
                 category: { type: 'varint' },
                 buf: { type: 'blob' },
-                willBeNull: { type: 'text' }
+                willBeNull: { type: 'text' },
+                count: { type: 'int' },
+                walletBalance: { type: 'double' }
             }
         });
         await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
@@ -138,7 +142,9 @@ describe('TABLES: basic operations and data types', function() {
             uniqueId: new UUID(uniqueIdVal),
             category: 42n,
             buf: Buffer.from('hello', 'utf8'),
-            willBeNull: null
+            willBeNull: null,
+            count: 12,
+            // walletBalance: 100.50
         }).save();
         assert.strictEqual(saveResponse.name, 'User 1');
         assert.strictEqual(saveResponse.age, 10);
@@ -154,6 +160,9 @@ describe('TABLES: basic operations and data types', function() {
         assert.strictEqual(saveResponse.category, 42n);
         assert.strictEqual(saveResponse.buf!.toString('utf8'), 'hello');
         assert.strictEqual(saveResponse.willBeNull, null);
+        assert.strictEqual(saveResponse.count, 12);
+        // assert.ok(saveResponse.walletBalance instanceof Types.Double);
+        // assert.strictEqual(saveResponse.walletBalance.valueOf(), 100.50);
         //get record using findOne and verify results
         const findOneResponse = await User.findOne({name: 'User 1'}).orFail();
         assert.strictEqual(findOneResponse.name, 'User 1');
@@ -170,5 +179,8 @@ describe('TABLES: basic operations and data types', function() {
         assert.strictEqual(findOneResponse.category, 42n);
         assert.strictEqual(findOneResponse.buf!.toString('utf8'), 'hello');
         assert.strictEqual(findOneResponse.willBeNull, null);
+        assert.strictEqual(findOneResponse.count, 12);
+        // assert.ok(findOneResponse.walletBalance instanceof Types.Double);
+        // assert.strictEqual(findOneResponse.walletBalance.valueOf(), 100.50);
     });
 });

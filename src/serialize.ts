@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Binary, ObjectId } from 'bson';
+import { Binary, Double, ObjectId } from 'bson';
 import mongoose from 'mongoose';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,6 +45,8 @@ function serializeValue(data: any, useTables?: boolean): any {
     } else if (data instanceof mongoose.Types.Decimal128) {
         //Decimal128 handling
         return Number(data.toString());
+    } else if (data instanceof Double) {
+        return Number(data.valueOf());
     } else if (data instanceof Date) {
         // Rely on astra driver to serialize dates
         return data;
