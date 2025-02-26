@@ -144,7 +144,7 @@ describe('TABLES: basic operations and data types', function() {
             buf: Buffer.from('hello', 'utf8'),
             willBeNull: null,
             count: 12,
-            // walletBalance: 100.50
+            walletBalance: 100.50
         }).save();
         assert.strictEqual(saveResponse.name, 'User 1');
         assert.strictEqual(saveResponse.age, 10);
@@ -161,8 +161,8 @@ describe('TABLES: basic operations and data types', function() {
         assert.strictEqual(saveResponse.buf!.toString('utf8'), 'hello');
         assert.strictEqual(saveResponse.willBeNull, null);
         assert.strictEqual(saveResponse.count, 12);
-        // assert.ok(saveResponse.walletBalance instanceof Types.Double);
-        // assert.strictEqual(saveResponse.walletBalance.valueOf(), 100.50);
+        assert.ok(saveResponse.walletBalance instanceof Types.Double);
+        assert.strictEqual(saveResponse.walletBalance.valueOf(), 100.50);
         //get record using findOne and verify results
         const findOneResponse = await User.findOne({name: 'User 1'}).orFail();
         assert.strictEqual(findOneResponse.name, 'User 1');
@@ -180,7 +180,7 @@ describe('TABLES: basic operations and data types', function() {
         assert.strictEqual(findOneResponse.buf!.toString('utf8'), 'hello');
         assert.strictEqual(findOneResponse.willBeNull, null);
         assert.strictEqual(findOneResponse.count, 12);
-        // assert.ok(findOneResponse.walletBalance instanceof Types.Double);
-        // assert.strictEqual(findOneResponse.walletBalance.valueOf(), 100.50);
+        assert.ok(findOneResponse.walletBalance instanceof Types.Double);
+        assert.strictEqual(findOneResponse.walletBalance.valueOf(), 100.50);
     });
 });
