@@ -15,58 +15,98 @@
 import { default as MongooseCollection } from 'mongoose/lib/collection';
 import type { Connection } from './connection';
 import {
-    DeleteOneOptions,
-    DeleteOneOptionsForDataAPI,
-    FindOneAndDeleteOptions,
-    FindOneAndDeleteOptionsForDataAPI,
-    FindOneAndReplaceOptions,
-    FindOneAndReplaceOptionsForDataAPI,
-    FindOneAndUpdateOptions,
-    FindOneAndUpdateOptionsForDataAPI,
-    FindOneOptions,
-    FindOneOptionsForDataAPI,
-    FindOptions,
-    FindOptionsForDataAPI,
-    InsertManyOptions,
-    ReplaceOneOptions,
-    ReplaceOneOptionsForDataAPI,
-    SortOption,
-    SortOptionInternal,
-    UpdateManyOptions,
-    UpdateOneOptions,
-    UpdateOneOptionsForDataAPI
-} from '../collections/options';
-import { DataAPIDeleteResult } from '../collections/collection';
+    Collection as AstraCollection,
+    CollectionDeleteOneOptions as DeleteOneOptionsInternal,
+    CollectionFindOptions as FindOptionsInternal,
+    CollectionFindOneAndDeleteOptions as FindOneAndDeleteOptionsInternal,
+    CollectionFindOneAndReplaceOptions as FindOneAndReplaceOptionsInternal,
+    CollectionFindOneAndUpdateOptions as FindOneAndUpdateOptionsInternal,
+    CollectionFindOneOptions as FindOneOptionsInternal,
+    CollectionReplaceOneOptions,
+    CollectionUpdateManyOptions,
+    CollectionUpdateOneOptions as UpdateOneOptionsInternal,
+    CollectionInsertManyOptions,
+    DataAPIResponseError,
+    SortDirection,
+    Sort as SortOptionInternal,
+    Table as AstraTable,
+    TableFilter,
+    CreateTableIndexOptions,
+    TableOptions,
+    TableIndexOptions,
+    TableVectorIndexOptions,
+    CollectionOptions
+} from '@datastax/astra-db-ts';
+import { serialize } from '../serialize';
+import deserializeDoc from '../deserializeDoc';
+import { SchemaOptions, Types } from 'mongoose';
 
-import { version } from 'mongoose';
+export type MongooseSortOption = Record<string, 1 | -1 | { $meta: Array<number> } | { $meta: string }>;
 
-const IS_MONGOOSE_7 = version.startsWith('7.');
+type FindOptions = Omit<FindOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
+type FindOneOptions = Omit<FindOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
+type FindOneAndUpdateOptions = Omit<FindOneAndUpdateOptionsInternal, 'sort'> & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
+type FindOneAndDeleteOptions = Omit<FindOneAndDeleteOptionsInternal, 'sort'> & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
+type FindOneAndReplaceOptions = Omit<FindOneAndReplaceOptionsInternal, 'sort'> & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
+type DeleteOneOptions = Omit<DeleteOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
+type ReplaceOneOptions = Omit<CollectionReplaceOneOptions, 'sort'> & { sort?: MongooseSortOption };
+type UpdateOneOptions = Omit<UpdateOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
 
-type NodeCallback<ResultType = unknown> = (err: Error | null, res: ResultType | null) => unknown;
+interface StargateMongooseIndexDescription {
+    name: string,
+    definition: { column: string, options?: TableIndexOptions | TableVectorIndexOptions },
+    key: Record<string, 1>
+}
+
+export interface MongooseCollectionOptions {
+    schemaUserProvidedOptions?: SchemaOptions,
+    capped?: boolean,
+    modelName?: string,
+    autoCreate?: boolean
+}
 
 /**
- * Collection operations supported by the driver.
+ * Collection operations supported by the driver. This class is called "Collection" for consistency with Mongoose, because
+ * in Mongoose a Collection is the interface that Models and Queries use to communicate with the database. However, from
+ * an Astra perspective, this class can be a wrapper around a Collection **or** a Table depending on the corresponding db's
+ * `useTables` option.
  */
-export class Collection extends MongooseCollection {
+export class Collection<DocType extends Record<string, unknown> = Record<string, unknown>> extends MongooseCollection {
     debugType = 'StargateMongooseCollection';
+    _collection?: AstraCollection<DocType> | AstraTable<DocType>;
+    _closed: boolean;
+    connection: Connection;
+    options?: (TableOptions | CollectionOptions) & MongooseCollectionOptions;
 
-    constructor(name: string, conn: Connection, options?: unknown) {
+    constructor(name: string, conn: Connection, options?: (TableOptions | CollectionOptions) & MongooseCollectionOptions) {
         super(name, conn, options);
+        this.connection = conn;
         this._closed = false;
+        this.options = options;
     }
 
-    //getter for collection
-    get collection() {
-        return this.conn.db.collection(this.name);
+    // Get the collection or table. Cache the result so we don't recreate collection/table every time.
+    get collection(): AstraCollection | AstraTable<DocType> {
+        if (this._collection != null) {
+            return this._collection;
+        }
+
+        const collectionOptions = this.options?.schemaUserProvidedOptions?.serdes
+            // Type coercion because `collection<>` method below doesn't know whether we're creating a
+            // Astra Table or Astra Collection until runtime
+            ? { serdes: this.options.schemaUserProvidedOptions.serdes } as unknown as Record<string, never>
+            : {};
+        // Cache because @datastax/astra-db-ts doesn't
+        const collection = this.connection.db!.collection<DocType>(this.name, collectionOptions);
+        this._collection = collection;
+        return collection;
     }
 
-    /**
-    * Count documents in the collection that match the given filter. Use countDocuments() instead.
-    * @param filter
-    * @deprecated
-    */
-    count(filter: Record<string, unknown>) {
-        return this.collection.count(filter);
+    // Get whether the underlying Astra store is a table or a collection. `connection.db` may be `null` if
+    // the connection has never been opened (`mongoose.connect()` or `openUri()` never called), so in that
+    // case we default to `useTables: false`.
+    get useTables() {
+        return this.connection.db?.useTables;
     }
 
     /**
@@ -74,7 +114,11 @@ export class Collection extends MongooseCollection {
      * @param filter
      */
     countDocuments(filter: Record<string, unknown>) {
-        return this.collection.countDocuments(filter);
+        if (this.collection instanceof AstraTable) {
+            throw new OperationNotSupportedError('Cannot use countDocuments() with tables');
+        }
+        filter = serialize(filter);
+        return this.collection.countDocuments(filter, 1000);
     }
 
     /**
@@ -83,19 +127,18 @@ export class Collection extends MongooseCollection {
      * @param options
      * @param callback
      */
-    find(filter: Record<string, unknown>, options?: FindOptions, callback?: NodeCallback<Record<string, unknown>[]>) {
-        let requestOptions: FindOptionsForDataAPI | undefined = undefined;
-        if (options != null && options.sort != null) {
-            requestOptions = { ...options, sort: processSortOption(options.sort) };
-        } else if (options != null && options.sort == null) {
-            requestOptions = { ...options, sort: undefined };
-            delete requestOptions.sort;
+    find(filter: Record<string, unknown>, options: FindOptions) {
+        const requestOptions: FindOptionsInternal = options != null && options.sort != null
+            ? { ...options, sort: processSortOption(options.sort) }
+            : { ...options, sort: undefined };
+        filter = serialize(filter, this.useTables);
+
+        // Weirdness to work around astra-db-ts method overrides: `find()` with `projection: never` means we need a separate branch
+        if (this.collection instanceof AstraTable) {
+            return this.collection.find(filter as TableFilter<DocType>, requestOptions).map(doc => deserializeDoc<DocType>(doc));
+        } else {
+            return this.collection.find(filter, requestOptions).map(doc => deserializeDoc<DocType>(doc));
         }
-        const cursor = this.collection.find(filter, requestOptions);
-        if (callback != null) {
-            return callback(null, cursor);
-        }
-        return cursor;
     }
 
     /**
@@ -103,15 +146,28 @@ export class Collection extends MongooseCollection {
      * @param filter
      * @param options
      */
-    findOne(filter: Record<string, unknown>, options?: FindOneOptions) {
-        let requestOptions: FindOneOptionsForDataAPI | undefined = undefined;
-        if (options != null && options.sort != null) {
-            requestOptions = { ...options, sort: processSortOption(options.sort) };
-        } else if (options != null && options.sort == null) {
-            requestOptions = { ...options, sort: undefined };
-            delete requestOptions.sort;
+    async findOne(filter: Record<string, unknown>, options?: FindOneOptions) {
+        // Weirdness to work around astra-db-ts method overrides
+        if (options == null) {
+            filter = serialize(filter, this.useTables);
+            if (this.collection instanceof AstraTable) {
+                return this.collection.findOne(filter as TableFilter<DocType>).then(doc => deserializeDoc<DocType>(doc));
+            }
+            return this.collection.findOne(filter).then(doc => deserializeDoc<DocType>(doc));
         }
-        return this.collection.findOne(filter, requestOptions);
+
+        const requestOptions: FindOneOptionsInternal = options != null && options.sort != null
+            ? { ...options, sort: processSortOption(options.sort) }
+            : { ...options, sort: undefined };
+
+        filter = serialize(filter, this.useTables);
+
+        // Weirdness to work around astra-db-ts method overrides: `findOne()` with `projection: never` means we need a separate branch
+        if (this.collection instanceof AstraTable) {
+            return this.collection.findOne(filter as TableFilter<DocType>, requestOptions).then(doc => deserializeDoc<DocType>(doc));
+        } else {
+            return this.collection.findOne(filter, requestOptions).then(doc => deserializeDoc<DocType>(doc));
+        }
     }
 
     /**
@@ -119,7 +175,7 @@ export class Collection extends MongooseCollection {
      * @param doc
      */
     insertOne(doc: Record<string, unknown>) {
-        return this.collection.insertOne(doc);
+        return this.collection.insertOne(serialize(doc, this.useTables) as DocType);
     }
 
     /**
@@ -127,58 +183,9 @@ export class Collection extends MongooseCollection {
      * @param documents
      * @param options
      */
-    async insertMany(documents: Record<string, unknown>[], options?: InsertManyOptions) {
-        const usePagination = options?.usePagination ?? false;
-        if (options != null && 'usePagination' in options) {
-            options = { ...options };
-            delete options.usePagination;
-        }
-
-        const ordered = options?.ordered ?? true;
-
-        if (usePagination) {
-            const batchSize = 20;
-            const ops = [];
-            const ret = options?.returnDocumentResponses
-                ? { acknowledged: true, documentResponses: [] }
-                : { acknowledged: true, insertedCount: 0, insertedIds: [] };
-            for (let i = 0; i < documents.length; i += batchSize) {
-                const batch = documents.slice(i, i + batchSize);
-                if (ordered) {
-                    const {
-                        acknowledged,
-                        insertedCount,
-                        insertedIds,
-                        documentResponses
-                    } = await this.collection.insertMany(batch, options);
-                    ret.acknowledged = ret.acknowledged && acknowledged;
-                    if (options?.returnDocumentResponses) {
-                        ret.documentResponses = ret.documentResponses?.concat(documentResponses ?? []);
-                    } else {
-                        ret.insertedCount += insertedCount;
-                        ret.insertedIds = (ret.insertedIds ?? []).concat(insertedIds);
-                    }
-                } else {
-                    ops.push(this.collection.insertMany(batch, options));
-                }
-            }
-            if (!ordered) {
-                const results = await Promise.all(ops);
-                for (const { acknowledged, insertedCount, insertedIds, documentResponses } of results) {
-                    ret.acknowledged = ret.acknowledged && acknowledged;
-                    if (options?.returnDocumentResponses) {
-                        ret.documentResponses = ret.documentResponses?.concat(documentResponses ?? []);
-                    } else {
-                        ret.insertedCount += insertedCount;
-                        ret.insertedIds = (ret.insertedIds ?? []).concat(insertedIds);
-                    }
-                }
-            }
-
-            return ret;
-        } else {
-            return this.collection.insertMany(documents, options);
-        }
+    async insertMany(documents: Record<string, unknown>[], options?: CollectionInsertManyOptions) {
+        documents = documents.map(doc => serialize(doc, this.useTables));
+        return this.collection.insertMany(documents as DocType[], options);
     }
 
     /**
@@ -187,21 +194,27 @@ export class Collection extends MongooseCollection {
      * @param update
      * @param options
      */
-    async findOneAndUpdate(filter: Record<string, unknown>, update: Record<string, unknown>, options?: FindOneAndUpdateOptions) {
-        let requestOptions: FindOneAndUpdateOptionsForDataAPI | undefined = undefined;
-        if (options != null && options.sort != null) {
-            requestOptions = { ...options, sort: processSortOption(options.sort) };
-        } else if (options != null && options.sort == null) {
-            requestOptions = { ...options, sort: undefined };
-            delete requestOptions.sort;
+    async findOneAndUpdate(filter: Record<string, unknown>, update: Record<string, unknown>, options: FindOneAndUpdateOptions) {
+        if (this.collection instanceof AstraTable) {
+            throw new OperationNotSupportedError('Cannot use findOneAndUpdate() with tables');
         }
-        const res = await this.collection.findOneAndUpdate(filter, update, requestOptions);
-        if (IS_MONGOOSE_7) {
-            return options?.includeResultMetadata === false ? res.value : res;
-        } else if (options?.includeResultMetadata !== false) {
-            return res.value;
+        const requestOptions: FindOneAndUpdateOptionsInternal = options.sort != null
+            ? { ...options, sort: processSortOption(options.sort) }
+            : { ...options, sort: undefined };
+
+        filter = serialize(filter);
+        setDefaultIdForUpsert(filter, update, requestOptions, false);
+        update = serialize(update);
+
+        // Weirdness to work around TypeScript, otherwise TypeScript fails with
+        // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
+        if (options?.includeResultMetadata) {
+            return this.collection.findOneAndUpdate(filter, update, requestOptions).then((value: Record<string, unknown> | null) => {
+                return { value: deserializeDoc<DocType>(value) };
+            });
+        } else {
+            return this.collection.findOneAndUpdate(filter, update, requestOptions).then((doc: Record<string, unknown>  | null) => deserializeDoc<DocType>(doc));
         }
-        return res;
     }
 
     /**
@@ -209,21 +222,24 @@ export class Collection extends MongooseCollection {
      * @param filter
      * @param options
      */
-    async findOneAndDelete(filter: Record<string, unknown>, options?: FindOneAndDeleteOptions) {
-        let requestOptions: FindOneAndDeleteOptionsForDataAPI | undefined = undefined;
-        if (options != null && options.sort != null) {
-            requestOptions = { ...options, sort: processSortOption(options.sort) };
-        } else if (options != null && options.sort == null) {
-            requestOptions = { ...options, sort: undefined };
-            delete requestOptions.sort;
+    async findOneAndDelete(filter: Record<string, unknown>, options: FindOneAndDeleteOptions) {
+        if (this.collection instanceof AstraTable) {
+            throw new OperationNotSupportedError('Cannot use findOneAndDelete() with tables');
         }
-        const res = await this.collection.findOneAndDelete(filter, requestOptions);
-        if (IS_MONGOOSE_7) {
-            return options?.includeResultMetadata === false ? res.value : res;
-        } else if (options?.includeResultMetadata !== false) {
-            return res.value;
+        const requestOptions: FindOneAndDeleteOptionsInternal = options.sort != null
+            ? { ...options, sort: processSortOption(options.sort) }
+            : { ...options, sort: undefined };
+        filter = serialize(filter);
+
+        // Weirdness to work around TypeScript, otherwise TypeScript fails with
+        // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
+        if (options?.includeResultMetadata) {
+            return this.collection.findOneAndDelete(filter, requestOptions).then((value: Record<string, unknown>  | null) => {
+                return { value: deserializeDoc<DocType>(value) };
+            });
+        } else {
+            return this.collection.findOneAndDelete(filter, requestOptions).then((doc: Record<string, unknown>  | null) => deserializeDoc<DocType>(doc));
         }
-        return res;
     }
 
     /**
@@ -232,21 +248,26 @@ export class Collection extends MongooseCollection {
      * @param newDoc
      * @param options
      */
-    async findOneAndReplace(filter: Record<string, unknown>, newDoc: Record<string, unknown>, options?: FindOneAndReplaceOptions) {
-        let requestOptions: FindOneAndReplaceOptionsForDataAPI | undefined = undefined;
-        if (options != null && options.sort != null) {
-            requestOptions = { ...options, sort: processSortOption(options.sort) };
-        } else if (options != null && options.sort == null) {
-            requestOptions = { ...options, sort: undefined };
-            delete requestOptions.sort;
+    async findOneAndReplace(filter: Record<string, unknown>, newDoc: Record<string, unknown>, options: FindOneAndReplaceOptions) {
+        if (this.collection instanceof AstraTable) {
+            throw new OperationNotSupportedError('Cannot use findOneAndReplace() with tables');
         }
-        const res = await this.collection.findOneAndReplace(filter, newDoc, requestOptions);
-        if (IS_MONGOOSE_7) {
-            return options?.includeResultMetadata === false ? res.value : res;
-        } else if (options?.includeResultMetadata !== false) {
-            return res.value;
+        const requestOptions: FindOneAndReplaceOptionsInternal = options.sort != null
+            ? { ...options, sort: processSortOption(options.sort) }
+            : { ...options, sort: undefined };
+        filter = serialize(filter);
+        setDefaultIdForUpsert(filter, newDoc, requestOptions, true);
+        newDoc = serialize(newDoc);
+
+        // Weirdness to work around TypeScript, otherwise TypeScript fails with
+        // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
+        if (options?.includeResultMetadata) {
+            return this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((value: Record<string, unknown> | null) => {
+                return { value: deserializeDoc<DocType>(value) };
+            });
+        } else {
+            return this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((doc: Record<string, unknown> | null) => deserializeDoc<DocType>(doc));
         }
-        return res;
     }
 
     /**
@@ -254,7 +275,8 @@ export class Collection extends MongooseCollection {
      * @param filter
      */
     deleteMany(filter: Record<string, unknown>) {
-        return this.collection.deleteMany(filter);
+        filter = serialize(filter, this.useTables);
+        return this.collection.deleteMany(filter as TableFilter<DocType>);
     }
 
     /**
@@ -263,22 +285,12 @@ export class Collection extends MongooseCollection {
      * @param options
      * @param callback
      */
-    deleteOne(filter: Record<string, unknown>, options?: DeleteOneOptions, callback?: NodeCallback<DataAPIDeleteResult>) {
-        let requestOptions: DeleteOneOptionsForDataAPI | undefined = undefined;
-        if (options != null && options.sort != null) {
-            requestOptions = { ...options, sort: processSortOption(options.sort) };
-        } else if (options != null && options.sort == null) {
-            requestOptions = { ...options, sort: undefined };
-            delete requestOptions.sort;
-        }
-
-        const promise = this.collection.deleteOne(filter, requestOptions);
-
-        if (callback != null) {
-            promise.then((res: DataAPIDeleteResult) => callback(null, res), (err: Error) => callback(err, null));
-        }
-
-        return promise;
+    deleteOne(filter: Record<string, unknown>, options: DeleteOneOptions) {
+        const requestOptions: DeleteOneOptionsInternal = options.sort != null
+            ? { ...options, sort: processSortOption(options.sort) }
+            : { ...options, sort: undefined };
+        filter = serialize(filter, this.useTables);
+        return this.collection.deleteOne(filter as TableFilter<DocType>, requestOptions);
     }
 
     /**
@@ -288,14 +300,16 @@ export class Collection extends MongooseCollection {
      * @param replacement
      * @param options
      */
-    replaceOne(filter: Record<string, unknown>, replacement: Record<string, unknown>, options?: ReplaceOneOptions) {
-        let requestOptions: ReplaceOneOptionsForDataAPI | undefined = undefined;
-        if (options != null && options.sort != null) {
-            requestOptions = { ...options, sort: processSortOption(options.sort) };
-        } else if (options != null && options.sort == null) {
-            requestOptions = { ...options, sort: undefined };
-            delete requestOptions.sort;
+    replaceOne(filter: Record<string, unknown>, replacement: Record<string, unknown>, options: ReplaceOneOptions) {
+        if (this.collection instanceof AstraTable) {
+            throw new OperationNotSupportedError('Cannot use replaceOne() with tables');
         }
+        const requestOptions: CollectionReplaceOneOptions = options.sort != null
+            ? { ...options, sort: processSortOption(options.sort) }
+            : { ...options, sort: undefined };
+        filter = serialize(filter);
+        setDefaultIdForUpsert(filter, replacement, requestOptions, true);
+        replacement = serialize(replacement);
         return this.collection.replaceOne(filter, replacement, requestOptions);
     }
 
@@ -305,15 +319,18 @@ export class Collection extends MongooseCollection {
      * @param update
      * @param options
      */
-    updateOne(filter: Record<string, unknown>, update: Record<string, unknown>, options?: UpdateOneOptions) {
-        let requestOptions: UpdateOneOptionsForDataAPI | undefined = undefined;
-        if (options != null && options.sort != null) {
-            requestOptions = { ...options, sort: processSortOption(options.sort) };
-        } else if (options != null && options.sort == null) {
-            requestOptions = { ...options, sort: undefined };
-            delete requestOptions.sort;
-        }
-        return this.collection.updateOne(filter, update, requestOptions);
+    updateOne(filter: Record<string, unknown>, update: Record<string, unknown>, options: UpdateOneOptions) {
+        const requestOptions: UpdateOneOptionsInternal = options.sort != null
+            ? { ...options, sort: processSortOption(options.sort) }
+            : { ...options, sort: undefined };
+        filter = serialize(filter, this.useTables);
+        setDefaultIdForUpsert(filter, update, requestOptions, false);
+        update = serialize(update, this.useTables);
+        return this.collection.updateOne(filter as TableFilter<DocType>, update, requestOptions).then(res => {
+            // Mongoose currently has a bug where null response from updateOne() throws an error that we can't
+            // catch here for unknown reasons. See Automattic/mongoose#15126. Tables API returns null here.
+            return res ?? {};
+        });
     }
 
     /**
@@ -322,7 +339,13 @@ export class Collection extends MongooseCollection {
      * @param update
      * @param options
      */
-    updateMany(filter: Record<string, unknown>, update: Record<string, unknown>, options?: UpdateManyOptions) {
+    updateMany(filter: Record<string, unknown>, update: Record<string, unknown>, options: CollectionUpdateManyOptions) {
+        if (this.collection instanceof AstraTable) {
+            throw new OperationNotSupportedError('Cannot use updateMany() with tables');
+        }
+        filter = serialize(filter, this.useTables);
+        setDefaultIdForUpsert(filter, update, options, false);
+        update = serialize(update, this.useTables);
         return this.collection.updateMany(filter, update, options);
     }
 
@@ -330,6 +353,9 @@ export class Collection extends MongooseCollection {
      * Get the estimated number of documents in a collection based on collection metadata
      */
     estimatedDocumentCount() {
+        if (this.collection instanceof AstraTable) {
+            throw new OperationNotSupportedError('Cannot use estimatedDocumentCount() with tables');
+        }
         return this.collection.estimatedDocumentCount();
     }
 
@@ -338,7 +364,9 @@ export class Collection extends MongooseCollection {
      * @param command
      */
     runCommand(command: Record<string, unknown>) {
-        return this.collection.runCommand(command);
+        return this.collection._httpClient.executeCommand(command, {
+            timeoutManager: this.collection._httpClient.tm.single('runCommandTimeoutMS', 60_000)
+        });
     }
 
     /**
@@ -360,48 +388,69 @@ export class Collection extends MongooseCollection {
     }
 
     /**
-     * Bulk Save not supported.
-     * @param docs
-     * @param options
-     */
-    bulkSave(_docs: Record<string, unknown>[], _options?: Record<string, unknown>) {
-        throw new OperationNotSupportedError('bulkSave() Not Implemented');
-    }
-
-    /**
-     * Clean indexes not supported.
-     * @param options
-     */
-    cleanIndexes(_options?: Record<string, unknown>) {
-        throw new OperationNotSupportedError('cleanIndexes() Not Implemented');
-    }
-
-    /**
      * List indexes not supported.
      * @param options
      */
-    listIndexes(_options?: Record<string, unknown>) {
-        throw new OperationNotSupportedError('listIndexes() Not Implemented');
+    listIndexes() {
+        if (this.collection instanceof AstraCollection) {
+            throw new OperationNotSupportedError('Cannot use listIndexes() with collections');
+        }
+        // Mongoose uses the `key` property of an index for index diffing in `cleanIndexes()` and `syncIndexes()`.
+        return new AsyncCursorPlaceholder<StargateMongooseIndexDescription>(
+            this.collection.listIndexes().then(indexes => indexes.map(index => ({ ...index, key: { [index.definition.column]: 1 } })))
+        );
     }
 
     /**
-     * Create index not supported.
+     * Create a new index
      *
-     * Async because Mongoose `createIndexes()` throws an unhandled error if `createIndex()` throws a sync error
-     * See Automattic/mongoose#14995
-     *
-     * @param fieldOrSpec
+     * @param spec MongoDB-style index spec for Mongoose compatibility
      * @param options
      */
-    async createIndex(_fieldOrSpec: Record<string, unknown>, _options?: Record<string, unknown>) {
-        throw new OperationNotSupportedError('createIndex() Not Implemented');
+    async createIndex(indexSpec: Record<string, boolean>, options?: CreateTableIndexOptions & { name?: string }): Promise<void> {
+        if (this.collection instanceof AstraCollection) {
+            throw new OperationNotSupportedError('Cannot use createIndex() with collections');
+        }
+        if (Object.keys(indexSpec).length !== 1) {
+            throw new TypeError('createIndex indexSpec must have exactly 1 key');
+        }
+        const [column] = Object.keys(indexSpec);
+        return this.collection.createIndex(options?.name ?? column, column, options).catch((error: Error) => {
+            if (error instanceof DataAPIResponseError) {
+                // This error occurs if we try to create an index that already exists with same name and options.
+                // Ignore this error for Mongoose compatibility.
+                if (error.errorDescriptors?.[0]?.errorCode === 'CANNOT_ADD_EXISTING_INDEX') {
+                    return;
+                }
+            }
+            throw error;
+        });
     }
 
     /**
-     * Drop indexes not supported.
+     * Create a new vector index
+     *
+     * @param name
+     * @param column
+     * @param options
      */
-    dropIndexes() {
-        throw new OperationNotSupportedError('dropIndexes() Not Implemented');
+    async createVectorIndex(name: string, column: string, options?: { metric: 'cosine' | 'euclidean' | 'dot_product', sourceModel?: string }): Promise<void> {
+        if (this.collection instanceof AstraCollection) {
+            throw new OperationNotSupportedError('Cannot use createVectorIndex() with collections');
+        }
+        return this.collection.createVectorIndex(name, column, { options, ifNotExists: true });
+    }
+
+    /**
+     * Drop an existin index
+     *
+     * @param name
+     */
+    async dropIndex(name: string) {
+        if (this.collection instanceof AstraCollection) {
+            throw new OperationNotSupportedError('Cannot use dropIndex() with collections');
+        }
+        await this.connection.db!.astraDb.dropTableIndex(name);
     }
 
     /**
@@ -419,7 +468,7 @@ export class Collection extends MongooseCollection {
     }
 }
 
-function processSortOption(sort: SortOption): SortOptionInternal {
+function processSortOption(sort: MongooseSortOption): SortOptionInternal {
     const result: SortOptionInternal = {};
     for (const key of Object.keys(sort)) {
         const sortValue = sort[key];
@@ -430,7 +479,10 @@ function processSortOption(sort: SortOption): SortOptionInternal {
 
         const $meta = typeof sortValue === 'object' && sortValue.$meta;
         if ($meta) {
-            result[key] = $meta;
+            // Astra-db-ts 1.x does not currently support using fields other than $vector and $vectorize
+            // for vector sort and vectorize sort, but that works in tables. Stargate-mongoose added
+            // support in PR #258
+            result[key] = $meta as unknown as SortDirection;
         }
     }
 
@@ -441,5 +493,58 @@ export class OperationNotSupportedError extends Error {
     constructor(message: string) {
         super(message);
         this.name = 'OperationNotSupportedError';
+    }
+}
+
+export function setDefaultIdForUpsert(filter: Record<string, unknown>, update: { $setOnInsert?: Record<string, unknown> } & Record<string, unknown>, options: { upsert?: boolean }, replace?: boolean) {
+    if (!options.upsert) {
+        return;
+    }
+    if ('_id' in filter) {
+        return;
+    }
+
+    if (replace) {
+        if ('_id' in update) {
+            return;
+        }
+        update._id = new Types.ObjectId();
+    } else {
+        if (_updateHasKey(update, '_id')) {
+            return;
+        }
+        if (update.$setOnInsert == null) {
+            update.$setOnInsert = {};
+        }
+        if (!('_id' in update.$setOnInsert)) {
+            update.$setOnInsert._id = new Types.ObjectId();
+        }
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function _updateHasKey(update: Record<string, any>, key: string) {
+    for (const operator of Object.keys(update)) {
+        if (update[operator] != null && typeof update[operator] === 'object' && key in update[operator]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Mongoose expects listIndexes() to return a cursor but Astra returns an array. Mongoose itself doesn't support
+ * returning a cursor from Model.listIndexes(), so all we need to return is an object with a toArray() function.
+ */
+
+class AsyncCursorPlaceholder<ValueType = unknown> {
+    promise: Promise<Array<ValueType>>;
+
+    constructor(promise: Promise<Array<ValueType>>) {
+        this.promise = promise;
+    }
+
+    toArray() {
+        return this.promise;
     }
 }
