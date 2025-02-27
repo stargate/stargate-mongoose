@@ -169,6 +169,23 @@ describe('tableDefinitionFromSchema', () => {
         });
     });
 
+    it('creates vector column if array of numbers has dimension property', () => {
+        const testSchema = new Schema({
+            arr: { type: [Number], dimension: 2 }
+        });
+
+        const result = tableDefinitionFromSchema(testSchema);
+
+        assert.deepStrictEqual(result, {
+            primaryKey: '_id',
+            columns: {
+                '_id': { type: 'text' },
+                '__v': { type: 'int' },
+                'arr': { type: 'vector', dimension: 2 }
+            }
+        });
+    });
+
     it('throws on 3 level deep nested path', () => {
         const testSchema = new Schema({
             foo: {

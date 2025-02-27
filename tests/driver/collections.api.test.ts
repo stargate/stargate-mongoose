@@ -214,10 +214,12 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.strictEqual(error.errorDescriptors[0].message, 'Invalid filter expression: filter clause path (\'$where\') cannot start with `$`');
         });
         it('API ops tests db.dropCollection() and Model.createCollection()', async function() {
+            this.timeout(120_000);
+
             let collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
             assert.ok(collections.includes(Product.collection.collectionName));
 
-            await Product.db.dropCollection(Product.collection.collectionName);
+            await Product.db.db!.dropCollection(Product.collection.collectionName, { timeoutMS: 60_000 });
             collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
             assert.ok(!collections.includes(Product.collection.collectionName));
 

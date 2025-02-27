@@ -60,9 +60,11 @@ export async function createMongooseCollections(useTables: boolean) {
     await mongooseInstance.connection.openUri(testClient!.uri, { ...testClient!.options });
     await mongooseInstanceTables.connection.openUri(testClient!.uri, { ...testClient!.options, useTables: true });
 
-    const { databases } = await mongooseInstance.connection.listDatabases();
-    if (!databases.find(db => db.name === mongooseInstance.connection.namespace)) {
-        await createNamespace();
+    if (!testClient!.isAstra) {
+        await createNamespace();const { databases } = await mongooseInstance.connection.listDatabases();
+        if (!databases.find(db => db.name === mongooseInstance.connection.namespace)) {
+            await createNamespace();
+        }
     }
 
     const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });

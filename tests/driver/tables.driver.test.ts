@@ -206,6 +206,20 @@ describe('TABLES: driver based tests', async () => {
                 /watch\(\) Not Implemented/
             );
         });
+
+        it('handles createIndex', async () => {
+            const collection = mongooseInstance.connection.collection(Product.collection.collectionName);
+            await collection.createIndex({ name: true }, { name: 'test_index' });
+            // Creating index that already exists is a no-op
+            await collection.createIndex({ name: true }, { name: 'test_index' });
+
+            await collection.dropIndex('test_index');
+
+            await assert.rejects(
+                collection.createIndex({ propertyThatDoesNotExist: true }, {}),
+                /The command attempted to index the unknown columns: "propertyThatDoesNotExist"/
+            );
+        });
     });
     describe('namespace management tests', () => {
         it('should fail when dropDatabase is called', async () => {

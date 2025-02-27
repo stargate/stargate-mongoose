@@ -48,9 +48,9 @@ describe('TABLES: vector search', function() {
         const existingTables = await mongooseInstance.connection.listTables();
         if (!existingTables.find(t => t.name === 'vector_table')) {
             await mongooseInstance.connection.createTable('vector_table', tableDefinitionFromSchema(vectorSchema));
-
-            await mongooseInstance.connection.collection('vector_table').createVectorIndex('vectortables', 'vector');
         }
+
+        await mongooseInstance.connection.collection('vector_table').createVectorIndex('vectortables', 'vector');
     });
 
     beforeEach(async function() {
@@ -66,6 +66,23 @@ describe('TABLES: vector search', function() {
             }
         ]);
         vectorIds = vectors.map(v => v._id);
+    });
+
+    it('drops and creates vector index', async function() {
+        await mongooseInstance.connection.collection('vector_table').dropIndex('vectortables');
+        let indexes = await mongooseInstance.connection.collection('vector_table').listIndexes().toArray();
+        assert.deepStrictEqual(indexes, []);
+
+        await mongooseInstance.connection.collection('vector_table').createVectorIndex('vectortables', 'vector');
+        indexes = await mongooseInstance.connection.collection('vector_table').listIndexes().toArray();
+        assert.deepStrictEqual(indexes, [
+            {
+                name: 'vectortables',
+                definition: { column: 'vector', options: { metric: 'cosine', sourceModel: 'other' }  },
+                indexType: 'vector',
+                key: { vector: 1 }
+            }
+        ]);
     });
 
     it('supports updating $vector with save()', async function() {
@@ -145,5 +162,16 @@ describe('TABLES: vector search', function() {
             vector: [1, 2, 3]
         });
         await assert.rejects(() => doc.save(), /Array must be of length 2/);
+    });
+
+    it('can save doc with null vector', async function () {
+        const doc = new Vector({
+            name: 'Test vector wrong dimension',
+            vector: null
+        });
+        await doc.save();
+
+        const { vector } = await Vector.findById(doc._id).orFail();
+        assert.strictEqual(vector, null);
     });
 });

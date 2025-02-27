@@ -317,6 +317,12 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                 { message: 'Cannot use findOneAndUpdate() with tables' }
             );
         });
+        it('API ops tests Model.findOneAndReplace()', async function() {
+            await assert.rejects(
+                Product.findOneAndReplace({category: 'cat 1'}, {name: 'Product 4'}),
+                { message: 'Cannot use findOneAndReplace() with tables' }
+            );
+        });
         it('API ops tests Model.insertMany()', async () => {
             const product1Id = new mongoose.Types.ObjectId('0'.repeat(24));
             const product2Id = new mongoose.Types.ObjectId('1'.repeat(24));
@@ -385,6 +391,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                     key: { name: 1 }
                 }
             ]);
+
             await collection.dropIndex('test_index');
         });
         it('API ops tests Model.populate()', async () => {
@@ -667,6 +674,9 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                 () => mongooseInstance.connection.setClient(mongooseInstance.connection.client as DataAPIClient),
                 /SetClient not supported/
             );
+        });
+        it('API ops tests Model.createCollection()', async function() {
+            await assert.rejects(Product.createCollection(), /Cannot createCollection in tables mode/);
         });
     });
 });

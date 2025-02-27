@@ -73,8 +73,8 @@ export abstract class BaseDb {
      * Drop a collection by name.
      * @param name The name of the collection to be dropped.
      */
-    async dropCollection(name: string) {
-        return this.astraDb.dropCollection(name);
+    async dropCollection(name: string, options?: { timeout?: number }) {
+        return this.astraDb.dropCollection(name, options);
     }
 
     /**
