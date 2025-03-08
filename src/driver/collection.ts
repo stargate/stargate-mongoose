@@ -391,14 +391,20 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * List indexes not supported.
      * @param options
      */
-    listIndexes() {
+    listIndexes(): { toArray: () => Promise<StargateMongooseIndexDescription[]> } {
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use listIndexes() with collections');
         }
-        // Mongoose uses the `key` property of an index for index diffing in `cleanIndexes()` and `syncIndexes()`.
-        return new AsyncCursorPlaceholder<StargateMongooseIndexDescription>(
-            this.collection.listIndexes().then(indexes => indexes.map(index => ({ ...index, key: { [index.definition.column]: 1 } })))
-        );
+        // TypeScript isn't able to infer that `this.collection` is an AstraTable here, so we need to cast it.
+        const collection: AstraTable<DocType> = this.collection;
+        /**
+         * Mongoose expects listIndexes() to return a cursor but Astra returns an array. Mongoose itself doesn't support
+         * returning a cursor from Model.listIndexes(), so all we need to return is an object with a toArray() function.
+         */
+        return {
+            // Mongoose uses the `key` property of an index for index diffing in `cleanIndexes()` and `syncIndexes()`.
+            toArray: () => collection.listIndexes().then(indexes => indexes.map(index => ({ ...index, key: { [index.definition.column]: 1 } })))
+        };
     }
 
     /**
@@ -530,21 +536,4 @@ function _updateHasKey(update: Record<string, any>, key: string) {
         }
     }
     return false;
-}
-
-/**
- * Mongoose expects listIndexes() to return a cursor but Astra returns an array. Mongoose itself doesn't support
- * returning a cursor from Model.listIndexes(), so all we need to return is an object with a toArray() function.
- */
-
-class AsyncCursorPlaceholder<ValueType = unknown> {
-    promise: Promise<Array<ValueType>>;
-
-    constructor(promise: Promise<Array<ValueType>>) {
-        this.promise = promise;
-    }
-
-    toArray() {
-        return this.promise;
-    }
 }
