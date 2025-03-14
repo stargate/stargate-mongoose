@@ -1073,4 +1073,139 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             });
         });
     });
+
+    describe('vectorize', function () {
+        const vectorSchema = new Schema(
+            {
+                $vector: { type: [Number], default: () => void 0, dimension: 1024 },
+                $vectorize: { type: String },
+                name: 'String'
+            },
+            {
+                collectionOptions: {
+                    vector: {
+                        dimension: 1024,
+                        metric: 'cosine',
+                        service: { provider: 'nvidia', modelName: 'NV-Embed-QA' }
+                    }
+                },
+                autoCreate: false
+            }
+        );
+
+        let Vector: Model<InferSchemaType<typeof vectorSchema>>;
+
+        before(async function() {
+            if (!testClient!.isAstra) {
+                return this.skip();
+            }
+
+            mongooseInstance.deleteModel(/Vector/);
+            Vector = mongooseInstance.model(
+                'Vector',
+                vectorSchema,
+                'vector'
+            );
+
+            const collections = await mongooseInstance.connection.listCollections({ nameOnly: false });
+            const vectorCollection = collections.find(coll => coll.name === 'vector');
+            if (!vectorCollection) {
+                await Vector.createCollection();
+            } else if (vectorCollection.definition?.vector?.dimension !== 1024 || vectorCollection.definition?.vector?.metric !== 'cosine') {
+                await mongooseInstance.connection.dropCollection('vector');
+                await Vector.createCollection();
+            }
+        });
+
+        beforeEach(async function () {
+            await Vector.deleteMany({});
+        });
+
+        it('supports creating document with $vectorize', async function () {
+            const { _id } = await Vector.create({ name: 'Moby-Dick', $vectorize: 'Call me Ishmael.' });
+            const doc = await Vector.findById(_id).select({ '*': 1 }).orFail();
+            assert.strictEqual(doc.$vectorize, 'Call me Ishmael.');
+            assert.ok(doc.$vector);
+            assert.equal(doc.$vector.length, 1024);
+            assert.ok(doc.$vector.every(v => typeof v === 'number'));
+        });
+
+        it('handles default projection', async function () {
+            const { _id } = await Vector.create({ name: 'Moby-Dick', $vectorize: 'Call me Ishmael.' });
+            const doc = await Vector.findById(_id).orFail();
+            assert.ok(!doc.$vectorize);
+            assert.ok(!doc.$vector);
+        });
+    });
+
+    describe('vectorize with select: true', function () {
+        const vectorSchema = new Schema(
+            {
+                $vector: { type: [Number], default: () => void 0, dimension: 1024 },
+                $vectorize: { type: String, select: true },
+                name: 'String'
+            },
+            {
+                collectionOptions: {
+                    vector: {
+                        dimension: 1024,
+                        metric: 'cosine',
+                        service: { provider: 'nvidia', modelName: 'NV-Embed-QA' }
+                    }
+                },
+                autoCreate: false
+            }
+        );
+
+        let Vector: Model<InferSchemaType<typeof vectorSchema>>;
+
+        before(async function() {
+            if (!testClient!.isAstra) {
+                return this.skip();
+            }
+
+            mongooseInstance.deleteModel(/Vector/);
+            Vector = mongooseInstance.model(
+                'Vector',
+                vectorSchema,
+                'vector'
+            );
+
+            const collections = await mongooseInstance.connection.listCollections({ nameOnly: false });
+            const vectorCollection = collections.find(coll => coll.name === 'vector');
+            if (!vectorCollection) {
+                await Vector.createCollection();
+            } else if (vectorCollection.definition?.vector?.dimension !== 1024 || vectorCollection.definition?.vector?.metric !== 'cosine') {
+                await mongooseInstance.connection.dropCollection('vector');
+                await Vector.createCollection();
+            }
+        });
+
+        beforeEach(async function () {
+            await Vector.deleteMany({});
+        });
+
+        it('supports creating document with $vectorize', async function () {
+            const { _id } = await Vector.create({ name: 'Moby-Dick', $vectorize: 'Call me Ishmael.' });
+            const doc = await Vector.findById(_id).select({ '*': 1 }).orFail();
+            assert.strictEqual(doc.$vectorize, 'Call me Ishmael.');
+            assert.ok(doc.$vector);
+            assert.equal(doc.$vector.length, 1024);
+            assert.ok(doc.$vector.every(v => typeof v === 'number'));
+        });
+
+        it('handles default projection', async function () {
+            const { _id } = await Vector.create({ name: 'Moby-Dick', $vectorize: 'Call me Ishmael.' });
+            const doc = await Vector.findById(_id).orFail();
+            assert.strictEqual(doc.$vectorize, 'Call me Ishmael.');
+            assert.ok(!doc.$vector);
+        });
+
+        it('supports excluding $vectorize from projection', async function () {
+            const { _id } = await Vector.create({ name: 'Moby-Dick', $vectorize: 'Call me Ishmael.' });
+            const doc = await Vector.findById(_id).select({ '$vectorize': 0 }).orFail();
+            assert.strictEqual(doc.name, 'Moby-Dick');
+            assert.ok(!doc.$vector);
+        });
+    });
 });
