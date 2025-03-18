@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import type { StargateMongoose } from '../../src';
 import assert from 'assert';
-import mongoose from 'mongoose';
-import * as StargateMongooseDriver from '../../src/driver';
-import { testClient, TEST_COLLECTION_NAME } from '../fixtures';
+import { testClient } from '../fixtures';
 import { createMongooseCollections } from '../mongooseFixtures';
 
 describe('astra tests', function () {

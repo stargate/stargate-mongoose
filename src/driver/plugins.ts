@@ -1,3 +1,17 @@
+// Copyright DataStax, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import type { Schema, SchemaType } from 'mongoose';
 
 /**
@@ -44,7 +58,8 @@ function projectionDoesNotHaveProperty(projection: Record<string, unknown>, prop
 
 export function addVectorDimensionValidator(schema: Schema) {
     schema.eachPath((_path: string, schemaType: SchemaType) => {
-        if (schemaType.instance === 'Array' && schemaType.getEmbeddedSchemaType()?.instance === 'Number' && typeof schemaType.options?.dimension === 'number') {
+        const isValidArray = schemaType.instance === 'Array' || schemaType.instance === 'Vectorize';
+        if (isValidArray && schemaType.getEmbeddedSchemaType()?.instance === 'Number' && typeof schemaType.options?.dimension === 'number') {
             const dimension = schemaType.options?.dimension;
             schemaType.validate((value: number[] | null) => {
                 if (value == null) {

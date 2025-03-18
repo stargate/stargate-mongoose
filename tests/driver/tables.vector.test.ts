@@ -15,9 +15,11 @@
 import { FindCursor } from '@datastax/astra-db-ts';
 import { InferSchemaType, Model, Schema, Types } from 'mongoose';
 import assert from 'assert';
+import { testClient } from '../fixtures';
 import { createMongooseCollections, mongooseInstanceTables as mongooseInstance } from '../mongooseFixtures';
 import { once } from 'events';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
+import { driver } from '../../';
 
 describe('TABLES: vector search', function() {
     let vectorIds: Types.ObjectId[] = [];
@@ -46,7 +48,11 @@ describe('TABLES: vector search', function() {
         );
 
         const existingTables = await mongooseInstance.connection.listTables();
-        if (!existingTables.find(t => t.name === 'vector_table')) {
+        const vectorTable = existingTables.find(t => t.name === 'vector_table');
+        if (!vectorTable) {
+            await mongooseInstance.connection.createTable('vector_table', tableDefinitionFromSchema(vectorSchema));
+        } else if (!vectorTable.definition.columns.vector || vectorTable.definition.columns.vector.type !== 'vector' || vectorTable.definition.columns.vector.dimension !== 2) {
+            await mongooseInstance.connection.dropTable('vector_table');
             await mongooseInstance.connection.createTable('vector_table', tableDefinitionFromSchema(vectorSchema));
         }
 
@@ -173,5 +179,72 @@ describe('TABLES: vector search', function() {
 
         const { vector } = await Vector.findById(doc._id).orFail();
         assert.strictEqual(vector, null);
+    });
+});
+
+describe('TABLES: vectorize', function () {
+    const vectorSchema = new Schema(
+        {
+            vector: { type: driver.Vectorize, default: () => void 0, dimension: 1024 },
+            name: 'String'
+        },
+        {
+            autoCreate: false
+        }
+    );
+
+    let Vector: Model<InferSchemaType<typeof vectorSchema>>;
+
+    before(async () => {
+        await createMongooseCollections(true);
+    });
+
+    before(async function() {
+        if (!testClient!.isAstra) {
+            return this.skip();
+        }
+
+        mongooseInstance.deleteModel(/Vector/);
+        Vector = mongooseInstance.model(
+            'Vector',
+            vectorSchema,
+            'vector_table'
+        );
+
+        const existingTables = await mongooseInstance.connection.listTables();
+        const vectorTable = existingTables.find(t => t.name === 'vector_table');
+        if (!vectorTable) {
+            await mongooseInstance.connection.createTable('vector_table', tableDefinitionFromSchema(vectorSchema));
+        } else if (!vectorTable.definition.columns.vector || vectorTable.definition.columns.vector.type !== 'vector' || vectorTable.definition.columns.vector.dimension !== 1024) {
+            await mongooseInstance.connection.dropTable('vector_table');
+            const tableDefinition = tableDefinitionFromSchema(vectorSchema);
+            tableDefinition.columns.vector = { type: 'vector', dimension: 1024, service: { provider: 'nvidia', modelName: 'NV-Embed-QA' } };
+            await mongooseInstance.connection.createTable('vector_table', tableDefinition);
+        }
+
+        await mongooseInstance.connection.collection('vector_table').createVectorIndex('vectortables', 'vector');
+    });
+
+    beforeEach(async function () {
+        await Vector.deleteMany({});
+    });
+
+    it('supports inserting vectorize doc', async function () {
+        const { _id } = await Vector.create({ name: 'Moby-Dick', vector: 'Call me Ishmael.' });
+        assert.ok(_id);
+        const fromDb = await Vector.findById(_id).orFail();
+        await fromDb.validate();
+        assert.ok(Array.isArray(fromDb.vector));
+        assert.equal(fromDb.vector.length, 1024);
+    });
+
+    it('supports sorting on vectorize', async function () {
+        await Vector.collection.insertOne({ _id: new Types.ObjectId(), name: 'Recipe', vector: 'My Taco Recipe: 1 corn tortilla, 2 oz ground beef' });
+        await Vector.collection.insertOne({ _id: new Types.ObjectId(), name: 'Story', vector: 'Colorful butterflies soar high above the blooming garden' });
+        let doc = await Vector.findOne().sort({ vector: { $meta: 'flowers' } }).orFail();
+        assert.equal(doc.name, 'Story');
+
+        doc = await Vector.findOne().sort({ vector: { $meta: 'mexican food' } }).orFail();
+        assert.equal(doc.name, 'Recipe');
     });
 });

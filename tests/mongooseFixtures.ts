@@ -1,8 +1,11 @@
 import { testClient } from './fixtures';
 import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 import * as StargateMongooseDriver from '../src/driver';
-import { plugins } from '../src/driver';
+import { plugins, Vectorize } from '../src/driver';
 import tableDefinitionFromSchema from '../src/tableDefinitionFromSchema';
+
+// @ts-expect-error
+Schema.Types.Vectorize = Vectorize;
 
 const cartSchema = new Schema({
     name: String,

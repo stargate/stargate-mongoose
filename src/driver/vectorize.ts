@@ -12,14 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export { Connection } from './connection';
-export { Collection, OperationNotSupportedError } from './collection';
-export { Vectorize } from './vectorize';
+import { Schema, Document } from 'mongoose';
 
-import { Connection } from './connection';
-import { Mongoose } from 'mongoose';
-import { handleVectorFieldsProjection, addVectorDimensionValidator } from './plugins';
+export class Vectorize extends Schema.Types.Array {
+    constructor(key: string) {
+        super(key, { type: 'Number' });
+        this.instance = 'Vectorize';
+    }
 
-export const plugins = [handleVectorFieldsProjection, addVectorDimensionValidator];
+    cast(val: unknown, doc: Document, init: boolean, prev: unknown, options: unknown) {
+        if (!init && typeof val === 'string') {
+            return val;
+        }
+        return super.cast(val, doc, init, prev, options);
+    }
+}
 
-export type StargateMongoose = Mongoose & { connection: Connection, connections: Connection[] };
+// @ts-expect-error needs override because Mongoose hard-codes `schemaName` type
+Vectorize.schemaName = 'Vectorize';
