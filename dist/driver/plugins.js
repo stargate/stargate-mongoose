@@ -1,6 +1,20 @@
 "use strict";
+// Copyright DataStax, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handleVectorFieldsProjection = handleVectorFieldsProjection;
+exports.addVectorDimensionValidator = addVectorDimensionValidator;
 /**
  * Mongoose plugin to handle adding `$vector` to the projection by default if `$vector` has `select: true`.
  * Because `$vector` is deselected by default, this plugin makes it possible for the user to include `$vector`
@@ -33,5 +47,23 @@ function handleVectorFieldsProjection(schema) {
 }
 function projectionDoesNotHaveProperty(projection, property) {
     return projection == null || !(property in projection);
+}
+/**
+ * Mongoose plugin to validate arrays of numbers that have a `dimension` property. Ensure that the array
+ * is either nullish or has a length equal to the dimension.
+ */
+function addVectorDimensionValidator(schema) {
+    schema.eachPath((_path, schemaType) => {
+        const isValidArray = schemaType.instance === 'Array' || schemaType.instance === 'Vectorize';
+        if (isValidArray && schemaType.getEmbeddedSchemaType()?.instance === 'Number' && typeof schemaType.options?.dimension === 'number') {
+            const dimension = schemaType.options?.dimension;
+            schemaType.validate((value) => {
+                if (value == null) {
+                    return true;
+                }
+                return value.length === dimension;
+            }, `Array must be of length ${dimension}, got value {VALUE}`);
+        }
+    });
 }
 //# sourceMappingURL=plugins.js.map

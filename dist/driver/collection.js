@@ -52,9 +52,11 @@ class Collection extends collection_1.default {
         this._collection = collection;
         return collection;
     }
-    // Get whether the underlying Astra store is a table or a collection
+    // Get whether the underlying Astra store is a table or a collection. `connection.db` may be `null` if
+    // the connection has never been opened (`mongoose.connect()` or `openUri()` never called), so in that
+    // case we default to `useTables: false`.
     get useTables() {
-        return this.conn.db.useTables;
+        return this.connection.db?.useTables;
     }
     /**
      * Count documents in the collection that match the given filter.
@@ -322,8 +324,16 @@ class Collection extends collection_1.default {
         if (this.collection instanceof astra_db_ts_1.Collection) {
             throw new OperationNotSupportedError('Cannot use listIndexes() with collections');
         }
-        // Mongoose uses the `key` property of an index for index diffing in `cleanIndexes()` and `syncIndexes()`.
-        return new AsyncCursorPlaceholder(this.collection.listIndexes().then(indexes => indexes.map(index => ({ ...index, key: { [index.definition.column]: 1 } }))));
+        // TypeScript isn't able to infer that `this.collection` is an AstraTable here, so we need to cast it.
+        const collection = this.collection;
+        /**
+         * Mongoose expects listIndexes() to return a cursor but Astra returns an array. Mongoose itself doesn't support
+         * returning a cursor from Model.listIndexes(), so all we need to return is an object with a toArray() function.
+         */
+        return {
+            // Mongoose uses the `key` property of an index for index diffing in `cleanIndexes()` and `syncIndexes()`.
+            toArray: () => collection.listIndexes().then(indexes => indexes.map(index => ({ ...index, key: { [index.definition.column]: 1 } })))
+        };
     }
     /**
      * Create a new index
@@ -446,17 +456,5 @@ function _updateHasKey(update, key) {
         }
     }
     return false;
-}
-/**
- * Mongoose expects listIndexes() to return a cursor but Astra returns an array. Mongoose itself doesn't support
- * returning a cursor from Model.listIndexes(), so all we need to return is an object with a toArray() function.
- */
-class AsyncCursorPlaceholder {
-    constructor(promise) {
-        this.promise = promise;
-    }
-    toArray() {
-        return this.promise;
-    }
 }
 //# sourceMappingURL=collection.js.map

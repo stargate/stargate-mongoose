@@ -287,8 +287,15 @@ exports.Connection = Connection;
 const parseUri = (uri) => {
     const parsedUrl = url_1.default.parse(uri, true);
     const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
-    const keyspaceName = parsedUrl.pathname?.substring(parsedUrl.pathname?.lastIndexOf('/') + 1);
-    const baseApiPath = getBaseAPIPath(parsedUrl.pathname);
+    if (!parsedUrl.pathname) {
+        throw new Error('Invalid URI: keyspace is required');
+    }
+    const keyspaceName = parsedUrl.pathname.substring(parsedUrl.pathname.lastIndexOf('/') + 1);
+    // Remove the last part of the api path (which is assumed as the keyspace name). For example:
+    //  /v1/testks1 => v1
+    //  /apis/v1/testks1 => apis/v1
+    //  /testks1 => '' (empty string)
+    const baseApiPath = parsedUrl.pathname.substring(1, parsedUrl.pathname.lastIndexOf('/') + 1);
     const applicationToken = parsedUrl.query?.applicationToken;
     const authHeaderName = parsedUrl.query?.authHeaderName;
     if (Array.isArray(applicationToken)) {
@@ -297,7 +304,7 @@ const parseUri = (uri) => {
     if (Array.isArray(authHeaderName)) {
         throw new Error('Invalid URI: multiple application auth header names');
     }
-    if (!keyspaceName) {
+    if (keyspaceName.length === 0) {
         throw new Error('Invalid URI: keyspace is required');
     }
     return {
@@ -309,17 +316,4 @@ const parseUri = (uri) => {
     };
 };
 exports.parseUri = parseUri;
-// Removes the last part of the api path (which is assumed as the keyspace name). for example below are the sample input => output from this function
-//  /v1/testks1 => v1
-//  /apis/v1/testks1 => apis/v1
-//  /testks1 => '' (empty string)
-function getBaseAPIPath(pathFromUrl) {
-    if (!pathFromUrl) {
-        return '';
-    }
-    const pathElements = pathFromUrl.split('/');
-    pathElements[pathElements.length - 1] = '';
-    const baseApiPath = pathElements.join('/');
-    return baseApiPath === '/' ? '' : baseApiPath.substring(1, baseApiPath.length - 1);
-}
 //# sourceMappingURL=connection.js.map

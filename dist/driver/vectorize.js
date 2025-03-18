@@ -12,11 +12,22 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-// setup envars
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
-//# sourceMappingURL=setup.js.map
+exports.Vectorize = void 0;
+const mongoose_1 = require("mongoose");
+class Vectorize extends mongoose_1.Schema.Types.Array {
+    constructor(key) {
+        super(key, { type: 'Number' });
+        this.instance = 'Vectorize';
+    }
+    cast(val, doc, init, prev, options) {
+        if (!init && typeof val === 'string') {
+            return val;
+        }
+        return super.cast(val, doc, init, prev, options);
+    }
+}
+exports.Vectorize = Vectorize;
+// @ts-expect-error needs override because Mongoose hard-codes `schemaName` type
+Vectorize.schemaName = 'Vectorize';
+//# sourceMappingURL=vectorize.js.map

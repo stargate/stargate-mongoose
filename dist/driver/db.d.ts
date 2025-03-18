@@ -34,7 +34,9 @@ export declare abstract class BaseDb {
      * Drop a collection by name.
      * @param name The name of the collection to be dropped.
      */
-    dropCollection(name: string): Promise<void>;
+    dropCollection(name: string, options?: {
+        timeout?: number;
+    }): Promise<void>;
     /**
      * Drop a table by name. This function does **not** throw an error if the table does not exist.
      * @param name

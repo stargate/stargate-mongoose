@@ -49,6 +49,9 @@ function serializeValue(data, useTables) {
         //Decimal128 handling
         return Number(data.toString());
     }
+    else if (data instanceof bson_1.Double) {
+        return Number(data.valueOf());
+    }
     else if (data instanceof Date) {
         // Rely on astra driver to serialize dates
         return data;

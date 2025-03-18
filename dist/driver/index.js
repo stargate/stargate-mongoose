@@ -13,12 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.plugins = exports.OperationNotSupportedError = exports.Collection = exports.Connection = void 0;
+exports.plugins = exports.Vectorize = exports.OperationNotSupportedError = exports.Collection = exports.Connection = void 0;
 var connection_1 = require("./connection");
 Object.defineProperty(exports, "Connection", { enumerable: true, get: function () { return connection_1.Connection; } });
 var collection_1 = require("./collection");
 Object.defineProperty(exports, "Collection", { enumerable: true, get: function () { return collection_1.Collection; } });
 Object.defineProperty(exports, "OperationNotSupportedError", { enumerable: true, get: function () { return collection_1.OperationNotSupportedError; } });
+var vectorize_1 = require("./vectorize");
+Object.defineProperty(exports, "Vectorize", { enumerable: true, get: function () { return vectorize_1.Vectorize; } });
 const plugins_1 = require("./plugins");
-exports.plugins = [plugins_1.handleVectorFieldsProjection];
+exports.plugins = [plugins_1.handleVectorFieldsProjection, plugins_1.addVectorDimensionValidator];
 //# sourceMappingURL=index.js.map

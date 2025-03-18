@@ -39,8 +39,8 @@ class BaseDb {
      * Drop a collection by name.
      * @param name The name of the collection to be dropped.
      */
-    async dropCollection(name) {
-        return this.astraDb.dropCollection(name);
+    async dropCollection(name, options) {
+        return this.astraDb.dropCollection(name, options);
     }
     /**
      * Drop a table by name. This function does **not** throw an error if the table does not exist.

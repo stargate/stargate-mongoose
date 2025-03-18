@@ -41,7 +41,7 @@ function tableDefinitionFromSchema(schema) {
         else if (type) {
             tableDefinition.columns[path] = { type };
         }
-        else if (schemaType.instance === 'Array') {
+        else if (schemaType.instance === 'Array' || schemaType.instance === 'Vectorize') {
             if (schemaType.schema) {
                 throw new Error(`Cannot convert schema to Data API table definition: DocumentArray "${path}" is not supported`);
             }
@@ -144,6 +144,12 @@ function mongooseTypeToDataAPIType(type) {
     }
     else if (type === 'UUID') {
         return 'uuid';
+    }
+    else if (type === 'Int32') {
+        return 'int';
+    }
+    else if (type === 'Double') {
+        return 'double';
     }
     return null;
 }

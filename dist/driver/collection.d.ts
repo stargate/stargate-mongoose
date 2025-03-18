@@ -62,7 +62,7 @@ export declare class Collection<DocType extends Record<string, unknown> = Record
     options?: (TableOptions | CollectionOptions) & MongooseCollectionOptions;
     constructor(name: string, conn: Connection, options?: (TableOptions | CollectionOptions) & MongooseCollectionOptions);
     get collection(): AstraCollection | AstraTable<DocType>;
-    get useTables(): any;
+    get useTables(): boolean | undefined;
     /**
      * Count documents in the collection that match the given filter.
      * @param filter
@@ -177,7 +177,9 @@ export declare class Collection<DocType extends Record<string, unknown> = Record
      * List indexes not supported.
      * @param options
      */
-    listIndexes(): AsyncCursorPlaceholder<StargateMongooseIndexDescription>;
+    listIndexes(): {
+        toArray: () => Promise<StargateMongooseIndexDescription[]>;
+    };
     /**
      * Create a new index
      *
@@ -221,13 +223,4 @@ export declare function setDefaultIdForUpsert(filter: Record<string, unknown>, u
 } & Record<string, unknown>, options: {
     upsert?: boolean;
 }, replace?: boolean): void;
-/**
- * Mongoose expects listIndexes() to return a cursor but Astra returns an array. Mongoose itself doesn't support
- * returning a cursor from Model.listIndexes(), so all we need to return is an object with a toArray() function.
- */
-declare class AsyncCursorPlaceholder<ValueType = unknown> {
-    promise: Promise<Array<ValueType>>;
-    constructor(promise: Promise<Array<ValueType>>);
-    toArray(): Promise<ValueType[]>;
-}
 export {};
