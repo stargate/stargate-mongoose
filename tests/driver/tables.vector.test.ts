@@ -14,12 +14,12 @@
 
 import { FindCursor } from '@datastax/astra-db-ts';
 import { InferSchemaType, Model, Schema, Types } from 'mongoose';
+import { Vectorize } from '../../';
 import assert from 'assert';
 import { testClient } from '../fixtures';
 import { createMongooseCollections, mongooseInstanceTables as mongooseInstance } from '../mongooseFixtures';
 import { once } from 'events';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
-import { driver } from '../../';
 
 describe('TABLES: vector search', function() {
     let vectorIds: Types.ObjectId[] = [];
@@ -185,7 +185,7 @@ describe('TABLES: vector search', function() {
 describe('TABLES: vectorize', function () {
     const vectorSchema = new Schema(
         {
-            vector: { type: driver.Vectorize, default: () => void 0, dimension: 1024 },
+            vector: { type: Vectorize, default: () => void 0, dimension: 1024 },
             name: 'String'
         },
         {
