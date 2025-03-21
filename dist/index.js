@@ -49,10 +49,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.tableDefinitionFromSchema = exports.createAstraUri = exports.driver = void 0;
+exports.Vectorize = exports.tableDefinitionFromSchema = exports.createAstraUri = exports.driver = void 0;
 exports.driver = __importStar(require("./driver"));
 var createAstraUri_1 = require("./createAstraUri");
 Object.defineProperty(exports, "createAstraUri", { enumerable: true, get: function () { return __importDefault(createAstraUri_1).default; } });
 var tableDefinitionFromSchema_1 = require("./tableDefinitionFromSchema");
 Object.defineProperty(exports, "tableDefinitionFromSchema", { enumerable: true, get: function () { return __importDefault(tableDefinitionFromSchema_1).default; } });
+var driver_1 = require("./driver");
+Object.defineProperty(exports, "Vectorize", { enumerable: true, get: function () { return driver_1.Vectorize; } });
 //# sourceMappingURL=index.js.map
