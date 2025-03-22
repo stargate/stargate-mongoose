@@ -16,9 +16,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vectorize = void 0;
 const mongoose_1 = require("mongoose");
 class Vectorize extends mongoose_1.Schema.Types.Array {
-    constructor(key) {
+    constructor(key, options) {
         super(key, { type: 'Number' });
+        this.options = options;
         this.instance = 'Vectorize';
+        if (typeof options?.service?.provider !== 'string') {
+            throw new Error('`provider` option for vectorize paths must be a string, got: ' + options?.service?.provider);
+        }
     }
     cast(val, doc, init, prev, options) {
         if (!init && typeof val === 'string') {

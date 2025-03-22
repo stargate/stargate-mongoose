@@ -61,6 +61,9 @@ function addVectorDimensionValidator(schema) {
                 if (value == null) {
                     return true;
                 }
+                if (typeof value === 'string') {
+                    return true;
+                }
                 return value.length === dimension;
             }, `Array must be of length ${dimension}, got value {VALUE}`);
         }

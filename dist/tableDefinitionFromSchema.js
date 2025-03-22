@@ -53,6 +53,9 @@ function tableDefinitionFromSchema(schema) {
                     throw new Error(`Cannot convert schema to Data API table definition: vector column at "${path}" must be an array of numbers`);
                 }
                 tableDefinition.columns[path] = { type: 'vector', dimension: schemaType.options.dimension };
+                if (schemaType.instance === 'Vectorize' && schemaType.options.service != null) {
+                    tableDefinition.columns[path].service = schemaType.options.service;
+                }
             }
             else {
                 const valueType = mongooseTypeToDataAPIType(embeddedSchemaType.instance);
