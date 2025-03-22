@@ -61,8 +61,11 @@ export function addVectorDimensionValidator(schema: Schema) {
         const isValidArray = schemaType.instance === 'Array' || schemaType.instance === 'Vectorize';
         if (isValidArray && schemaType.getEmbeddedSchemaType()?.instance === 'Number' && typeof schemaType.options?.dimension === 'number') {
             const dimension = schemaType.options?.dimension;
-            schemaType.validate((value: number[] | null) => {
+            schemaType.validate((value: number[] | string | null) => {
                 if (value == null) {
+                    return true;
+                }
+                if (typeof value === 'string') {
                     return true;
                 }
                 return value.length === dimension;

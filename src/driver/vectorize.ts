@@ -12,12 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Schema, Document } from 'mongoose';
+import { Schema, Document, AnyObject } from 'mongoose';
 
 export class Vectorize extends Schema.Types.Array {
-    constructor(key: string) {
+    constructor(key: string, options: AnyObject) {
         super(key, { type: 'Number' });
+        this.options = options;
         this.instance = 'Vectorize';
+        if (typeof options?.service?.provider !== 'string') {
+            throw new Error('`provider` option for vectorize paths must be a string, got: ' + options?.service?.provider);
+        }
     }
 
     cast(val: unknown, doc: Document, init: boolean, prev: unknown, options: unknown) {

@@ -49,10 +49,13 @@ describe('TABLES: vector search', function() {
 
         const existingTables = await mongooseInstance.connection.listTables();
         const vectorTable = existingTables.find(t => t.name === 'vector_table');
-        if (!vectorTable) {
-            await mongooseInstance.connection.createTable('vector_table', tableDefinitionFromSchema(vectorSchema));
-        } else if (!vectorTable.definition.columns.vector || vectorTable.definition.columns.vector.type !== 'vector' || vectorTable.definition.columns.vector.dimension !== 2) {
-            await mongooseInstance.connection.dropTable('vector_table');
+        const hasValidVectorDefinition = vectorTable?.definition.columns.vector?.type === 'vector' &&
+            vectorTable.definition.columns.vector?.dimension === 2;
+
+        if (!hasValidVectorDefinition) {
+            if (vectorTable) {
+                await mongooseInstance.connection.dropTable('vector_table');
+            }
             await mongooseInstance.connection.createTable('vector_table', tableDefinitionFromSchema(vectorSchema));
         }
 
@@ -185,7 +188,15 @@ describe('TABLES: vector search', function() {
 describe('TABLES: vectorize', function () {
     const vectorSchema = new Schema(
         {
-            vector: { type: Vectorize, default: () => void 0, dimension: 1024 },
+            vector: {
+                type: Vectorize,
+                default: () => void 0,
+                dimension: 1024,
+                service: {
+                    provider: 'nvidia',
+                    modelName: 'NV-Embed-QA'
+                }
+            },
             name: 'String'
         },
         {
@@ -213,12 +224,14 @@ describe('TABLES: vectorize', function () {
 
         const existingTables = await mongooseInstance.connection.listTables();
         const vectorTable = existingTables.find(t => t.name === 'vector_table');
-        if (!vectorTable) {
-            await mongooseInstance.connection.createTable('vector_table', tableDefinitionFromSchema(vectorSchema));
-        } else if (!vectorTable.definition.columns.vector || vectorTable.definition.columns.vector.type !== 'vector' || vectorTable.definition.columns.vector.dimension !== 1024) {
-            await mongooseInstance.connection.dropTable('vector_table');
+        const hasValidVectorDefinition = vectorTable?.definition.columns.vector?.type === 'vector' &&
+            vectorTable.definition.columns.vector?.dimension === 1024;
+
+        if (!hasValidVectorDefinition) {
+            if (vectorTable) {
+                await mongooseInstance.connection.dropTable('vector_table');
+            }
             const tableDefinition = tableDefinitionFromSchema(vectorSchema);
-            tableDefinition.columns.vector = { type: 'vector', dimension: 1024, service: { provider: 'nvidia', modelName: 'NV-Embed-QA' } };
             await mongooseInstance.connection.createTable('vector_table', tableDefinition);
         }
 
@@ -246,5 +259,16 @@ describe('TABLES: vectorize', function () {
 
         doc = await Vector.findOne().sort({ vector: { $meta: 'mexican food' } }).orFail();
         assert.equal(doc.name, 'Recipe');
+    });
+
+    it('throws if creating a schema with Vectorize but no provider', async function () {
+        assert.throws(() => {
+            new Schema({
+                vector: {
+                    type: Vectorize,
+                    dimension: 1024
+                }
+            });
+        }, /`provider` option for vectorize paths must be a string, got: undefined/);
     });
 });
