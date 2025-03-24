@@ -1,5 +1,16 @@
-import { Schema, Document, AnyObject } from 'mongoose';
-export declare class Vectorize extends Schema.Types.Array {
-    constructor(key: string, options: AnyObject);
-    cast(val: unknown, doc: Document, init: boolean, prev: unknown, options: unknown): any;
+import { Schema, Document } from 'mongoose';
+interface VectorizeOptions {
+    service: {
+        provider: string;
+        modelName: string;
+        authentication?: Record<string, unknown>;
+        parameters?: Record<string, unknown>;
+    };
+    dimension: number;
 }
+export declare class Vectorize extends Schema.Types.Array {
+    constructor(key: string, options: VectorizeOptions);
+    cast(val: unknown, doc: Document, init: boolean, prev: unknown, options: unknown): any;
+    clone(): Vectorize;
+}
+export {};

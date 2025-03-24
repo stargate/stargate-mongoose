@@ -12,10 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Schema, Document, AnyObject } from 'mongoose';
+import { Schema, Document } from 'mongoose';
+
+interface VectorizeOptions {
+  service: {
+    provider: string;
+    modelName: string;
+    authentication?: Record<string, unknown>;
+    parameters?: Record<string, unknown>;
+  },
+  dimension: number;
+}
 
 export class Vectorize extends Schema.Types.Array {
-    constructor(key: string, options: AnyObject) {
+    constructor(key: string, options: VectorizeOptions) {
         super(key, { type: 'Number' });
         this.options = options;
         this.instance = 'Vectorize';
@@ -29,6 +39,19 @@ export class Vectorize extends Schema.Types.Array {
             return val;
         }
         return super.cast(val, doc, init, prev, options);
+    }
+
+    // Overwritten to account for Mongoose SchemaArray constructor taking different arguments than Vectorize
+    clone(): Vectorize {
+        const options = Object.assign({}, this.options) as VectorizeOptions;
+        const schematype = new Vectorize(this.path, options);
+        schematype.validators = this.validators.slice();
+        // @ts-expect-error Mongoose doesn't expose the type of `requiredValidator`
+        if (this.requiredValidator !== undefined) {
+            // @ts-expect-error Mongoose doesn't expose the type of `requiredValidator`
+            schematype.requiredValidator = this.requiredValidator;
+        }
+        return schematype;
     }
 }
 

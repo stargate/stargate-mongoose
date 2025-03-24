@@ -30,6 +30,17 @@ class Vectorize extends mongoose_1.Schema.Types.Array {
         }
         return super.cast(val, doc, init, prev, options);
     }
+    clone() {
+        const options = Object.assign({}, this.options);
+        const schematype = new Vectorize(this.path, options);
+        schematype.validators = this.validators.slice();
+        // @ts-expect-error Mongoose doesn't expose the type of `requiredValidator`
+        if (this.requiredValidator !== undefined) {
+            // @ts-expect-error Mongoose doesn't expose the type of `requiredValidator`
+            schematype.requiredValidator = this.requiredValidator;
+        }
+        return schematype;
+    }
 }
 exports.Vectorize = Vectorize;
 // @ts-expect-error needs override because Mongoose hard-codes `schemaName` type
