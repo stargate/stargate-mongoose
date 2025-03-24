@@ -22,4 +22,7 @@ import { handleVectorFieldsProjection, addVectorDimensionValidator } from './plu
 
 export const plugins = [handleVectorFieldsProjection, addVectorDimensionValidator];
 
+import { Vectorize } from './vectorize';
+export const SchemaTypes = { Vectorize };
+
 export type StargateMongoose = Mongoose & { connection: Connection, connections: Connection[] };
