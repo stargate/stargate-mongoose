@@ -14,7 +14,7 @@
 
 export { Connection } from './connection';
 export { Collection, OperationNotSupportedError } from './collection';
-export { Vectorize } from './vectorize';
+export { Vectorize, VectorizeOptions } from './vectorize';
 
 import { Connection } from './connection';
 import { Mongoose } from 'mongoose';

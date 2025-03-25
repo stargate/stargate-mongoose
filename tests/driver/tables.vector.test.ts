@@ -14,7 +14,7 @@
 
 import { FindCursor } from '@datastax/astra-db-ts';
 import { InferSchemaType, Model, Schema, Types } from 'mongoose';
-import { Vectorize } from '../../';
+import { Vectorize } from '../../src/driver/vectorize';
 import assert from 'assert';
 import { testClient } from '../fixtures';
 import { createMongooseCollections, mongooseInstanceTables as mongooseInstance } from '../mongooseFixtures';
@@ -186,17 +186,22 @@ describe('TABLES: vector search', function() {
 });
 
 describe('TABLES: vectorize', function () {
-    const vectorSchema = new Schema(
+    interface IVector {
+        vector: string | number[] | null;
+        name?: string | null;
+    }
+    const vectorSchema = new Schema<IVector>(
         {
-            vector: {
-                type: Vectorize,
-                default: () => void 0,
+            // Mongoose supports setting paths to SchemaType instances at runtime, but adding
+            // TypeScript support for this has proven tricky, which is why there is an `as` workaround
+            vector: new Vectorize('vector', {
+                default: [],
                 dimension: 1024,
                 service: {
                     provider: 'nvidia',
                     modelName: 'NV-Embed-QA'
                 }
-            },
+            }) as unknown as 'Vectorize',
             name: 'String'
         },
         {
@@ -247,8 +252,13 @@ describe('TABLES: vectorize', function () {
         assert.ok(_id);
         const fromDb = await Vector.findById(_id).orFail();
         await fromDb.validate();
+
+        const _start: number | string = fromDb.vector![0];
         assert.ok(Array.isArray(fromDb.vector));
         assert.equal(fromDb.vector.length, 1024);
+
+        fromDb.vector = 'Some years ago--never mind how long precisely...';
+        await fromDb.save();
     });
 
     it('supports sorting on vectorize', async function () {

@@ -1,5 +1,5 @@
-import { Schema, Document } from 'mongoose';
-interface VectorizeOptions {
+import { Schema, Document, SchemaTypeOptions } from 'mongoose';
+export interface VectorizeOptions extends SchemaTypeOptions<number[]> {
     service: {
         provider: string;
         modelName: string;
@@ -13,4 +13,3 @@ export declare class Vectorize extends Schema.Types.Array {
     cast(val: unknown, doc: Document, init: boolean, prev: unknown, options: unknown): any;
     clone(): Vectorize;
 }
-export {};

@@ -15,9 +15,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vectorize = void 0;
 const mongoose_1 = require("mongoose");
+const x = { service: { provider: 'test', modelName: 'test' }, dimension: 1, default: () => void 0 };
 class Vectorize extends mongoose_1.Schema.Types.Array {
     constructor(key, options) {
         super(key, { type: 'Number' });
+        console.log(options.default);
         this.options = options;
         this.instance = 'Vectorize';
         if (typeof options?.service?.provider !== 'string') {
@@ -30,6 +32,7 @@ class Vectorize extends mongoose_1.Schema.Types.Array {
         }
         return super.cast(val, doc, init, prev, options);
     }
+    // Overwritten to account for Mongoose SchemaArray constructor taking different arguments than Vectorize
     clone() {
         const options = Object.assign({}, this.options);
         const schematype = new Vectorize(this.path, options);

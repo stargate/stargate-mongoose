@@ -21,7 +21,7 @@ export { default as tableDefinitionFromSchema } from './tableDefinitionFromSchem
 import * as StargateMongooseDriver from './driver';
 import type { Mongoose } from 'mongoose';
 
-export { Vectorize } from './driver';
+export { Vectorize, VectorizeOptions } from './driver';
 
 export type StargateMongoose = Omit<Mongoose, 'connection'> & { connection: StargateMongooseDriver.Connection };
 

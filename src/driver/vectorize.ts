@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Schema, Document } from 'mongoose';
+import { Schema, Document, SchemaTypeOptions } from 'mongoose';
 
-interface VectorizeOptions {
+export interface VectorizeOptions extends SchemaTypeOptions<number[]> {
   service: {
     provider: string;
     modelName: string;
@@ -24,9 +24,12 @@ interface VectorizeOptions {
   dimension: number;
 }
 
+const x: VectorizeOptions = { service: { provider: 'test', modelName: 'test' }, dimension: 1, default: () => void 0 };
+
 export class Vectorize extends Schema.Types.Array {
     constructor(key: string, options: VectorizeOptions) {
         super(key, { type: 'Number' });
+        console.log(options.default);
         this.options = options;
         this.instance = 'Vectorize';
         if (typeof options?.service?.provider !== 'string') {
