@@ -253,6 +253,7 @@ describe('TABLES: vectorize', function () {
         const fromDb = await Vector.findById(_id).orFail();
         await fromDb.validate();
 
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const _start: number | string = fromDb.vector![0];
         assert.ok(Array.isArray(fromDb.vector));
         assert.equal(fromDb.vector.length, 1024);

@@ -24,8 +24,6 @@ export interface VectorizeOptions extends SchemaTypeOptions<number[]> {
   dimension: number;
 }
 
-const x: VectorizeOptions = { service: { provider: 'test', modelName: 'test' }, dimension: 1, default: () => void 0 };
-
 export class Vectorize extends Schema.Types.Array {
     constructor(key: string, options: VectorizeOptions) {
         super(key, { type: 'Number' });
