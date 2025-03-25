@@ -190,24 +190,15 @@ describe('TABLES: vectorize', function () {
         vector: string | number[] | null;
         name?: string | null;
     }
-    const vectorSchema = new Schema<IVector>(
-        {
-            // Mongoose supports setting paths to SchemaType instances at runtime, but adding
-            // TypeScript support for this has proven tricky, which is why there is an `as` workaround
-            vector: new Vectorize('vector', {
-                default: [],
-                dimension: 1024,
-                service: {
-                    provider: 'nvidia',
-                    modelName: 'NV-Embed-QA'
-                }
-            }) as unknown as 'Vectorize',
-            name: 'String'
-        },
-        {
-            autoCreate: false
+    const vectorSchema = new Schema<IVector>({ name: 'String' }, { autoCreate: false });
+    vectorSchema.path('vector', new Vectorize('vector', {
+        default: [],
+        dimension: 1024,
+        service: {
+            provider: 'nvidia',
+            modelName: 'NV-Embed-QA'
         }
-    );
+    }));
 
     let Vector: Model<InferSchemaType<typeof vectorSchema>>;
 

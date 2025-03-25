@@ -15,7 +15,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vectorize = void 0;
 const mongoose_1 = require("mongoose");
-const x = { service: { provider: 'test', modelName: 'test' }, dimension: 1, default: () => void 0 };
 class Vectorize extends mongoose_1.Schema.Types.Array {
     constructor(key, options) {
         super(key, { type: 'Number' });
