@@ -388,8 +388,8 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     }
 
     /**
-     * List indexes not supported.
-     * @param options
+     * Returns a list of all indexes on the collection. Returns a pseudo-cursor for Mongoose compatibility.
+     * Only works in tables mode, throws an error in collections mode.
      */
     listIndexes(): { toArray: () => Promise<StargateMongooseIndexDescription[]> } {
         if (this.collection instanceof AstraCollection) {
@@ -408,9 +408,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     }
 
     /**
-     * Create a new index
+     * Create a new index. Only works in tables mode, throws an error in collections mode.
      *
-     * @param spec MongoDB-style index spec for Mongoose compatibility
+     * @param indexSpec MongoDB-style index spec for Mongoose compatibility
      * @param options
      */
     async createIndex(indexSpec: Record<string, boolean>, options?: CreateTableIndexOptions & { name?: string }): Promise<void> {
@@ -434,7 +434,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     }
 
     /**
-     * Create a new vector index
+     * Create a new vector index. Only works in tables mode, throws an error in collections mode.
      *
      * @param name
      * @param column
@@ -448,7 +448,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     }
 
     /**
-     * Drop an existin index
+     * Drop an existing index by name. Only works in tables mode, throws an error in collections mode.
      *
      * @param name
      */
@@ -461,6 +461,8 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
     /**
      * Watch operation not supported.
+     *
+     * @ignore
      */
     watch() {
         throw new OperationNotSupportedError('watch() Not Implemented');
@@ -468,6 +470,8 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
     /**
      * Distinct operation not supported.
+     *
+     * @ignore
      */
     distinct() {
         throw new OperationNotSupportedError('distinct() Not Implemented');

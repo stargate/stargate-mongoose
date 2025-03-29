@@ -3,30 +3,64 @@
 
 <dl>
 <dt><a href="#Collection">Collection</a></dt>
-<dd><p>Collection operations supported by the driver.</p></dd>
+<dd><p>Collection operations supported by the driver. This class is called &quot;Collection&quot; for consistency with Mongoose, because
+in Mongoose a Collection is the interface that Models and Queries use to communicate with the database. However, from
+an Astra perspective, this class can be a wrapper around a Collection <strong>or</strong> a Table depending on the corresponding db's
+<code>useTables</code> option.</p></dd>
+<dt><a href="#Connection">Connection</a></dt>
+<dd><p>Extends Mongoose's Connection class to provide compatibility with Data API. Responsible for maintaining the
+connection to Data API.</p></dd>
+<dt><a href="#BaseDb">BaseDb</a></dt>
+<dd><p>Defines the base database class for interacting with Astra DB. Responsible for creating collections and tables.
+This class abstracts the operations for both collections mode and tables mode. There is a separate TablesDb class
+for tables and CollectionsDb class for collections.</p></dd>
+<dt><a href="#CollectionsDb">CollectionsDb</a></dt>
+<dd></dd>
+<dt><a href="#TablesDb">TablesDb</a></dt>
+<dd></dd>
+<dt><a href="#Vectorize">Vectorize</a></dt>
+<dd><p>Vectorize is a custom Mongoose SchemaType that allows you set a vector value to a string
+for tables mode vectorize API. A Vectorize path is an array of numbers that can also be set to a string.</p></dd>
+</dl>
+
+## Members
+
+<dl>
+<dt><a href="#BaseDb">BaseDb</a> ⇐ <code><a href="#BaseDb">BaseDb</a></code></dt>
+<dd><p>Db instance that creates and manages collections.</p></dd>
+<dt><a href="#CollectionsDb">CollectionsDb</a> ⇐ <code><a href="#BaseDb">BaseDb</a></code></dt>
+<dd><p>Db instance that creates and manages tables.</p></dd>
 </dl>
 
 ## Functions
 
 <dl>
-<dt><a href="#createAstraUri">createAstraUri(apiEndpoint, applicationToken, namespace, baseApiPath, logLevel, authHeaderName)</a> ⇒</dt>
-<dd><p>Create an Astra connection URI while connecting to Astra Data API</p></dd>
-<dt><a href="#createStargateUri">createStargateUri(baseUrl, baseAuthUrl, keyspace, username, password, logLevel)</a> ⇒</dt>
-<dd><p>Create a Data API connection URI while connecting to Open source Data API</p></dd>
-<dt><a href="#getStargateAccessToken">getStargateAccessToken(authUrl, username, password)</a> ⇒</dt>
-<dd><p>Get an access token from Stargate (this is useful while connecting to open source Data API)</p></dd>
+<dt><a href="#createAstraUri">createAstraUri()</a></dt>
+<dd><p>Create an Astra connection URI while connecting to Astra Data API.</p></dd>
+<dt><a href="#handleVectorFieldsProjection">handleVectorFieldsProjection()</a></dt>
+<dd><p>Mongoose plugin to handle adding <code>$vector</code> to the projection by default if <code>$vector</code> has <code>select: true</code>.
+Because <code>$vector</code> is deselected by default, this plugin makes it possible for the user to include <code>$vector</code>
+by default from their schema.</p>
+<p>You do not need to call this function directly. Mongoose applies this plugin automatically when you call <code>setDriver()</code>.</p></dd>
+<dt><a href="#addVectorDimensionValidator">addVectorDimensionValidator()</a></dt>
+<dd><p>Mongoose plugin to validate arrays of numbers that have a <code>dimension</code> property. Ensure that the array
+is either nullish or has a length equal to the dimension.</p>
+<p>You do not need to call this function directly. Mongoose applies this plugin automatically when you call <code>setDriver()</code>.</p></dd>
+<dt><a href="#tableDefinitionFromSchema">tableDefinitionFromSchema()</a></dt>
+<dd><p>Given a Mongoose schema, create an equivalent Data API table definition for use with <code>createTable()</code></p></dd>
 </dl>
 
 <a name="Collection"></a>
 
 ## Collection
-<p>Collection operations supported by the driver.</p>
+<p>Collection operations supported by the driver. This class is called &quot;Collection&quot; for consistency with Mongoose, because
+in Mongoose a Collection is the interface that Models and Queries use to communicate with the database. However, from
+an Astra perspective, this class can be a wrapper around a Collection <strong>or</strong> a Table depending on the corresponding db's
+<code>useTables</code> option.</p>
 
 **Kind**: global class  
 
 * [Collection](#Collection)
-    * ~~[.count()](#Collection+count)~~
-    * ~~[.count(filter)](#Collection+count)~~
     * [.countDocuments(filter)](#Collection+countDocuments)
     * [.find(filter, options, callback)](#Collection+find)
     * [.findOne(filter, options)](#Collection+findOne)
@@ -37,39 +71,17 @@
     * [.findOneAndReplace(filter, newDoc, options)](#Collection+findOneAndReplace)
     * [.deleteMany(filter)](#Collection+deleteMany)
     * [.deleteOne(filter, options, callback)](#Collection+deleteOne)
+    * [.replaceOne(filter, replacement, options)](#Collection+replaceOne)
     * [.updateOne(filter, update, options)](#Collection+updateOne)
     * [.updateMany(filter, update, options)](#Collection+updateMany)
+    * [.estimatedDocumentCount()](#Collection+estimatedDocumentCount)
+    * [.runCommand(command)](#Collection+runCommand)
     * [.bulkWrite(ops, options)](#Collection+bulkWrite)
     * [.aggregate(pipeline, options)](#Collection+aggregate)
-    * [.bulkSave(docs, options)](#Collection+bulkSave)
-    * [.cleanIndexes(options)](#Collection+cleanIndexes)
-    * [.listIndexes(options)](#Collection+listIndexes)
-    * [.createIndex(fieldOrSpec, options)](#Collection+createIndex)
-    * [.dropIndexes()](#Collection+dropIndexes)
-    * [.watch()](#Collection+watch)
-    * [.distinct()](#Collection+distinct)
-    * [.estimatedDocumentCount()](#Collection+estimatedDocumentCount)
-    * [.replaceOne()](#Collection+replaceOne)
-    * [.syncIndexes()](#Collection+syncIndexes)
-
-<a name="Collection+count"></a>
-
-### ~~collection.count()~~
-***Deprecated***
-
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-<a name="Collection+count"></a>
-
-### ~~collection.count(filter)~~
-***Deprecated***
-
-<p>Count documents in the collection that match the given filter. Use countDocuments() instead.</p>
-
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-
-| Param |
-| --- |
-| filter | 
+    * [.listIndexes()](#Collection+listIndexes)
+    * [.createIndex(indexSpec, options)](#Collection+createIndex)
+    * [.createVectorIndex(name, column, options)](#Collection+createVectorIndex)
+    * [.dropIndex(name)](#Collection+dropIndex)
 
 <a name="Collection+countDocuments"></a>
 
@@ -192,6 +204,20 @@
 | options | 
 | callback | 
 
+<a name="Collection+replaceOne"></a>
+
+### collection.replaceOne(filter, replacement, options)
+<p>Update a single document in a collection that matches the given filter, replacing it with <code>replacement</code>.
+Converted to a <code>findOneAndReplace()</code> under the hood.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| filter | 
+| replacement | 
+| options | 
+
 <a name="Collection+updateOne"></a>
 
 ### collection.updateOne(filter, update, options)
@@ -218,6 +244,23 @@
 | update | 
 | options | 
 
+<a name="Collection+estimatedDocumentCount"></a>
+
+### collection.estimatedDocumentCount()
+<p>Get the estimated number of documents in a collection based on collection metadata</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+<a name="Collection+runCommand"></a>
+
+### collection.runCommand(command)
+<p>Run an arbitrary command against this collection's http client</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| command | 
+
 <a name="Collection+bulkWrite"></a>
 
 ### collection.bulkWrite(ops, options)
@@ -242,133 +285,557 @@
 | pipeline | 
 | options | 
 
-<a name="Collection+bulkSave"></a>
-
-### collection.bulkSave(docs, options)
-<p>Bulk Save not supported.</p>
-
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-
-| Param |
-| --- |
-| docs | 
-| options | 
-
-<a name="Collection+cleanIndexes"></a>
-
-### collection.cleanIndexes(options)
-<p>Clean indexes not supported.</p>
-
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-
-| Param |
-| --- |
-| options | 
-
 <a name="Collection+listIndexes"></a>
 
-### collection.listIndexes(options)
-<p>List indexes not supported.</p>
+### collection.listIndexes()
+<p>Returns a list of all indexes on the collection. Returns a pseudo-cursor for Mongoose compatibility.
+Only works in tables mode, throws an error in collections mode.</p>
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
-
-| Param |
-| --- |
-| options | 
-
 <a name="Collection+createIndex"></a>
 
-### collection.createIndex(fieldOrSpec, options)
-<p>Create index not supported.</p>
+### collection.createIndex(indexSpec, options)
+<p>Create a new index. Only works in tables mode, throws an error in collections mode.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param | Description |
+| --- | --- |
+| indexSpec | <p>MongoDB-style index spec for Mongoose compatibility</p> |
+| options |  |
+
+<a name="Collection+createVectorIndex"></a>
+
+### collection.createVectorIndex(name, column, options)
+<p>Create a new vector index. Only works in tables mode, throws an error in collections mode.</p>
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 
 | Param |
 | --- |
-| fieldOrSpec | 
+| name | 
+| column | 
 | options | 
 
-<a name="Collection+dropIndexes"></a>
+<a name="Collection+dropIndex"></a>
 
-### collection.dropIndexes()
-<p>Drop indexes not supported.</p>
-
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-<a name="Collection+watch"></a>
-
-### collection.watch()
-<p>Watch operation not supported.</p>
+### collection.dropIndex(name)
+<p>Drop an existing index by name. Only works in tables mode, throws an error in collections mode.</p>
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
-<a name="Collection+distinct"></a>
 
-### collection.distinct()
-<p>Distinct operation not supported.</p>
+| Param |
+| --- |
+| name | 
 
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-<a name="Collection+estimatedDocumentCount"></a>
+<a name="Connection"></a>
 
-### collection.estimatedDocumentCount()
-<p>Estimated document count operation not supported.</p>
+## Connection
+<p>Extends Mongoose's Connection class to provide compatibility with Data API. Responsible for maintaining the
+connection to Data API.</p>
 
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-<a name="Collection+replaceOne"></a>
+**Kind**: global class  
 
-### collection.replaceOne()
-<p>Replace one operation not supported.</p>
+* [Connection](#Connection)
+    * [.collection(name, options)](#Connection+collection)
+    * [.createCollection(name, options)](#Connection+createCollection)
+    * [.createTable(name, definition)](#Connection+createTable)
+    * [.dropCollection(name)](#Connection+dropCollection)
+    * [.dropTable(name)](#Connection+dropTable)
+    * [.createNamespace(namespace)](#Connection+createNamespace)
+    * [.listCollections()](#Connection+listCollections)
+    * [.listTables()](#Connection+listTables)
+    * [.runCommand(command)](#Connection+runCommand)
+    * [.listDatabases()](#Connection+listDatabases)
+    * [.openUri(uri, options)](#Connection+openUri)
+    * [.createClient(uri, options)](#Connection+createClient)
+    * [.asPromise()](#Connection+asPromise)
 
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-<a name="Collection+syncIndexes"></a>
+<a name="Connection+collection"></a>
 
-### collection.syncIndexes()
-<p>Sync indexes operation not supported.</p>
+### connection.collection(name, options)
+<p>Get a collection by name. Cached in <code>this.collections</code>.</p>
 
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+
+| Param |
+| --- |
+| name | 
+| options | 
+
+<a name="Connection+createCollection"></a>
+
+### connection.createCollection(name, options)
+<p>Create a new collection in the database</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the collection to create</p> |
+| options |  |
+
+<a name="Connection+createTable"></a>
+
+### connection.createTable(name, definition)
+<p>Create a new table in the database</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+
+| Param |
+| --- |
+| name | 
+| definition | 
+
+<a name="Connection+dropCollection"></a>
+
+### connection.dropCollection(name)
+<p>Drop a collection from the database</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+
+| Param |
+| --- |
+| name | 
+
+<a name="Connection+dropTable"></a>
+
+### connection.dropTable(name)
+<p>Drop a table from the database</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the table to drop</p> |
+
+<a name="Connection+createNamespace"></a>
+
+### connection.createNamespace(namespace)
+<p>Create a new namespace in the database.
+Throws an error if connecting to Astra, as Astra does not support creating namespaces through Data API.</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+
+| Param | Description |
+| --- | --- |
+| namespace | <p>The name of the namespace to create</p> |
+
+<a name="Connection+listCollections"></a>
+
+### connection.listCollections()
+<p>List all collections in the database</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+<a name="Connection+listTables"></a>
+
+### connection.listTables()
+<p>List all tables in the database</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+<a name="Connection+runCommand"></a>
+
+### connection.runCommand(command)
+<p>Run an arbitrary Data API command on the database</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+
+| Param | Description |
+| --- | --- |
+| command | <p>The command to run</p> |
+
+<a name="Connection+listDatabases"></a>
+
+### connection.listDatabases()
+<p>List all keyspaces. Only available in local Data API, not Astra. Called &quot;listDatabases&quot; for Mongoose compatibility</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+<a name="Connection+openUri"></a>
+
+### connection.openUri(uri, options)
+<p>Logic for creating a connection to Data API. Mongoose calls <code>openUri()</code> internally when the
+user calls <code>mongoose.create()</code> or <code>mongoose.createConnection(uri)</code></p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+
+| Param | Description |
+| --- | --- |
+| uri | <p>the connection string</p> |
+| options |  |
+
+<a name="Connection+createClient"></a>
+
+### connection.createClient(uri, options)
+<p>Create an astra-db-ts client and corresponding objects: client, db, admin.</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+
+| Param | Description |
+| --- | --- |
+| uri | <p>the connection string</p> |
+| options |  |
+
+<a name="Connection+asPromise"></a>
+
+### connection.asPromise()
+<p>For consistency with Mongoose's API. <code>mongoose.createConnection(uri)</code> returns the connection, <strong>not</strong> a promise,
+so the Mongoose pattern to call <code>createConnection()</code> and wait for connection to succeed is
+<code>await createConnection(uri).asPromise()</code></p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+<a name="BaseDb"></a>
+
+## BaseDb
+<p>Defines the base database class for interacting with Astra DB. Responsible for creating collections and tables.
+This class abstracts the operations for both collections mode and tables mode. There is a separate TablesDb class
+for tables and CollectionsDb class for collections.</p>
+
+**Kind**: global class  
+
+* [BaseDb](#BaseDb)
+    * [.httpClient](#BaseDb+httpClient)
+    * [.createTable(name, definition)](#BaseDb+createTable)
+    * [.dropCollection(name)](#BaseDb+dropCollection)
+    * [.dropTable(name)](#BaseDb+dropTable)
+    * [.listCollections(options)](#BaseDb+listCollections)
+    * [.listTables()](#BaseDb+listTables)
+    * [.command(command)](#BaseDb+command)
+
+<a name="BaseDb+httpClient"></a>
+
+### baseDb.httpClient
+<p>Return the raw HTTP client used by astra-db-ts to talk to the db.</p>
+
+**Kind**: instance property of [<code>BaseDb</code>](#BaseDb)  
+<a name="BaseDb+createTable"></a>
+
+### baseDb.createTable(name, definition)
+<p>Create a new table with the specified name and definition</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+
+| Param |
+| --- |
+| name | 
+| definition | 
+
+<a name="BaseDb+dropCollection"></a>
+
+### baseDb.dropCollection(name)
+<p>Drop a collection by name.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the collection to be dropped.</p> |
+
+<a name="BaseDb+dropTable"></a>
+
+### baseDb.dropTable(name)
+<p>Drop a table by name. This function does <strong>not</strong> throw an error if the table does not exist.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+
+| Param |
+| --- |
+| name | 
+
+<a name="BaseDb+listCollections"></a>
+
+### baseDb.listCollections(options)
+<p>List all collections in the database.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+
+| Param | Description |
+| --- | --- |
+| options | <p>Additional options for listing collections.</p> |
+
+<a name="BaseDb+listTables"></a>
+
+### baseDb.listTables()
+<p>List all tables in the database.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+<a name="BaseDb+command"></a>
+
+### baseDb.command(command)
+<p>Execute a command against the database.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+
+| Param | Description |
+| --- | --- |
+| command | <p>The command to be executed.</p> |
+
+<a name="CollectionsDb"></a>
+
+## CollectionsDb
+**Kind**: global class  
+
+* [CollectionsDb](#CollectionsDb)
+    * [new CollectionsDb(astraDb, keyspaceName)](#new_CollectionsDb_new)
+    * [.collection(name)](#CollectionsDb+collection)
+    * [.createCollection()](#CollectionsDb+createCollection)
+
+<a name="new_CollectionsDb_new"></a>
+
+### new CollectionsDb(astraDb, keyspaceName)
+<p>Creates an instance of CollectionsDb. Do not instantiate this class directly.</p>
+
+
+| Param | Description |
+| --- | --- |
+| astraDb | <p>The AstraDb instance to interact with the database.</p> |
+| keyspaceName | <p>The name of the keyspace to use.</p> |
+
+<a name="CollectionsDb+collection"></a>
+
+### collectionsDb.collection(name)
+<p>Get a collection by name.</p>
+
+**Kind**: instance method of [<code>CollectionsDb</code>](#CollectionsDb)  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the collection.</p> |
+
+<a name="CollectionsDb+createCollection"></a>
+
+### collectionsDb.createCollection()
+<p>Send a CreateCollection command to Data API.</p>
+
+**Kind**: instance method of [<code>CollectionsDb</code>](#CollectionsDb)  
+<a name="TablesDb"></a>
+
+## TablesDb
+**Kind**: global class  
+
+* [TablesDb](#TablesDb)
+    * [new TablesDb(astraDb, keyspaceName)](#new_TablesDb_new)
+    * [.collection(name)](#TablesDb+collection)
+    * [.createCollection()](#TablesDb+createCollection)
+
+<a name="new_TablesDb_new"></a>
+
+### new TablesDb(astraDb, keyspaceName)
+<p>Creates an instance of TablesDb. Do not instantiate this class directly.</p>
+
+
+| Param | Description |
+| --- | --- |
+| astraDb | <p>The AstraDb instance to interact with the database.</p> |
+| keyspaceName | <p>The name of the keyspace to use.</p> |
+
+<a name="TablesDb+collection"></a>
+
+### tablesDb.collection(name)
+<p>Get a table by name. This method is called <code>collection()</code> for compatibility with Mongoose, which calls
+this method for getting a Mongoose Collection instance, which may map to a table in Astra DB when using tables mode.</p>
+
+**Kind**: instance method of [<code>TablesDb</code>](#TablesDb)  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the table.</p> |
+
+<a name="TablesDb+createCollection"></a>
+
+### tablesDb.createCollection()
+<p>Throws an error, stargate-mongoose does not support creating collections in tables mode.</p>
+
+**Kind**: instance method of [<code>TablesDb</code>](#TablesDb)  
+<a name="Vectorize"></a>
+
+## Vectorize
+<p>Vectorize is a custom Mongoose SchemaType that allows you set a vector value to a string
+for tables mode vectorize API. A Vectorize path is an array of numbers that can also be set to a string.</p>
+
+**Kind**: global class  
+
+* [Vectorize](#Vectorize)
+    * [new Vectorize(key, options)](#new_Vectorize_new)
+    * [.cast()](#Vectorize+cast)
+    * [.clone()](#Vectorize+clone)
+
+<a name="new_Vectorize_new"></a>
+
+### new Vectorize(key, options)
+<p>Create a new instance of the Vectorize SchemaType. You may need to instantiate this type to add to your Mongoose
+schema using <code>Schema.prototype.path()</code> for better TypeScript support.</p>
+
+
+| Param | Description |
+| --- | --- |
+| key | <p>the path to this vectorize field in your schema</p> |
+| options | <p>vectorize options that define how to interact with the vectorize service, including the dimension</p> |
+
+<a name="Vectorize+cast"></a>
+
+### vectorize.cast()
+<p>Cast a given value to the appropriate type. Defers to the default casting behavior for Mongoose number arrays, with
+the one exception being strings.</p>
+
+**Kind**: instance method of [<code>Vectorize</code>](#Vectorize)  
+<a name="Vectorize+clone"></a>
+
+### vectorize.clone()
+<p>Overwritten to account for Mongoose SchemaArray constructor taking different arguments than Vectorize</p>
+
+**Kind**: instance method of [<code>Vectorize</code>](#Vectorize)  
+<a name="BaseDb"></a>
+
+## BaseDb ⇐ [<code>BaseDb</code>](#BaseDb)
+<p>Db instance that creates and manages collections.</p>
+
+**Kind**: global variable  
+**Extends**: [<code>BaseDb</code>](#BaseDb)  
+
+* [BaseDb](#BaseDb) ⇐ [<code>BaseDb</code>](#BaseDb)
+    * [.httpClient](#BaseDb+httpClient)
+    * [.createTable(name, definition)](#BaseDb+createTable)
+    * [.dropCollection(name)](#BaseDb+dropCollection)
+    * [.dropTable(name)](#BaseDb+dropTable)
+    * [.listCollections(options)](#BaseDb+listCollections)
+    * [.listTables()](#BaseDb+listTables)
+    * [.command(command)](#BaseDb+command)
+
+<a name="BaseDb+httpClient"></a>
+
+### baseDb.httpClient
+<p>Return the raw HTTP client used by astra-db-ts to talk to the db.</p>
+
+**Kind**: instance property of [<code>BaseDb</code>](#BaseDb)  
+<a name="BaseDb+createTable"></a>
+
+### baseDb.createTable(name, definition)
+<p>Create a new table with the specified name and definition</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+
+| Param |
+| --- |
+| name | 
+| definition | 
+
+<a name="BaseDb+dropCollection"></a>
+
+### baseDb.dropCollection(name)
+<p>Drop a collection by name.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the collection to be dropped.</p> |
+
+<a name="BaseDb+dropTable"></a>
+
+### baseDb.dropTable(name)
+<p>Drop a table by name. This function does <strong>not</strong> throw an error if the table does not exist.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+
+| Param |
+| --- |
+| name | 
+
+<a name="BaseDb+listCollections"></a>
+
+### baseDb.listCollections(options)
+<p>List all collections in the database.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+
+| Param | Description |
+| --- | --- |
+| options | <p>Additional options for listing collections.</p> |
+
+<a name="BaseDb+listTables"></a>
+
+### baseDb.listTables()
+<p>List all tables in the database.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+<a name="BaseDb+command"></a>
+
+### baseDb.command(command)
+<p>Execute a command against the database.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+
+| Param | Description |
+| --- | --- |
+| command | <p>The command to be executed.</p> |
+
+<a name="CollectionsDb"></a>
+
+## CollectionsDb ⇐ [<code>BaseDb</code>](#BaseDb)
+<p>Db instance that creates and manages tables.</p>
+
+**Kind**: global variable  
+**Extends**: [<code>BaseDb</code>](#BaseDb)  
+
+* [CollectionsDb](#CollectionsDb) ⇐ [<code>BaseDb</code>](#BaseDb)
+    * [new CollectionsDb(astraDb, keyspaceName)](#new_CollectionsDb_new)
+    * [.collection(name)](#CollectionsDb+collection)
+    * [.createCollection()](#CollectionsDb+createCollection)
+
+<a name="new_CollectionsDb_new"></a>
+
+### new CollectionsDb(astraDb, keyspaceName)
+<p>Creates an instance of CollectionsDb. Do not instantiate this class directly.</p>
+
+
+| Param | Description |
+| --- | --- |
+| astraDb | <p>The AstraDb instance to interact with the database.</p> |
+| keyspaceName | <p>The name of the keyspace to use.</p> |
+
+<a name="CollectionsDb+collection"></a>
+
+### collectionsDb.collection(name)
+<p>Get a collection by name.</p>
+
+**Kind**: instance method of [<code>CollectionsDb</code>](#CollectionsDb)  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the collection.</p> |
+
+<a name="CollectionsDb+createCollection"></a>
+
+### collectionsDb.createCollection()
+<p>Send a CreateCollection command to Data API.</p>
+
+**Kind**: instance method of [<code>CollectionsDb</code>](#CollectionsDb)  
 <a name="createAstraUri"></a>
 
-## createAstraUri(apiEndpoint, applicationToken, namespace, baseApiPath, logLevel, authHeaderName) ⇒
-<p>Create an Astra connection URI while connecting to Astra Data API</p>
+## createAstraUri()
+<p>Create an Astra connection URI while connecting to Astra Data API.</p>
 
 **Kind**: global function  
-**Returns**: <p>URL as string</p>  
+<a name="handleVectorFieldsProjection"></a>
 
-| Param | Description |
-| --- | --- |
-| databaseId | <p>the database id of the Astra database</p> |
-| region | <p>the region of the Astra database</p> |
-| keyspace | <p>the keyspace to connect to</p> |
-| applicationToken | <p>an Astra application token</p> |
-| baseApiPath | <p>baseAPI path defaults to /api/json/v1</p> |
-| logLevel | <p>an winston log level (error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6)</p> |
-| authHeaderName |  |
-
-<a name="createStargateUri"></a>
-
-## createStargateUri(baseUrl, baseAuthUrl, keyspace, username, password, logLevel) ⇒
-<p>Create a Data API connection URI while connecting to Open source Data API</p>
+## handleVectorFieldsProjection()
+<p>Mongoose plugin to handle adding <code>$vector</code> to the projection by default if <code>$vector</code> has <code>select: true</code>.
+Because <code>$vector</code> is deselected by default, this plugin makes it possible for the user to include <code>$vector</code>
+by default from their schema.</p>
+<p>You do not need to call this function directly. Mongoose applies this plugin automatically when you call <code>setDriver()</code>.</p>
 
 **Kind**: global function  
-**Returns**: <p>URL as string</p>  
+<a name="addVectorDimensionValidator"></a>
 
-| Param | Description |
-| --- | --- |
-| baseUrl | <p>the base URL of the Data API</p> |
-| baseAuthUrl | <p>the base URL of the Data API auth (this is generally the Stargate Coordinator auth URL)</p> |
-| keyspace | <p>the keyspace to connect to</p> |
-| username | <p>the username to connect with</p> |
-| password | <p>the password to connect with</p> |
-| logLevel | <p>an winston log level (error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6)</p> |
-
-<a name="getStargateAccessToken"></a>
-
-## getStargateAccessToken(username, password) ⇒
-<p>Get an access token from Stargate (this is useful while connecting to open source Data API)</p>
+## addVectorDimensionValidator()
+<p>Mongoose plugin to validate arrays of numbers that have a <code>dimension</code> property. Ensure that the array
+is either nullish or has a length equal to the dimension.</p>
+<p>You do not need to call this function directly. Mongoose applies this plugin automatically when you call <code>setDriver()</code>.</p>
 
 **Kind**: global function  
-**Returns**: <p>access token as string</p>  
+<a name="tableDefinitionFromSchema"></a>
 
-| Param | Description |
-| --- | --- |
-| username | <p>Username</p> |
-| password | <p>Password</p> |
+## tableDefinitionFromSchema()
+<p>Given a Mongoose schema, create an equivalent Data API table definition for use with <code>createTable()</code></p>
 
+**Kind**: global function  

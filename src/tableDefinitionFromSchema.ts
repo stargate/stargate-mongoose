@@ -17,6 +17,9 @@ import { Schema, SchemaType } from 'mongoose';
 
 type AllowedDataAPITypes = 'text' | 'double' | 'timestamp' | 'boolean' | 'decimal' | 'varint' | 'blob' | 'uuid' | 'int';
 
+/**
+ * Given a Mongoose schema, create an equivalent Data API table definition for use with `createTable()`
+ */
 export default function tableDefinitionFromSchema(schema: Schema): CreateTableDefinition {
     const tableDefinition: CreateTableDefinition = {
         primaryKey: '_id',

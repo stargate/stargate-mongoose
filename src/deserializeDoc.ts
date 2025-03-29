@@ -22,6 +22,7 @@ import { DataAPIBlob, DataAPIVector } from '@datastax/astra-db-ts';
  *
  * @param doc
  * @returns void
+ * @ignore
  */
 
 export default function deserializeDoc<DocType extends Record<string, unknown> = Record<string, unknown>>(doc: Record<string, unknown> | null): DocType | null {

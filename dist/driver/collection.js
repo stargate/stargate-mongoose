@@ -317,8 +317,8 @@ class Collection extends collection_1.default {
         throw new OperationNotSupportedError('aggregate() Not Implemented');
     }
     /**
-     * List indexes not supported.
-     * @param options
+     * Returns a list of all indexes on the collection. Returns a pseudo-cursor for Mongoose compatibility.
+     * Only works in tables mode, throws an error in collections mode.
      */
     listIndexes() {
         if (this.collection instanceof astra_db_ts_1.Collection) {
@@ -336,9 +336,9 @@ class Collection extends collection_1.default {
         };
     }
     /**
-     * Create a new index
+     * Create a new index. Only works in tables mode, throws an error in collections mode.
      *
-     * @param spec MongoDB-style index spec for Mongoose compatibility
+     * @param indexSpec MongoDB-style index spec for Mongoose compatibility
      * @param options
      */
     async createIndex(indexSpec, options) {
@@ -361,7 +361,7 @@ class Collection extends collection_1.default {
         });
     }
     /**
-     * Create a new vector index
+     * Create a new vector index. Only works in tables mode, throws an error in collections mode.
      *
      * @param name
      * @param column
@@ -374,7 +374,7 @@ class Collection extends collection_1.default {
         return this.collection.createVectorIndex(name, column, { options, ifNotExists: true });
     }
     /**
-     * Drop an existin index
+     * Drop an existing index by name. Only works in tables mode, throws an error in collections mode.
      *
      * @param name
      */

@@ -24,10 +24,20 @@ export interface VectorizeOptions extends SchemaTypeOptions<number[]> {
   dimension: number;
 }
 
+/**
+ * Vectorize is a custom Mongoose SchemaType that allows you set a vector value to a string
+ * for tables mode vectorize API. A Vectorize path is an array of numbers that can also be set to a string.
+ */
+
 export class Vectorize extends Schema.Types.Array {
+    /**
+     * Create a new instance of the Vectorize SchemaType. You may need to instantiate this type to add to your Mongoose
+     * schema using `Schema.prototype.path()` for better TypeScript support.
+     * @param key the path to this vectorize field in your schema
+     * @param options vectorize options that define how to interact with the vectorize service, including the dimension
+     */
     constructor(key: string, options: VectorizeOptions) {
         super(key, { type: 'Number' });
-        console.log(options.default);
         this.options = options;
         this.instance = 'Vectorize';
         if (typeof options?.service?.provider !== 'string') {
@@ -35,6 +45,10 @@ export class Vectorize extends Schema.Types.Array {
         }
     }
 
+    /**
+     * Cast a given value to the appropriate type. Defers to the default casting behavior for Mongoose number arrays, with
+     * the one exception being strings.
+     */
     cast(val: unknown, doc: Document, init: boolean, prev: unknown, options: unknown) {
         if (!init && typeof val === 'string') {
             return val;
@@ -42,7 +56,9 @@ export class Vectorize extends Schema.Types.Array {
         return super.cast(val, doc, init, prev, options);
     }
 
-    // Overwritten to account for Mongoose SchemaArray constructor taking different arguments than Vectorize
+    /**
+     * Overwritten to account for Mongoose SchemaArray constructor taking different arguments than Vectorize
+     */
     clone(): Vectorize {
         const options = Object.assign({}, this.options) as VectorizeOptions;
         const schematype = new Vectorize(this.path, options);

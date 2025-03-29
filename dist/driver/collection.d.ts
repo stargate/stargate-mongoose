@@ -174,23 +174,23 @@ export declare class Collection<DocType extends Record<string, unknown> = Record
      */
     aggregate(_pipeline: Record<string, unknown>[], _options?: Record<string, unknown>): void;
     /**
-     * List indexes not supported.
-     * @param options
+     * Returns a list of all indexes on the collection. Returns a pseudo-cursor for Mongoose compatibility.
+     * Only works in tables mode, throws an error in collections mode.
      */
     listIndexes(): {
         toArray: () => Promise<StargateMongooseIndexDescription[]>;
     };
     /**
-     * Create a new index
+     * Create a new index. Only works in tables mode, throws an error in collections mode.
      *
-     * @param spec MongoDB-style index spec for Mongoose compatibility
+     * @param indexSpec MongoDB-style index spec for Mongoose compatibility
      * @param options
      */
     createIndex(indexSpec: Record<string, boolean>, options?: CreateTableIndexOptions & {
         name?: string;
     }): Promise<void>;
     /**
-     * Create a new vector index
+     * Create a new vector index. Only works in tables mode, throws an error in collections mode.
      *
      * @param name
      * @param column
@@ -201,7 +201,7 @@ export declare class Collection<DocType extends Record<string, unknown> = Record
         sourceModel?: string;
     }): Promise<void>;
     /**
-     * Drop an existin index
+     * Drop an existing index by name. Only works in tables mode, throws an error in collections mode.
      *
      * @param name
      */

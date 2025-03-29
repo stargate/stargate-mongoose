@@ -37,6 +37,11 @@ interface ConnectOptionsInternal extends ConnectOptions {
     bufferCommands?: boolean;
 }
 
+/**
+ * Extends Mongoose's Connection class to provide compatibility with Data API. Responsible for maintaining the
+ * connection to Data API.
+ */
+
 export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
     initialConnection: Promise<Connection> | null = null;
@@ -56,6 +61,7 @@ export class Connection extends MongooseConnection {
     /**
      * Helper borrowed from Mongoose to wait for the connection to finish connecting. Because Mongoose
      * supports creating a new connection, registering some models, and connecting to the database later.
+     * This method is private and should not be called by clients.
      *
      * #### Example:
      *     const conn = mongoose.createConnection();
@@ -63,6 +69,8 @@ export class Connection extends MongooseConnection {
      *     // this connection hasn't connected to the database yet.
      *     conn.model('Test', mongoose.Schema({ name: String }));
      *     await conn.openUri(uri);
+     *
+     * @ignore
      */
     async _waitForClient() {
         const shouldWaitForClient = (this.readyState === STATES.connecting || this.readyState === STATES.disconnected) && this._shouldBufferCommands();
@@ -124,7 +132,9 @@ export class Connection extends MongooseConnection {
     }
 
     /**
-     * Create a new namespace in the database
+     * Create a new namespace in the database.
+     * Throws an error if connecting to Astra, as Astra does not support creating namespaces through Data API.
+     *
      * @param namespace The name of the namespace to create
      */
     async createNamespace(name: string) {
@@ -145,7 +155,9 @@ export class Connection extends MongooseConnection {
     }
 
     /**
-     * Drop the entire database
+     * Not implemented.
+     *
+     * @ignore
      */
     async dropDatabase() {
         throw new Error('dropDatabase() Not Implemented');
@@ -316,6 +328,13 @@ export class Connection extends MongooseConnection {
         return this;
     }
 
+    /**
+     * Not supported
+     *
+     * @param _client
+     * @ignore
+     */
+
     setClient(_client: DataAPIClient) {
         throw new Error('SetClient not supported');
     }
@@ -329,6 +348,12 @@ export class Connection extends MongooseConnection {
         return this.initialConnection;
     }
 
+    /**
+     * Not supported
+     *
+     * @ignore
+     */
+
     startSession() {
         throw new Error('startSession() Not Implemented');
     }
@@ -336,7 +361,11 @@ export class Connection extends MongooseConnection {
     /**
      * Mongoose calls `doClose()` to close the connection when the user calls `mongoose.disconnect()` or `conn.close()`.
      * Handles closing the astra-db-ts client.
+     * This method is private and should not be called by clients directly. Mongoose will call this method internally when
+     * the user calls `mongoose.disconnect()` or `conn.close()`.
+     *
      * @returns Client
+     * @ignore
      */
     doClose(_force?: boolean) {
         if (this.client != null) {
