@@ -24,6 +24,7 @@ import {
     DataAPIClient,
     UsernamePasswordTokenProvider
 } from '@datastax/astra-db-ts';
+import { StargateMongooseError } from 'src/stargateMongooseError';
 
 interface ConnectOptionsInternal extends ConnectOptions {
     useTables?: boolean;
@@ -77,7 +78,7 @@ export class Connection extends MongooseConnection {
         if (shouldWaitForClient) {
             await this._waitForConnect();
         } else if (this.readyState !== STATES.connected) {
-            throw new Error('Connection is not connected');
+            throw new StargateMongooseError('Connection is not connected', { readyState: this.readyState });
         }
     }
 
@@ -140,7 +141,7 @@ export class Connection extends MongooseConnection {
     async createNamespace(name: string) {
         await this._waitForClient();
         if (this.admin instanceof AstraAdmin) {
-            throw new Error('Cannot createNamespace() in Astra');
+            throw new StargateMongooseError('Cannot createNamespace() in Astra', { name });
         }
         return this.db!.httpClient._request({
             url: this.baseUrl + '/' + this.baseApiPath,
@@ -208,7 +209,7 @@ export class Connection extends MongooseConnection {
 
     async listDatabases(): Promise<{ databases: { name: string }[] }> {
         if (this.admin instanceof AstraAdmin) {
-            throw new Error('Cannot listDatabases in Astra');
+            throw new StargateMongooseError('Cannot listDatabases in Astra');
         }
         await this._waitForClient();
         return { databases: await this.admin!.listKeyspaces().then(keyspaces => keyspaces.map(name => ({ name }))) };
@@ -290,7 +291,7 @@ export class Connection extends MongooseConnection {
             }
 
             if (options?.username == null || options?.password == null) {
-                throw new Error('Username and password are required when connecting to self-hosted DSE');
+                throw new StargateMongooseError('Username and password are required when connecting to self-hosted DSE', { uri, options });
             }
             const client = new DataAPIClient(
                 new UsernamePasswordTokenProvider(options.username, options.password),
@@ -336,7 +337,7 @@ export class Connection extends MongooseConnection {
      */
 
     setClient(_client: DataAPIClient) {
-        throw new Error('SetClient not supported');
+        throw new StargateMongooseError('SetClient not supported');
     }
 
     /**
@@ -355,7 +356,7 @@ export class Connection extends MongooseConnection {
      */
 
     startSession() {
-        throw new Error('startSession() Not Implemented');
+        throw new StargateMongooseError('startSession() Not Implemented');
     }
 
     /**

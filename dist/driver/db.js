@@ -14,6 +14,12 @@
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TablesDb = exports.CollectionsDb = exports.BaseDb = void 0;
+const stargateMongooseError_1 = require("src/stargateMongooseError");
+/**
+ * Defines the base database class for interacting with Astra DB. Responsible for creating collections and tables.
+ * This class abstracts the operations for both collections mode and tables mode. There is a separate TablesDb class
+ * for tables and CollectionsDb class for collections.
+ */
 class BaseDb {
     constructor(astraDb, keyspaceName, useTables) {
         this.astraDb = astraDb;
@@ -83,7 +89,16 @@ class BaseDb {
     }
 }
 exports.BaseDb = BaseDb;
+/**
+ * Db instance that creates and manages collections.
+ * @extends BaseDb
+ */
 class CollectionsDb extends BaseDb {
+    /**
+     * Creates an instance of CollectionsDb. Do not instantiate this class directly.
+     * @param astraDb The AstraDb instance to interact with the database.
+     * @param keyspaceName The name of the keyspace to use.
+     */
     constructor(astraDb, keyspaceName) {
         super(astraDb, keyspaceName, false);
     }
@@ -94,24 +109,40 @@ class CollectionsDb extends BaseDb {
     collection(name, options) {
         return this.astraDb.collection(name, options);
     }
+    /**
+     * Send a CreateCollection command to Data API.
+     */
     createCollection(name, options) {
         return this.astraDb.createCollection(name, options);
     }
 }
 exports.CollectionsDb = CollectionsDb;
+/**
+ * Db instance that creates and manages tables.
+ * @extends BaseDb
+ */
 class TablesDb extends BaseDb {
+    /**
+     * Creates an instance of TablesDb. Do not instantiate this class directly.
+     * @param astraDb The AstraDb instance to interact with the database.
+     * @param keyspaceName The name of the keyspace to use.
+     */
     constructor(astraDb, keyspaceName) {
         super(astraDb, keyspaceName, true);
     }
     /**
-     * Get a collection by name.
-     * @param name The name of the collection.
+     * Get a table by name. This method is called `collection()` for compatibility with Mongoose, which calls
+     * this method for getting a Mongoose Collection instance, which may map to a table in Astra DB when using tables mode.
+     * @param name The name of the table.
      */
     collection(name, options) {
         return this.astraDb.table(name, options);
     }
-    createCollection(_name, _options) {
-        throw new Error('Cannot createCollection in tables mode');
+    /**
+     * Throws an error, stargate-mongoose does not support creating collections in tables mode.
+     */
+    createCollection(name, options) {
+        throw new stargateMongooseError_1.StargateMongooseError('Cannot createCollection in tables mode', { name, options });
     }
 }
 exports.TablesDb = TablesDb;

@@ -24,6 +24,11 @@ const connection_1 = __importDefault(require("mongoose/lib/connection"));
 const mongoose_1 = require("mongoose");
 const url_1 = __importDefault(require("url"));
 const astra_db_ts_2 = require("@datastax/astra-db-ts");
+const stargateMongooseError_1 = require("src/stargateMongooseError");
+/**
+ * Extends Mongoose's Connection class to provide compatibility with Data API. Responsible for maintaining the
+ * connection to Data API.
+ */
 class Connection extends connection_1.default {
     constructor(base) {
         super(base);
@@ -40,6 +45,7 @@ class Connection extends connection_1.default {
     /**
      * Helper borrowed from Mongoose to wait for the connection to finish connecting. Because Mongoose
      * supports creating a new connection, registering some models, and connecting to the database later.
+     * This method is private and should not be called by clients.
      *
      * #### Example:
      *     const conn = mongoose.createConnection();
@@ -47,6 +53,8 @@ class Connection extends connection_1.default {
      *     // this connection hasn't connected to the database yet.
      *     conn.model('Test', mongoose.Schema({ name: String }));
      *     await conn.openUri(uri);
+     *
+     * @ignore
      */
     async _waitForClient() {
         const shouldWaitForClient = (this.readyState === mongoose_1.STATES.connecting || this.readyState === mongoose_1.STATES.disconnected) && this._shouldBufferCommands();
@@ -54,7 +62,7 @@ class Connection extends connection_1.default {
             await this._waitForConnect();
         }
         else if (this.readyState !== mongoose_1.STATES.connected) {
-            throw new Error('Connection is not connected');
+            throw new stargateMongooseError_1.StargateMongooseError('Connection is not connected', { readyState: this.readyState });
         }
     }
     /**
@@ -103,13 +111,15 @@ class Connection extends connection_1.default {
         return this.db.dropTable(name);
     }
     /**
-     * Create a new namespace in the database
+     * Create a new namespace in the database.
+     * Throws an error if connecting to Astra, as Astra does not support creating namespaces through Data API.
+     *
      * @param namespace The name of the namespace to create
      */
     async createNamespace(name) {
         await this._waitForClient();
         if (this.admin instanceof astra_db_ts_1.AstraAdmin) {
-            throw new Error('Cannot createNamespace() in Astra');
+            throw new stargateMongooseError_1.StargateMongooseError('Cannot createNamespace() in Astra', { name });
         }
         return this.db.httpClient._request({
             url: this.baseUrl + '/' + this.baseApiPath,
@@ -123,7 +133,9 @@ class Connection extends connection_1.default {
         });
     }
     /**
-     * Drop the entire database
+     * Not implemented.
+     *
+     * @ignore
      */
     async dropDatabase() {
         throw new Error('dropDatabase() Not Implemented');
@@ -155,7 +167,7 @@ class Connection extends connection_1.default {
      */
     async listDatabases() {
         if (this.admin instanceof astra_db_ts_1.AstraAdmin) {
-            throw new Error('Cannot listDatabases in Astra');
+            throw new stargateMongooseError_1.StargateMongooseError('Cannot listDatabases in Astra');
         }
         await this._waitForClient();
         return { databases: await this.admin.listKeyspaces().then(keyspaces => keyspaces.map(name => ({ name }))) };
@@ -225,7 +237,7 @@ class Connection extends connection_1.default {
                 };
             }
             if (options?.username == null || options?.password == null) {
-                throw new Error('Username and password are required when connecting to self-hosted DSE');
+                throw new stargateMongooseError_1.StargateMongooseError('Username and password are required when connecting to self-hosted DSE', { uri, options });
             }
             const client = new astra_db_ts_2.DataAPIClient(new astra_db_ts_2.UsernamePasswordTokenProvider(options.username, options.password), { environment: 'dse' });
             const db = options?.useTables
@@ -256,8 +268,14 @@ class Connection extends connection_1.default {
         this.onOpen();
         return this;
     }
+    /**
+     * Not supported
+     *
+     * @param _client
+     * @ignore
+     */
     setClient(_client) {
-        throw new Error('SetClient not supported');
+        throw new stargateMongooseError_1.StargateMongooseError('SetClient not supported');
     }
     /**
      * For consistency with Mongoose's API. `mongoose.createConnection(uri)` returns the connection, **not** a promise,
@@ -267,13 +285,22 @@ class Connection extends connection_1.default {
     asPromise() {
         return this.initialConnection;
     }
+    /**
+     * Not supported
+     *
+     * @ignore
+     */
     startSession() {
-        throw new Error('startSession() Not Implemented');
+        throw new stargateMongooseError_1.StargateMongooseError('startSession() Not Implemented');
     }
     /**
      * Mongoose calls `doClose()` to close the connection when the user calls `mongoose.disconnect()` or `conn.close()`.
      * Handles closing the astra-db-ts client.
+     * This method is private and should not be called by clients directly. Mongoose will call this method internally when
+     * the user calls `mongoose.disconnect()` or `conn.close()`.
+     *
      * @returns Client
+     * @ignore
      */
     doClose(_force) {
         if (this.client != null) {

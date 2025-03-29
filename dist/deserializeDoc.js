@@ -23,6 +23,7 @@ const astra_db_ts_1 = require("@datastax/astra-db-ts");
  *
  * @param doc
  * @returns void
+ * @ignore
  */
 function deserializeDoc(doc) {
     if (doc == null) {

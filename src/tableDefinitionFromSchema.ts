@@ -14,6 +14,7 @@
 
 import { CreateTableDefinition } from '@datastax/astra-db-ts';
 import { Schema, SchemaType } from 'mongoose';
+import { StargateMongooseError } from './stargateMongooseError';
 
 type AllowedDataAPITypes = 'text' | 'double' | 'timestamp' | 'boolean' | 'decimal' | 'varint' | 'blob' | 'uuid' | 'int';
 
@@ -36,7 +37,11 @@ export default function tableDefinitionFromSchema(schema: Schema): CreateTableDe
         if (isNestedOrMap) {
             const split = schemaType.path.split('.');
             if (split.length > 2) {
-                throw new Error(`Cannot convert schema to Data API table definition: schemas with 3-level deep nested path ${path} are not supported`);
+                throw new StargateMongooseError(`Cannot convert schema to Data API table definition: schemas with 3-level deep nested path ${path} are not supported`, {
+                    path,
+                    type,
+                    schema
+                });
             }
             const nestedPath = split[0];
             if (schemaTypesForNestedPath[nestedPath] == null) {
@@ -47,14 +52,22 @@ export default function tableDefinitionFromSchema(schema: Schema): CreateTableDe
             tableDefinition.columns[path] = { type };
         } else if (schemaType.instance === 'Array' || schemaType.instance === 'Vectorize') {
             if (schemaType.schema) {
-                throw new Error(`Cannot convert schema to Data API table definition: DocumentArray "${path}" is not supported`);
+                throw new StargateMongooseError(`Cannot convert schema to Data API table definition: DocumentArray "${path}" is not supported`, {
+                    path,
+                    type,
+                    schema
+                });
             }
             // Arrays always have an embedded schema type
             const embeddedSchemaType = schemaType.getEmbeddedSchemaType() as SchemaType;
             if (schemaType.options.dimension != null) {
                 // If dimension, assume we're creating a vector column
                 if (embeddedSchemaType.instance !== 'Number') {
-                    throw new Error(`Cannot convert schema to Data API table definition: vector column at "${path}" must be an array of numbers`);
+                    throw new StargateMongooseError(`Cannot convert schema to Data API table definition: vector column at "${path}" must be an array of numbers`, {
+                        path,
+                        type,
+                        schema
+                    });
                 }
                 tableDefinition.columns[path] = { type: 'vector', dimension: schemaType.options.dimension };
                 if (schemaType.instance === 'Vectorize' && schemaType.options.service != null) {
@@ -63,7 +76,12 @@ export default function tableDefinitionFromSchema(schema: Schema): CreateTableDe
             } else {
                 const valueType = mongooseTypeToDataAPIType(embeddedSchemaType.instance);
                 if (valueType == null) {
-                    throw new Error(`Cannot convert schema to Data API table definition: unsupported array type at path "${path}"`);
+                    throw new StargateMongooseError(`Cannot convert schema to Data API table definition: unsupported array type at path "${path}"`, {
+                        path,
+                        valueType,
+                        type,
+                        schema
+                    });
                 }
                 tableDefinition.columns[path] = { type: 'list', valueType };
             }
@@ -72,11 +90,20 @@ export default function tableDefinitionFromSchema(schema: Schema): CreateTableDe
             for (const subpath of Object.keys(schemaType.schema.paths)) {
                 const isNested = subpath.indexOf('.') !== -1;
                 if (isNested) {
-                    throw new Error(`Cannot convert schema to Data API table definition: unsupported nested path underneath subdocument at path "${path}.${subpath}"`);
+                    throw new StargateMongooseError(`Cannot convert schema to Data API table definition: unsupported nested path underneath subdocument at path "${path}.${subpath}"`, {
+                        path,
+                        subpath,
+                        schema
+                    });
                 }
                 const type = mongooseTypeToDataAPIType(schemaType.schema.paths[subpath].instance);
                 if (type == null) {
-                    throw new Error(`Cannot convert schema to Data API table definition: unsupported type in subdocument at path "${path}.${subpath}"`);
+                    throw new StargateMongooseError(`Cannot convert schema to Data API table definition: unsupported type in subdocument at path "${path}.${subpath}"`, {
+                        path,
+                        subpath,
+                        type,
+                        schema
+                    });
                 }
                 dataAPITypes.add(type);
             }
@@ -85,7 +112,11 @@ export default function tableDefinitionFromSchema(schema: Schema): CreateTableDe
                 tableDefinition.columns[path] = { type: 'map', keyType: 'text', valueType: [...dataAPITypes][0] };
             } else {
                 if (dataAPITypes.has('blob')) {
-                    throw new Error(`Cannot convert schema to Data API table definition: subdocuments with Buffer at "${path}" are not supported`);
+                    throw new StargateMongooseError(`Cannot convert schema to Data API table definition: subdocuments with Buffer at "${path}" are not supported`, {
+                        path,
+                        type,
+                        schema
+                    });
                 }
                 tableDefinition.columns[path] = { type: 'map', keyType: 'text', valueType: 'text' };
             }
@@ -93,7 +124,10 @@ export default function tableDefinitionFromSchema(schema: Schema): CreateTableDe
             // Maps are handled by the isNestedOrMap code path
             continue;
         } else {
-            throw new Error(`Cannot convert schema to Data API table definition: unsupported type at path "${path}"`);
+            throw new StargateMongooseError(`Cannot convert schema to Data API table definition: unsupported type at path "${path}"`, {
+                path,
+                schema
+            });
         }
     }
 
@@ -103,12 +137,19 @@ export default function tableDefinitionFromSchema(schema: Schema): CreateTableDe
         for (const schemaType of schemaTypesForNestedPath[nestedPath]) {
             const type = mongooseTypeToDataAPIType(schemaType.instance);
             if (type == null) {
-                throw new Error(`Cannot convert schema to Data API table definition: unsupported type at path "${schemaType.path}"`);
+                throw new StargateMongooseError(`Cannot convert schema to Data API table definition: unsupported type at path "${schemaType.path}"`, {
+                    nestedPath,
+                    type,
+                    schema
+                });
             }
             dataAPITypes.add(type);
         }
         if (dataAPITypes.has('blob')) {
-            throw new Error(`Cannot convert schema to Data API table definition: nested paths with Buffer at "${nestedPath}" are not supported`);
+            throw new StargateMongooseError(`Cannot convert schema to Data API table definition: nested paths with Buffer at "${nestedPath}" are not supported`, {
+                nestedPath,
+                schema
+            });
         }
         // If all keys have same data type, then can just make map of that data type
         if (dataAPITypes.size === 1) {

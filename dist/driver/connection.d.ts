@@ -15,6 +15,10 @@ interface ConnectOptionsInternal extends ConnectOptions {
     sanitizeFilter?: boolean;
     bufferCommands?: boolean;
 }
+/**
+ * Extends Mongoose's Connection class to provide compatibility with Data API. Responsible for maintaining the
+ * connection to Data API.
+ */
 export declare class Connection extends MongooseConnection {
     debugType: string;
     initialConnection: Promise<Connection> | null;
@@ -30,6 +34,7 @@ export declare class Connection extends MongooseConnection {
     /**
      * Helper borrowed from Mongoose to wait for the connection to finish connecting. Because Mongoose
      * supports creating a new connection, registering some models, and connecting to the database later.
+     * This method is private and should not be called by clients.
      *
      * #### Example:
      *     const conn = mongoose.createConnection();
@@ -37,6 +42,8 @@ export declare class Connection extends MongooseConnection {
      *     // this connection hasn't connected to the database yet.
      *     conn.model('Test', mongoose.Schema({ name: String }));
      *     await conn.openUri(uri);
+     *
+     * @ignore
      */
     _waitForClient(): Promise<void>;
     /**
@@ -74,12 +81,16 @@ export declare class Connection extends MongooseConnection {
      */
     dropTable(name: string): Promise<void>;
     /**
-     * Create a new namespace in the database
+     * Create a new namespace in the database.
+     * Throws an error if connecting to Astra, as Astra does not support creating namespaces through Data API.
+     *
      * @param namespace The name of the namespace to create
      */
     createNamespace(name: string): Promise<any>;
     /**
-     * Drop the entire database
+     * Not implemented.
+     *
+     * @ignore
      */
     dropDatabase(): Promise<void>;
     /**
@@ -127,6 +138,12 @@ export declare class Connection extends MongooseConnection {
      * @param options
      */
     createClient(uri: string, options: ConnectOptionsInternal): Promise<this>;
+    /**
+     * Not supported
+     *
+     * @param _client
+     * @ignore
+     */
     setClient(_client: DataAPIClient): void;
     /**
      * For consistency with Mongoose's API. `mongoose.createConnection(uri)` returns the connection, **not** a promise,
@@ -134,11 +151,20 @@ export declare class Connection extends MongooseConnection {
      * `await createConnection(uri).asPromise()`
      */
     asPromise(): Promise<Connection> | null;
+    /**
+     * Not supported
+     *
+     * @ignore
+     */
     startSession(): void;
     /**
      * Mongoose calls `doClose()` to close the connection when the user calls `mongoose.disconnect()` or `conn.close()`.
      * Handles closing the astra-db-ts client.
+     * This method is private and should not be called by clients directly. Mongoose will call this method internally when
+     * the user calls `mongoose.disconnect()` or `conn.close()`.
+     *
      * @returns Client
+     * @ignore
      */
     doClose(_force?: boolean): this;
 }

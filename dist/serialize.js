@@ -23,8 +23,11 @@ const mongoose_1 = __importDefault(require("mongoose"));
 function serialize(data, useTables) {
     return serializeValue(data, useTables);
 }
-// Mongoose relies on certain values getting transformed into their BSON equivalents,
-// most notably subdocuments and document arrays. Otherwise `$push` on a document array fails.
+/**
+ * Mongoose relies on certain values getting transformed into their BSON equivalents,
+ * most notably subdocuments and document arrays. Otherwise `$push` on a document array fails.
+ * @ignore
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function serializeValue(data, useTables) {
     if (data == null) {

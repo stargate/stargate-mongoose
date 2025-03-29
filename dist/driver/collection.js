@@ -386,12 +386,16 @@ class Collection extends collection_1.default {
     }
     /**
      * Watch operation not supported.
+     *
+     * @ignore
      */
     watch() {
         throw new OperationNotSupportedError('watch() Not Implemented');
     }
     /**
      * Distinct operation not supported.
+     *
+     * @ignore
      */
     distinct() {
         throw new OperationNotSupportedError('distinct() Not Implemented');

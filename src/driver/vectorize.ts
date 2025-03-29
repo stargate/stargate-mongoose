@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { Schema, Document, SchemaTypeOptions } from 'mongoose';
+import { StargateMongooseError } from 'src/stargateMongooseError';
 
 export interface VectorizeOptions extends SchemaTypeOptions<number[]> {
   service: {
@@ -41,7 +42,9 @@ export class Vectorize extends Schema.Types.Array {
         this.options = options;
         this.instance = 'Vectorize';
         if (typeof options?.service?.provider !== 'string') {
-            throw new Error('`provider` option for vectorize paths must be a string, got: ' + options?.service?.provider);
+            throw new StargateMongooseError('`provider` option for vectorize paths must be a string, got: ' + options?.service?.provider, {
+                options
+            });
         }
     }
 

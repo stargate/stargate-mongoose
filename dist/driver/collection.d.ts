@@ -208,10 +208,14 @@ export declare class Collection<DocType extends Record<string, unknown> = Record
     dropIndex(name: string): Promise<void>;
     /**
      * Watch operation not supported.
+     *
+     * @ignore
      */
     watch(): void;
     /**
      * Distinct operation not supported.
+     *
+     * @ignore
      */
     distinct(): void;
 }
