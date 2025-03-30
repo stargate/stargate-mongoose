@@ -24,7 +24,7 @@ import {
     DataAPIClient,
     UsernamePasswordTokenProvider
 } from '@datastax/astra-db-ts';
-import { StargateMongooseError } from 'src/stargateMongooseError';
+import { StargateMongooseError } from '../stargateMongooseError';
 
 interface ConnectOptionsInternal extends ConnectOptions {
     useTables?: boolean;
