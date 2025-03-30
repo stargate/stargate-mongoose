@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Schema, Document, SchemaTypeOptions } from 'mongoose';
-import { StargateMongooseError } from 'src/stargateMongooseError';
+import { StargateMongooseError } from '../stargateMongooseError';
 
 export interface VectorizeOptions extends SchemaTypeOptions<number[]> {
   service: {

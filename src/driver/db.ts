@@ -24,7 +24,7 @@ import {
     TableOptions,
     Collection
 } from '@datastax/astra-db-ts';
-import { StargateMongooseError } from 'src/stargateMongooseError';
+import { StargateMongooseError } from '../stargateMongooseError';
 
 /**
  * Defines the base database class for interacting with Astra DB. Responsible for creating collections and tables.

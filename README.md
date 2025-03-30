@@ -14,7 +14,7 @@
 
 ## Quickstart
 Prerequisites:
-node (>=18.0.0), npm/yarn, Docker (for testing locally using docker compose)
+node (>=20.0.0), npm/yarn, Docker (for testing locally using docker compose)
 - Start `Docker` on your local machine.
 - Clone this repository
 ```shell

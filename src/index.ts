@@ -23,6 +23,8 @@ import type { Mongoose } from 'mongoose';
 
 export { Vectorize, VectorizeOptions } from './driver';
 
+export { StargateMongooseError } from './stargateMongooseError';
+
 export type StargateMongoose = Omit<Mongoose, 'connection'> & { connection: StargateMongooseDriver.Connection };
 
 declare module 'mongodb' {
