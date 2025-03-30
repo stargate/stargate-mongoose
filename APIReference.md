@@ -21,6 +21,8 @@ for tables and CollectionsDb class for collections.</p></dd>
 <dt><a href="#Vectorize">Vectorize</a></dt>
 <dd><p>Vectorize is a custom Mongoose SchemaType that allows you set a vector value to a string
 for tables mode vectorize API. A Vectorize path is an array of numbers that can also be set to a string.</p></dd>
+<dt><a href="#StargateMongooseError">StargateMongooseError</a></dt>
+<dd><p>Base class for stargate-mongoose-specific errors.</p></dd>
 </dl>
 
 ## Members
@@ -493,6 +495,7 @@ for tables and CollectionsDb class for collections.</p>
 **Kind**: global class  
 
 * [BaseDb](#BaseDb)
+    * [new BaseDb()](#new_BaseDb_new)
     * [.httpClient](#BaseDb+httpClient)
     * [.createTable(name, definition)](#BaseDb+createTable)
     * [.dropCollection(name)](#BaseDb+dropCollection)
@@ -500,6 +503,13 @@ for tables and CollectionsDb class for collections.</p>
     * [.listCollections(options)](#BaseDb+listCollections)
     * [.listTables()](#BaseDb+listTables)
     * [.command(command)](#BaseDb+command)
+
+<a name="new_BaseDb_new"></a>
+
+### new BaseDb()
+<p>Whether we're using &quot;tables mode&quot; or &quot;collections mode&quot;. If tables mode, then <code>collection()</code> returns
+a Table instance, <strong>not</strong> a Collection instance. Also, if tables mode, <code>createCollection()</code> throws an
+error for Mongoose <code>syncIndexes()</code> compatibility reasons.</p>
 
 <a name="BaseDb+httpClient"></a>
 
@@ -684,6 +694,12 @@ the one exception being strings.</p>
 <p>Overwritten to account for Mongoose SchemaArray constructor taking different arguments than Vectorize</p>
 
 **Kind**: instance method of [<code>Vectorize</code>](#Vectorize)  
+<a name="StargateMongooseError"></a>
+
+## StargateMongooseError
+<p>Base class for stargate-mongoose-specific errors.</p>
+
+**Kind**: global class  
 <a name="BaseDb"></a>
 
 ## BaseDb ⇐ [<code>BaseDb</code>](#BaseDb)
@@ -693,6 +709,7 @@ the one exception being strings.</p>
 **Extends**: [<code>BaseDb</code>](#BaseDb)  
 
 * [BaseDb](#BaseDb) ⇐ [<code>BaseDb</code>](#BaseDb)
+    * [new BaseDb()](#new_BaseDb_new)
     * [.httpClient](#BaseDb+httpClient)
     * [.createTable(name, definition)](#BaseDb+createTable)
     * [.dropCollection(name)](#BaseDb+dropCollection)
@@ -700,6 +717,13 @@ the one exception being strings.</p>
     * [.listCollections(options)](#BaseDb+listCollections)
     * [.listTables()](#BaseDb+listTables)
     * [.command(command)](#BaseDb+command)
+
+<a name="new_BaseDb_new"></a>
+
+### new BaseDb()
+<p>Whether we're using &quot;tables mode&quot; or &quot;collections mode&quot;. If tables mode, then <code>collection()</code> returns
+a Table instance, <strong>not</strong> a Collection instance. Also, if tables mode, <code>createCollection()</code> throws an
+error for Mongoose <code>syncIndexes()</code> compatibility reasons.</p>
 
 <a name="BaseDb+httpClient"></a>
 

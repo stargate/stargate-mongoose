@@ -24,7 +24,7 @@ const connection_1 = __importDefault(require("mongoose/lib/connection"));
 const mongoose_1 = require("mongoose");
 const url_1 = __importDefault(require("url"));
 const astra_db_ts_2 = require("@datastax/astra-db-ts");
-const stargateMongooseError_1 = require("src/stargateMongooseError");
+const stargateMongooseError_1 = require("../stargateMongooseError");
 /**
  * Extends Mongoose's Connection class to provide compatibility with Data API. Responsible for maintaining the
  * connection to Data API.

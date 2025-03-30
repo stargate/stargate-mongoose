@@ -15,7 +15,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vectorize = void 0;
 const mongoose_1 = require("mongoose");
-const stargateMongooseError_1 = require("src/stargateMongooseError");
+const stargateMongooseError_1 = require("../stargateMongooseError");
 /**
  * Vectorize is a custom Mongoose SchemaType that allows you set a vector value to a string
  * for tables mode vectorize API. A Vectorize path is an array of numbers that can also be set to a string.

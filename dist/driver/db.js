@@ -14,7 +14,7 @@
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TablesDb = exports.CollectionsDb = exports.BaseDb = void 0;
-const stargateMongooseError_1 = require("src/stargateMongooseError");
+const stargateMongooseError_1 = require("../stargateMongooseError");
 /**
  * Defines the base database class for interacting with Astra DB. Responsible for creating collections and tables.
  * This class abstracts the operations for both collections mode and tables mode. There is a separate TablesDb class

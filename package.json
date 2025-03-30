@@ -28,10 +28,7 @@
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "mocha": {
-    "timeout": 30000,
-    "require": [
-      "tests/setup.ts"
-    ]
+    "timeout": 30000
   },
   "directories": {
     "lib": "src",
@@ -51,9 +48,10 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "test": "env TEST_DOC_DB=dataapi ts-mocha --forbid-only -p tsconfig.json tests/**/*.test.ts tests/*.test.ts",
-    "test-astra": "env TEST_DOC_DB=astra nyc --check-coverage --reporter=text --reporter=lcov ts-mocha --forbid-only -p tsconfig.json tests/**/*.test.ts tests/*.test.ts",
-    "test-dataapi": "env TEST_DOC_DB=dataapi nyc --check-coverage --reporter=text --reporter=lcov ts-mocha --forbid-only -p tsconfig.json tests/**/*.test.ts tests/*.test.ts",
+    "pretest": "touch .env",
+    "test": "env TEST_DOC_DB=dataapi ts-mocha --forbid-only -p tsconfig.json --env-file=.env tests/**/*.test.ts tests/*.test.ts",
+    "test-astra": "env TEST_DOC_DB=astra nyc --check-coverage --reporter=text --reporter=lcov --env-file=.env ts-mocha --forbid-only -p tsconfig.json tests/**/*.test.ts tests/*.test.ts",
+    "test-dataapi": "env TEST_DOC_DB=dataapi nyc --check-coverage --reporter=text --reporter=lcov --env-file=.env ts-mocha --forbid-only -p tsconfig.json tests/**/*.test.ts tests/*.test.ts",
     "preinstall": "npm run update-version-file",
     "build": "npm run update-version-file && tsc --project tsconfig.build.json",
     "build:docs": "jsdoc2md -t APIReference.hbs --files src/**/*.ts --files src/*.ts --configure ./jsdoc2md.json > APIReference.md",
@@ -65,13 +63,10 @@
   "devDependencies": {
     "@babel/cli": "^7.17.10",
     "@babel/core": "^7.18.2",
-    "@babel/plugin-proposal-class-properties": "^7.17.12",
-    "@babel/plugin-proposal-object-rest-spread": "^7.18.0",
     "@babel/preset-env": "^7.18.2",
     "@babel/preset-typescript": "^7.17.12",
     "@types/mocha": "^10.0.10",
     "@types/node": "^18.19.67",
-    "dotenv": "^16.0.1",
     "eslint": "~9.13",
     "jsdoc-babel": "^0.5.0",
     "jsdoc-to-markdown": "^9.1.1",
