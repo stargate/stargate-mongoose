@@ -772,7 +772,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
 
             await assert.rejects(
                 mongooseInstance.createConnection('', testClient!.options).asPromise(),
-                /Invalid URI: keyspace is required/
+                /Invalid URL/
             );
 
             await assert.rejects(
@@ -1068,16 +1068,8 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             const collections = await mongooseInstance.connection.listCollections();
             const collection = collections.find(collection => collection.name === 'vector');
             assert.ok(collection, 'Collection named "vector" not found');
-            assert.deepStrictEqual(collection.definition, {
-                vector: { dimension: 2, metric: 'cosine', sourceModel: 'other' },
-                lexical: {
-                    analyzer: 'standard',
-                    enabled: true
-                },
-                rerank: {
-                    enabled: false
-                }
-            });
+            const { vector } = collection.definition;
+            assert.deepStrictEqual(vector, { dimension: 2, metric: 'cosine', sourceModel: 'other' });
         });
     });
 

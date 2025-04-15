@@ -608,7 +608,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
 
             await assert.rejects(
                 mongooseInstance.createConnection('', testClient!.options).asPromise(),
-                /Invalid URI: keyspace is required/
+                /Invalid URL/
             );
 
             await assert.rejects(

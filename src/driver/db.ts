@@ -42,7 +42,6 @@ export abstract class BaseDb {
 
     constructor(astraDb: AstraDb, keyspaceName: string, useTables?: boolean) {
         this.astraDb = astraDb;
-        this.httpClient.baseHeaders['Feature-Flag-tables'] = 'true';
         astraDb.useKeyspace(keyspaceName);
         this.useTables = !!useTables;
     }

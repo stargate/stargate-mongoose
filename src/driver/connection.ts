@@ -18,7 +18,7 @@ import { CollectionsDb, TablesDb } from './db';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
 import type { ConnectOptions, Mongoose, Model } from 'mongoose';
-import url from 'url';
+import { URL } from 'url';
 
 import {
     DataAPIClient,
@@ -271,12 +271,7 @@ export class Connection extends MongooseConnection {
 
         const { baseUrl, keyspaceName, applicationToken, baseApiPath } = parseUri(uri);
 
-        const dbOptions = {
-            dataApiPath: baseApiPath,
-            additionalHeaders: {
-                'Feature-Flag-tables': 'true'
-            }
-        };
+        const dbOptions = { dataApiPath: baseApiPath };
 
         const { client, db, admin } = (() => {
             if (options?.isAstra) {
@@ -386,25 +381,32 @@ interface ParsedUri {
 
 // Parse a connection URI in the format of: https://${baseUrl}/${baseAPIPath}/${keyspace}?applicationToken=${applicationToken}
 export const parseUri = (uri: string): ParsedUri => {
-    const parsedUrl = url.parse(uri, true);
+    const parsedUrl = new URL(uri);
     const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
     if (!parsedUrl.pathname) {
         throw new Error('Invalid URI: keyspace is required');
     }
+
     const keyspaceName = parsedUrl.pathname.substring(parsedUrl.pathname.lastIndexOf('/') + 1);
     // Remove the last part of the api path (which is assumed as the keyspace name). For example:
     //  /v1/testks1 => v1
     //  /apis/v1/testks1 => apis/v1
     //  /testks1 => '' (empty string)
     const baseApiPath = parsedUrl.pathname.substring(1, parsedUrl.pathname.lastIndexOf('/') + 1);
-    const applicationToken = parsedUrl.query?.applicationToken;
-    const authHeaderName = parsedUrl.query?.authHeaderName;
-    if (Array.isArray(applicationToken)) {
+
+    const applicationToken = parsedUrl.searchParams.get('applicationToken') ?? undefined;
+    const authHeaderName = parsedUrl.searchParams.get('authHeaderName') ?? undefined;
+
+    // Check for duplicate application tokens
+    if (parsedUrl.searchParams.getAll('applicationToken').length > 1) {
         throw new Error('Invalid URI: multiple application tokens');
     }
-    if (Array.isArray(authHeaderName)) {
+
+    // Check for duplicate auth header names
+    if (parsedUrl.searchParams.getAll('authHeaderName').length > 1) {
         throw new Error('Invalid URI: multiple application auth header names');
     }
+
     if (keyspaceName.length === 0) {
         throw new Error('Invalid URI: keyspace is required');
     }
