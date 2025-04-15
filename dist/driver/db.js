@@ -23,7 +23,6 @@ const stargateMongooseError_1 = require("../stargateMongooseError");
 class BaseDb {
     constructor(astraDb, keyspaceName, useTables) {
         this.astraDb = astraDb;
-        this.httpClient.baseHeaders['Feature-Flag-tables'] = 'true';
         astraDb.useKeyspace(keyspaceName);
         this.useTables = !!useTables;
     }

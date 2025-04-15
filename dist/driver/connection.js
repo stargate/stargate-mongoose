@@ -22,7 +22,7 @@ const astra_db_ts_1 = require("@datastax/astra-db-ts");
 const db_1 = require("./db");
 const connection_1 = __importDefault(require("mongoose/lib/connection"));
 const mongoose_1 = require("mongoose");
-const url_1 = __importDefault(require("url"));
+const url_1 = require("url");
 const astra_db_ts_2 = require("@datastax/astra-db-ts");
 const stargateMongooseError_1 = require("../stargateMongooseError");
 /**
@@ -219,12 +219,7 @@ class Connection extends connection_1.default {
         this._closeCalled = false;
         this.readyState = mongoose_1.STATES.connecting;
         const { baseUrl, keyspaceName, applicationToken, baseApiPath } = (0, exports.parseUri)(uri);
-        const dbOptions = {
-            dataApiPath: baseApiPath,
-            additionalHeaders: {
-                'Feature-Flag-tables': 'true'
-            }
-        };
+        const dbOptions = { dataApiPath: baseApiPath };
         const { client, db, admin } = (() => {
             if (options?.isAstra) {
                 const client = new astra_db_ts_2.DataAPIClient(applicationToken);
@@ -312,7 +307,7 @@ class Connection extends connection_1.default {
 exports.Connection = Connection;
 // Parse a connection URI in the format of: https://${baseUrl}/${baseAPIPath}/${keyspace}?applicationToken=${applicationToken}
 const parseUri = (uri) => {
-    const parsedUrl = url_1.default.parse(uri, true);
+    const parsedUrl = new url_1.URL(uri);
     const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
     if (!parsedUrl.pathname) {
         throw new Error('Invalid URI: keyspace is required');
@@ -323,12 +318,14 @@ const parseUri = (uri) => {
     //  /apis/v1/testks1 => apis/v1
     //  /testks1 => '' (empty string)
     const baseApiPath = parsedUrl.pathname.substring(1, parsedUrl.pathname.lastIndexOf('/') + 1);
-    const applicationToken = parsedUrl.query?.applicationToken;
-    const authHeaderName = parsedUrl.query?.authHeaderName;
-    if (Array.isArray(applicationToken)) {
+    const applicationToken = parsedUrl.searchParams.get('applicationToken') ?? undefined;
+    const authHeaderName = parsedUrl.searchParams.get('authHeaderName') ?? undefined;
+    // Check for duplicate application tokens
+    if (parsedUrl.searchParams.getAll('applicationToken').length > 1) {
         throw new Error('Invalid URI: multiple application tokens');
     }
-    if (Array.isArray(authHeaderName)) {
+    // Check for duplicate auth header names
+    if (parsedUrl.searchParams.getAll('authHeaderName').length > 1) {
         throw new Error('Invalid URI: multiple application auth header names');
     }
     if (keyspaceName.length === 0) {

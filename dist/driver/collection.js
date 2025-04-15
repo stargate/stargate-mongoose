@@ -324,15 +324,16 @@ class Collection extends collection_1.default {
         if (this.collection instanceof astra_db_ts_1.Collection) {
             throw new OperationNotSupportedError('Cannot use listIndexes() with collections');
         }
-        // TypeScript isn't able to infer that `this.collection` is an AstraTable here, so we need to cast it.
-        const collection = this.collection;
         /**
          * Mongoose expects listIndexes() to return a cursor but Astra returns an array. Mongoose itself doesn't support
          * returning a cursor from Model.listIndexes(), so all we need to return is an object with a toArray() function.
          */
         return {
-            // Mongoose uses the `key` property of an index for index diffing in `cleanIndexes()` and `syncIndexes()`.
-            toArray: () => collection.listIndexes().then(indexes => indexes.map(index => ({ ...index, key: { [index.definition.column]: 1 } })))
+            toArray: () => this.runCommand({ listIndexes: { options: { explain: true } } })
+                .then((res) => {
+                // Mongoose uses the `key` property of an index for index diffing in `cleanIndexes()` and `syncIndexes()`.
+                return res.status.indexes.map((index) => ({ ...index, key: { [index.definition.column]: 1 } }));
+            })
         };
     }
     /**

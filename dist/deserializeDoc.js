@@ -40,6 +40,10 @@ function deserializeDoc(doc) {
             doc[key] = Object.fromEntries([...value.entries()]);
         }
     }
+    const $vector = doc.$vector;
+    if ($vector instanceof Object && typeof $vector.$binary === 'string') {
+        doc.$vector = new astra_db_ts_1.DataAPIVector(doc.$vector).asArray();
+    }
     return doc;
 }
 //# sourceMappingURL=deserializeDoc.js.map

@@ -1,6 +1,6 @@
 import { default as MongooseCollection } from 'mongoose/lib/collection';
 import type { Connection } from './connection';
-import { Collection as AstraCollection, CollectionDeleteOneOptions as DeleteOneOptionsInternal, CollectionFindOptions as FindOptionsInternal, CollectionFindOneAndDeleteOptions as FindOneAndDeleteOptionsInternal, CollectionFindOneAndReplaceOptions as FindOneAndReplaceOptionsInternal, CollectionFindOneAndUpdateOptions as FindOneAndUpdateOptionsInternal, CollectionFindOneOptions as FindOneOptionsInternal, CollectionReplaceOneOptions, CollectionUpdateManyOptions, CollectionUpdateOneOptions as UpdateOneOptionsInternal, CollectionInsertManyOptions, Table as AstraTable, CreateTableIndexOptions, TableOptions, TableIndexOptions, TableVectorIndexOptions, CollectionOptions } from '@datastax/astra-db-ts';
+import { Collection as AstraCollection, CollectionDeleteOneOptions as DeleteOneOptionsInternal, CollectionFindOptions as FindOptionsInternal, CollectionFindOneAndDeleteOptions as FindOneAndDeleteOptionsInternal, CollectionFindOneAndReplaceOptions as FindOneAndReplaceOptionsInternal, CollectionFindOneAndUpdateOptions as FindOneAndUpdateOptionsInternal, CollectionFindOneOptions as FindOneOptionsInternal, CollectionReplaceOneOptions, CollectionUpdateManyOptions, CollectionUpdateOneOptions as UpdateOneOptionsInternal, CollectionInsertManyOptions, Table as AstraTable, TableCreateIndexOptions, TableOptions, TableIndexOptions, TableVectorIndexOptions, CollectionOptions } from '@datastax/astra-db-ts';
 import { SchemaOptions } from 'mongoose';
 export type MongooseSortOption = Record<string, 1 | -1 | {
     $meta: Array<number>;
@@ -74,7 +74,7 @@ export declare class Collection<DocType extends Record<string, unknown> = Record
      * @param options
      * @param callback
      */
-    find(filter: Record<string, unknown>, options: FindOptions): import("@datastax/astra-db-ts").FindCursor<DocType | null, Partial<import("@datastax/astra-db-ts").FoundRow<DocType>>> | import("@datastax/astra-db-ts").FindCursor<DocType | null, Partial<import("@datastax/astra-db-ts").FoundDoc<import("@datastax/astra-db-ts").SomeDoc>>>;
+    find(filter: Record<string, unknown>, options: FindOptions): import("@datastax/astra-db-ts").TableFindCursor<DocType | null, import("@datastax/astra-db-ts").WithSim<import("@datastax/astra-db-ts").FoundRow<DocType>>> | import("@datastax/astra-db-ts").CollectionFindCursor<DocType | null, import("@datastax/astra-db-ts").WithSim<import("@datastax/astra-db-ts").FoundDoc<import("@datastax/astra-db-ts").SomeDoc>>>;
     /**
      * Find a single document in the collection that matches the given filter.
      * @param filter
@@ -122,14 +122,14 @@ export declare class Collection<DocType extends Record<string, unknown> = Record
      * Delete one or more documents in a collection that match the given filter.
      * @param filter
      */
-    deleteMany(filter: Record<string, unknown>): Promise<void> | Promise<import("@datastax/astra-db-ts").GenericDeleteManyResult>;
+    deleteMany(filter: Record<string, unknown>): Promise<import("@datastax/astra-db-ts").GenericDeleteManyResult> | Promise<void>;
     /**
      * Delete a single document in a collection that matches the given filter.
      * @param filter
      * @param options
      * @param callback
      */
-    deleteOne(filter: Record<string, unknown>, options: DeleteOneOptions): Promise<void> | Promise<import("@datastax/astra-db-ts").CollectionDeleteOneResult>;
+    deleteOne(filter: Record<string, unknown>, options: DeleteOneOptions): Promise<import("@datastax/astra-db-ts").CollectionDeleteOneResult> | Promise<void>;
     /**
      * Update a single document in a collection that matches the given filter, replacing it with `replacement`.
      * Converted to a `findOneAndReplace()` under the hood.
@@ -186,7 +186,7 @@ export declare class Collection<DocType extends Record<string, unknown> = Record
      * @param indexSpec MongoDB-style index spec for Mongoose compatibility
      * @param options
      */
-    createIndex(indexSpec: Record<string, boolean>, options?: CreateTableIndexOptions & {
+    createIndex(indexSpec: Record<string, boolean>, options?: TableCreateIndexOptions & {
         name?: string;
     }): Promise<void>;
     /**
