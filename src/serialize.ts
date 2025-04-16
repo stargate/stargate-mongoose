@@ -53,7 +53,7 @@ function serializeValue(data: any, useTables?: boolean): any {
     } else if (data instanceof Date) {
         // Rely on astra driver to serialize dates
         return data;
-    } else if (data instanceof Map) {
+    } else if (data instanceof Map && !useTables) {
         return Object.fromEntries(data.entries());
     } else if (data instanceof Binary) {
         if (data.sub_type === 3 || data.sub_type === 4) {
