@@ -47,13 +47,6 @@ export abstract class BaseDb {
     }
 
     /**
-     * Return the raw HTTP client used by astra-db-ts to talk to the db.
-     */
-    get httpClient() {
-        return this.astraDb._httpClient;
-    }
-
-    /**
      * Get a collection by name.
      * @param name The name of the collection.
      */

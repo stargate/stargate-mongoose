@@ -143,7 +143,7 @@ export class Connection extends MongooseConnection {
         if (this.admin instanceof AstraAdmin) {
             throw new StargateMongooseError('Cannot createNamespace() in Astra', { name });
         }
-        return this.db!.httpClient._request({
+        return this.db!.astraDb._httpClient._request({
             url: this.baseUrl + '/' + this.baseApiPath,
             method: 'POST',
             data: JSON.stringify({
@@ -151,7 +151,7 @@ export class Connection extends MongooseConnection {
                     name
                 }
             }),
-            timeoutManager: this.db!.httpClient.tm.single('databaseAdminTimeoutMs', { timeout: 120_000 })
+            timeoutManager: this.db!.astraDb._httpClient.tm.single('databaseAdminTimeoutMs', { timeout: 120_000 })
         });
     }
 
