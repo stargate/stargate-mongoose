@@ -181,6 +181,6 @@ export class TablesDb extends BaseDb {
      * Throws an error, stargate-mongoose does not support creating collections in tables mode.
      */
     createCollection(name: string, options?: Record<string, unknown>): Promise<Collection<Record<string, never>>> {
-        throw new StargateMongooseError('Cannot createCollection in tables mode', { name, options });
+        throw new StargateMongooseError('Cannot createCollection in tables mode; use createTable instead', { name, options });
     }
 }
