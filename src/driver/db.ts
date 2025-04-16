@@ -89,12 +89,8 @@ export abstract class BaseDb {
      * @param name
      */
     async dropTable(name: string) {
-        return this.astraDb.dropTable(name).catch(err => {
-            // For consistency with Mongoose, ignore errors if the table does not exist.
-            if (err.errorDescriptors?.[0].errorCode === 'CANNOT_DROP_UNKNOWN_TABLE') {
-                return;
-            }
-            throw err;
+        return this.astraDb.dropTable(name, {
+            ifExists: true,
         });
     }
 
