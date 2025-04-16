@@ -40,11 +40,5 @@ export default function deserializeDoc<DocType extends Record<string, unknown> =
             doc[key] = Object.fromEntries([...value.entries()]);
         }
     }
-
-    const $vector: unknown = doc.$vector;
-    if ($vector instanceof Object && typeof ($vector as unknown as { $binary?: unknown }).$binary === 'string') {
-        doc.$vector = new DataAPIVector(doc.$vector as unknown as { $binary: string }).asArray();
-    }
-
     return doc as DocType;
 }
