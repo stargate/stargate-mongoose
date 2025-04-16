@@ -16,12 +16,7 @@ import { Schema, Document, SchemaTypeOptions } from 'mongoose';
 import { StargateMongooseError } from '../stargateMongooseError';
 
 export interface VectorizeOptions extends SchemaTypeOptions<number[]> {
-  service: {
-    provider: string;
-    modelName: string;
-    authentication?: Record<string, unknown>;
-    parameters?: Record<string, unknown>;
-  },
+  service: VectorizeServiceOptions,
   dimension: number;
 }
 
