@@ -26,7 +26,7 @@ export default function createAstraUri (
 ) {
     const uri = new url.URL(apiEndpoint);
     let contextPath = '';
-    contextPath += baseApiPath ? `/${baseApiPath}` : '/api/json/v1';
+    contextPath += baseApiPath ? `/${baseApiPath.replace(/^\/+/, '')}` : '/api/json/v1';
     contextPath += `/${namespace ?? 'default_keyspace'}`;
     uri.pathname = contextPath;
     if (apiToken) {
