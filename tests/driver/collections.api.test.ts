@@ -219,7 +219,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             let collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
             assert.ok(collections.includes(Product.collection.collectionName));
 
-            await Product.db.db!.dropCollection(Product.collection.collectionName, { timeoutMS: 60_000 });
+            await Product.db.db!.dropCollection(Product.collection.collectionName);
             collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
             assert.ok(!collections.includes(Product.collection.collectionName));
 

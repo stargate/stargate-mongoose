@@ -17,6 +17,7 @@ import {
     Collection as AstraCollection,
     CollectionOptions,
     CreateTableDefinition,
+    DropCollectionOptions,
     ListCollectionsOptions,
     ListTablesOptions,
     RawDataAPIResponse,
@@ -73,7 +74,7 @@ export abstract class BaseDb {
      * Drop a collection by name.
      * @param name The name of the collection to be dropped.
      */
-    async dropCollection(name: string, options?: { timeout?: number }) {
+    async dropCollection(name: string, options?: DropCollectionOptions) {
         return this.astraDb.dropCollection(name, options);
     }
 
