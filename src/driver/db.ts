@@ -13,18 +13,19 @@
 // limitations under the License.
 
 import {
-    Db as AstraDb,
+    Collection,
     Collection as AstraCollection,
     CollectionDescriptor,
     CollectionOptions,
     CreateTableDefinition,
+    Db as AstraDb,
     DropCollectionOptions,
     ListCollectionsOptions,
     ListTablesOptions,
     RawDataAPIResponse,
     Table as AstraTable,
+    TableDescriptor,
     TableOptions,
-    Collection
 } from '@datastax/astra-db-ts';
 import { StargateMongooseError } from '../stargateMongooseError';
 
@@ -107,8 +108,11 @@ export abstract class BaseDb {
     /**
      * List all tables in the database.
      */
-    async listTables(options: ListTablesOptions) {
-        if (options.nameOnly) {
+    async listTables(options: ListTablesOptions & { nameOnly: true }): Promise<string[]>;
+    async listTables(options?: ListTablesOptions & { nameOnly?: false }): Promise<TableDescriptor[]>;
+
+    async listTables(options?: ListTablesOptions) {
+        if (options?.nameOnly) {
             return this.astraDb.listTables({ ...options, nameOnly: true });
         }
         return this.astraDb.listTables({ ...options, nameOnly: false });
