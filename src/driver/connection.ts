@@ -281,7 +281,7 @@ export class Connection extends MongooseConnection {
                     db: options.useTables
                         ? new TablesDb(client.db(baseUrl, dbOptions), keyspaceName)
                         : new CollectionsDb(client.db(baseUrl, dbOptions), keyspaceName),
-                    admin: client.admin({ adminToken: applicationToken })
+                    admin: db.astraDb.admin({ adminToken: applicationToken })
                 };
             }
 
