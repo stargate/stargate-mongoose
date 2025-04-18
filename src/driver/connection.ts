@@ -47,7 +47,7 @@ export class Connection extends MongooseConnection {
     debugType = 'StargateMongooseConnection';
     initialConnection: Promise<Connection> | null = null;
     client: DataAPIClient | null = null;
-    admin: AstraAdmin | DataAPIDbAdmin | null = null;
+    admin: AstraDbAdmin | DataAPIDbAdmin | null = null;
     db: CollectionsDb | TablesDb | null = null;
     namespace: string | null = null;
     config?: ConnectOptionsInternal;
