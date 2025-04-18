@@ -140,7 +140,7 @@ export class Connection extends MongooseConnection {
      */
     async createNamespace(name: string) {
         await this._waitForClient();
-        if (this.admin instanceof AstraAdmin) {
+        if (this.admin instanceof AstraDbAdmin) {
             throw new StargateMongooseError('Cannot createNamespace() in Astra', { name });
         }
         return this.db!.astraDb._httpClient._request({
@@ -208,7 +208,7 @@ export class Connection extends MongooseConnection {
      */
 
     async listDatabases(): Promise<{ databases: { name: string }[] }> {
-        if (this.admin instanceof AstraAdmin) {
+        if (this.admin instanceof AstraDbAdmin) {
             throw new StargateMongooseError('Cannot listDatabases in Astra');
         }
         await this._waitForClient();
@@ -276,11 +276,12 @@ export class Connection extends MongooseConnection {
         const { client, db, admin } = (() => {
             if (options?.isAstra) {
                 const client = new DataAPIClient(applicationToken);
+                const db = options.useTables
+                    ? new TablesDb(client.db(baseUrl, dbOptions), keyspaceName)
+                    : new CollectionsDb(client.db(baseUrl, dbOptions), keyspaceName);
                 return {
                     client,
-                    db: options.useTables
-                        ? new TablesDb(client.db(baseUrl, dbOptions), keyspaceName)
-                        : new CollectionsDb(client.db(baseUrl, dbOptions), keyspaceName),
+                    db,
                     admin: db.astraDb.admin({ adminToken: applicationToken })
                 };
             }
