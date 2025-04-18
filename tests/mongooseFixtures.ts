@@ -1,6 +1,7 @@
 import { testClient } from './fixtures';
 import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 import * as StargateMongooseDriver from '../src/driver';
+import assert from 'assert';
 import { plugins } from '../src/driver';
 import tableDefinitionFromSchema from '../src/tableDefinitionFromSchema';
 
@@ -51,20 +52,14 @@ for (const plugin of plugins) {
 export const CartTablesModel = mongooseInstanceTables.model('Cart', cartSchema, 'carts_table');
 export const ProductTablesModel = mongooseInstanceTables.model('Product', productSchema, 'products_table');
 
-async function createNamespace() {
-    const connection = mongooseInstance.connection;
-    return connection.createNamespace(connection.namespace as string);
-}
-
 export async function createMongooseCollections(useTables: boolean) {
     await mongooseInstance.connection.openUri(testClient!.uri, { ...testClient!.options });
     await mongooseInstanceTables.connection.openUri(testClient!.uri, { ...testClient!.options, useTables: true });
 
-    if (!testClient!.isAstra) {
-        await createNamespace();const { databases } = await mongooseInstance.connection.listDatabases();
-        if (!databases.find(db => db.name === mongooseInstance.connection.namespace)) {
-            await createNamespace();
-        }
+    const { databases } = await mongooseInstance.connection.listDatabases();
+    assert.ok(mongooseInstance.connection.keyspaceName);
+    if (!databases.find(db => db.name === mongooseInstance.connection.keyspaceName)) {
+        await mongooseInstance.connection.createKeyspace(mongooseInstance.connection.keyspaceName as string);
     }
 
     const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });

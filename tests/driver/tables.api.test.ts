@@ -200,7 +200,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
         });
         it('API ops tests Model.db', async () => {
             const conn = Product.db as unknown as StargateMongooseDriver.Connection;
-            assert.strictEqual(conn.namespace, parseUri(testClient!.uri).keyspaceName);
+            assert.strictEqual(conn.keyspaceName, parseUri(testClient!.uri).keyspaceName);
             // @ts-expect-error
             assert.strictEqual(conn.db.name, parseUri(testClient!.uri).keyspaceName);
         });

@@ -290,7 +290,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         });
         it('API ops tests Model.db', async () => {
             const conn = Product.db as unknown as StargateMongooseDriver.Connection;
-            assert.strictEqual(conn.namespace, parseUri(testClient!.uri).keyspaceName);
+            assert.strictEqual(conn.keyspaceName, parseUri(testClient!.uri).keyspaceName);
             // @ts-expect-error
             assert.strictEqual(conn.db.name, parseUri(testClient!.uri).keyspaceName);
         });
@@ -747,9 +747,9 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             }
             const { databases } = await mongooseInstance!.connection.listDatabases();
             assert.ok(Array.isArray(databases));
-            assert.ok(mongooseInstance.connection.namespace);
+            assert.ok(mongooseInstance.connection.keyspaceName);
 
-            assert.ok(databases.find(db => db.name === mongooseInstance.connection.namespace));
+            assert.ok(databases.find(db => db.name === mongooseInstance.connection.keyspaceName));
         });
         it('API ops tests connection.runCommand()', async () => {
             const res = await mongooseInstance.connection.runCommand({ findCollections: {} });

@@ -49,7 +49,7 @@ export class Connection extends MongooseConnection {
     client: DataAPIClient | null = null;
     admin: AstraDbAdmin | DataAPIDbAdmin | null = null;
     db: CollectionsDb | TablesDb | null = null;
-    namespace: string | null = null;
+    keyspaceName: string | null = null;
     config?: ConnectOptionsInternal;
     baseUrl: string | null = null;
     baseApiPath: string | null = null;
@@ -133,26 +133,13 @@ export class Connection extends MongooseConnection {
     }
 
     /**
-     * Create a new namespace in the database.
-     * Throws an error if connecting to Astra, as Astra does not support creating namespaces through Data API.
+     * Create a new keyspace.
      *
-     * @param namespace The name of the namespace to create
+     * @param name The name of the keyspace to create
      */
-    async createNamespace(name: string) {
+    async createKeyspace(name: string) {
         await this._waitForClient();
-        if (this.admin instanceof AstraDbAdmin) {
-            throw new StargateMongooseError('Cannot createNamespace() in Astra', { name });
-        }
-        return this.db!.astraDb._httpClient._request({
-            url: this.baseUrl + '/' + this.baseApiPath,
-            method: 'POST',
-            data: JSON.stringify({
-                createNamespace: {
-                    name
-                }
-            }),
-            timeoutManager: this.db!.astraDb._httpClient.tm.single('databaseAdminTimeoutMs', { timeout: 120_000 })
-        });
+        return await this.admin!.createKeyspace(name);
     }
 
     /**
@@ -204,13 +191,10 @@ export class Connection extends MongooseConnection {
     }
 
     /**
-     * List all keyspaces. Only available in local Data API, not Astra. Called "listDatabases" for Mongoose compatibility
+     * List all keyspaces. Called "listDatabases" for Mongoose compatibility
      */
 
     async listDatabases(): Promise<{ databases: { name: string }[] }> {
-        if (this.admin instanceof AstraDbAdmin) {
-            throw new StargateMongooseError('Cannot listDatabases in Astra');
-        }
         await this._waitForClient();
         return { databases: await this.admin!.listKeyspaces().then(keyspaces => keyspaces.map(name => ({ name }))) };
     }
@@ -317,7 +301,7 @@ export class Connection extends MongooseConnection {
         (this.db as any).name = keyspaceName;
         this.admin = admin;
         this.baseUrl = baseUrl;
-        this.namespace = keyspaceName;
+        this.keyspaceName = keyspaceName;
         this.baseApiPath = baseApiPath;
 
         this.readyState = STATES.connected;
