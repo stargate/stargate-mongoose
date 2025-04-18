@@ -15,6 +15,7 @@
 import {
     Db as AstraDb,
     Collection as AstraCollection,
+    CollectionDescriptor,
     CollectionOptions,
     CreateTableDefinition,
     DropCollectionOptions,
@@ -92,8 +93,12 @@ export abstract class BaseDb {
      * List all collections in the database.
      * @param options Additional options for listing collections.
      */
-    async listCollections(options: ListCollectionsOptions) {
-        if (options.nameOnly) {
+
+    async listCollections(options: ListCollectionsOptions & { nameOnly: true }): Promise<string[]>;
+    async listCollections(options?: ListCollectionsOptions & { nameOnly?: false }): Promise<CollectionDescriptor[]>;
+
+    async listCollections(options?: ListCollectionsOptions) {
+        if (options?.nameOnly) {
             return this.astraDb.listCollections({ ...options, nameOnly: true });
         }
         return this.astraDb.listCollections({ ...options, nameOnly: false });
