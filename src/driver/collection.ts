@@ -83,12 +83,14 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     _closed: boolean;
     connection: Connection;
     options?: (TableOptions | CollectionOptions) & MongooseCollectionOptions;
+    name: string;
 
     constructor(name: string, conn: Connection, options?: (TableOptions | CollectionOptions) & MongooseCollectionOptions) {
         super(name, conn, options);
         this.connection = conn;
         this._closed = false;
         this.options = options;
+        this.name = name;
     }
 
     // Get the collection or table. Cache the result so we don't recreate collection/table every time.
@@ -366,13 +368,11 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     }
 
     /**
-     * Run an arbitrary command against this collection's http client
+     * Run an arbitrary command against this collection
      * @param command
      */
     runCommand(command: Record<string, unknown>) {
-        return this.collection._httpClient.executeCommand(command, {
-            timeoutManager: this.collection._httpClient.tm.single('runCommandTimeoutMS', 60_000)
-        });
+        return this.connection.db!.astraDb.command(command, this.useTables ? { table: this.name } : { collection: this.name });
     }
 
     /**
