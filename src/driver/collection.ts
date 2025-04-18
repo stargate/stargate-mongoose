@@ -430,16 +430,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             throw new TypeError('createIndex indexSpec must have exactly 1 key');
         }
         const [column] = Object.keys(indexSpec);
-        return this.collection.createIndex(options?.name ?? column, column, options).catch((error: Error) => {
-            if (error instanceof DataAPIResponseError) {
-                // This error occurs if we try to create an index that already exists with same name and options.
-                // Ignore this error for Mongoose compatibility.
-                if (error.errorDescriptors?.[0]?.errorCode === 'CANNOT_ADD_EXISTING_INDEX') {
-                    return;
-                }
-            }
-            throw error;
-        });
+        return this.collection.createIndex(options?.name ?? column, column, { ifNotExists: true, ...options });
     }
 
     /**
