@@ -12,20 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CollectionIndexingOptions, CollectionSerDesConfig, CollectionVectorOptions, TableSerDesConfig } from '@datastax/astra-db-ts';
+import {
+    CollectionFindAndRerankOptions,
+    CollectionIndexingOptions,
+    CollectionSerDesConfig,
+    CollectionVectorOptions,
+    RerankedResult,
+    TableSerDesConfig
+} from '@datastax/astra-db-ts';
 
 export * as driver from './driver';
 export { default as createAstraUri } from './createAstraUri';
 export { default as tableDefinitionFromSchema } from './tableDefinitionFromSchema';
 
 import * as StargateMongooseDriver from './driver';
-import type { Mongoose } from 'mongoose';
+import type { Mongoose, Model } from 'mongoose';
 
 export { Vectorize, VectorizeOptions } from './driver';
 
 export { StargateMongooseError } from './stargateMongooseError';
 
 export type StargateMongoose = Omit<Mongoose, 'connection'> & { connection: StargateMongooseDriver.Connection };
+
+export type StargateMongooseModel<DocType, ModelType = Model<DocType>> = Model<DocType, ModelType> & {
+  findAndRerank(filter: Record<string, unknown>, options?: CollectionFindAndRerankOptions): Promise<RerankedResult<DocType>[]>;
+};
 
 declare module 'mongodb' {
     interface CreateCollectionOptions {

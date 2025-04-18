@@ -26,7 +26,7 @@ import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMo
 import { parseUri } from '../../src/driver/connection';
 import { FindCursor, DataAPIResponseError, DataAPIClient } from '@datastax/astra-db-ts';
 import { Long, UUID } from 'bson';
-import type { StargateMongoose } from '../../src';
+import type { StargateMongoose, StargateMongooseModel } from '../../src';
 
 describe('COLLECTIONS: mongoose Model API level tests with collections', async () => {
     let Product: ProductModelType;
@@ -1078,6 +1078,8 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             {
                 $vector: { type: [Number], default: () => void 0, dimension: 1024 },
                 $vectorize: { type: String },
+                $hybrid: { type: String },
+                $lexical: { type: String },
                 name: 'String'
             },
             {
@@ -1086,13 +1088,24 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                         dimension: 1024,
                         metric: 'cosine',
                         service: { provider: 'nvidia', modelName: 'NV-Embed-QA' }
+                    },
+                    lexical: {
+                        enabled: true,
+                        analyzer: 'STANDARD',
+                    },
+                    rerank: {
+                        enabled: true,
+                        service: {
+                            provider: 'nvidia',
+                            modelName: 'nvidia/llama-3.2-nv-rerankqa-1b-v2'
+                        }
                     }
                 },
                 autoCreate: false
             }
         );
 
-        let Vector: Model<InferSchemaType<typeof vectorSchema>>;
+        let Vector: StargateMongooseModel<InferSchemaType<typeof vectorSchema>>;
 
         before(async function() {
             if (!testClient!.isAstra) {
@@ -1104,7 +1117,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 'Vector',
                 vectorSchema,
                 'vector'
-            );
+            ) as StargateMongooseModel<InferSchemaType<typeof vectorSchema>>;
 
             const collections = await mongooseInstance.connection.listCollections({ nameOnly: false });
             const vectorCollection = collections.find(coll => coll.name === 'vector');
@@ -1134,6 +1147,18 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             const doc = await Vector.findById(_id).orFail();
             assert.ok(!doc.$vectorize);
             assert.ok(!doc.$vector);
+        });
+
+        it('supports findAndRerank', async function () {
+            await Vector.create({ name: 'Doc 1', $vectorize: 'I like Mexican food', $lexical: 'taco taco taco' });
+            await Vector.create({ name: 'Doc 2', $vectorize: 'Tacos are a part of Taco Tuesday', $lexical: 'taco' });
+            const result = await Vector.findAndRerank({}, { sort: { $hybrid: 'taco' }, includeScores: true });
+            assert.strictEqual(result.length, 2);
+            assert.strictEqual(result[0].document.name, 'Doc 2');
+            assert.strictEqual(result[1].document.name, 'Doc 1');
+            result.sort((a, b) => a.scores.$bm25Rank - b.scores.$bm25Rank);
+            assert.strictEqual(result[0].document.name, 'Doc 1');
+            assert.strictEqual(result[1].document.name, 'Doc 2');
         });
     });
 

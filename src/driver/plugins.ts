@@ -13,6 +13,8 @@
 // limitations under the License.
 
 import type { Schema, SchemaType } from 'mongoose';
+import { CollectionFindAndRerankOptions } from '@datastax/astra-db-ts';
+import { Collection } from './collection';
 
 /**
  * Mongoose plugin to handle adding `$vector` to the projection by default if `$vector` has `select: true`.
@@ -75,5 +77,13 @@ export function addVectorDimensionValidator(schema: Schema) {
                 return value.length === dimension;
             }, `Array must be of length ${dimension}, got value {VALUE}`);
         }
+    });
+}
+
+export function findAndRerankStatic(schema: Schema) {
+    schema.static('findAndRerank', async function findAndRerank(filter: Record<string, unknown>, options?: CollectionFindAndRerankOptions) {
+        const collection = this.collection as unknown as Collection;
+        const result = await collection.findAndRerank(filter, options);
+        return result.toArray();
     });
 }

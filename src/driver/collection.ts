@@ -17,6 +17,7 @@ import type { Connection } from './connection';
 import {
     Collection as AstraCollection,
     CollectionDeleteOneOptions as DeleteOneOptionsInternal,
+    CollectionFindAndRerankOptions,
     CollectionFindOptions as FindOptionsInternal,
     CollectionFindOneAndDeleteOptions as FindOneAndDeleteOptionsInternal,
     CollectionFindOneAndReplaceOptions as FindOneAndReplaceOptionsInternal,
@@ -465,6 +466,13 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             throw new OperationNotSupportedError('Cannot use dropIndex() with collections');
         }
         await this.connection.db!.astraDb.dropTableIndex(name);
+    }
+
+    async findAndRerank(filter: Record<string, unknown>, options?: CollectionFindAndRerankOptions) {
+        if (this.collection instanceof AstraTable) {
+            throw new OperationNotSupportedError('Cannot use findAndRerank() with tables');
+        }
+        return this.collection.findAndRerank(filter, options);
     }
 
     /**

@@ -18,9 +18,9 @@ export { Vectorize, VectorizeOptions } from './vectorize';
 
 import { Connection } from './connection';
 import { Mongoose } from 'mongoose';
-import { handleVectorFieldsProjection, addVectorDimensionValidator } from './plugins';
+import { handleVectorFieldsProjection, addVectorDimensionValidator, findAndRerankStatic } from './plugins';
 
-export const plugins = [handleVectorFieldsProjection, addVectorDimensionValidator];
+export const plugins = [handleVectorFieldsProjection, addVectorDimensionValidator, findAndRerankStatic];
 
 import { Vectorize } from './vectorize';
 export const SchemaTypes = { Vectorize };

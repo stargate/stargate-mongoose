@@ -383,9 +383,6 @@ interface ParsedUri {
 export const parseUri = (uri: string): ParsedUri => {
     const parsedUrl = new URL(uri);
     const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
-    if (!parsedUrl.pathname) {
-        throw new Error('Invalid URI: keyspace is required');
-    }
 
     const keyspaceName = parsedUrl.pathname.substring(parsedUrl.pathname.lastIndexOf('/') + 1);
     // Remove the last part of the api path (which is assumed as the keyspace name). For example:
