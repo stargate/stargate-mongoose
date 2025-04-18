@@ -42,11 +42,13 @@ export abstract class BaseDb {
      * error for Mongoose `syncIndexes()` compatibility reasons.
      */
     useTables: boolean;
+    name: string;
 
     constructor(astraDb: AstraDb, keyspaceName: string, useTables?: boolean) {
         this.astraDb = astraDb;
         astraDb.useKeyspace(keyspaceName);
         this.useTables = !!useTables;
+        this.name = keyspaceName;
     }
 
     /**

@@ -297,8 +297,6 @@ export class Connection extends MongooseConnection {
 
         this.client = client;
         this.db = db;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this.db as any).name = keyspaceName;
         this.admin = admin;
         this.baseUrl = baseUrl;
         this.keyspaceName = keyspaceName;
