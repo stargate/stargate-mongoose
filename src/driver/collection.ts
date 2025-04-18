@@ -27,7 +27,6 @@ import {
     CollectionUpdateManyOptions,
     CollectionUpdateOneOptions as UpdateOneOptionsInternal,
     CollectionInsertManyOptions,
-    DataAPIResponseError,
     SortDirection,
     Sort as SortOptionInternal,
     Table as AstraTable,

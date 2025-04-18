@@ -53,14 +53,14 @@ export abstract class BaseDb {
      * Get a collection by name.
      * @param name The name of the collection.
      */
-    abstract collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options: Record<string, unknown>): AstraCollection | AstraTable<DocType>;
+    abstract collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options: Record<string, unknown>): AstraCollection<DocType> | AstraTable<DocType>;
 
     /**
      * Create a new collection with the specified name and options.
      * @param name The name of the collection to be created.
      * @param options Additional options for creating the collection.
      */
-    abstract createCollection(name: string, options?: Record<string, unknown>): Promise<Collection>;
+    abstract createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: Record<string, unknown>): Promise<Collection<DocType>>;
 
     /**
      * Create a new table with the specified name and definition
@@ -68,8 +68,8 @@ export abstract class BaseDb {
      * @param definition
      */
 
-    async createTable(name: string, definition: CreateTableDefinition) {
-        return this.astraDb.createTable(name, { definition });
+    async createTable<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, definition: CreateTableDefinition) {
+        return this.astraDb.createTable<DocType>(name, { definition });
     }
 
     /**
@@ -152,8 +152,8 @@ export class CollectionsDb extends BaseDb {
     /**
      * Send a CreateCollection command to Data API.
      */
-    createCollection(name: string, options?: Record<string, unknown>) {
-        return this.astraDb.createCollection(name, options);
+    createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: Record<string, unknown>) {
+        return this.astraDb.createCollection<DocType>(name, options);
     }
 }
 
@@ -183,7 +183,7 @@ export class TablesDb extends BaseDb {
     /**
      * Throws an error, stargate-mongoose does not support creating collections in tables mode.
      */
-    createCollection(name: string, options?: Record<string, unknown>): Promise<Collection<Record<string, never>>> {
+    createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: Record<string, unknown>): Promise<Collection<DocType>> {
         throw new StargateMongooseError('Cannot createCollection in tables mode; use createTable instead', { name, options });
     }
 }
