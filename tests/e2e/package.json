@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "stargate-mongoose": "file:../../stargate-mongoose.tgz"
+    "astra-mongoose": "file:../../astra-mongoose.tgz"
   }
 }

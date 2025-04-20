@@ -1,6 +1,6 @@
-# stargate-mongoose ![ci-tests](https://github.com/stargate/stargate-mongoose/actions/workflows/ci-tests.yml/badge.svg)
+# astra-mongoose ![ci-tests](https://github.com/stargate/stargate-mongoose/actions/workflows/ci-tests.yml/badge.svg)
 
-`stargate-mongoose` is a Mongoose driver for [Data API](https://github.com/stargate/data-api) which runs on top of Apache Cassandra / DataStax Enterprise.
+`astra-mongoose` is a Mongoose driver for [Data API](https://github.com/stargate/data-api) which runs on top of Apache Cassandra / DataStax Enterprise.
 
 1. [Quickstart](#quickstart)
 2. [Architecture](#architecture)
@@ -38,11 +38,11 @@ cd sample-app
 ```
 - Initialize and add required dependencies
 ```shell
-npm init -y && npm install express mongoose stargate-mongoose --engine-strict
+npm init -y && npm install express mongoose astra-mongoose
 ```
 OR
 ```shell
-yarn init -y && yarn add express mongoose stargate-mongoose
+yarn init -y && yarn add express mongoose astra-mongoose
 ```
 
 
@@ -51,9 +51,8 @@ yarn init -y && yarn add express mongoose stargate-mongoose
 //imports
 const express = require('express');
 const mongoose = require('mongoose');
-const stargate_mongoose = require('stargate-mongoose');
+const { driver } = require('astra-mongoose');
 const Schema = mongoose.Schema;
-const driver = stargate_mongoose.driver;
 
 //override the default native driver
 mongoose.setDriver(driver);
@@ -122,11 +121,11 @@ CI tests are run using the Stargate and Data API versions specified in the [api-
 
 ## Connecting to AstraDB
 
-Here's a quick way to connect to AstraDB using `stargate-mongoose` driver.
+Here's a quick way to connect to AstraDB using `astra-mongoose` driver.
 
 ```typescript
 const mongoose = require("mongoose");
-const { driver, createAstraUri } = require("stargate-mongoose");
+const { driver, createAstraUri } = require("astra-mongoose");
 
 const uri = createAstraUri(
   process.env.ASTRA_DB_API_ENDPOINT,
@@ -147,7 +146,7 @@ https://docs.datastax.com/en/astra/astra-db-vector/api-reference/data-api-with-m
 
 ## Sample Applications
 
-Sample applications developed using `stargate-mongoose` driver are available in below repository.
+Sample applications developed using `astra-mongoose` driver are available in below repository.
 
 https://github.com/stargate/stargate-mongoose-sample-apps
 
@@ -398,7 +397,7 @@ Transaction operations are not supported.
 Vector search is supported. Define a property of type `[Number]` with a `dimension` property and Mongoose will treat it as a vector when you use `tableDefinitionForSchema`.
 
 ```typescript
-import { tableDefinitionFromSchema } from 'stargate-mongoose';
+import { tableDefinitionFromSchema } from 'astra-mongoose';
 
 const vectorSchema = new Schema(
     {
@@ -424,10 +423,10 @@ const res = await Vector.find({}, null, { includeSimilarity: true }).sort({ vect
 
 ### Vectorize
 
-Vectorize is supported. Use the `Vectorize` type exported by stargate-mongoose.
+Vectorize is supported. Use the `Vectorize` type exported by astra-mongoose.
 
 ```typescript
-import { tableDefinitionFromSchema, Vectorize } from 'stargate-mongoose';
+import { tableDefinitionFromSchema, Vectorize } from 'astra-mongoose';
 
 // Define raw document type override because Mongoose's TypeScript support can't infer the type of Vectorize
 interface IVector {

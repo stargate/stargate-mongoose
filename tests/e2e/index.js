@@ -1,1 +1,1 @@
-require('stargate-mongoose');
+require('astra-mongoose');

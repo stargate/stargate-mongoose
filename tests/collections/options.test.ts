@@ -34,7 +34,7 @@ describe('Options tests', async () => {
         it('should cleanup insertManyOptions', async () => {
             // @ts-expect-error
             const products: Product[] = [new Product({ name: 'Product 2', price: 10, isCertified: true }), new Product({ name: 'Product 1', price: 10, isCertified: false})];
-            //rawResult options should be cleaned up by stargate-mongoose, but 'ordered' should be preserved
+            //rawResult options should be cleaned up by astra-mongoose, but 'ordered' should be preserved
             const insertManyResp = await Product.insertMany(products, { ordered: true, rawResult: false });
             assert.strictEqual(insertManyResp.length, 2);
             assert.strictEqual(insertManyResp[0].name, 'Product 2');
@@ -61,7 +61,7 @@ describe('Options tests', async () => {
             assert.strictEqual(insertManyResp[0].name, 'Product 2');
             assert.strictEqual(insertManyResp[1].name, 'Product 1');
             assert.strictEqual(insertManyResp[2].name, 'Product 3');
-            //rawResult options should be cleaned up by stargate-mongoose, but 'upsert' should be preserved
+            //rawResult options should be cleaned up by astra-mongoose, but 'upsert' should be preserved
             const updateOneResp = await Product.updateOne({ _id: new mongoose.Types.ObjectId() },
                 { $set: { isCertified: true, name: 'Product 4', price: 5 } },
                 { upsert: true, rawResult: false, setDefaultsOnInsert: false } as unknown as Record<string, never>
@@ -86,7 +86,7 @@ describe('Options tests', async () => {
             assert.strictEqual(insertManyResp[0].name, 'Product 2');
             assert.strictEqual(insertManyResp[1].name, 'Product 1');
             assert.strictEqual(insertManyResp[2].name, 'Product 3');
-            //rawResult options should be cleaned up by stargate-mongoose, but 'upsert' should be preserved
+            //rawResult options should be cleaned up by astra-mongoose, but 'upsert' should be preserved
             const updateManyResp = await Product.updateMany(
                 { category: 'cat1' },
                 { $set : { isCertified : true }, $inc: { price: 5 } },
@@ -107,7 +107,7 @@ describe('Options tests', async () => {
         it('should cleanup deleteOneOptions', async () => {
             const product1 = new Product({ name: 'Product 1', price: 10, isCertified: true });
             await product1.save();
-            //runValidations is not a flag supported by Data API, so it should be removed by stargate-mongoose
+            //runValidations is not a flag supported by Data API, so it should be removed by astra-mongoose
             await Product.deleteOne({ _id: product1._id }, { runValidations: true } as unknown as Record<string, never>);
             const product1Deleted = await Product.findOne({ name: 'Product 1' });
             assert.strictEqual(product1Deleted, null);
@@ -126,7 +126,7 @@ describe('Options tests', async () => {
             }
             await Product.insertMany(products, { ordered: true, rawResult: false });
             //find 30 products with rawResult option
-            //rawResult must be removed and the limit must be preserved by stargate-mongoose
+            //rawResult must be removed and the limit must be preserved by astra-mongoose
             const findResp = await Product.find({ }, {}, { rawResult: false, limit : 30 });
             assert.strictEqual(findResp.length, 30);
         });

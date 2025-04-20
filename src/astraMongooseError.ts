@@ -13,15 +13,15 @@
 // limitations under the License.
 
 /**
- * Base class for stargate-mongoose-specific errors.
+ * Base class for astra-mongoose-specific errors.
  */
 
-export class StargateMongooseError extends Error {
+export class AstraMongooseError extends Error {
     extra?: Record<string, unknown>;
 
     constructor(message: string, extra?: Record<string, unknown>) {
         super(message);
-        this.name = 'StargateMongooseError';
+        this.name = 'AstraMongooseError';
         this.extra = extra;
     }
 }

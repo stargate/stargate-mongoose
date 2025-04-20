@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Schema, Document, SchemaTypeOptions } from 'mongoose';
-import { StargateMongooseError } from '../stargateMongooseError';
+import { StargateMongooseError } from '../astraMongooseError';
 import { VectorizeServiceOptions } from '@datastax/astra-db-ts';
 
 export interface VectorizeOptions extends SchemaTypeOptions<number[]> {

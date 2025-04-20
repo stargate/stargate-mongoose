@@ -74,4 +74,4 @@ So to publish a release to NPM, we need to
 git tag rel-x.y.z
 git push origin rel-x.y.z
 ```
-- Finally, check the stargate-mongoose npm registry page https://www.npmjs.com/package/stargate-mongoose and make sure the latest version is updated.
+- Finally, check the astra-mongoose npm registry page https://www.npmjs.com/package/astra-mongoose and make sure the latest version is updated.

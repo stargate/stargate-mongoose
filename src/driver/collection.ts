@@ -510,7 +510,7 @@ function processSortOption(sort: MongooseSortOption): SortOptionInternal {
         const $meta = typeof sortValue === 'object' && sortValue.$meta;
         if ($meta) {
             // Astra-db-ts 1.x does not currently support using fields other than $vector and $vectorize
-            // for vector sort and vectorize sort, but that works in tables. Stargate-mongoose added
+            // for vector sort and vectorize sort, but that works in tables. astra-mongoose added
             // support in PR #258
             result[key] = $meta as unknown as SortDirection;
         }

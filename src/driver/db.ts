@@ -27,7 +27,7 @@ import {
     TableDescriptor,
     TableOptions,
 } from '@datastax/astra-db-ts';
-import { StargateMongooseError } from '../stargateMongooseError';
+import { StargateMongooseError } from '../astraMongooseError';
 
 /**
  * Defines the base database class for interacting with Astra DB. Responsible for creating collections and tables.
@@ -183,7 +183,7 @@ export class TablesDb extends BaseDb {
     }
 
     /**
-     * Throws an error, stargate-mongoose does not support creating collections in tables mode.
+     * Throws an error, astra-mongoose does not support creating collections in tables mode.
      */
     createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: Record<string, unknown>): Promise<Collection<DocType>> {
         throw new StargateMongooseError('Cannot createCollection in tables mode; use createTable instead', { name, options });
