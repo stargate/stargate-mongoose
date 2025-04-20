@@ -16,25 +16,29 @@ import { default as MongooseCollection } from 'mongoose/lib/collection';
 import type { Connection } from './connection';
 import {
     Collection as AstraCollection,
-    CollectionDeleteOneOptions as DeleteOneOptionsInternal,
+    CollectionDeleteOneOptions,
     CollectionFindAndRerankOptions,
     CollectionFindOptions,
-    CollectionFindOneAndDeleteOptions as FindOneAndDeleteOptionsInternal,
-    CollectionFindOneAndReplaceOptions as FindOneAndReplaceOptionsInternal,
-    CollectionFindOneAndUpdateOptions as FindOneAndUpdateOptionsInternal,
-    CollectionFindOneOptions as FindOneOptionsInternal,
+    CollectionFindOneAndDeleteOptions,
+    CollectionFindOneAndReplaceOptions,
+    CollectionFindOneAndUpdateOptions,
+    CollectionFindOneOptions,
     CollectionReplaceOneOptions,
     CollectionUpdateManyOptions,
-    CollectionUpdateOneOptions as UpdateOneOptionsInternal,
+    CollectionUpdateOneOptions,
     CollectionInsertManyOptions,
     SortDirection,
     Sort as SortOptionInternal,
     Table as AstraTable,
     TableCreateIndexOptions,
+    TableDeleteOneOptions,
     TableFilter,
+    TableFindOneOptions,
     TableFindOptions,
+    TableInsertManyOptions,
     TableOptions,
     TableIndexOptions,
+    TableUpdateOneOptions,
     TableVectorIndexOptions,
     CollectionOptions
 } from '@datastax/astra-db-ts';
@@ -45,13 +49,18 @@ import { SchemaOptions, Types } from 'mongoose';
 export type MongooseSortOption = Record<string, 1 | -1 | { $meta: Array<number> } | { $meta: string }>;
 
 type FindOptions = (Omit<CollectionFindOptions, 'sort'> | Omit<TableFindOptions, 'sort'>) & { sort?: MongooseSortOption };
-type FindOneOptions = Omit<FindOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
-type FindOneAndUpdateOptions = Omit<FindOneAndUpdateOptionsInternal, 'sort'> & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
-type FindOneAndDeleteOptions = Omit<FindOneAndDeleteOptionsInternal, 'sort'> & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
-type FindOneAndReplaceOptions = Omit<FindOneAndReplaceOptionsInternal, 'sort'> & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
-type DeleteOneOptions = Omit<DeleteOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
+type FindOneOptions = (Omit<CollectionFindOneOptions, 'sort'> | Omit<TableFindOneOptions, 'sort'>) & { sort?: MongooseSortOption };
+type FindOneAndUpdateOptions = Omit<CollectionFindOneAndUpdateOptions, 'sort'>
+    & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
+type FindOneAndDeleteOptions = Omit<CollectionFindOneAndDeleteOptions, 'sort'>
+    & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
+type FindOneAndReplaceOptions = Omit<CollectionFindOneAndReplaceOptions, 'sort'>
+    & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
+type DeleteOneOptions = (Omit<CollectionDeleteOneOptions, 'sort'> | Omit<TableDeleteOneOptions, 'sort'>)
+    & { sort?: MongooseSortOption };
 type ReplaceOneOptions = Omit<CollectionReplaceOneOptions, 'sort'> & { sort?: MongooseSortOption };
-type UpdateOneOptions = Omit<UpdateOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
+type UpdateOneOptions = (Omit<CollectionUpdateOneOptions, 'sort'> | Omit<TableUpdateOneOptions, 'sort'>)
+    & { sort?: MongooseSortOption };
 
 interface StargateMongooseIndexDescription {
     name: string,
@@ -76,7 +85,7 @@ export interface MongooseCollectionOptions {
  * Collection operations supported by the driver. This class is called "Collection" for consistency with Mongoose, because
  * in Mongoose a Collection is the interface that Models and Queries use to communicate with the database. However, from
  * an Astra perspective, this class can be a wrapper around a Collection **or** a Table depending on the corresponding db's
- * `useTables` option.
+ * `useTables` option. Needs to be a separate class because Mongoose only supports one collection class.
  */
 export class Collection<DocType extends Record<string, unknown> = Record<string, unknown>> extends MongooseCollection {
     debugType = 'StargateMongooseCollection';
@@ -165,7 +174,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             return this.collection.findOne(filter).then(doc => deserializeDoc<DocType>(doc));
         }
 
-        const requestOptions: FindOneOptionsInternal = options != null && options.sort != null
+        const requestOptions: CollectionFindOneOptions | TableFindOneOptions = options != null && options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
 
@@ -192,7 +201,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param documents
      * @param options
      */
-    async insertMany(documents: Record<string, unknown>[], options?: CollectionInsertManyOptions) {
+    async insertMany(documents: Record<string, unknown>[], options?: CollectionInsertManyOptions | TableInsertManyOptions) {
         documents = documents.map(doc => serialize(doc, this.useTables));
         return this.collection.insertMany(documents as DocType[], options);
     }
@@ -207,7 +216,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findOneAndUpdate() with tables');
         }
-        const requestOptions: FindOneAndUpdateOptionsInternal = options.sort != null
+        const requestOptions: CollectionFindOneAndUpdateOptions = options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
 
@@ -235,7 +244,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findOneAndDelete() with tables');
         }
-        const requestOptions: FindOneAndDeleteOptionsInternal = options.sort != null
+        const requestOptions: CollectionFindOneAndDeleteOptions = options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
         filter = serialize(filter);
@@ -261,7 +270,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findOneAndReplace() with tables');
         }
-        const requestOptions: FindOneAndReplaceOptionsInternal = options.sort != null
+        const requestOptions: CollectionFindOneAndReplaceOptions = options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
         filter = serialize(filter);
@@ -295,7 +304,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param callback
      */
     deleteOne(filter: Record<string, unknown>, options: DeleteOneOptions) {
-        const requestOptions: DeleteOneOptionsInternal = options.sort != null
+        const requestOptions: CollectionDeleteOneOptions | TableDeleteOneOptions = options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
         filter = serialize(filter, this.useTables);
@@ -329,7 +338,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param options
      */
     updateOne(filter: Record<string, unknown>, update: Record<string, unknown>, options: UpdateOneOptions) {
-        const requestOptions: UpdateOneOptionsInternal = options.sort != null
+        const requestOptions: CollectionUpdateOneOptions | TableUpdateOneOptions = options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
         filter = serialize(filter, this.useTables);
