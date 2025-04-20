@@ -14,16 +14,16 @@
 
 import assert from 'assert';
 import mongoose from 'mongoose';
-import * as StargateMongooseDriver from '../../src/driver';
+import * as AstraMongooseDriver from '../../src/driver';
 import { testClient, TEST_TABLE_NAME } from '../fixtures';
 import { CartModelType, ProductModelType, createMongooseCollections } from '../mongooseFixtures';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
-import type { StargateMongoose } from '../../src';
+import type { AstraMongoose } from '../../src';
 
 describe('TABLES: driver based tests', async () => {
     let Product: ProductModelType;
     let Cart: CartModelType;
-    let mongooseInstance: StargateMongoose;
+    let mongooseInstance: AstraMongoose;
 
     before(async function createTables() {
         ({ Product, Cart, mongooseInstance } = await createMongooseCollections(true));
@@ -35,7 +35,7 @@ describe('TABLES: driver based tests', async () => {
         dbUri = testClient!.uri;
         isAstra = testClient!.isAstra;
     });
-    describe('StargateMongoose - index', () => {
+    describe('AstraMongoose - index', () => {
         it('should leverage astradb', async function () {
             await Promise.all([Product.deleteMany({}), Cart.deleteMany({})]);
             const product1 = new Product({
@@ -224,7 +224,7 @@ describe('TABLES: driver based tests', async () => {
     describe('namespace management tests', () => {
         it('should fail when dropDatabase is called', async () => {
             const mongooseInstance = new mongoose.Mongoose();
-            mongooseInstance.setDriver(StargateMongooseDriver);
+            mongooseInstance.setDriver(AstraMongooseDriver);
             mongooseInstance.set('autoCreate', false);
             mongooseInstance.set('autoIndex', false);
             const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };

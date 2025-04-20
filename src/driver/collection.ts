@@ -64,7 +64,7 @@ type ReplaceOneOptions = Omit<CollectionReplaceOneOptions, 'sort'> & { sort?: Mo
 type UpdateOneOptions = (Omit<CollectionUpdateOneOptions, 'sort'> | Omit<TableUpdateOneOptions, 'sort'>)
     & { sort?: MongooseSortOption };
 
-interface StargateMongooseIndexDescription {
+interface AstraMongooseIndexDescription {
     name: string,
     definition: { column: string, options?: TableIndexOptions | TableVectorIndexOptions },
     key: Record<string, 1>
@@ -90,7 +90,7 @@ export interface MongooseCollectionOptions {
  * `useTables` option. Needs to be a separate class because Mongoose only supports one collection class.
  */
 export class Collection<DocType extends Record<string, unknown> = Record<string, unknown>> extends MongooseCollection {
-    debugType = 'StargateMongooseCollection';
+    debugType = 'AstraMongooseCollection';
     _collection?: AstraCollection<DocType> | AstraTable<DocType>;
     _closed: boolean;
     connection: Connection;
@@ -409,7 +409,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * Returns a list of all indexes on the collection. Returns a pseudo-cursor for Mongoose compatibility.
      * Only works in tables mode, throws an error in collections mode.
      */
-    listIndexes(): { toArray: () => Promise<StargateMongooseIndexDescription[]> } {
+    listIndexes(): { toArray: () => Promise<AstraMongooseIndexDescription[]> } {
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use listIndexes() with collections');
         }
@@ -437,7 +437,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     async createIndex(indexSpec: Record<string, boolean>, options?: TableCreateIndexOptions & { name?: string, vector?: false }): Promise<void>;
 
     async createIndex(indexSpec: Record<string, boolean | 1 | -1>, options?: (TableCreateVectorIndexOptions | TableCreateIndexOptions) & { name?: string, vector?: boolean }): Promise<void> {
-      console.log('CREATE INDEX', indexSpec, options);
+        console.log('CREATE INDEX', indexSpec, options);
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use createIndex() with collections');
         }

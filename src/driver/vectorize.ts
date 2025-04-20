@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Schema, Document, SchemaTypeOptions } from 'mongoose';
-import { StargateMongooseError } from '../astraMongooseError';
+import { AstraMongooseError } from '../astraMongooseError';
 import { VectorizeServiceOptions } from '@datastax/astra-db-ts';
 
 export interface VectorizeOptions extends SchemaTypeOptions<number[]> {
@@ -41,7 +41,7 @@ export class Vectorize extends Schema.Types.Array {
             this.index.call(this, options.index);
         }
         if (typeof options?.service?.provider !== 'string') {
-            throw new StargateMongooseError('`provider` option for vectorize paths must be a string, got: ' + options?.service?.provider, {
+            throw new AstraMongooseError('`provider` option for vectorize paths must be a string, got: ' + options?.service?.provider, {
                 options
             });
         }

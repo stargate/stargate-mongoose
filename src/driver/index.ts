@@ -25,4 +25,4 @@ export const plugins = [handleVectorFieldsProjection, addVectorDimensionValidato
 import { Vectorize } from './vectorize';
 export const SchemaTypes = { Vectorize };
 
-export type StargateMongoose = Mongoose & { connection: Connection, connections: Connection[] };
+export type AstraMongoose = Mongoose & { connection: Connection, connections: Connection[] };

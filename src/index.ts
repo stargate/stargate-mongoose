@@ -25,16 +25,16 @@ export * as driver from './driver';
 export { default as createAstraUri } from './createAstraUri';
 export { default as tableDefinitionFromSchema } from './tableDefinitionFromSchema';
 
-import * as StargateMongooseDriver from './driver';
+import * as AstraMongooseDriver from './driver';
 import type { Mongoose, Model } from 'mongoose';
 
 export { Vectorize, VectorizeOptions } from './driver';
 
-export { StargateMongooseError } from './stargateMongooseError';
+export { AstraMongooseError } from './astraMongooseError';
 
-export type StargateMongoose = Omit<Mongoose, 'connection'> & { connection: StargateMongooseDriver.Connection };
+export type AstraMongoose = Omit<Mongoose, 'connection'> & { connection: AstraMongooseDriver.Connection };
 
-export type StargateMongooseModel<DocType, ModelType = Model<DocType>> = Model<DocType, ModelType> & {
+export type AstraMongooseModel<DocType, ModelType = Model<DocType>> = Model<DocType, ModelType> & {
   findAndRerank(filter: Record<string, unknown>, options?: CollectionFindAndRerankOptions): Promise<RerankedResult<DocType>[]>;
 };
 
@@ -63,5 +63,5 @@ declare module 'mongoose' {
         serdes?: CollectionSerDesConfig | TableSerDesConfig
     }
 
-    function setDriver(driver: typeof StargateMongooseDriver): StargateMongoose;
+    function setDriver(driver: typeof AstraMongooseDriver): AstraMongoose;
 }

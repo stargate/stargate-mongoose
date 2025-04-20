@@ -2,11 +2,13 @@
 ## Classes
 
 <dl>
+<dt><a href="#AstraMongooseError">AstraMongooseError</a></dt>
+<dd><p>Base class for astra-mongoose-specific errors.</p></dd>
 <dt><a href="#Collection">Collection</a></dt>
 <dd><p>Collection operations supported by the driver. This class is called &quot;Collection&quot; for consistency with Mongoose, because
 in Mongoose a Collection is the interface that Models and Queries use to communicate with the database. However, from
 an Astra perspective, this class can be a wrapper around a Collection <strong>or</strong> a Table depending on the corresponding db's
-<code>useTables</code> option.</p></dd>
+<code>useTables</code> option. Needs to be a separate class because Mongoose only supports one collection class.</p></dd>
 <dt><a href="#Connection">Connection</a></dt>
 <dd><p>Extends Mongoose's Connection class to provide compatibility with Data API. Responsible for maintaining the
 connection to Data API.</p></dd>
@@ -21,8 +23,6 @@ for tables and CollectionsDb class for collections.</p></dd>
 <dt><a href="#Vectorize">Vectorize</a></dt>
 <dd><p>Vectorize is a custom Mongoose SchemaType that allows you set a vector value to a string
 for tables mode vectorize API. A Vectorize path is an array of numbers that can also be set to a string.</p></dd>
-<dt><a href="#StargateMongooseError">StargateMongooseError</a></dt>
-<dd><p>Base class for stargate-mongoose-specific errors.</p></dd>
 </dl>
 
 ## Members
@@ -52,13 +52,19 @@ is either nullish or has a length equal to the dimension.</p>
 <dd><p>Given a Mongoose schema, create an equivalent Data API table definition for use with <code>createTable()</code></p></dd>
 </dl>
 
+<a name="AstraMongooseError"></a>
+
+## AstraMongooseError
+<p>Base class for astra-mongoose-specific errors.</p>
+
+**Kind**: global class  
 <a name="Collection"></a>
 
 ## Collection
 <p>Collection operations supported by the driver. This class is called &quot;Collection&quot; for consistency with Mongoose, because
 in Mongoose a Collection is the interface that Models and Queries use to communicate with the database. However, from
 an Astra perspective, this class can be a wrapper around a Collection <strong>or</strong> a Table depending on the corresponding db's
-<code>useTables</code> option.</p>
+<code>useTables</code> option. Needs to be a separate class because Mongoose only supports one collection class.</p>
 
 **Kind**: global class  
 
@@ -82,7 +88,6 @@ an Astra perspective, this class can be a wrapper around a Collection <strong>or
     * [.aggregate(pipeline, options)](#Collection+aggregate)
     * [.listIndexes()](#Collection+listIndexes)
     * [.createIndex(indexSpec, options)](#Collection+createIndex)
-    * [.createVectorIndex(name, column, options)](#Collection+createVectorIndex)
     * [.dropIndex(name)](#Collection+dropIndex)
 
 <a name="Collection+countDocuments"></a>
@@ -255,7 +260,7 @@ Converted to a <code>findOneAndReplace()</code> under the hood.</p>
 <a name="Collection+runCommand"></a>
 
 ### collection.runCommand(command)
-<p>Run an arbitrary command against this collection's http client</p>
+<p>Run an arbitrary command against this collection</p>
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 
@@ -306,19 +311,6 @@ Only works in tables mode, throws an error in collections mode.</p>
 | indexSpec | <p>MongoDB-style index spec for Mongoose compatibility</p> |
 | options |  |
 
-<a name="Collection+createVectorIndex"></a>
-
-### collection.createVectorIndex(name, column, options)
-<p>Create a new vector index. Only works in tables mode, throws an error in collections mode.</p>
-
-**Kind**: instance method of [<code>Collection</code>](#Collection)  
-
-| Param |
-| --- |
-| name | 
-| column | 
-| options | 
-
 <a name="Collection+dropIndex"></a>
 
 ### collection.dropIndex(name)
@@ -344,7 +336,7 @@ connection to Data API.</p>
     * [.createTable(name, definition)](#Connection+createTable)
     * [.dropCollection(name)](#Connection+dropCollection)
     * [.dropTable(name)](#Connection+dropTable)
-    * [.createNamespace(namespace)](#Connection+createNamespace)
+    * [.createKeyspace(name)](#Connection+createKeyspace)
     * [.listCollections()](#Connection+listCollections)
     * [.listTables()](#Connection+listTables)
     * [.runCommand(command)](#Connection+runCommand)
@@ -411,17 +403,16 @@ connection to Data API.</p>
 | --- | --- |
 | name | <p>The name of the table to drop</p> |
 
-<a name="Connection+createNamespace"></a>
+<a name="Connection+createKeyspace"></a>
 
-### connection.createNamespace(namespace)
-<p>Create a new namespace in the database.
-Throws an error if connecting to Astra, as Astra does not support creating namespaces through Data API.</p>
+### connection.createKeyspace(name)
+<p>Create a new keyspace.</p>
 
 **Kind**: instance method of [<code>Connection</code>](#Connection)  
 
 | Param | Description |
 | --- | --- |
-| namespace | <p>The name of the namespace to create</p> |
+| name | <p>The name of the keyspace to create</p> |
 
 <a name="Connection+listCollections"></a>
 
@@ -449,7 +440,7 @@ Throws an error if connecting to Astra, as Astra does not support creating names
 <a name="Connection+listDatabases"></a>
 
 ### connection.listDatabases()
-<p>List all keyspaces. Only available in local Data API, not Astra. Called &quot;listDatabases&quot; for Mongoose compatibility</p>
+<p>List all keyspaces. Called &quot;listDatabases&quot; for Mongoose compatibility</p>
 
 **Kind**: instance method of [<code>Connection</code>](#Connection)  
 <a name="Connection+openUri"></a>
@@ -496,7 +487,6 @@ for tables and CollectionsDb class for collections.</p>
 
 * [BaseDb](#BaseDb)
     * [new BaseDb()](#new_BaseDb_new)
-    * [.httpClient](#BaseDb+httpClient)
     * [.createTable(name, definition)](#BaseDb+createTable)
     * [.dropCollection(name)](#BaseDb+dropCollection)
     * [.dropTable(name)](#BaseDb+dropTable)
@@ -511,12 +501,6 @@ for tables and CollectionsDb class for collections.</p>
 a Table instance, <strong>not</strong> a Collection instance. Also, if tables mode, <code>createCollection()</code> throws an
 error for Mongoose <code>syncIndexes()</code> compatibility reasons.</p>
 
-<a name="BaseDb+httpClient"></a>
-
-### baseDb.httpClient
-<p>Return the raw HTTP client used by astra-db-ts to talk to the db.</p>
-
-**Kind**: instance property of [<code>BaseDb</code>](#BaseDb)  
 <a name="BaseDb+createTable"></a>
 
 ### baseDb.createTable(name, definition)
@@ -653,7 +637,7 @@ this method for getting a Mongoose Collection instance, which may map to a table
 <a name="TablesDb+createCollection"></a>
 
 ### tablesDb.createCollection()
-<p>Throws an error, stargate-mongoose does not support creating collections in tables mode.</p>
+<p>Throws an error, astra-mongoose does not support creating collections in tables mode.</p>
 
 **Kind**: instance method of [<code>TablesDb</code>](#TablesDb)  
 <a name="Vectorize"></a>
@@ -694,12 +678,6 @@ the one exception being strings.</p>
 <p>Overwritten to account for Mongoose SchemaArray constructor taking different arguments than Vectorize</p>
 
 **Kind**: instance method of [<code>Vectorize</code>](#Vectorize)  
-<a name="StargateMongooseError"></a>
-
-## StargateMongooseError
-<p>Base class for stargate-mongoose-specific errors.</p>
-
-**Kind**: global class  
 <a name="BaseDb"></a>
 
 ## BaseDb ⇐ [<code>BaseDb</code>](#BaseDb)
@@ -710,7 +688,6 @@ the one exception being strings.</p>
 
 * [BaseDb](#BaseDb) ⇐ [<code>BaseDb</code>](#BaseDb)
     * [new BaseDb()](#new_BaseDb_new)
-    * [.httpClient](#BaseDb+httpClient)
     * [.createTable(name, definition)](#BaseDb+createTable)
     * [.dropCollection(name)](#BaseDb+dropCollection)
     * [.dropTable(name)](#BaseDb+dropTable)
@@ -725,12 +702,6 @@ the one exception being strings.</p>
 a Table instance, <strong>not</strong> a Collection instance. Also, if tables mode, <code>createCollection()</code> throws an
 error for Mongoose <code>syncIndexes()</code> compatibility reasons.</p>
 
-<a name="BaseDb+httpClient"></a>
-
-### baseDb.httpClient
-<p>Return the raw HTTP client used by astra-db-ts to talk to the db.</p>
-
-**Kind**: instance property of [<code>BaseDb</code>](#BaseDb)  
 <a name="BaseDb+createTable"></a>
 
 ### baseDb.createTable(name, definition)

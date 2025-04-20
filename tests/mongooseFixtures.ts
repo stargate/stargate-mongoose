@@ -1,6 +1,6 @@
 import { testClient } from './fixtures';
 import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
-import * as StargateMongooseDriver from '../src/driver';
+import * as AstraMongooseDriver from '../src/driver';
 import assert from 'assert';
 import { plugins } from '../src/driver';
 import tableDefinitionFromSchema from '../src/tableDefinitionFromSchema';
@@ -26,7 +26,7 @@ export const productSchema = new Schema({
     }
 }, { versionKey: false });
 
-export const mongooseInstance = new Mongoose().setDriver(StargateMongooseDriver);
+export const mongooseInstance = new Mongoose().setDriver(AstraMongooseDriver);
 mongooseInstance.set('autoCreate', false);
 mongooseInstance.set('autoIndex', false);
 
@@ -41,7 +41,7 @@ export type ProductModelType = typeof Product;
 export type ProductHydratedDoc = ReturnType<(typeof Product)['hydrate']>;
 export type ProductRawDoc = SubdocsToPOJOs<InferSchemaType<typeof productSchema>>;
 
-export const mongooseInstanceTables = new Mongoose().setDriver(StargateMongooseDriver);
+export const mongooseInstanceTables = new Mongoose().setDriver(AstraMongooseDriver);
 mongooseInstanceTables.set('autoCreate', false);
 mongooseInstanceTables.set('autoIndex', false);
 

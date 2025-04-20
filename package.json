@@ -1,7 +1,7 @@
 {
   "name": "astra-mongoose",
   "version": "1.0.0-rc.0",
-  "description": "Stargate's NodeJS Mongoose compatability client",
+  "description": "Astra's NodeJS Mongoose compatability client",
   "contributors": [
     "CRW (http://barnyrubble.tumblr.com/)",
     "Valeri Karpov (https://github.com/vkarpov15)",

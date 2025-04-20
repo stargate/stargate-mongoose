@@ -19,19 +19,19 @@ import {
 } from '../fixtures';
 import mongoose, { Schema, InferSchemaType, InsertManyResult, Model } from 'mongoose';
 import { once } from 'events';
-import * as StargateMongooseDriver from '../../src/driver';
+import * as AstraMongooseDriver from '../../src/driver';
 import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '../../src/driver';
 import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
 import { FindCursor, DataAPIResponseError, DataAPIClient } from '@datastax/astra-db-ts';
 import { Long, UUID } from 'bson';
-import type { StargateMongoose, StargateMongooseModel } from '../../src';
+import type { AstraMongoose, AstraMongooseModel } from '../../src';
 
 describe('COLLECTIONS: mongoose Model API level tests with collections', async () => {
     let Product: ProductModelType;
     let Cart: CartModelType;
-    let mongooseInstance: StargateMongoose;
+    let mongooseInstance: AstraMongoose;
 
     before(async function() {
         this.timeout(120_000);
@@ -289,7 +289,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             );
         });
         it('API ops tests Model.db', async () => {
-            const conn = Product.db as unknown as StargateMongooseDriver.Connection;
+            const conn = Product.db as unknown as AstraMongooseDriver.Connection;
             assert.strictEqual(conn.keyspaceName, parseUri(testClient!.uri).keyspaceName);
             // @ts-expect-error
             assert.strictEqual(conn.db.name, parseUri(testClient!.uri).keyspaceName);
@@ -760,7 +760,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.ok(Array.isArray(res.data.documents));
         });
         it('API ops tests createConnection() with uri and options', async function() {
-            const connection = mongooseInstance.createConnection(testClient!.uri, testClient!.options) as unknown as StargateMongooseDriver.Connection;
+            const connection = mongooseInstance.createConnection(testClient!.uri, testClient!.options) as unknown as AstraMongooseDriver.Connection;
             await connection.asPromise();
             const promise = connection.listCollections({ nameOnly: false });
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
@@ -801,14 +801,14 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             }
         });
         it('API ops tests createConnection() with queueing', async function() {
-            const connection = mongooseInstance.createConnection() as unknown as StargateMongooseDriver.Connection;
+            const connection = mongooseInstance.createConnection() as unknown as AstraMongooseDriver.Connection;
             const promise = connection.listCollections({ nameOnly: false });
 
             await connection.openUri(testClient!.uri, testClient!.options);
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
         });
         it('API ops tests createConnection() with no buffering', async function() {
-            const connection = mongooseInstance.createConnection(testClient!.uri, { ...testClient!.options, bufferCommands: false }) as unknown as StargateMongooseDriver.Connection;
+            const connection = mongooseInstance.createConnection(testClient!.uri, { ...testClient!.options, bufferCommands: false }) as unknown as AstraMongooseDriver.Connection;
             await connection.asPromise();
             await connection.close();
             await assert.rejects(connection.listCollections({}), /Connection is not connected/);
@@ -1105,7 +1105,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             }
         );
 
-        let Vector: StargateMongooseModel<InferSchemaType<typeof vectorSchema>>;
+        let Vector: AstraMongooseModel<InferSchemaType<typeof vectorSchema>>;
 
         before(async function() {
             if (!testClient!.isAstra) {
@@ -1117,7 +1117,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 'Vector',
                 vectorSchema,
                 'vector'
-            ) as StargateMongooseModel<InferSchemaType<typeof vectorSchema>>;
+            ) as AstraMongooseModel<InferSchemaType<typeof vectorSchema>>;
 
             const collections = await mongooseInstance.connection.listCollections({ nameOnly: false });
             const vectorCollection = collections.find(coll => coll.name === 'vector');

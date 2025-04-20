@@ -24,7 +24,7 @@ import {
     DataAPIClient,
     UsernamePasswordTokenProvider
 } from '@datastax/astra-db-ts';
-import { StargateMongooseError } from '../stargateMongooseError';
+import { AstraMongooseError } from '../astraMongooseError';
 
 interface ConnectOptionsInternal extends ConnectOptions {
     useTables?: boolean;
@@ -44,7 +44,7 @@ interface ConnectOptionsInternal extends ConnectOptions {
  */
 
 export class Connection extends MongooseConnection {
-    debugType = 'StargateMongooseConnection';
+    debugType = 'AstraMongooseConnection';
     initialConnection: Promise<Connection> | null = null;
     client: DataAPIClient | null = null;
     admin: AstraDbAdmin | DataAPIDbAdmin | null = null;
@@ -78,7 +78,7 @@ export class Connection extends MongooseConnection {
         if (shouldWaitForClient) {
             await this._waitForConnect();
         } else if (this.readyState !== STATES.connected) {
-            throw new StargateMongooseError('Connection is not connected', { readyState: this.readyState });
+            throw new AstraMongooseError('Connection is not connected', { readyState: this.readyState });
         }
     }
 
@@ -271,7 +271,7 @@ export class Connection extends MongooseConnection {
             }
 
             if (options?.username == null || options?.password == null) {
-                throw new StargateMongooseError('Username and password are required when connecting to self-hosted DSE', { uri, options });
+                throw new AstraMongooseError('Username and password are required when connecting to self-hosted DSE', { uri, options });
             }
             const client = new DataAPIClient(
                 new UsernamePasswordTokenProvider(options.username, options.password),
@@ -315,7 +315,7 @@ export class Connection extends MongooseConnection {
      */
 
     setClient(_client: DataAPIClient) {
-        throw new StargateMongooseError('SetClient not supported');
+        throw new AstraMongooseError('SetClient not supported');
     }
 
     /**
@@ -334,7 +334,7 @@ export class Connection extends MongooseConnection {
      */
 
     startSession() {
-        throw new StargateMongooseError('startSession() Not Implemented');
+        throw new AstraMongooseError('startSession() Not Implemented');
     }
 
     /**

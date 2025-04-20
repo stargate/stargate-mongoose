@@ -17,17 +17,17 @@ import {
     testClient
 } from '../fixtures';
 import mongoose, { Schema, InferSchemaType, InsertManyResult } from 'mongoose';
-import * as StargateMongooseDriver from '../../src/driver';
+import * as AstraMongooseDriver from '../../src/driver';
 import {OperationNotSupportedError} from '../../src/driver';
 import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
 import { DataAPIResponseError, DataAPIClient } from '@datastax/astra-db-ts';
-import type { StargateMongoose } from '../../src';
+import type { AstraMongoose } from '../../src';
 
 describe('TABLES: Mongoose Model API level tests', async () => {
     let Product: ProductModelType;
     let Cart: CartModelType;
-    let mongooseInstance: StargateMongoose;
+    let mongooseInstance: AstraMongoose;
 
     before(async () => {
         ({ Product, Cart, mongooseInstance } = await createMongooseCollections(true));
@@ -199,7 +199,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             Product.schema._indexes = [];
         });
         it('API ops tests Model.db', async () => {
-            const conn = Product.db as unknown as StargateMongooseDriver.Connection;
+            const conn = Product.db as unknown as AstraMongooseDriver.Connection;
             assert.strictEqual(conn.keyspaceName, parseUri(testClient!.uri).keyspaceName);
             // @ts-expect-error
             assert.strictEqual(conn.db.name, parseUri(testClient!.uri).keyspaceName);
@@ -596,7 +596,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             assert.ok(Array.isArray(res.data.documents));
         });
         it('API ops tests createConnection() with uri and options', async function() {
-            const connection = mongooseInstance.createConnection(testClient!.uri, testClient!.options) as unknown as StargateMongooseDriver.Connection;
+            const connection = mongooseInstance.createConnection(testClient!.uri, testClient!.options) as unknown as AstraMongooseDriver.Connection;
             await connection.asPromise();
             const promise = connection.listTables({ nameOnly: false });
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
@@ -637,14 +637,14 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             }
         });
         it('API ops tests createConnection() with queueing', async function() {
-            const connection = mongooseInstance.createConnection() as unknown as StargateMongooseDriver.Connection;
+            const connection = mongooseInstance.createConnection() as unknown as AstraMongooseDriver.Connection;
             const promise = connection.listTables({ nameOnly: false });
 
             await connection.openUri(testClient!.uri, testClient!.options);
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
         });
         it('API ops tests createConnection() with no buffering', async function() {
-            const connection = mongooseInstance.createConnection(testClient!.uri, { ...testClient!.options, bufferCommands: false }) as unknown as StargateMongooseDriver.Connection;
+            const connection = mongooseInstance.createConnection(testClient!.uri, { ...testClient!.options, bufferCommands: false }) as unknown as AstraMongooseDriver.Connection;
             await connection.asPromise();
             await connection.close();
             await assert.rejects(connection.listCollections({}), /Connection is not connected/);
