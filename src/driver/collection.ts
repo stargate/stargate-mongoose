@@ -437,7 +437,6 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     async createIndex(indexSpec: Record<string, boolean>, options?: TableCreateIndexOptions & { name?: string, vector?: false }): Promise<void>;
 
     async createIndex(indexSpec: Record<string, boolean | 1 | -1>, options?: (TableCreateVectorIndexOptions | TableCreateIndexOptions) & { name?: string, vector?: boolean }): Promise<void> {
-        console.log('CREATE INDEX', indexSpec, options);
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use createIndex() with collections');
         }
