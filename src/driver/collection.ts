@@ -18,7 +18,7 @@ import {
     Collection as AstraCollection,
     CollectionDeleteOneOptions as DeleteOneOptionsInternal,
     CollectionFindAndRerankOptions,
-    CollectionFindOptions as FindOptionsInternal,
+    CollectionFindOptions,
     CollectionFindOneAndDeleteOptions as FindOneAndDeleteOptionsInternal,
     CollectionFindOneAndReplaceOptions as FindOneAndReplaceOptionsInternal,
     CollectionFindOneAndUpdateOptions as FindOneAndUpdateOptionsInternal,
@@ -30,8 +30,9 @@ import {
     SortDirection,
     Sort as SortOptionInternal,
     Table as AstraTable,
-    TableFilter,
     TableCreateIndexOptions,
+    TableFilter,
+    TableFindOptions,
     TableOptions,
     TableIndexOptions,
     TableVectorIndexOptions,
@@ -43,7 +44,7 @@ import { SchemaOptions, Types } from 'mongoose';
 
 export type MongooseSortOption = Record<string, 1 | -1 | { $meta: Array<number> } | { $meta: string }>;
 
-type FindOptions = Omit<FindOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
+type FindOptions = (Omit<CollectionFindOptions, 'sort'> | Omit<TableFindOptions, 'sort'>) & { sort?: MongooseSortOption };
 type FindOneOptions = Omit<FindOneOptionsInternal, 'sort'> & { sort?: MongooseSortOption };
 type FindOneAndUpdateOptions = Omit<FindOneAndUpdateOptionsInternal, 'sort'> & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
 type FindOneAndDeleteOptions = Omit<FindOneAndDeleteOptionsInternal, 'sort'> & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
@@ -136,16 +137,16 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param callback
      */
     find(filter: Record<string, unknown>, options: FindOptions) {
-        const requestOptions: FindOptionsInternal = options != null && options.sort != null
+        const requestOptions: CollectionFindOptions | TableFindOptions = options != null && options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
         filter = serialize(filter, this.useTables);
 
         // Weirdness to work around astra-db-ts method overrides: `find()` with `projection: never` means we need a separate branch
         if (this.collection instanceof AstraTable) {
-            return this.collection.find(filter as TableFilter<DocType>, requestOptions).map(doc => deserializeDoc<DocType>(doc));
+            return this.collection.find(filter as TableFilter<DocType>, requestOptions).map(doc => deserializeDoc<DocType>(doc) as DocType);
         } else {
-            return this.collection.find(filter, requestOptions).map(doc => deserializeDoc<DocType>(doc));
+            return this.collection.find(filter, requestOptions).map(doc => deserializeDoc<DocType>(doc) as DocType);
         }
     }
 
@@ -408,9 +409,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
          */
         return {
             toArray: () => this.runCommand({ listIndexes: { options: { explain: true } } })
-                .then((res: { status: { indexes: AstraIndexDescription[] } }) => {
+                .then((res: { status?: { indexes?: AstraIndexDescription[] } }) => {
                     // Mongoose uses the `key` property of an index for index diffing in `cleanIndexes()` and `syncIndexes()`.
-                    return res.status.indexes.map((index) => ({ ...index, key: { [index.definition.column]: 1 } }));
+                    return res.status?.indexes?.map((index) => ({ ...index, key: { [index.definition.column]: 1 } })) ?? [];
                 })
         };
     }
