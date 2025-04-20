@@ -37,6 +37,9 @@ export class Vectorize extends Schema.Types.Array {
         super(key, { type: 'Number' });
         this.options = options;
         this.instance = 'Vectorize';
+        if (options?.index) {
+            this.index.call(this, options.index);
+        }
         if (typeof options?.service?.provider !== 'string') {
             throw new StargateMongooseError('`provider` option for vectorize paths must be a string, got: ' + options?.service?.provider, {
                 options

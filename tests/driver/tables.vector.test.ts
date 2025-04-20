@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { FindCursor } from '@datastax/astra-db-ts';
-import { InferSchemaType, Model, Schema, Types } from 'mongoose';
+import { IndexOptions, InferSchemaType, Model, Schema, Types } from 'mongoose';
 import { Vectorize } from '../../src/driver/vectorize';
 import assert from 'assert';
 import { testClient } from '../fixtures';
@@ -25,7 +25,12 @@ describe('TABLES: vector search', function() {
     let vectorIds: Types.ObjectId[] = [];
     const vectorSchema = new Schema(
         {
-            vector: { type: [Number], default: () => void 0, dimension: 2 },
+            vector: {
+                type: [Number],
+                default: () => void 0,
+                dimension: 2,
+                index: { name: 'vectortables', vector: true }
+            },
             name: 'String'
         },
         {
@@ -59,7 +64,7 @@ describe('TABLES: vector search', function() {
             await mongooseInstance.connection.createTable('vector_table', tableDefinitionFromSchema(vectorSchema));
         }
 
-        await mongooseInstance.connection.collection('vector_table').createVectorIndex('vectortables', 'vector');
+        await Vector.createIndexes();
     });
 
     beforeEach(async function() {
@@ -82,7 +87,7 @@ describe('TABLES: vector search', function() {
         let indexes = await mongooseInstance.connection.collection('vector_table').listIndexes().toArray();
         assert.deepStrictEqual(indexes, []);
 
-        await mongooseInstance.connection.collection('vector_table').createVectorIndex('vectortables', 'vector');
+        await mongooseInstance.connection.collection('vector_table').createIndex({ vector: true }, { name: 'vectortables', vector: true });
         indexes = await mongooseInstance.connection.collection('vector_table').listIndexes().toArray();
         assert.deepStrictEqual(indexes, [
             {
@@ -194,6 +199,7 @@ describe('TABLES: vectorize', function () {
     vectorSchema.path('vector', new Vectorize('vector', {
         default: [],
         dimension: 1024,
+        index: { name: 'vectortables', vector: true } as IndexOptions,
         service: {
             provider: 'nvidia',
             modelName: 'NV-Embed-QA'
@@ -231,7 +237,7 @@ describe('TABLES: vectorize', function () {
             await mongooseInstance.connection.createTable('vector_table', tableDefinition);
         }
 
-        await mongooseInstance.connection.collection('vector_table').createVectorIndex('vectortables', 'vector');
+        await Vector.createIndexes();
     });
 
     beforeEach(async function () {

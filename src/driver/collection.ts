@@ -40,11 +40,13 @@ import {
     TableIndexOptions,
     TableUpdateOneOptions,
     TableVectorIndexOptions,
-    CollectionOptions
+    CollectionOptions,
+    TableCreateVectorIndexOptions
 } from '@datastax/astra-db-ts';
+import { SchemaOptions } from 'mongoose';
 import { serialize } from '../serialize';
 import deserializeDoc from '../deserializeDoc';
-import { SchemaOptions, Types } from 'mongoose';
+import setDefaultIdForUpsert from '../setDefaultIdForUpsert';
 
 export type MongooseSortOption = Record<string, 1 | -1 | { $meta: Array<number> } | { $meta: string }>;
 
@@ -431,7 +433,11 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param indexSpec MongoDB-style index spec for Mongoose compatibility
      * @param options
      */
-    async createIndex(indexSpec: Record<string, boolean>, options?: TableCreateIndexOptions & { name?: string }): Promise<void> {
+    async createIndex(indexSpec: Record<string, boolean>, options: TableCreateVectorIndexOptions & { name?: string, vector: true }): Promise<void>;
+    async createIndex(indexSpec: Record<string, boolean>, options?: TableCreateIndexOptions & { name?: string, vector?: false }): Promise<void>;
+
+    async createIndex(indexSpec: Record<string, boolean | 1 | -1>, options?: (TableCreateVectorIndexOptions | TableCreateIndexOptions) & { name?: string, vector?: boolean }): Promise<void> {
+      console.log('CREATE INDEX', indexSpec, options);
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use createIndex() with collections');
         }
@@ -439,21 +445,19 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             throw new TypeError('createIndex indexSpec must have exactly 1 key');
         }
         const [column] = Object.keys(indexSpec);
-        return this.collection.createIndex(options?.name ?? column, column, { ifNotExists: true, ...options });
-    }
-
-    /**
-     * Create a new vector index. Only works in tables mode, throws an error in collections mode.
-     *
-     * @param name
-     * @param column
-     * @param options
-     */
-    async createVectorIndex(name: string, column: string, options?: { metric: 'cosine' | 'euclidean' | 'dot_product', sourceModel?: string }): Promise<void> {
-        if (this.collection instanceof AstraCollection) {
-            throw new OperationNotSupportedError('Cannot use createVectorIndex() with collections');
+        if (options?.vector) {
+            return this.collection.createVectorIndex(
+                options?.name ?? column,
+                column,
+                { ifNotExists: true, ...(options as TableCreateVectorIndexOptions) }
+            );
         }
-        return this.collection.createVectorIndex(name, column, { options, ifNotExists: true });
+
+        return this.collection.createIndex(
+            options?.name ?? column,
+            column,
+            { ifNotExists: true, ...(options as TableCreateIndexOptions) }
+        );
     }
 
     /**
@@ -520,40 +524,4 @@ export class OperationNotSupportedError extends Error {
         super(message);
         this.name = 'OperationNotSupportedError';
     }
-}
-
-export function setDefaultIdForUpsert(filter: Record<string, unknown>, update: { $setOnInsert?: Record<string, unknown> } & Record<string, unknown>, options: { upsert?: boolean }, replace?: boolean) {
-    if (!options.upsert) {
-        return;
-    }
-    if ('_id' in filter) {
-        return;
-    }
-
-    if (replace) {
-        if ('_id' in update) {
-            return;
-        }
-        update._id = new Types.ObjectId();
-    } else {
-        if (_updateHasKey(update, '_id')) {
-            return;
-        }
-        if (update.$setOnInsert == null) {
-            update.$setOnInsert = {};
-        }
-        if (!('_id' in update.$setOnInsert)) {
-            update.$setOnInsert._id = new Types.ObjectId();
-        }
-    }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function _updateHasKey(update: Record<string, any>, key: string) {
-    for (const operator of Object.keys(update)) {
-        if (update[operator] != null && typeof update[operator] === 'object' && key in update[operator]) {
-            return true;
-        }
-    }
-    return false;
 }

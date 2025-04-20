@@ -211,13 +211,6 @@ describe('COLLECTIONS: driver based tests', async () => {
             assert.ok(typeof collectionNames[0] === 'string', collectionNames.join(','));
         });
 
-        it('handles createVectorIndex', async function() {
-            await assert.rejects(
-                mongooseInstance!.connection.collection(Product.collection.collectionName).createVectorIndex('vector', 'vector'),
-                /Cannot use createVectorIndex\(\) with collections/
-            );
-        });
-
         it('handles enableBigNumbers in collections', async function() {
             delete mongooseInstance.connection.collections[Product.collection.collectionName];
             const bigNumbersProductSchema = Product.schema.clone()

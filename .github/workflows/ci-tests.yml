@@ -1,4 +1,4 @@
-name: Tests - stargate-mongoose
+name: Tests
 on:
   pull_request:
     branches:
