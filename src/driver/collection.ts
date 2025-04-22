@@ -420,9 +420,10 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
          */
         return {
             toArray: () => this.runCommand({ listIndexes: { options: { explain: true } } })
-                .then((res: { status?: { indexes?: AstraIndexDescription[] } }) => {
+                .then(res => {
+                    const indexes = (res as { status: { indexes: AstraIndexDescription[] } }).status.indexes;
                     // Mongoose uses the `key` property of an index for index diffing in `cleanIndexes()` and `syncIndexes()`.
-                    return res.status?.indexes?.map((index) => ({ ...index, key: { [index.definition.column]: 1 } })) ?? [];
+                    return indexes.map((index) => ({ ...index, key: { [index.definition.column]: 1 } }));
                 })
         };
     }

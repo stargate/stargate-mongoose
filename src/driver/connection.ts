@@ -257,38 +257,23 @@ export class Connection extends MongooseConnection {
 
         const dbOptions = { dataApiPath: baseApiPath };
 
-        const { client, db, admin } = (() => {
-            if (options?.isAstra) {
-                const client = new DataAPIClient(applicationToken);
-                const db = options.useTables
-                    ? new TablesDb(client.db(baseUrl, dbOptions), keyspaceName)
-                    : new CollectionsDb(client.db(baseUrl, dbOptions), keyspaceName);
-                return {
-                    client,
-                    db,
-                    admin: db.astraDb.admin({ adminToken: applicationToken })
-                };
-            }
-
-            if (options?.username == null || options?.password == null) {
-                throw new AstraMongooseError('Username and password are required when connecting to self-hosted DSE', { uri, options });
-            }
-            const client = new DataAPIClient(
-                new UsernamePasswordTokenProvider(options.username, options.password),
-                { environment: 'dse' }
-            );
-            const db = options?.useTables
-                ? new TablesDb(client.db(baseUrl, dbOptions), keyspaceName)
-                : new CollectionsDb(client.db(baseUrl, dbOptions), keyspaceName);
-            return {
-                client,
-                db,
-                admin: db.astraDb.admin({
-                    environment: 'dse',
-                    adminToken: new UsernamePasswordTokenProvider(options.username, options.password)
-                })
+        const isAstra = options?.isAstra;
+        const { adminToken, environment } = isAstra
+            ? { adminToken: applicationToken, environment: 'astra' as const }
+            : {
+                adminToken: new UsernamePasswordTokenProvider(
+                    options.username || throwMissingUsernamePassword(),
+                    options.password || throwMissingUsernamePassword()
+                ),
+                environment: 'dse' as const
             };
-        })();
+        const client = new DataAPIClient(adminToken, { environment });
+        const db = options?.useTables
+            ? new TablesDb(client.db(baseUrl, dbOptions), keyspaceName)
+            : new CollectionsDb(client.db(baseUrl, dbOptions), keyspaceName);
+        const admin = isAstra
+            ? db.astraDb.admin({ adminToken })
+            : db.astraDb.admin({ adminToken, environment: 'dse' });
 
         const collections: Collection[] = Object.values(this.collections);
         for (const collection of collections) {
@@ -305,6 +290,13 @@ export class Connection extends MongooseConnection {
         this.readyState = STATES.connected;
         this.onOpen();
         return this;
+
+        function throwMissingUsernamePassword(): string {
+            throw new AstraMongooseError(
+                'Username and password are required when connecting to self-hosted DSE',
+                { uri, options },
+            );
+        }
     }
 
     /**

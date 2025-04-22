@@ -1,4 +1,5 @@
 import { testClient } from './fixtures';
+import { AstraMongooseModel } from '../src';
 import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 import * as AstraMongooseDriver from '../src/driver';
 import assert from 'assert';
@@ -35,7 +36,7 @@ for (const plugin of plugins) {
 }
 
 export const Cart = mongooseInstance.model('Cart', cartSchema);
-export const Product = mongooseInstance.model('Product', productSchema);
+export const Product = mongooseInstance.model('Product', productSchema) as AstraMongooseModel<InferSchemaType<typeof productSchema>>;
 export type CartModelType = typeof Cart;
 export type ProductModelType = typeof Product;
 export type ProductHydratedDoc = ReturnType<(typeof Product)['hydrate']>;
@@ -56,11 +57,10 @@ export async function createMongooseCollections(useTables: boolean) {
     await mongooseInstance.connection.openUri(testClient!.uri, { ...testClient!.options });
     await mongooseInstanceTables.connection.openUri(testClient!.uri, { ...testClient!.options, useTables: true });
 
-    const { databases } = await mongooseInstance.connection.listDatabases();
     assert.ok(mongooseInstance.connection.keyspaceName);
-    if (!databases.find(db => db.name === mongooseInstance.connection.keyspaceName)) {
-        await mongooseInstance.connection.createKeyspace(mongooseInstance.connection.keyspaceName as string);
-    }
+    await mongooseInstance.connection.createKeyspace(mongooseInstance.connection.keyspaceName as string);
+    const { databases } = await mongooseInstance.connection.listDatabases();
+    assert.ok(databases.find(db => db.name === mongooseInstance.connection.keyspaceName));
 
     const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });
     const collectionNames = await mongooseInstance.connection.listCollections({ nameOnly: true });

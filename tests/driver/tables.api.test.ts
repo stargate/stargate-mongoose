@@ -678,5 +678,8 @@ describe('TABLES: Mongoose Model API level tests', async () => {
         it('API ops tests Model.createCollection()', async function() {
             await assert.rejects(Product.createCollection(), /Cannot createCollection in tables mode/);
         });
+        it('API ops tests Model.findAndRerank()', async function() {
+            await assert.rejects(Product.findAndRerank({ name: 'test' }), /Cannot use findAndRerank\(\) with tables/);
+        });
     });
 });

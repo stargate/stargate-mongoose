@@ -29,7 +29,7 @@ describe('TABLES: vector search', function() {
                 type: [Number],
                 default: () => void 0,
                 dimension: 2,
-                index: { name: 'vectortables', vector: true }
+                index: { name: 'vector', vector: true }
             },
             name: 'String'
         },
@@ -83,15 +83,15 @@ describe('TABLES: vector search', function() {
     });
 
     it('drops and creates vector index', async function() {
-        await mongooseInstance.connection.collection('vector_table').dropIndex('vectortables');
+        await mongooseInstance.connection.collection('vector_table').dropIndex('vector');
         let indexes = await mongooseInstance.connection.collection('vector_table').listIndexes().toArray();
         assert.deepStrictEqual(indexes, []);
 
-        await mongooseInstance.connection.collection('vector_table').createIndex({ vector: true }, { name: 'vectortables', vector: true });
+        await mongooseInstance.connection.collection('vector_table').createIndex({ vector: true }, { name: 'vector', vector: true });
         indexes = await mongooseInstance.connection.collection('vector_table').listIndexes().toArray();
         assert.deepStrictEqual(indexes, [
             {
-                name: 'vectortables',
+                name: 'vector',
                 definition: { column: 'vector', options: { metric: 'cosine', sourceModel: 'other' }  },
                 indexType: 'vector',
                 key: { vector: 1 }
@@ -199,7 +199,7 @@ describe('TABLES: vectorize', function () {
     vectorSchema.path('vector', new Vectorize('vector', {
         default: [],
         dimension: 1024,
-        index: { name: 'vectortables', vector: true } as IndexOptions,
+        index: { vector: true } as IndexOptions,
         service: {
             provider: 'nvidia',
             modelName: 'NV-Embed-QA'
@@ -242,6 +242,35 @@ describe('TABLES: vectorize', function () {
 
     beforeEach(async function () {
         await Vector.deleteMany({});
+    });
+
+    it('throws an error if vectorize provider is not a string', async function () {
+        assert.throws(
+            () => {
+                new Vectorize('vector', {
+                    dimension: 1024,
+                    service: {
+                        provider: null as unknown as string,
+                        modelName: 'does not matter'
+                    }
+                });
+            },
+            /`provider` option for vectorize paths must be a string, got: null/
+        );
+    });
+
+    it('handles required vectorize', async function () {
+        const vectorSchema = new Schema<IVector>({ name: 'String' }, { autoCreate: false });
+        vectorSchema.path('vector', new Vectorize('vector', {
+            dimension: 1024,
+            index: { name: 'vector', vector: true } as IndexOptions,
+            service: {
+                provider: 'nvidia',
+                modelName: 'NV-Embed-QA'
+            }
+        }));
+        vectorSchema.path('vector').required(true);
+        vectorSchema.path('vector2', vectorSchema.path('vector'));
     });
 
     it('supports inserting vectorize doc', async function () {
