@@ -26,17 +26,13 @@ export { default as createAstraUri } from './createAstraUri';
 export { default as tableDefinitionFromSchema } from './tableDefinitionFromSchema';
 
 import * as AstraMongooseDriver from './driver';
-import type { Mongoose, Model } from 'mongoose';
+import type { Mongoose } from 'mongoose';
 
 export { Vectorize, VectorizeOptions } from './driver';
 
 export { AstraMongooseError } from './astraMongooseError';
 
 export type AstraMongoose = Omit<Mongoose, 'connection'> & { connection: AstraMongooseDriver.Connection };
-
-export type AstraMongooseModel<DocType, ModelType = Model<DocType>> = Model<DocType, ModelType> & {
-  findAndRerank(filter: Record<string, unknown>, options?: CollectionFindAndRerankOptions): Promise<RerankedResult<DocType>[]>;
-};
 
 declare module 'mongodb' {
     interface CreateCollectionOptions {
@@ -64,4 +60,24 @@ declare module 'mongoose' {
     }
 
     function setDriver(driver: typeof AstraMongooseDriver): AstraMongoose;
+
+    // Module augmentation for Mongoose's `Model` interface to add `findAndRerank`. Not strictly 100%
+    // type-safe since you may import astra-mongoose without actually calling `setDriver()` but sufficient
+    // for practical purposes. The generic parameters must match Mongoose's `Model` generics **exactly**.
+    interface Model<
+      TRawDocType,
+      // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+      TQueryHelpers = {},
+      // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+      TInstanceMethods = {},
+      // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+      TVirtuals = {},
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      THydratedDocumentType = HydratedDocument<TRawDocType, TVirtuals & TInstanceMethods, TQueryHelpers>,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+      TSchema = any
+    > {
+
+      findAndRerank(filter: Record<string, unknown>, options?: CollectionFindAndRerankOptions): Promise<RerankedResult<TRawDocType>[]>;
+    }
 }

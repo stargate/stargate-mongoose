@@ -26,7 +26,7 @@ import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMo
 import { parseUri } from '../../src/driver/connection';
 import { FindCursor, DataAPIResponseError, DataAPIClient } from '@datastax/astra-db-ts';
 import { Long, UUID } from 'bson';
-import type { AstraMongoose, AstraMongooseModel } from '../../src';
+import type { AstraMongoose } from '../../src';
 
 describe('COLLECTIONS: mongoose Model API level tests with collections', async () => {
     let Product: ProductModelType;
@@ -1105,7 +1105,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             }
         );
 
-        let Vector: AstraMongooseModel<InferSchemaType<typeof vectorSchema>>;
+        let Vector: Model<InferSchemaType<typeof vectorSchema>>;
 
         before(async function() {
             if (!testClient!.isAstra) {
@@ -1117,7 +1117,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 'Vector',
                 vectorSchema,
                 'vector'
-            ) as AstraMongooseModel<InferSchemaType<typeof vectorSchema>>;
+            );
 
             const collections = await mongooseInstance.connection.listCollections({ nameOnly: false });
             const vectorCollection = collections.find(coll => coll.name === 'vector');

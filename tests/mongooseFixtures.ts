@@ -1,6 +1,5 @@
 import { testClient } from './fixtures';
-import { AstraMongooseModel } from '../src';
-import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
+import { Schema, Mongoose, Model, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 import * as AstraMongooseDriver from '../src/driver';
 import assert from 'assert';
 import { plugins } from '../src/driver';
@@ -35,10 +34,10 @@ for (const plugin of plugins) {
     mongooseInstance.plugin(plugin);
 }
 
-export type CartModelType = AstraMongooseModel<InferSchemaType<typeof cartSchema>>;
-export type ProductModelType = AstraMongooseModel<InferSchemaType<typeof productSchema>>;
-export const Cart = mongooseInstance.model('Cart', cartSchema) as CartModelType;
-export const Product = mongooseInstance.model('Product', productSchema) as ProductModelType;
+export type CartModelType = Model<InferSchemaType<typeof cartSchema>>;
+export type ProductModelType = Model<InferSchemaType<typeof productSchema>>;
+export const Cart = mongooseInstance.model('Cart', cartSchema);
+export const Product = mongooseInstance.model('Product', productSchema);
 export type ProductHydratedDoc = ReturnType<(typeof Product)['hydrate']>;
 export type ProductRawDoc = SubdocsToPOJOs<InferSchemaType<typeof productSchema>>;
 
@@ -50,8 +49,8 @@ for (const plugin of plugins) {
     mongooseInstanceTables.plugin(plugin);
 }
 
-export const CartTablesModel = mongooseInstanceTables.model('Cart', cartSchema, 'carts_table') as CartModelType;
-export const ProductTablesModel = mongooseInstanceTables.model('Product', productSchema, 'products_table') as ProductModelType;
+export const CartTablesModel = mongooseInstanceTables.model('Cart', cartSchema, 'carts_table');
+export const ProductTablesModel = mongooseInstanceTables.model('Product', productSchema, 'products_table');
 
 export async function createMongooseCollections(useTables: boolean) {
     await mongooseInstance.connection.openUri(testClient!.uri, { ...testClient!.options });
