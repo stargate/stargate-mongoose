@@ -197,14 +197,13 @@ describe('TABLES: vectorize', function () {
     }
     const vectorSchema = new Schema<IVector>({ name: 'String' }, { autoCreate: false });
     vectorSchema.path('vector', new Vectorize('vector', {
-        default: [],
         dimension: 1024,
-        index: { vector: true } as IndexOptions,
         service: {
             provider: 'nvidia',
             modelName: 'NV-Embed-QA'
         }
     }));
+    vectorSchema.path('vector').index({ vector: true } as IndexOptions);
 
     let Vector: Model<InferSchemaType<typeof vectorSchema>>;
 
