@@ -198,7 +198,7 @@ describe('tableDefinitionFromSchema', () => {
         assert.throws(() => {
             tableDefinitionFromSchema(testSchema);
         }, {
-            message: 'Cannot convert schema to Data API table definition: schemas with 3-level deep nested path foo.bar.baz are not supported'
+            message: 'Cannot convert schema to Data API table definition: schemas with paths that are more than 2 levels deep are not supported (found foo.bar.baz)'
         });
     });
 

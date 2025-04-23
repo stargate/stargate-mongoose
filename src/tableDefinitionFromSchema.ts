@@ -37,7 +37,7 @@ export default function tableDefinitionFromSchema(schema: Schema): CreateTableDe
         if (isNestedOrMap) {
             const split = schemaType.path.split('.');
             if (split.length > 2) {
-                throw new AstraMongooseError(`Cannot convert schema to Data API table definition: schemas with 3-level deep nested path ${path} are not supported`, {
+                throw new AstraMongooseError(`Cannot convert schema to Data API table definition: schemas with paths that are more than 2 levels deep are not supported (found ${path})`, {
                     path,
                     type,
                     schema
