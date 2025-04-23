@@ -35,10 +35,10 @@ for (const plugin of plugins) {
     mongooseInstance.plugin(plugin);
 }
 
-export const Cart = mongooseInstance.model('Cart', cartSchema);
-export const Product = mongooseInstance.model('Product', productSchema) as AstraMongooseModel<InferSchemaType<typeof productSchema>>;
-export type CartModelType = typeof Cart;
-export type ProductModelType = typeof Product;
+export type CartModelType = AstraMongooseModel<InferSchemaType<typeof cartSchema>>;
+export type ProductModelType = AstraMongooseModel<InferSchemaType<typeof productSchema>>;
+export const Cart = mongooseInstance.model('Cart', cartSchema) as CartModelType;
+export const Product = mongooseInstance.model('Product', productSchema) as ProductModelType;
 export type ProductHydratedDoc = ReturnType<(typeof Product)['hydrate']>;
 export type ProductRawDoc = SubdocsToPOJOs<InferSchemaType<typeof productSchema>>;
 
@@ -50,8 +50,8 @@ for (const plugin of plugins) {
     mongooseInstanceTables.plugin(plugin);
 }
 
-export const CartTablesModel = mongooseInstanceTables.model('Cart', cartSchema, 'carts_table');
-export const ProductTablesModel = mongooseInstanceTables.model('Product', productSchema, 'products_table');
+export const CartTablesModel = mongooseInstanceTables.model('Cart', cartSchema, 'carts_table') as CartModelType;
+export const ProductTablesModel = mongooseInstanceTables.model('Product', productSchema, 'products_table') as ProductModelType;
 
 export async function createMongooseCollections(useTables: boolean) {
     await mongooseInstance.connection.openUri(testClient!.uri, { ...testClient!.options });

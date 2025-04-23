@@ -757,7 +757,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         });
         it('API ops tests collection.runCommand()', async function() {
             const res = await mongooseInstance.connection.collection('carts').runCommand({ find: {} });
-            assert.ok(Array.isArray(res.data.documents));
+            assert.ok(Array.isArray(res.data!.documents));
         });
         it('API ops tests createConnection() with uri and options', async function() {
             const connection = mongooseInstance.createConnection(testClient!.uri, testClient!.options) as unknown as AstraMongooseDriver.Connection;
