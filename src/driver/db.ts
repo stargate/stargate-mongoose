@@ -26,6 +26,9 @@ import {
     Table as AstraTable,
     TableDescriptor,
     TableOptions,
+    CreateTableOptions,
+    DropTableOptions,
+    CreateCollectionOptions,
 } from '@datastax/astra-db-ts';
 import { AstraMongooseError } from '../astraMongooseError';
 
@@ -62,7 +65,10 @@ export abstract class BaseDb {
      * @param name The name of the collection to be created.
      * @param options Additional options for creating the collection.
      */
-    abstract createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: Record<string, unknown>): Promise<Collection<DocType>>;
+    abstract createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(
+        name: string,
+        options?: CreateCollectionOptions<DocType>
+    ): Promise<Collection<DocType>>;
 
     /**
      * Create a new table with the specified name and definition
@@ -70,8 +76,12 @@ export abstract class BaseDb {
      * @param definition
      */
 
-    async createTable<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, definition: CreateTableDefinition) {
-        return this.astraDb.createTable<DocType>(name, { definition });
+    async createTable<DocType extends Record<string, unknown> = Record<string, unknown>>(
+        name: string,
+        definition: CreateTableDefinition,
+        options?: Omit<CreateTableOptions, 'definition'>
+    ) {
+        return this.astraDb.createTable<DocType>(name, { ...options, definition });
     }
 
     /**
@@ -86,9 +96,10 @@ export abstract class BaseDb {
      * Drop a table by name. This function does **not** throw an error if the table does not exist.
      * @param name
      */
-    async dropTable(name: string) {
+    async dropTable(name: string, options?: DropTableOptions) {
         return this.astraDb.dropTable(name, {
             ifExists: true,
+            ...options
         });
     }
 
@@ -154,7 +165,7 @@ export class CollectionsDb extends BaseDb {
     /**
      * Send a CreateCollection command to Data API.
      */
-    createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: Record<string, unknown>) {
+    createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: CreateCollectionOptions<DocType>) {
         return this.astraDb.createCollection<DocType>(name, options);
     }
 }
@@ -185,7 +196,10 @@ export class TablesDb extends BaseDb {
     /**
      * Throws an error, astra-mongoose does not support creating collections in tables mode.
      */
-    createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: Record<string, unknown>): Promise<Collection<DocType>> {
+    createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(
+        name: string,
+        options?: CreateCollectionOptions<DocType>
+    ): Promise<Collection<DocType>> {
         throw new AstraMongooseError('Cannot createCollection in tables mode; use createTable instead', { name, options });
     }
 }

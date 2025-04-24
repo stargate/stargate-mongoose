@@ -22,7 +22,13 @@ import {
     ListCollectionsOptions,
     ListTablesOptions,
     RawDataAPIResponse,
-    TableDescriptor
+    TableDescriptor,
+    DropCollectionOptions,
+    CreateTableOptions,
+    DropTableOptions,
+    CreateAstraKeyspaceOptions,
+    CreateDataAPIKeyspaceOptions,
+    CreateCollectionOptions
 } from '@datastax/astra-db-ts';
 import { CollectionsDb, TablesDb } from './db';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
@@ -112,9 +118,12 @@ export class Connection extends MongooseConnection {
      * @param name The name of the collection to create
      * @param options
      */
-    async createCollection(name: string, options?: Record<string, unknown>) {
+    async createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(
+        name: string,
+        options?: CreateCollectionOptions<DocType>
+    ) {
         await this._waitForClient();
-        return this.db!.createCollection(name, options);
+        return this.db!.createCollection<DocType>(name, options);
     }
 
     /**
@@ -129,27 +138,31 @@ export class Connection extends MongooseConnection {
      * @param name
      * @param definition
      */
-    async createTable(name: string, definition: CreateTableDefinition) {
+    async createTable<DocType extends Record<string, unknown> = Record<string, unknown>>(
+        name: string,
+        definition: CreateTableDefinition,
+        options?: Omit<CreateTableOptions, 'definition'>
+    ) {
         await this._waitForClient();
-        return this.db!.createTable(name, definition);
+        return this.db!.createTable<DocType>(name, definition, options);
     }
 
     /**
      * Drop a collection from the database
      * @param name
      */
-    async dropCollection(name: string) {
+    async dropCollection(name: string, options?: DropCollectionOptions) {
         await this._waitForClient();
-        return this.db!.dropCollection(name);
+        return this.db!.dropCollection(name, options);
     }
 
     /**
      * Drop a table from the database
      * @param name The name of the table to drop
      */
-    async dropTable(name: string) {
+    async dropTable(name: string, options?: DropTableOptions) {
         await this._waitForClient();
-        return this.db!.dropTable(name);
+        return this.db!.dropTable(name, options);
     }
 
     /**
@@ -157,9 +170,9 @@ export class Connection extends MongooseConnection {
      *
      * @param name The name of the keyspace to create
      */
-    async createKeyspace(name: string) {
+    async createKeyspace(name: string, options?: CreateAstraKeyspaceOptions & CreateDataAPIKeyspaceOptions) {
         await this._waitForClient();
-        return await this.admin!.createKeyspace(name);
+        return await this.admin!.createKeyspace(name, options);
     }
 
     /**

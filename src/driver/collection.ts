@@ -23,25 +23,26 @@ import {
     CollectionFindOneAndReplaceOptions,
     CollectionFindOneAndUpdateOptions,
     CollectionFindOneOptions,
+    CollectionInsertManyOptions,
+    CollectionInsertOneOptions,
     CollectionReplaceOneOptions,
     CollectionUpdateManyOptions,
     CollectionUpdateOneOptions,
-    CollectionInsertManyOptions,
     SortDirection,
     Sort as SortOptionInternal,
     Table as AstraTable,
     TableCreateIndexOptions,
+    TableCreateVectorIndexOptions,
     TableDeleteOneOptions,
     TableFilter,
     TableFindOneOptions,
     TableFindOptions,
     TableInsertManyOptions,
+    TableInsertOneOptions,
     TableOptions,
     TableIndexOptions,
     TableUpdateOneOptions,
     TableVectorIndexOptions,
-    CollectionOptions,
-    TableCreateVectorIndexOptions
 } from '@datastax/astra-db-ts';
 import { SchemaOptions } from 'mongoose';
 import deserializeDoc from '../deserializeDoc';
@@ -149,7 +150,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * Count documents in the collection that match the given filter.
      * @param filter
      */
-    countDocuments(filter: Record<string, unknown>) {
+    async countDocuments(filter: Record<string, unknown>) {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('countDocuments', arguments);
         if (this.collection instanceof AstraTable) {
@@ -216,10 +217,10 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * Insert a single document into the collection.
      * @param doc
      */
-    insertOne(doc: Record<string, unknown>) {
+    async insertOne(doc: Record<string, unknown>, options?: CollectionInsertOneOptions | TableInsertOneOptions) {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('insertOne', arguments);
-        return this.collection.insertOne(serialize(doc, this.useTables) as DocType);
+        return this.collection.insertOne(serialize(doc, this.useTables) as DocType, options);
     }
 
     /**
@@ -326,7 +327,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * Delete one or more documents in a collection that match the given filter.
      * @param filter
      */
-    deleteMany(filter: Record<string, unknown>) {
+    async deleteMany(filter: Record<string, unknown>) {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('deleteMany', arguments);
         filter = serialize(filter, this.useTables);
@@ -339,7 +340,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param options
      * @param callback
      */
-    deleteOne(filter: Record<string, unknown>, options: DeleteOneOptions) {
+    async deleteOne(filter: Record<string, unknown>, options: DeleteOneOptions) {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('deleteOne', arguments);
         const requestOptions: CollectionDeleteOneOptions | TableDeleteOneOptions = options.sort != null
@@ -356,7 +357,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param replacement
      * @param options
      */
-    replaceOne(filter: Record<string, unknown>, replacement: Record<string, unknown>, options: ReplaceOneOptions) {
+    async replaceOne(filter: Record<string, unknown>, replacement: Record<string, unknown>, options: ReplaceOneOptions) {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('replaceOne', arguments);
         if (this.collection instanceof AstraTable) {
@@ -377,7 +378,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param update
      * @param options
      */
-    updateOne(filter: Record<string, unknown>, update: Record<string, unknown>, options: UpdateOneOptions) {
+    async updateOne(filter: Record<string, unknown>, update: Record<string, unknown>, options: UpdateOneOptions) {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('updateOne', arguments);
         const requestOptions: CollectionUpdateOneOptions | TableUpdateOneOptions = options.sort != null
@@ -399,7 +400,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param update
      * @param options
      */
-    updateMany(filter: Record<string, unknown>, update: Record<string, unknown>, options: CollectionUpdateManyOptions) {
+    async updateMany(filter: Record<string, unknown>, update: Record<string, unknown>, options: CollectionUpdateManyOptions) {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('updateMany', arguments);
         if (this.collection instanceof AstraTable) {
@@ -414,7 +415,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     /**
      * Get the estimated number of documents in a collection based on collection metadata
      */
-    estimatedDocumentCount() {
+    async estimatedDocumentCount() {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('estimatedDocumentCount', arguments);
         if (this.collection instanceof AstraTable) {
@@ -427,7 +428,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * Run an arbitrary command against this collection
      * @param command
      */
-    runCommand(command: Record<string, unknown>) {
+    async runCommand(command: Record<string, unknown>) {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('runCommand', arguments);
         return this.connection.db!.astraDb.command(command, this.useTables ? { table: this.name } : { collection: this.name });
