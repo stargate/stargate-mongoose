@@ -25,6 +25,7 @@ import {
     CollectionFindOneOptions,
     CollectionInsertManyOptions,
     CollectionInsertOneOptions,
+    CollectionOptions,
     CollectionReplaceOneOptions,
     CollectionUpdateManyOptions,
     CollectionUpdateOneOptions,

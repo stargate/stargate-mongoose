@@ -18,6 +18,7 @@ import { Schema, Types } from 'mongoose';
 import { randomUUID } from 'crypto';
 import { UUID } from 'bson';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
+import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime } from '@datastax/astra-db-ts';
 
 const TEST_TABLE_NAME = 'table1';
 
@@ -114,6 +115,18 @@ describe('TABLES: basic operations and data types', function() {
                 walletBalance: { type: 'double' }
             }
         });
+
+        tableDefinition.columns.timeSinceStart = { type: 'duration' };
+        tableDefinition.columns.hostIP = { type: 'inet' };
+        tableDefinition.columns.startDate = { type: 'date' };
+        tableDefinition.columns.timeOfDay = { type: 'time' };
+        userSchema.add({
+            timeSinceStart: String,
+            hostIP: String,
+            startDate: String,
+            timeOfDay: String
+        });
+
         await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
         mongooseInstance.deleteModel(/User/);
         const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
@@ -168,8 +181,21 @@ describe('TABLES: basic operations and data types', function() {
         assert.strictEqual(saveResponse.count, 12);
         assert.ok(saveResponse.walletBalance instanceof Types.Double);
         assert.strictEqual(saveResponse.walletBalance.valueOf(), 100.50);
+
+        await mongooseInstance.connection.collection(TEST_TABLE_NAME).collection.updateOne(
+            { _id: saveResponse._id.toString() },
+            {
+                $set: {
+                    timeSinceStart: new DataAPIDuration('2w'),
+                    hostIP: new DataAPIInet('192.168.1.1', 4),
+                    startDate: new DataAPIDate('2022-01-01'),
+                    timeOfDay: new DataAPITime('12:00:00')
+                }
+            }
+        );
+
         //get record using findOne and verify results
-        const findOneResponse = await User.findOne({name: 'User 1'}).orFail();
+        let findOneResponse = await User.findOne({name: 'User 1'}).orFail();
         assert.strictEqual(findOneResponse.name, 'User 1');
         assert.strictEqual(findOneResponse.age, 10);
         assert.strictEqual(findOneResponse.dob!.toISOString(), dobVal.toISOString());
@@ -187,5 +213,21 @@ describe('TABLES: basic operations and data types', function() {
         assert.strictEqual(findOneResponse.count, 12);
         assert.ok(findOneResponse.walletBalance instanceof Types.Double);
         assert.strictEqual(findOneResponse.walletBalance.valueOf(), 100.50);
+
+        assert.strictEqual(findOneResponse.get('hostIP'), '192.168.1.1');
+        assert.strictEqual(findOneResponse.get('timeSinceStart'), '14d');
+        assert.strictEqual(findOneResponse.get('startDate'), '2022-01-01');
+        assert.strictEqual(findOneResponse.get('timeOfDay'), '12:00:00.000000000');
+
+        findOneResponse.set('hostIP', '192.168.1.2');
+        findOneResponse.set('timeSinceStart', '15d');
+        findOneResponse.set('startDate', '2022-01-02');
+        findOneResponse.set('timeOfDay', '13:00:00.000000000');
+        await findOneResponse.save();
+        findOneResponse = await User.findOne({name: 'User 1'}).orFail();
+        assert.strictEqual(findOneResponse.get('hostIP'), '192.168.1.2');
+        assert.strictEqual(findOneResponse.get('timeSinceStart'), '15d');
+        assert.strictEqual(findOneResponse.get('startDate'), '2022-01-02');
+        assert.strictEqual(findOneResponse.get('timeOfDay'), '13:00:00.000000000');
     });
 });
