@@ -16,7 +16,7 @@ import assert from 'assert';
 import mongoose from 'mongoose';
 import * as AstraMongooseDriver from '../../src/driver';
 import { testClient, TEST_COLLECTION_NAME } from '../fixtures';
-import { CartModelType, ProductModelType, createMongooseCollections } from '../mongooseFixtures';
+import { CartModelType, ProductModelType, createMongooseCollections, testDebug } from '../mongooseFixtures';
 import type { AstraMongoose } from '../../src';
 
 describe('COLLECTIONS: driver based tests', async () => {
@@ -217,6 +217,11 @@ describe('COLLECTIONS: driver based tests', async () => {
                 .add({ price: BigInt })
                 .set('serdes', { enableBigNumbers: () => 'number_or_string' });
             const BigNumbersProduct = mongooseInstance.model('BigNumbersProduct', bigNumbersProductSchema, Product.collection.collectionName);
+            if (testDebug) {
+                mongooseInstance.connection.collection(Product.collection.collectionName).collection.on('commandStarted', ev => {
+                    console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
+                });
+            }
 
             const _id = new mongoose.Types.ObjectId();
             const collection = mongooseInstance.connection.db!.collection(
@@ -240,6 +245,13 @@ describe('COLLECTIONS: driver based tests', async () => {
                 // Make sure to clean up the collection so we don't have the `serdes` option leaking to other tests
                 delete mongooseInstance.connection.collections[Product.collection.collectionName];
             }
+        });
+
+        it('handles debug mode', async () => {
+            const calls: string[] = [];
+            mongooseInstance.set('debug', (collectionName: string, fnName: string) => calls.push(`${collectionName}.${fnName}`));
+            await Person.findOne({});
+            assert.deepStrictEqual(calls, ['collection1.findOne']);
         });
     });
     describe('namespace management tests', () => {

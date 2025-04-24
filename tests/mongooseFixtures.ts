@@ -52,9 +52,11 @@ for (const plugin of plugins) {
 export const CartTablesModel = mongooseInstanceTables.model('Cart', cartSchema, 'carts_table');
 export const ProductTablesModel = mongooseInstanceTables.model('Product', productSchema, 'products_table');
 
+export const testDebug = !!process.env.D;
+
 export async function createMongooseCollections(useTables: boolean) {
-    await mongooseInstance.connection.openUri(testClient!.uri, { ...testClient!.options });
-    await mongooseInstanceTables.connection.openUri(testClient!.uri, { ...testClient!.options, useTables: true });
+    await mongooseInstance.connection.openUri(testClient!.uri, { ...testClient!.options, logging: testDebug ? 'commandStarted' : undefined });
+    await mongooseInstanceTables.connection.openUri(testClient!.uri, { ...testClient!.options, useTables: true, logging: testDebug ? 'commandStarted' : undefined });
 
     assert.ok(mongooseInstance.connection.keyspaceName);
     await mongooseInstance.connection.createKeyspace(mongooseInstance.connection.keyspaceName as string);
@@ -96,6 +98,15 @@ export async function createMongooseCollections(useTables: boolean) {
             });
         }
 
+        if (testDebug) {
+            mongooseInstanceTables.connection.collection(ProductTablesModel.collection.collectionName).collection.on('commandStarted', ev => {
+                console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
+            });
+            mongooseInstanceTables.connection.collection(CartTablesModel.collection.collectionName).collection.on('commandStarted', ev => {
+                console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
+            });
+        }
+
         return { mongooseInstance: mongooseInstanceTables, Product: ProductTablesModel, Cart: CartTablesModel };
     } else {
         const collections = await mongooseInstance.connection.listCollections();
@@ -117,6 +128,15 @@ export async function createMongooseCollections(useTables: boolean) {
             await Product.createCollection();
         } else {
             await Product.deleteMany({});
+        }
+
+        if (testDebug) {
+            mongooseInstance.connection.collection(Product.collection.collectionName).collection.on('commandStarted', ev => {
+                console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
+            });
+            mongooseInstance.connection.collection(Cart.collection.collectionName).collection.on('commandStarted', ev => {
+                console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
+            });
         }
 
         return { mongooseInstance, Product, Cart };

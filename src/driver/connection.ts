@@ -13,7 +13,17 @@
 // limitations under the License.
 
 import { Collection, MongooseCollectionOptions } from './collection';
-import { AstraDbAdmin, CollectionDescriptor, CreateTableDefinition, DataAPIDbAdmin, ListCollectionsOptions, ListTablesOptions, RawDataAPIResponse, TableDescriptor } from '@datastax/astra-db-ts';
+import {
+    AstraDbAdmin,
+    CollectionDescriptor,
+    CreateTableDefinition,
+    DataAPIDbAdmin,
+    LoggingEvent,
+    ListCollectionsOptions,
+    ListTablesOptions,
+    RawDataAPIResponse,
+    TableDescriptor
+} from '@datastax/astra-db-ts';
 import { CollectionsDb, TablesDb } from './db';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
@@ -36,6 +46,8 @@ interface ConnectOptionsInternal extends ConnectOptions {
     autoCreate?: boolean;
     sanitizeFilter?: boolean;
     bufferCommands?: boolean;
+    debug?: boolean | ((name: string, fn: string, ...args: unknown[]) => void) | null;
+    logging?: LoggingEvent
 }
 
 /**
@@ -54,6 +66,7 @@ export class Connection extends MongooseConnection {
     baseUrl: string | null = null;
     baseApiPath: string | null = null;
     models: Record<string, Model<unknown>> = {};
+    _debug?: boolean | ((name: string, fn: string, ...args: unknown[]) => void) | null;
 
     constructor(base: Mongoose) {
         super(base);
@@ -102,6 +115,13 @@ export class Connection extends MongooseConnection {
     async createCollection(name: string, options?: Record<string, unknown>) {
         await this._waitForClient();
         return this.db!.createCollection(name, options);
+    }
+
+    /**
+     * Get current debug setting, accounting for potential changes to global debug config (`mongoose.set('debug', true | false)`)
+     */
+    get debug(): boolean | ((name: string, fn: string, ...args: unknown[]) => void) | null | undefined {
+        return this._debug ?? this.base?.options?.debug;
     }
 
     /**
@@ -257,6 +277,8 @@ export class Connection extends MongooseConnection {
 
         const dbOptions = { dataApiPath: baseApiPath };
 
+        this._debug = options.debug;
+
         const isAstra = options?.isAstra;
         const { adminToken, environment } = isAstra
             ? { adminToken: applicationToken, environment: 'astra' as const }
@@ -267,7 +289,7 @@ export class Connection extends MongooseConnection {
                 ),
                 environment: 'dse' as const
             };
-        const client = new DataAPIClient(adminToken, { environment });
+        const client = new DataAPIClient(adminToken, { environment, logging: options.logging });
         const db = options?.useTables
             ? new TablesDb(client.db(baseUrl, dbOptions), keyspaceName)
             : new CollectionsDb(client.db(baseUrl, dbOptions), keyspaceName);
@@ -364,7 +386,7 @@ export const parseUri = (uri: string): ParsedUri => {
     //  /v1/testks1 => v1
     //  /apis/v1/testks1 => apis/v1
     //  /testks1 => '' (empty string)
-    const baseApiPath = parsedUrl.pathname.substring(1, parsedUrl.pathname.lastIndexOf('/') + 1);
+    const baseApiPath = parsedUrl.pathname.substring(1, parsedUrl.pathname.lastIndexOf('/'));
 
     const applicationToken = parsedUrl.searchParams.get('applicationToken') ?? undefined;
     const authHeaderName = parsedUrl.searchParams.get('authHeaderName') ?? undefined;

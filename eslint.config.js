@@ -6,7 +6,7 @@ const tseslint = require('typescript-eslint');
 
 module.exports = [
     {
-        ignores: ['dist/**']
+        ignores: ['dist/**', 'coverage']
     },
     {
         languageOptions: {
@@ -41,7 +41,7 @@ module.exports = [
         ],
         rules: {
             'semi': 'error',
-    
+
             // Warnings: style and readability concerns
             'indent': [
                 'warn',

@@ -46,6 +46,50 @@ You should try to run `npm run lint` before committing to minimize risk of regre
 
 Stargate and the Data API versions are maintained in the file `api-compatibility.versions`. Update the versions accordingly, submit a PR and make sure that the GitHub Actions that verify the new versions run fine.
 
+## Debug Mode
+
+Astra-mongoose supports Mongoose's `debug` mode for logging calls at the Mongoose driver layer.
+Note that Mongoose debug mode logs function calls as they come in to astra-mongoose Collection instances as defined in `src/drivers/collection.ts`, **not** the requests sent to Data API.
+
+```ts
+import mongoose from 'mongoose';
+import { driver } from 'astra-mongoose';
+
+mongoose.set('debug', true); // Log to console
+// Can also log to a custom function as follows:
+// mongoose.set('debug', (collectionName: string, fnName: string, ...args: unknown[]) => { /* handle logging here */ });
+mongoose.setDriver(driver);
+```
+
+Astra-mongoose also supports astra-db-ts' logging to enable logging requests sent to Data API.
+
+```ts
+import mongoose from 'mongoose';
+import { driver } from 'astra-mongoose';
+
+mongoose.setDriver(driver);
+mongoose.connect(process.env.ASTRA_URI, {
+  isAstra: true,
+  logging: 'all' // astra-db-ts logging config
+});
+
+const TestModel = mongoose.model('Test', mongoose.Schema({ name: String }), 'test');
+
+// Listen to astra-db-ts events directly on the astra-db-ts collection or table.
+mongoose.connection.collection('test').collection.on('commandStarted', ev => {
+  console.log(ev);
+});
+
+
+await TestModel.findOne(); // Prints "CommandStartedEvent { ... }"
+```
+
+Astra-mongoose's tests use the above pattern to log requests sent to Data API.
+To debug commands sent to Data API in astra-mongoose's tests, you can enable test debug mode as follows:
+
+```
+env D=1 npm test
+```
 
 ## Build API Reference Documentation
 

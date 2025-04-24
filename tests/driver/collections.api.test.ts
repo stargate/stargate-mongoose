@@ -22,7 +22,7 @@ import { once } from 'events';
 import * as AstraMongooseDriver from '../../src/driver';
 import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '../../src/driver';
-import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
+import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections, testDebug } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
 import { FindCursor, DataAPIResponseError, DataAPIClient } from '@datastax/astra-db-ts';
 import { Long, UUID } from 'bson';
@@ -124,6 +124,11 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 await User.createCollection();
             } else {
                 await User.deleteMany({});
+            }
+            if (testDebug) {
+                mongooseInstance.connection.collection(TEST_COLLECTION_NAME).collection.on('commandStarted', ev => {
+                    console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
+                });
             }
             const employeeIdVal = new mongoose.Types.ObjectId();
             //generate a random uuid
@@ -854,6 +859,11 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             } else if (vectorCollection.definition?.vector?.dimension !== 2 || vectorCollection.definition?.vector?.metric !== 'cosine') {
                 await mongooseInstance.connection.dropCollection('vector');
                 await Vector.createCollection();
+            }
+            if (testDebug) {
+                mongooseInstance.connection.collection('vector').collection.on('commandStarted', ev => {
+                    console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
+                });
             }
         });
 

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { mongooseInstanceTables as mongooseInstance, createMongooseCollections } from '../mongooseFixtures';
+import { mongooseInstanceTables as mongooseInstance, createMongooseCollections, testDebug } from '../mongooseFixtures';
 import { Schema, Types } from 'mongoose';
 import { randomUUID } from 'crypto';
 import { UUID } from 'bson';
@@ -117,6 +117,11 @@ describe('TABLES: basic operations and data types', function() {
         await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
         mongooseInstance.deleteModel(/User/);
         const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
+        if (testDebug) {
+            mongooseInstance.connection.collection(TEST_TABLE_NAME).collection.on('commandStarted', ev => {
+                console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
+            });
+        }
 
         const employeeIdVal = new Types.ObjectId();
         //generate a random uuid
