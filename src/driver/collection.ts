@@ -256,15 +256,12 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         setDefaultIdForUpsert(filter, update, requestOptions, false);
         update = serialize(update);
 
-        // Weirdness to work around TypeScript, otherwise TypeScript fails with
-        // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
-        if (options?.includeResultMetadata) {
-            return this.collection.findOneAndUpdate(filter, update, requestOptions).then((value: Record<string, unknown> | null) => {
+        return this.collection.findOneAndUpdate(filter, update, requestOptions).then((value: Record<string, unknown> | null) => {
+            if (options?.includeResultMetadata) {
                 return { value: deserializeDoc<DocType>(value) };
-            });
-        } else {
-            return this.collection.findOneAndUpdate(filter, update, requestOptions).then((doc: Record<string, unknown>  | null) => deserializeDoc<DocType>(doc));
-        }
+            }
+            return deserializeDoc<DocType>(value);
+        });
     }
 
     /**
@@ -283,15 +280,12 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             : { ...options, sort: undefined };
         filter = serialize(filter);
 
-        // Weirdness to work around TypeScript, otherwise TypeScript fails with
-        // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
-        if (options?.includeResultMetadata) {
-            return this.collection.findOneAndDelete(filter, requestOptions).then((value: Record<string, unknown>  | null) => {
+        return this.collection.findOneAndDelete(filter, requestOptions).then((value: Record<string, unknown> | null) => {
+            if (options?.includeResultMetadata) {
                 return { value: deserializeDoc<DocType>(value) };
-            });
-        } else {
-            return this.collection.findOneAndDelete(filter, requestOptions).then((doc: Record<string, unknown>  | null) => deserializeDoc<DocType>(doc));
-        }
+            }
+            return deserializeDoc<DocType>(value);
+        });
     }
 
     /**
@@ -313,15 +307,12 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         setDefaultIdForUpsert(filter, newDoc, requestOptions, true);
         newDoc = serialize(newDoc);
 
-        // Weirdness to work around TypeScript, otherwise TypeScript fails with
-        // "Types of property 'includeResultMetadata' are incompatible: Type 'boolean | undefined' is not assignable to type 'false | undefined'."
-        if (options?.includeResultMetadata) {
-            return this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((value: Record<string, unknown> | null) => {
+        return this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((value: Record<string, unknown> | null) => {
+            if (options?.includeResultMetadata) {
                 return { value: deserializeDoc<DocType>(value) };
-            });
-        } else {
-            return this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((doc: Record<string, unknown> | null) => deserializeDoc<DocType>(doc));
-        }
+            }
+            return deserializeDoc<DocType>(value);
+        });
     }
 
     /**
