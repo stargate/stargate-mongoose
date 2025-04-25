@@ -328,7 +328,7 @@ export class Connection extends MongooseConnection {
 
         function throwMissingUsernamePassword(): string {
             throw new AstraMongooseError(
-                'Username and password are required when connecting to self-hosted DSE',
+                'Username and password are required when connecting to non-Astra deployments',
                 { uri, options },
             );
         }
