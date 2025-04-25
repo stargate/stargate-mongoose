@@ -29,6 +29,7 @@ import {
     CollectionReplaceOneOptions,
     CollectionUpdateManyOptions,
     CollectionUpdateOneOptions,
+    Filter,
     SortDirection,
     Sort as SortOptionInternal,
     Table as AstraTable,
@@ -167,7 +168,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param options
      * @param callback
      */
-    find(filter: Record<string, unknown>, options: FindOptions) {
+    find(filter: Filter, options: FindOptions) {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('find', arguments);
         const requestOptions: CollectionFindOptions | TableFindOptions = options != null && options.sort != null
@@ -175,12 +176,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             : { ...options, sort: undefined };
         filter = serialize(filter, this.useTables);
 
-        // Weirdness to work around astra-db-ts method overrides: `find()` with `projection: never` means we need a separate branch
-        if (this.collection instanceof AstraTable) {
-            return this.collection.find(filter as TableFilter<DocType>, requestOptions).map(doc => deserializeDoc<DocType>(doc) as DocType);
-        } else {
-            return this.collection.find(filter, requestOptions).map(doc => deserializeDoc<DocType>(doc) as DocType);
-        }
+        return this.collection.find(filter, requestOptions).map(doc => deserializeDoc<DocType>(doc) as DocType);
     }
 
     /**
@@ -188,7 +184,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param filter
      * @param options
      */
-    async findOne(filter: Record<string, unknown>, options?: FindOneOptions) {
+    async findOne(filter: Filter, options?: FindOneOptions) {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('findOne', arguments);
         // Weirdness to work around astra-db-ts method overrides
@@ -206,12 +202,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
         filter = serialize(filter, this.useTables);
 
-        // Weirdness to work around astra-db-ts method overrides: `findOne()` with `projection: never` means we need a separate branch
-        if (this.collection instanceof AstraTable) {
-            return this.collection.findOne(filter as TableFilter<DocType>, requestOptions).then(doc => deserializeDoc<DocType>(doc));
-        } else {
-            return this.collection.findOne(filter, requestOptions).then(doc => deserializeDoc<DocType>(doc));
-        }
+        return this.collection.findOne(filter, requestOptions).then(doc => deserializeDoc<DocType>(doc));
     }
 
     /**
