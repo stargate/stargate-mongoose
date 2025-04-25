@@ -54,9 +54,9 @@ export const ProductTablesModel = mongooseInstanceTables.model('Product', produc
 
 export const testDebug = !!process.env.D;
 
-export async function createMongooseCollections(useTables: boolean) {
+export async function createMongooseCollections(isTable: boolean) {
     await mongooseInstance.connection.openUri(testClient!.uri, { ...testClient!.options, logging: testDebug ? 'commandStarted' : undefined });
-    await mongooseInstanceTables.connection.openUri(testClient!.uri, { ...testClient!.options, useTables: true, logging: testDebug ? 'commandStarted' : undefined });
+    await mongooseInstanceTables.connection.openUri(testClient!.uri, { ...testClient!.options, isTable: true, logging: testDebug ? 'commandStarted' : undefined });
 
     assert.ok(mongooseInstance.connection.keyspaceName);
     await mongooseInstance.connection.createKeyspace(mongooseInstance.connection.keyspaceName as string);
@@ -66,7 +66,7 @@ export async function createMongooseCollections(useTables: boolean) {
     const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });
     const collectionNames = await mongooseInstance.connection.listCollections({ nameOnly: true });
 
-    if (useTables) {
+    if (isTable) {
         if (collectionNames.includes(CartTablesModel.collection.collectionName)) {
             await mongooseInstance.connection.dropCollection(CartTablesModel.collection.collectionName);
         }

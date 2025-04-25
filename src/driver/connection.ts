@@ -43,7 +43,7 @@ import {
 import { AstraMongooseError } from '../astraMongooseError';
 
 interface ConnectOptionsInternal extends ConnectOptions {
-    useTables?: boolean;
+    isTable?: boolean;
     isAstra?: boolean;
     _fireAndForget?: boolean;
     username?: string;
@@ -303,7 +303,7 @@ export class Connection extends MongooseConnection {
                 environment: 'dse' as const
             };
         const client = new DataAPIClient(adminToken, { environment, logging: options.logging });
-        const db = options?.useTables
+        const db = options?.isTable
             ? new TablesDb(client.db(baseUrl, dbOptions), keyspaceName)
             : new CollectionsDb(client.db(baseUrl, dbOptions), keyspaceName);
         const admin = isAstra

@@ -91,7 +91,7 @@ export interface MongooseCollectionOptions {
  * Collection operations supported by the driver. This class is called "Collection" for consistency with Mongoose, because
  * in Mongoose a Collection is the interface that Models and Queries use to communicate with the database. However, from
  * an Astra perspective, this class can be a wrapper around a Collection **or** a Table depending on the corresponding db's
- * `useTables` option. Needs to be a separate class because Mongoose only supports one collection class.
+ * `isTable` option. Needs to be a separate class because Mongoose only supports one collection class.
  */
 export class Collection<DocType extends Record<string, unknown> = Record<string, unknown>> extends MongooseCollection {
     debugType = 'AstraMongooseCollection';
@@ -129,9 +129,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
     // Get whether the underlying Astra store is a table or a collection. `connection.db` may be `null` if
     // the connection has never been opened (`mongoose.connect()` or `openUri()` never called), so in that
-    // case we default to `useTables: false`.
-    get useTables() {
-        return this.connection.db?.useTables;
+    // case we default to `isTable: false`.
+    get isTable() {
+        return this.connection.db?.isTable;
     }
 
     /**
@@ -174,7 +174,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         const requestOptions: CollectionFindOptions | TableFindOptions = options != null && options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
-        filter = serialize(filter, this.useTables);
+        filter = serialize(filter, this.isTable);
 
         return this.collection.find(filter, requestOptions).map(doc => deserializeDoc<DocType>(doc) as DocType);
     }
@@ -192,7 +192,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
 
-        filter = serialize(filter, this.useTables);
+        filter = serialize(filter, this.isTable);
 
         return this.collection.findOne(filter, requestOptions).then(doc => deserializeDoc<DocType>(doc));
     }
@@ -204,7 +204,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     async insertOne(doc: Record<string, unknown>, options?: CollectionInsertOneOptions | TableInsertOneOptions) {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('insertOne', arguments);
-        return this.collection.insertOne(serialize(doc, this.useTables) as DocType, options);
+        return this.collection.insertOne(serialize(doc, this.isTable) as DocType, options);
     }
 
     /**
@@ -215,7 +215,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     async insertMany(documents: Record<string, unknown>[], options?: CollectionInsertManyOptions | TableInsertManyOptions) {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('insertMany', arguments);
-        documents = documents.map(doc => serialize(doc, this.useTables));
+        documents = documents.map(doc => serialize(doc, this.isTable));
         return this.collection.insertMany(documents as DocType[], options);
     }
 
@@ -305,7 +305,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     async deleteMany(filter: Record<string, unknown>) {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('deleteMany', arguments);
-        filter = serialize(filter, this.useTables);
+        filter = serialize(filter, this.isTable);
         return this.collection.deleteMany(filter as TableFilter<DocType>);
     }
 
@@ -321,7 +321,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         const requestOptions: CollectionDeleteOneOptions | TableDeleteOneOptions = options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
-        filter = serialize(filter, this.useTables);
+        filter = serialize(filter, this.isTable);
         return this.collection.deleteOne(filter as TableFilter<DocType>, requestOptions);
     }
 
@@ -359,9 +359,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         const requestOptions: CollectionUpdateOneOptions | TableUpdateOneOptions = options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
-        filter = serialize(filter, this.useTables);
+        filter = serialize(filter, this.isTable);
         setDefaultIdForUpsert(filter, update, requestOptions, false);
-        update = serialize(update, this.useTables);
+        update = serialize(update, this.isTable);
         return this.collection.updateOne(filter as TableFilter<DocType>, update, requestOptions).then(res => {
             // Mongoose currently has a bug where null response from updateOne() throws an error that we can't
             // catch here for unknown reasons. See Automattic/mongoose#15126. Tables API returns null here.
@@ -381,9 +381,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use updateMany() with tables');
         }
-        filter = serialize(filter, this.useTables);
+        filter = serialize(filter, this.isTable);
         setDefaultIdForUpsert(filter, update, options, false);
-        update = serialize(update, this.useTables);
+        update = serialize(update, this.isTable);
         return this.collection.updateMany(filter, update, options);
     }
 
@@ -406,7 +406,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     async runCommand(command: Record<string, unknown>) {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('runCommand', arguments);
-        return this.connection.db!.astraDb.command(command, this.useTables ? { table: this.name } : { collection: this.name });
+        return this.connection.db!.astraDb.command(command, this.isTable ? { table: this.name } : { collection: this.name });
     }
 
     /**

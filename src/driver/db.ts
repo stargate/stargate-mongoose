@@ -44,13 +44,13 @@ export abstract class BaseDb {
      * a Table instance, **not** a Collection instance. Also, if tables mode, `createCollection()` throws an
      * error for Mongoose `syncIndexes()` compatibility reasons.
      */
-    useTables: boolean;
+    isTable: boolean;
     name: string;
 
-    constructor(astraDb: AstraDb, keyspaceName: string, useTables?: boolean) {
+    constructor(astraDb: AstraDb, keyspaceName: string, isTable?: boolean) {
         this.astraDb = astraDb;
         astraDb.useKeyspace(keyspaceName);
-        this.useTables = !!useTables;
+        this.isTable = !!isTable;
         this.name = keyspaceName;
     }
 

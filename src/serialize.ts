@@ -16,8 +16,8 @@ import { Binary, Double, ObjectId } from 'bson';
 import mongoose from 'mongoose';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function serialize(data: Record<string, any>, useTables?: boolean): Record<string, any> {
-    return serializeValue(data, useTables);
+export function serialize(data: Record<string, any>, isTable?: boolean): Record<string, any> {
+    return serializeValue(data, isTable);
 }
 
 /**
@@ -26,12 +26,12 @@ export function serialize(data: Record<string, any>, useTables?: boolean): Recor
  * @ignore
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function serializeValue(data: any, useTables?: boolean): any {
+function serializeValue(data: any, isTable?: boolean): any {
     if (data == null) {
         return data;
     }
     if (typeof data === 'bigint') {
-        if (useTables) {
+        if (isTable) {
             return data;
         }
         return data.toString();
@@ -53,7 +53,7 @@ function serializeValue(data: any, useTables?: boolean): any {
     } else if (data instanceof Date) {
         // Rely on astra driver to serialize dates
         return data;
-    } else if (data instanceof Map && !useTables) {
+    } else if (data instanceof Map && !isTable) {
         return Object.fromEntries(data.entries());
     } else if (data instanceof Binary) {
         if (data.sub_type === 3 || data.sub_type === 4) {
@@ -61,16 +61,16 @@ function serializeValue(data: any, useTables?: boolean): any {
             return data.toString('hex').replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
         }
         // Tables support `$binary` for storing blobs, but collections do not.
-        if (useTables) {
+        if (isTable) {
             return { $binary: data.toString('base64') };
         }
         // Store as JSON serialized buffer so Mongoose can deserialize properly.
         return { type: 'Buffer', data: [...data.buffer] };
     } else if (Array.isArray(data)) {
-        return data.map(el => serializeValue(el, useTables));
+        return data.map(el => serializeValue(el, isTable));
     } else {
         for (const key of Object.keys(data)) {
-            data[key] = serializeValue(data[key], useTables);
+            data[key] = serializeValue(data[key], isTable);
         }
         return data;
     }
