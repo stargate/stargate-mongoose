@@ -632,7 +632,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                 const { username: _username, password: _password, ...options } = testClient!.options;
                 await assert.rejects(
                     mongooseInstance.createConnection(testClient!.uri, options).asPromise(),
-                    /Username and password are required when connecting to self-hosted DSE/
+                    /Username and password are required when connecting to non-Astra deployments/
                 );
             }
         });
