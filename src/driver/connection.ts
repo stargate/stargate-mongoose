@@ -257,7 +257,7 @@ export class Connection extends MongooseConnection {
         };
 
         for (const model of Object.values(this.models)) {
-            model.init();
+            void model.init();
         }
 
         this.initialConnection = this.createClient(uri, options)
