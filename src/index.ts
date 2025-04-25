@@ -73,7 +73,7 @@ declare module 'mongoose' {
       // eslint-disable-next-line @typescript-eslint/no-empty-object-type
       TVirtuals = {},
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      THydratedDocumentType = HydratedDocument<TRawDocType, TVirtuals & TInstanceMethods, TQueryHelpers>,
+      THydratedDocumentType = HydratedDocument<TRawDocType, TVirtuals & TInstanceMethods, TQueryHelpers, TVirtuals>,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
       TSchema = any
     > {
