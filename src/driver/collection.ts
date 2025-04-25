@@ -135,26 +135,12 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     }
 
     /**
-     * Compatibility wrapper for Mongoose's `debug` mode
-     *
-     * @param functionName the name of the function being called, like `find` or `updateOne`
-     * @param args arguments passed to the function
-     */
-    _logFunctionCall(functionName: string, args: IArguments) {
-        if (typeof this.connection.debug === 'function') {
-            this.connection.debug(this.name, functionName, ...args);
-        } else if (this.connection.debug) {
-            console.log(`${this.name}.${functionName}(${[...args].map(arg => inspect(arg, { colors: true })).join(', ')})`);
-        }
-    }
-
-    /**
      * Count documents in the collection that match the given filter.
      * @param filter
      */
     async countDocuments(filter: Record<string, unknown>) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('countDocuments', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'countDocuments', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use countDocuments() with tables');
         }
@@ -170,7 +156,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     find(filter: Filter, options: FindOptions) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('find', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'find', arguments);
         const requestOptions: CollectionFindOptions | TableFindOptions = options != null && options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
@@ -186,7 +172,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async findOne(filter: Filter, options?: FindOneOptions) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('findOne', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'findOne', arguments);
 
         const requestOptions: CollectionFindOneOptions | TableFindOneOptions = options != null && options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
@@ -203,7 +189,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async insertOne(doc: Record<string, unknown>, options?: CollectionInsertOneOptions | TableInsertOneOptions) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('insertOne', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'insertOne', arguments);
         return this.collection.insertOne(serialize(doc, this.isTable) as DocType, options);
     }
 
@@ -214,7 +200,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async insertMany(documents: Record<string, unknown>[], options?: CollectionInsertManyOptions | TableInsertManyOptions) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('insertMany', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'insertMany', arguments);
         documents = documents.map(doc => serialize(doc, this.isTable));
         return this.collection.insertMany(documents as DocType[], options);
     }
@@ -227,7 +213,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async findOneAndUpdate(filter: Record<string, unknown>, update: Record<string, unknown>, options: FindOneAndUpdateOptions) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('findOneAndUpdate', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'findOneAndUpdate', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findOneAndUpdate() with tables');
         }
@@ -254,7 +240,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async findOneAndDelete(filter: Record<string, unknown>, options: FindOneAndDeleteOptions) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('findOneAndDelete', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'findOneAndDelete', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findOneAndDelete() with tables');
         }
@@ -279,7 +265,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async findOneAndReplace(filter: Record<string, unknown>, newDoc: Record<string, unknown>, options: FindOneAndReplaceOptions) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('findOneAndReplace', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'findOneAndReplace', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findOneAndReplace() with tables');
         }
@@ -304,7 +290,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async deleteMany(filter: Record<string, unknown>) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('deleteMany', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'deleteMany', arguments);
         filter = serialize(filter, this.isTable);
         return this.collection.deleteMany(filter as TableFilter<DocType>);
     }
@@ -317,7 +303,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async deleteOne(filter: Record<string, unknown>, options: DeleteOneOptions) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('deleteOne', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'deleteOne', arguments);
         const requestOptions: CollectionDeleteOneOptions | TableDeleteOneOptions = options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
@@ -334,7 +320,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async replaceOne(filter: Record<string, unknown>, replacement: Record<string, unknown>, options: ReplaceOneOptions) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('replaceOne', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'replaceOne', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use replaceOne() with tables');
         }
@@ -355,7 +341,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async updateOne(filter: Record<string, unknown>, update: Record<string, unknown>, options: UpdateOneOptions) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('updateOne', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'updateOne', arguments);
         const requestOptions: CollectionUpdateOneOptions | TableUpdateOneOptions = options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
@@ -377,7 +363,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async updateMany(filter: Record<string, unknown>, update: Record<string, unknown>, options: CollectionUpdateManyOptions) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('updateMany', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'updateMany', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use updateMany() with tables');
         }
@@ -392,7 +378,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async estimatedDocumentCount() {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('estimatedDocumentCount', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'estimatedDocumentCount', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use estimatedDocumentCount() with tables');
         }
@@ -405,7 +391,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async runCommand(command: Record<string, unknown>) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('runCommand', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'runCommand', arguments);
         return this.connection.db!.astraDb.command(command, this.isTable ? { table: this.name } : { collection: this.name });
     }
 
@@ -416,7 +402,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     bulkWrite(_ops: Record<string, unknown>[], _options?: Record<string, unknown>) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('bulkWrite', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'bulkWrite', arguments);
         throw new OperationNotSupportedError('bulkWrite() Not Implemented');
     }
 
@@ -427,7 +413,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     aggregate(_pipeline: Record<string, unknown>[], _options?: Record<string, unknown>) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('aggregate', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'aggregate', arguments);
         throw new OperationNotSupportedError('aggregate() Not Implemented');
     }
 
@@ -437,7 +423,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     listIndexes(): { toArray: () => Promise<AstraMongooseIndexDescription[]> } {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('listIndexes', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'listIndexes', arguments);
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use listIndexes() with collections');
         }
@@ -467,7 +453,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
     async createIndex(indexSpec: Record<string, boolean | 1 | -1>, options?: (TableCreateVectorIndexOptions | TableCreateIndexOptions) & { name?: string, vector?: boolean }): Promise<void> {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('createIndex', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'createIndex', arguments);
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use createIndex() with collections');
         }
@@ -497,7 +483,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async dropIndex(name: string) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('dropIndex', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'dropIndex', arguments);
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use dropIndex() with collections');
         }
@@ -506,7 +492,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
     async findAndRerank(filter: Record<string, unknown>, options?: CollectionFindAndRerankOptions) {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('findAndRerank', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'findAndRerank', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findAndRerank() with tables');
         }
@@ -520,7 +506,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     watch() {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('watch', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'watch', arguments);
         throw new OperationNotSupportedError('watch() Not Implemented');
     }
 
@@ -531,7 +517,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     distinct() {
         // eslint-disable-next-line prefer-rest-params
-        this._logFunctionCall('distinct', arguments);
+        _logFunctionCall(this.connection.debug, this.name, 'distinct', arguments);
         throw new OperationNotSupportedError('distinct() Not Implemented');
     }
 }
@@ -561,5 +547,20 @@ export class OperationNotSupportedError extends Error {
     constructor(message: string) {
         super(message);
         this.name = 'OperationNotSupportedError';
+    }
+}
+
+/*!
+ * Compatibility wrapper for Mongoose's `debug` mode
+ *
+ * @param functionName the name of the function being called, like `find` or `updateOne`
+ * @param args arguments passed to the function
+ */
+
+function _logFunctionCall(debug: ((name: string, fn: string, ...args: unknown[]) => void) | boolean | null | undefined, collectionName: string, functionName: string, args: IArguments) {
+    if (typeof debug === 'function') {
+        debug(collectionName, functionName, ...args);
+    } else if (debug) {
+        console.log(`${collectionName}.${functionName}(${[...args].map(arg => inspect(arg, { colors: true })).join(', ')})`);
     }
 }

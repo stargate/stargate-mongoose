@@ -8,7 +8,7 @@
 <dd><p>Collection operations supported by the driver. This class is called &quot;Collection&quot; for consistency with Mongoose, because
 in Mongoose a Collection is the interface that Models and Queries use to communicate with the database. However, from
 an Astra perspective, this class can be a wrapper around a Collection <strong>or</strong> a Table depending on the corresponding db's
-<code>useTables</code> option. Needs to be a separate class because Mongoose only supports one collection class.</p></dd>
+<code>isTable</code> option. Needs to be a separate class because Mongoose only supports one collection class.</p></dd>
 <dt><a href="#Connection">Connection</a></dt>
 <dd><p>Extends Mongoose's Connection class to provide compatibility with Data API. Responsible for maintaining the
 connection to Data API.</p></dd>
@@ -64,7 +64,7 @@ is either nullish or has a length equal to the dimension.</p>
 <p>Collection operations supported by the driver. This class is called &quot;Collection&quot; for consistency with Mongoose, because
 in Mongoose a Collection is the interface that Models and Queries use to communicate with the database. However, from
 an Astra perspective, this class can be a wrapper around a Collection <strong>or</strong> a Table depending on the corresponding db's
-<code>useTables</code> option. Needs to be a separate class because Mongoose only supports one collection class.</p>
+<code>isTable</code> option. Needs to be a separate class because Mongoose only supports one collection class.</p>
 
 **Kind**: global class  
 
@@ -331,6 +331,7 @@ connection to Data API.</p>
 **Kind**: global class  
 
 * [Connection](#Connection)
+    * [.debug](#Connection+debug)
     * [.collection(name, options)](#Connection+collection)
     * [.createCollection(name, options)](#Connection+createCollection)
     * [.createTable(name, definition)](#Connection+createTable)
@@ -345,6 +346,12 @@ connection to Data API.</p>
     * [.createClient(uri, options)](#Connection+createClient)
     * [.asPromise()](#Connection+asPromise)
 
+<a name="Connection+debug"></a>
+
+### connection.debug
+<p>Get current debug setting, accounting for potential changes to global debug config (<code>mongoose.set('debug', true | false)</code>)</p>
+
+**Kind**: instance property of [<code>Connection</code>](#Connection)  
 <a name="Connection+collection"></a>
 
 ### connection.collection(name, options)
