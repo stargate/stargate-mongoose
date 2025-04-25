@@ -53,6 +53,7 @@ export const CartTablesModel = mongooseInstanceTables.model('Cart', cartSchema, 
 export const ProductTablesModel = mongooseInstanceTables.model('Product', productSchema, 'products_table');
 
 export const testDebug = !!process.env.D;
+const clearDB = !!process.env.CLEAR_DB;
 
 export async function createMongooseCollections(isTable: boolean) {
     await mongooseInstance.connection.openUri(testClient!.uri, { ...testClient!.options, logging: testDebug ? 'commandStarted' : undefined });
@@ -62,6 +63,13 @@ export async function createMongooseCollections(isTable: boolean) {
     await mongooseInstance.connection.createKeyspace(mongooseInstance.connection.keyspaceName as string);
     const { databases } = await mongooseInstance.connection.listDatabases();
     assert.ok(databases.find(db => db.name === mongooseInstance.connection.keyspaceName));
+
+    if (clearDB) {
+        await mongooseInstance.connection.dropTable(CartTablesModel.collection.collectionName);
+        await mongooseInstance.connection.dropTable(ProductTablesModel.collection.collectionName);
+        await mongooseInstance.connection.dropCollection(Cart.collection.collectionName);
+        await mongooseInstance.connection.dropCollection(Product.collection.collectionName);
+    }
 
     const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });
     const collectionNames = await mongooseInstance.connection.listCollections({ nameOnly: true });
@@ -93,7 +101,8 @@ export async function createMongooseCollections(isTable: boolean) {
                     // Discriminator values
                     url: { type: 'text' },
                     // Extra key for testing strict mode
-                    extraCol: { type: 'text' }
+                    extraCol: { type: 'text' },
+                    testArray: { type: 'list', valueType: 'text' }
                 }
             });
         }

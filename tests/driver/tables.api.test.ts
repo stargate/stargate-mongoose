@@ -447,9 +447,21 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                 price: { type: Number, index: true }, // Index exists in db
                 expiryDate: Date,
                 isCertified: Boolean,
-                category: String // Index exists in db but not in schema, will drop
+                category: String, // Index exists in db but not in schema, will drop
+                testArray: [String]
             }, { autoCreate: false, autoIndex: false });
+            testProductSchema.index({ testArray: '$values' });
             const ProductIndexModel = mongooseInstance.model('ProductIndexes', testProductSchema, Product.collection.collectionName);
+            await ProductIndexModel.collection.runCommand({
+                createIndex: {
+                    name: 'testArray',
+                    definition: {
+                        column: {
+                            testArray: '$values'
+                        }
+                    }
+                }
+            });
 
             const stringIndexOptions = { ascii: false, caseSensitive: true, normalize: false };
             let indexes = await ProductIndexModel.listIndexes();
@@ -462,6 +474,19 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                     },
                     indexType: 'regular',
                     key: { price: 1 }
+                },
+                {
+                    name: 'testArray',
+                    key: {
+                        testArray: '$values'
+                    },
+                    indexType: 'regular',
+                    definition: {
+                        column: {
+                            testArray: '$values'
+                        },
+                        options: {}
+                    }
                 },
                 {
                     name: 'will_drop_index',
@@ -477,11 +502,11 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             try {
                 const droppedIndexes = await ProductIndexModel.syncIndexes();
 
-                // Drop "will_drop_index" because not in schema, but keep index on `price`
+                // Drop "will_drop_index" because not in schema, but keep index on `price` and `testArray`
                 assert.deepStrictEqual(droppedIndexes, ['will_drop_index']);
 
                 indexes = await ProductIndexModel.listIndexes();
-                assert.deepStrictEqual(indexes, [
+                assert.deepStrictEqual(indexes.sort((i1, i2) => i1.name.localeCompare(i2.name)), [
                     {
                         name: 'name',
                         definition: {
@@ -499,11 +524,25 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                         },
                         indexType: 'regular',
                         key: { price: 1 }
+                    },
+                    {
+                        name: 'testArray',
+                        key: {
+                            testArray: '$values'
+                        },
+                        indexType: 'regular',
+                        definition: {
+                            column: {
+                                testArray: '$values'
+                            },
+                            options: {}
+                        }
                     }
                 ]);
             } finally {
                 await collection.dropIndex('name').catch(() => {});
                 await collection.dropIndex('price').catch(() => {});
+                await collection.dropIndex('testArray').catch(() => {});
             }
         });
         it('API ops tests Model.updateOne()', async () => {

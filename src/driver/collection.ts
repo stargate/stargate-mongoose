@@ -70,13 +70,13 @@ type UpdateOneOptions = (Omit<CollectionUpdateOneOptions, 'sort'> | Omit<TableUp
 
 interface AstraMongooseIndexDescription {
     name: string,
-    definition: { column: string, options?: TableIndexOptions | TableVectorIndexOptions },
-    key: Record<string, 1>
+    definition: { column: string | ({ [key: string]: '$keys' | '$values' }), options?: TableIndexOptions | TableVectorIndexOptions },
+    key: Record<string, 1 | -1 | '$keys' | '$values'>
 }
 
 interface AstraIndexDescription {
   name: string;
-  definition: { column: string, options?: TableIndexOptions | TableVectorIndexOptions };
+  definition: { column: string | ({ [key: string]: '$keys' | '$values' }), options?: TableIndexOptions | TableVectorIndexOptions };
   indexType: string;
 }
 
@@ -437,7 +437,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
                 .then(res => {
                     const indexes = (res as { status: { indexes: AstraIndexDescription[] } }).status.indexes;
                     // Mongoose uses the `key` property of an index for index diffing in `cleanIndexes()` and `syncIndexes()`.
-                    return indexes.map((index) => ({ ...index, key: { [index.definition.column]: 1 } }));
+                    return indexes.map((index) => ({ ...index, key: typeof index.definition.column === 'string' ? { [index.definition.column]: 1 } : index.definition.column }));
                 })
         };
     }
