@@ -187,14 +187,6 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     async findOne(filter: Filter, options?: FindOneOptions) {
         // eslint-disable-next-line prefer-rest-params
         this._logFunctionCall('findOne', arguments);
-        // Weirdness to work around astra-db-ts method overrides
-        if (options == null) {
-            filter = serialize(filter, this.useTables);
-            if (this.collection instanceof AstraTable) {
-                return this.collection.findOne(filter as TableFilter<DocType>).then(doc => deserializeDoc<DocType>(doc));
-            }
-            return this.collection.findOne(filter).then(doc => deserializeDoc<DocType>(doc));
-        }
 
         const requestOptions: CollectionFindOneOptions | TableFindOneOptions = options != null && options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
