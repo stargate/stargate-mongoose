@@ -28,7 +28,8 @@ import {
     DropTableOptions,
     CreateAstraKeyspaceOptions,
     CreateDataAPIKeyspaceOptions,
-    CreateCollectionOptions
+    CreateCollectionOptions,
+    WithTimeout
 } from '@datastax/astra-db-ts';
 import { CollectionsDb, TablesDb } from './db';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
@@ -227,9 +228,9 @@ export class Connection extends MongooseConnection {
      * List all keyspaces. Called "listDatabases" for Mongoose compatibility
      */
 
-    async listDatabases(): Promise<{ databases: { name: string }[] }> {
+    async listDatabases(options?: WithTimeout<'keyspaceAdminTimeoutMs'>): Promise<{ databases: { name: string }[] }> {
         await this._waitForClient();
-        return { databases: await this.admin!.listKeyspaces().then(keyspaces => keyspaces.map(name => ({ name }))) };
+        return { databases: await this.admin!.listKeyspaces(options).then(keyspaces => keyspaces.map(name => ({ name }))) };
     }
 
     /**

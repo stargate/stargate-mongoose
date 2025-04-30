@@ -16,7 +16,10 @@ import { default as MongooseCollection } from 'mongoose/lib/collection';
 import type { Connection } from './connection';
 import {
     Collection as AstraCollection,
+    CollectionCountDocumentsOptions,
+    CollectionDeleteManyOptions,
     CollectionDeleteOneOptions,
+    CollectionEstimatedDocumentCountOptions,
     CollectionFindAndRerankOptions,
     CollectionFindOptions,
     CollectionFindOneAndDeleteOptions,
@@ -30,12 +33,16 @@ import {
     CollectionUpdateManyOptions,
     CollectionUpdateOneOptions,
     Filter,
+    RunCommandOptions,
     SortDirection,
     Sort as SortOptionInternal,
     Table as AstraTable,
+    TableCreateIndexColumn,
     TableCreateIndexOptions,
     TableCreateVectorIndexOptions,
+    TableDeleteManyOptions,
     TableDeleteOneOptions,
+    TableDropIndexOptions,
     TableFilter,
     TableFindOneOptions,
     TableFindOptions,
@@ -44,7 +51,7 @@ import {
     TableOptions,
     TableIndexOptions,
     TableUpdateOneOptions,
-    TableVectorIndexOptions,
+    TableVectorIndexOptions
 } from '@datastax/astra-db-ts';
 import { SchemaOptions } from 'mongoose';
 import deserializeDoc from '../deserializeDoc';
@@ -138,14 +145,14 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * Count documents in the collection that match the given filter.
      * @param filter
      */
-    async countDocuments(filter: Record<string, unknown>) {
+    async countDocuments(filter: Filter, options?: CollectionCountDocumentsOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'countDocuments', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use countDocuments() with tables');
         }
         filter = serialize(filter);
-        return this.collection.countDocuments(filter, 1000);
+        return this.collection.countDocuments(filter, 1000, options);
     }
 
     /**
@@ -211,7 +218,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param update
      * @param options
      */
-    async findOneAndUpdate(filter: Record<string, unknown>, update: Record<string, unknown>, options: FindOneAndUpdateOptions) {
+    async findOneAndUpdate(filter: Filter, update: Record<string, unknown>, options: FindOneAndUpdateOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'findOneAndUpdate', arguments);
         if (this.collection instanceof AstraTable) {
@@ -238,7 +245,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param filter
      * @param options
      */
-    async findOneAndDelete(filter: Record<string, unknown>, options: FindOneAndDeleteOptions) {
+    async findOneAndDelete(filter: Filter, options: FindOneAndDeleteOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'findOneAndDelete', arguments);
         if (this.collection instanceof AstraTable) {
@@ -263,7 +270,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param newDoc
      * @param options
      */
-    async findOneAndReplace(filter: Record<string, unknown>, newDoc: Record<string, unknown>, options: FindOneAndReplaceOptions) {
+    async findOneAndReplace(filter: Filter, newDoc: Record<string, unknown>, options: FindOneAndReplaceOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'findOneAndReplace', arguments);
         if (this.collection instanceof AstraTable) {
@@ -288,11 +295,11 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * Delete one or more documents in a collection that match the given filter.
      * @param filter
      */
-    async deleteMany(filter: Record<string, unknown>) {
+    async deleteMany(filter: Filter, options?: CollectionDeleteManyOptions | TableDeleteManyOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'deleteMany', arguments);
         filter = serialize(filter, this.isTable);
-        return this.collection.deleteMany(filter as TableFilter<DocType>);
+        return this.collection.deleteMany(filter, options);
     }
 
     /**
@@ -301,7 +308,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param options
      * @param callback
      */
-    async deleteOne(filter: Record<string, unknown>, options: DeleteOneOptions) {
+    async deleteOne(filter: Filter, options: DeleteOneOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'deleteOne', arguments);
         const requestOptions: CollectionDeleteOneOptions | TableDeleteOneOptions = options.sort != null
@@ -318,7 +325,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param replacement
      * @param options
      */
-    async replaceOne(filter: Record<string, unknown>, replacement: Record<string, unknown>, options: ReplaceOneOptions) {
+    async replaceOne(filter: Filter, replacement: Record<string, unknown>, options: ReplaceOneOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'replaceOne', arguments);
         if (this.collection instanceof AstraTable) {
@@ -339,7 +346,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param update
      * @param options
      */
-    async updateOne(filter: Record<string, unknown>, update: Record<string, unknown>, options: UpdateOneOptions) {
+    async updateOne(filter: Filter, update: Record<string, unknown>, options: UpdateOneOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'updateOne', arguments);
         const requestOptions: CollectionUpdateOneOptions | TableUpdateOneOptions = options.sort != null
@@ -361,7 +368,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param update
      * @param options
      */
-    async updateMany(filter: Record<string, unknown>, update: Record<string, unknown>, options: CollectionUpdateManyOptions) {
+    async updateMany(filter: Filter, update: Record<string, unknown>, options: CollectionUpdateManyOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'updateMany', arguments);
         if (this.collection instanceof AstraTable) {
@@ -376,23 +383,26 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     /**
      * Get the estimated number of documents in a collection based on collection metadata
      */
-    async estimatedDocumentCount() {
+    async estimatedDocumentCount(options?: CollectionEstimatedDocumentCountOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'estimatedDocumentCount', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use estimatedDocumentCount() with tables');
         }
-        return this.collection.estimatedDocumentCount();
+        return this.collection.estimatedDocumentCount(options);
     }
 
     /**
      * Run an arbitrary command against this collection
      * @param command
      */
-    async runCommand(command: Record<string, unknown>) {
+    async runCommand(command: Record<string, unknown>, options?: RunCommandOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'runCommand', arguments);
-        return this.connection.db!.astraDb.command(command, this.isTable ? { table: this.name } : { collection: this.name });
+        return this.connection.db!.astraDb.command(
+            command,
+            this.isTable ? { table: this.name, ...options } : { collection: this.name, ...options }
+        );
     }
 
     /**
@@ -448,10 +458,19 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param indexSpec MongoDB-style index spec for Mongoose compatibility
      * @param options
      */
-    async createIndex(indexSpec: Record<string, boolean>, options: TableCreateVectorIndexOptions & { name?: string, vector: true }): Promise<void>;
-    async createIndex(indexSpec: Record<string, boolean>, options?: TableCreateIndexOptions & { name?: string, vector?: false }): Promise<void>;
+    async createIndex(
+        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
+        options: TableCreateVectorIndexOptions & { name?: string, vector: true }
+    ): Promise<void>;
+    async createIndex(
+        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
+        options?: TableCreateIndexOptions & { name?: string, vector?: false }
+    ): Promise<void>;
 
-    async createIndex(indexSpec: Record<string, boolean | 1 | -1>, options?: (TableCreateVectorIndexOptions | TableCreateIndexOptions) & { name?: string, vector?: boolean }): Promise<void> {
+    async createIndex(
+        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
+        options?: (TableCreateVectorIndexOptions | TableCreateIndexOptions) & { name?: string, vector?: boolean }
+    ): Promise<void> {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'createIndex', arguments);
         if (this.collection instanceof AstraCollection) {
@@ -471,7 +490,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
         return this.collection.createIndex(
             options?.name ?? column,
-            column,
+            indexSpec[column] === '$keys' || indexSpec[column] === '$values'
+                ? { [column]: indexSpec[column] } as unknown as TableCreateIndexColumn<DocType>
+                : column,
             { ifNotExists: true, ...(options as TableCreateIndexOptions) }
         );
     }
@@ -481,16 +502,21 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      *
      * @param name
      */
-    async dropIndex(name: string) {
+    async dropIndex(name: string, options?: TableDropIndexOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'dropIndex', arguments);
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use dropIndex() with collections');
         }
-        await this.connection.db!.astraDb.dropTableIndex(name);
+        await this.connection.db!.astraDb.dropTableIndex(name, options);
     }
 
-    async findAndRerank(filter: Record<string, unknown>, options?: CollectionFindAndRerankOptions) {
+    /**
+     * Finds documents that match the filter and reranks them based on the provided options.
+     * @param filter
+     * @param options
+     */
+    async findAndRerank(filter: Filter, options?: CollectionFindAndRerankOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'findAndRerank', arguments);
         if (this.collection instanceof AstraTable) {

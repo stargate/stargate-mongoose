@@ -102,7 +102,7 @@ export async function createMongooseCollections(isTable: boolean) {
                     url: { type: 'text' },
                     // Extra key for testing strict mode
                     extraCol: { type: 'text' },
-                    testArray: { type: 'list', valueType: 'text' }
+                    testMap: { type: 'map', keyType: 'text', valueType: 'decimal' }
                 }
             });
         }

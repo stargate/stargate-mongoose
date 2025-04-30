@@ -16,7 +16,7 @@ import assert from 'assert';
 import {
     testClient
 } from '../fixtures';
-import mongoose, { Schema, InferSchemaType, InsertManyResult } from 'mongoose';
+import mongoose, { Schema, InferSchemaType, InsertManyResult, IndexDirection } from 'mongoose';
 import * as AstraMongooseDriver from '../../src/driver';
 import {OperationNotSupportedError} from '../../src/driver';
 import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
@@ -448,20 +448,13 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                 expiryDate: Date,
                 isCertified: Boolean,
                 category: String, // Index exists in db but not in schema, will drop
-                testArray: [String]
+                testMap: { type: Map, of: Number }
             }, { autoCreate: false, autoIndex: false });
-            testProductSchema.index({ testArray: '$values' });
+            testProductSchema.index({ testMap: '$values' as unknown as IndexDirection });
             const ProductIndexModel = mongooseInstance.model('ProductIndexes', testProductSchema, Product.collection.collectionName);
-            await ProductIndexModel.collection.runCommand({
-                createIndex: {
-                    name: 'testArray',
-                    definition: {
-                        column: {
-                            testArray: '$values'
-                        }
-                    }
-                }
-            });
+            await mongooseInstance.connection.collection(ProductIndexModel.collection.collectionName).createIndex(
+                { testMap: '$keys' }
+            );
 
             const stringIndexOptions = { ascii: false, caseSensitive: true, normalize: false };
             let indexes = await ProductIndexModel.listIndexes();
@@ -476,14 +469,14 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                     key: { price: 1 }
                 },
                 {
-                    name: 'testArray',
+                    name: 'testMap',
                     key: {
-                        testArray: '$values'
+                        testMap: '$keys'
                     },
                     indexType: 'regular',
                     definition: {
                         column: {
-                            testArray: '$values'
+                            testMap: '$keys'
                         },
                         options: {}
                     }
@@ -503,7 +496,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                 const droppedIndexes = await ProductIndexModel.syncIndexes();
 
                 // Drop "will_drop_index" because not in schema, but keep index on `price` and `testArray`
-                assert.deepStrictEqual(droppedIndexes, ['will_drop_index']);
+                assert.deepStrictEqual(droppedIndexes.sort(), ['testMap', 'will_drop_index']);
 
                 indexes = await ProductIndexModel.listIndexes();
                 assert.deepStrictEqual(indexes.sort((i1, i2) => i1.name.localeCompare(i2.name)), [
@@ -526,23 +519,27 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                         key: { price: 1 }
                     },
                     {
-                        name: 'testArray',
+                        name: 'testMap',
                         key: {
-                            testArray: '$values'
+                            testMap: '$values'
                         },
                         indexType: 'regular',
                         definition: {
                             column: {
-                                testArray: '$values'
+                                testMap: '$values'
                             },
                             options: {}
                         }
                     }
                 ]);
+
+                const { toDrop, toCreate } = await ProductIndexModel.diffIndexes();
+                assert.deepStrictEqual(toDrop, []);
+                assert.deepStrictEqual(toCreate, []);
             } finally {
                 await collection.dropIndex('name').catch(() => {});
                 await collection.dropIndex('price').catch(() => {});
-                await collection.dropIndex('testArray').catch(() => {});
+                await collection.dropIndex('testMap').catch(() => {});
             }
         });
         it('API ops tests Model.updateOne()', async () => {
