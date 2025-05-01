@@ -100,22 +100,24 @@ docker compose -f bin/docker-compose.yml down -v
 
 ## Architecture
 ### High level architecture
-<img src="stargate-mongoose-arch.png" alt="stargate-mongoose usage end to end architecture"/>
+<img src="astra-mongoose-arch.png" alt="astra-mongoose usage end to end architecture"/>
 
 ### Components
 - Cassandra Cluster - Apache Cassandra / DataStax Enterprise Cluster as backend database.
-- Stargate Coordinator Nodes - [Stargate](https://stargate.io/) is an open source Data API Gateway for Cassandra. Coordinator is one of the primary components of Stargate which connects the API layer to the backend database. More details can be found [here](https://stargate.io/docs/latest/concepts/concepts.html#stargate-v2-0).
-- Stargate Data API - [Data API](https://github.com/stargate/data-api) is an open source Data API that runs on top of Stargate's coordinator.
-- JavaScript Clients that use Mongoose - Mongoose is an elegant mongodb object modeling library for node.js applications. By implementing a driver required by the Mongoose interface to connect to the Data API instead of native mongodb access layer, now a JavaScript client can store/retrieve documents on an Apache Cassandra/DSE backend.
+- Data API - [Data API](https://github.com/stargate/data-api) is an open source HTTP API that allows interacting with Apache Cassandra/DSE Cluster.
+- JavaScript Clients that use Mongoose - Mongoose is an elegant MongoDB object modeling library for Node.js applications. By implementing a driver required by the Mongoose interface to connect to Data API instead of native MongoDB access layer, now a JavaScript client can store/retrieve documents on an Apache Cassandra/DSE Cluster.
+- Astra - [Astra](https://www.datastax.com/products/datastax-astra) is a managed DBaaS service that provides a fully managed Cassandra database service. Astra includes a managed Data API service that allows interacting with data stored in Astra.
+- Stargate - [Stargate](https://github.com/stargate/stargate) is an open source project that provides a RESTful API for interacting with Apache Cassandra/DSE Cluster. Data API currently relies on Stargate internally.
 
 The current implementation of the Data API uses DataStax Enterprise (DSE) as the backend database.
 
 ## Version compatibility
 | Component/Library Name | Version            |
 |------------------------|--------------------|
-| Mongoose               | ^7.5.0 \|\| ^8.0.0 |
+| Mongoose               | ^8.14.0            |
 | data-api               | 1.x                |
 | DataStax Enterprise    | 6.8.x              |
+| Astra                  | Current            |
 
 CI tests are run using the Stargate and Data API versions specified in the [api-compatibility.versions](api-compatibility.versions) file.
 
