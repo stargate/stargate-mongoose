@@ -489,6 +489,10 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             doc = await Product.findOneAndReplace({name: 'Product 19'}, {_id: product2._id, name: 'Product 20'}, {returnDocument: 'after', upsert: true});
             assert.strictEqual(doc!.name, 'Product 20');
             assert.strictEqual(doc!.category, undefined);
+
+            doc = await Product.findOneAndReplace({_id: doc!._id}, {name: 'Product 21'}, {returnDocument: 'after', upsert: true});
+            assert.strictEqual(doc!.name, 'Product 21');
+            assert.strictEqual(doc!.category, undefined);
         });
         it('API ops tests Model.findOneAndUpdate()', async function() {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});

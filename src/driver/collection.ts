@@ -30,6 +30,7 @@ import {
     CollectionInsertOneOptions,
     CollectionOptions,
     CollectionReplaceOneOptions,
+    CollectionUpdateFilter,
     CollectionUpdateManyOptions,
     CollectionUpdateOneOptions,
     Filter,
@@ -50,14 +51,15 @@ import {
     TableInsertOneOptions,
     TableOptions,
     TableIndexOptions,
+    TableUpdateFilter,
     TableUpdateOneOptions,
-    TableVectorIndexOptions
+    TableVectorIndexOptions,
 } from '@datastax/astra-db-ts';
 import { SchemaOptions } from 'mongoose';
 import deserializeDoc from '../deserializeDoc';
 import { inspect } from 'util';
 import { serialize } from '../serialize';
-import setDefaultIdForUpsert from '../setDefaultIdForUpsert';
+import { setDefaultIdForUpdate, setDefaultIdForReplace } from '../setDefaultIdForUpsert';
 
 export type MongooseSortOption = Record<string, 1 | -1 | { $meta: Array<number> } | { $meta: string }>;
 
@@ -218,7 +220,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param update
      * @param options
      */
-    async findOneAndUpdate(filter: Filter, update: Record<string, unknown>, options: FindOneAndUpdateOptions) {
+    async findOneAndUpdate(filter: Filter, update: CollectionUpdateFilter<DocType>, options: FindOneAndUpdateOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'findOneAndUpdate', arguments);
         if (this.collection instanceof AstraTable) {
@@ -229,7 +231,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             : { ...options, sort: undefined };
 
         filter = serialize(filter);
-        setDefaultIdForUpsert(filter, update, requestOptions, false);
+        setDefaultIdForUpdate<DocType>(filter, update, requestOptions);
         update = serialize(update);
 
         return this.collection.findOneAndUpdate(filter, update, requestOptions).then((value: Record<string, unknown> | null) => {
@@ -280,7 +282,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
         filter = serialize(filter);
-        setDefaultIdForUpsert(filter, newDoc, requestOptions, true);
+        setDefaultIdForReplace(filter, newDoc, requestOptions);
         newDoc = serialize(newDoc);
 
         return this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((value: Record<string, unknown> | null) => {
@@ -335,7 +337,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
         filter = serialize(filter);
-        setDefaultIdForUpsert(filter, replacement, requestOptions, true);
+        setDefaultIdForReplace(filter, replacement, requestOptions);
         replacement = serialize(replacement);
         return this.collection.replaceOne(filter, replacement, requestOptions);
     }
@@ -346,14 +348,19 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param update
      * @param options
      */
-    async updateOne(filter: Filter, update: Record<string, unknown>, options: UpdateOneOptions) {
+    async updateOne(filter: Filter, update: CollectionUpdateFilter<DocType> | TableUpdateFilter<DocType>, options: UpdateOneOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'updateOne', arguments);
         const requestOptions: CollectionUpdateOneOptions | TableUpdateOneOptions = options.sort != null
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
         filter = serialize(filter, this.isTable);
-        setDefaultIdForUpsert(filter, update, requestOptions, false);
+        // `setDefaultIdForUpdate` currently would not work with tables because tables don't support `$setOnInsert`.
+        // But `setDefaultIdForUpdate` would also never use `$setOnInsert` if `updateOne` is used correctly because tables
+        // require `_id` in filter. So safe to avoid this for tables.
+        if (!this.isTable) {
+            setDefaultIdForUpdate(filter, update as CollectionUpdateFilter<DocType>, requestOptions);
+        }
         update = serialize(update, this.isTable);
         return this.collection.updateOne(filter as TableFilter<DocType>, update, requestOptions).then(res => {
             // Mongoose currently has a bug where null response from updateOne() throws an error that we can't
@@ -368,14 +375,14 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param update
      * @param options
      */
-    async updateMany(filter: Filter, update: Record<string, unknown>, options: CollectionUpdateManyOptions) {
+    async updateMany(filter: Filter, update: CollectionUpdateFilter<DocType>, options: CollectionUpdateManyOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'updateMany', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use updateMany() with tables');
         }
         filter = serialize(filter, this.isTable);
-        setDefaultIdForUpsert(filter, update, options, false);
+        setDefaultIdForUpdate(filter, update, options);
         update = serialize(update, this.isTable);
         return this.collection.updateMany(filter, update, options);
     }
@@ -396,7 +403,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * Run an arbitrary command against this collection
      * @param command
      */
-    async runCommand(command: Record<string, unknown>, options?: RunCommandOptions) {
+    async runCommand(command: Record<string, unknown>, options?: Omit<RunCommandOptions, 'table' | 'collection' | 'keyspace'>) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'runCommand', arguments);
         return this.connection.db!.astraDb.command(

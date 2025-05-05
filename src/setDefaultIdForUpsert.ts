@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { CollectionUpdateFilter } from '@datastax/astra-db-ts';
 import { Types } from 'mongoose';
 
-export default function setDefaultIdForUpsert(filter: Record<string, unknown>, update: { $setOnInsert?: Record<string, unknown> } & Record<string, unknown>, options: { upsert?: boolean }, replace?: boolean) {
+export function setDefaultIdForReplace<DocType extends { _id?: unknown } = Record<string, unknown>>(
+    filter: Record<string, unknown>,
+    update: DocType,
+    options: { upsert?: boolean }
+) {
     if (!options.upsert) {
         return;
     }
@@ -22,21 +27,32 @@ export default function setDefaultIdForUpsert(filter: Record<string, unknown>, u
         return;
     }
 
-    if (replace) {
-        if ('_id' in update) {
-            return;
-        }
-        update._id = new Types.ObjectId();
-    } else {
-        if (_updateHasKey(update, '_id')) {
-            return;
-        }
-        if (update.$setOnInsert == null) {
-            update.$setOnInsert = {};
-        }
-        if (!('_id' in update.$setOnInsert)) {
-            update.$setOnInsert._id = new Types.ObjectId();
-        }
+    if ('_id' in update) {
+        return;
+    }
+    update._id = new Types.ObjectId();
+}
+
+export function setDefaultIdForUpdate<DocType extends { _id?: unknown } = Record<string, unknown>>(
+    filter: Record<string, unknown>,
+    update: CollectionUpdateFilter<DocType>,
+    options: { upsert?: boolean }
+) {
+    if (!options.upsert) {
+        return;
+    }
+    if ('_id' in filter) {
+        return;
+    }
+
+    if (_updateHasKey(update, '_id')) {
+        return;
+    }
+    if (update.$setOnInsert == null) {
+        update.$setOnInsert = {};
+    }
+    if (!('_id' in update.$setOnInsert)) {
+        update.$setOnInsert._id = new Types.ObjectId();
     }
 }
 
