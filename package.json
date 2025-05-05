@@ -1,5 +1,5 @@
 {
-  "name": "astra-mongoose",
+  "name": "@datastax/astra-mongoose",
   "version": "1.0.0-rc.0",
   "description": "Astra's NodeJS Mongoose compatability client",
   "contributors": [
