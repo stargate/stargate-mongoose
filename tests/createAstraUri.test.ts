@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { createAstraUri } from '../../src/collections/utils';
+import createAstraUri from '../src/createAstraUri';
 
 describe('Utils test', () => {
     it('createProdAstraUriDefaultKeyspace', () => {
@@ -41,5 +41,11 @@ describe('Utils test', () => {
         const apiEndpoint = 'https://a5cf1913-b80b-4f44-ab9f-a8b1c98469d0-ap-south-1.apps.astra.datastax.com';
         const uri: string = createAstraUri(apiEndpoint,'myToken','testks1','apis');
         assert.strictEqual(uri, 'https://a5cf1913-b80b-4f44-ab9f-a8b1c98469d0-ap-south-1.apps.astra.datastax.com/apis/testks1?applicationToken=myToken');
+    });
+
+    it('with authHeaderName', () => {
+        const apiEndpoint = 'https://a5cf1913-b80b-4f44-ab9f-a8b1c98469d0-ap-south-1.apps.astra.datastax.com';
+        const uri: string = createAstraUri(apiEndpoint,'myToken','testks1','apis','x-authn');
+        assert.strictEqual(uri, 'https://a5cf1913-b80b-4f44-ab9f-a8b1c98469d0-ap-south-1.apps.astra.datastax.com/apis/testks1?applicationToken=myToken&authHeaderName=x-authn');
     });
 });

@@ -12,28 +12,72 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { IndexingOptions, VectorOptions } from './collections';
+import {
+    CollectionFindAndRerankOptions,
+    CollectionIndexingOptions,
+    CollectionSerDesConfig,
+    CollectionVectorOptions,
+    RerankedResult,
+    TableSerDesConfig
+} from '@datastax/astra-db-ts';
 
-export * as collections from './collections';
 export * as driver from './driver';
-export * as client from './client';
-export * as logger from './logger';
+export { default as createAstraUri } from './createAstraUri';
+export { default as tableDefinitionFromSchema } from './tableDefinitionFromSchema';
+
+import * as AstraMongooseDriver from './driver';
+import type { Mongoose } from 'mongoose';
+
+export { Vectorize, VectorizeOptions } from './driver';
+
+export { AstraMongooseError } from './astraMongooseError';
+
+export type AstraMongoose = Omit<Mongoose, 'connection'> & { connection: AstraMongooseDriver.Connection };
 
 declare module 'mongodb' {
-  interface CreateCollectionOptions {
-    vector?: VectorOptions;
-    indexing?: IndexingOptions;
-  }
+    interface CreateCollectionOptions {
+        vector?: CollectionVectorOptions;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        indexing?: CollectionIndexingOptions<any>;
+    }
 }
 
 declare module 'mongoose' {
-  interface ConnectOptions {
-    isAstra?: boolean;
-    logSkippedOptions?: boolean;
-  }
+    interface ConnectOptions {
+        isTable?: boolean;
+        isAstra?: boolean;
+        sanitizeFilter?: boolean;
+        username?: string;
+        password?: string;
+    }
 
-  function setDriver<T = Mongoose>(driver: unknown): T;
+    interface InsertManyOptions {
+        returnDocumentResponses?: boolean;
+    }
+
+    interface SchemaOptions {
+        serdes?: CollectionSerDesConfig | TableSerDesConfig
+    }
+
+    function setDriver(driver: typeof AstraMongooseDriver): AstraMongoose;
+
+    // Module augmentation for Mongoose's `Model` interface to add `findAndRerank`. Not strictly 100%
+    // type-safe since you may import astra-mongoose without actually calling `setDriver()` but sufficient
+    // for practical purposes. The generic parameters must match Mongoose's `Model` generics **exactly**.
+    interface Model<
+      TRawDocType,
+      // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+      TQueryHelpers = {},
+      // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+      TInstanceMethods = {},
+      // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+      TVirtuals = {},
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      THydratedDocumentType = HydratedDocument<TRawDocType, TVirtuals & TInstanceMethods, TQueryHelpers, TVirtuals>,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+      TSchema = any
+    > {
+
+      findAndRerank(filter: Record<string, unknown>, options?: CollectionFindAndRerankOptions): Promise<RerankedResult<TRawDocType>[]>;
+    }
 }
-
-import { createStargateUri, createAstraUri } from './collections';
-export { createStargateUri, createAstraUri };

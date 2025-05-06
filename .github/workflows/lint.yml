@@ -1,4 +1,4 @@
-name: Lint - stargate-mongoose
+name: Lint
 on:
   pull_request:
     branches:
@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: 18.20.4
       - name: setup project
-        run: npm i      
+        run: npm i
       - name: run lint
         run: |
           npm run lint

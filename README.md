@@ -1,20 +1,20 @@
-# stargate-mongoose ![ci-tests](https://github.com/stargate/stargate-mongoose/actions/workflows/ci-tests.yml/badge.svg)
+# astra-mongoose ![ci-tests](https://github.com/stargate/stargate-mongoose/actions/workflows/ci-tests.yml/badge.svg)
 
-`stargate-mongoose` is a Mongoose driver for [Data API](https://github.com/stargate/data-api) which runs on top of Apache Cassandra / DataStax Enterprise.
+`astra-mongoose` is a Mongoose driver for [Data API](https://github.com/stargate/data-api) which runs on top of Apache Cassandra / DataStax Enterprise.
 
 1. [Quickstart](#quickstart)
 2. [Architecture](#architecture)
 3. [Version compatibility](#version-compatibility)
 4. [Connecting to AstraDB](#connecting-to-astradb)
 5. [Sample Applications](#sample-applications)
-6. [Features](#features)
-7. [NodeJS MongoDB Driver Overriding (experimental)](#nodejs-mongodb-driver-overriding-experimental)
+6. [Features Using Collections](#features-using-collections)
+7. [Features Using Tables](#features-using-tables)
 8. [API Reference](APIReference.md)
 9. [Developer Guide](DEVGUIDE.md)
 
 ## Quickstart
 Prerequisites:
-node (>=14.0.0), npm/yarn, Docker (for testing the sample app locally using docker compose)
+node (>=20.0.0), npm/yarn, Docker (for testing locally using docker compose)
 - Start `Docker` on your local machine.
 - Clone this repository
 ```shell
@@ -38,11 +38,11 @@ cd sample-app
 ```
 - Initialize and add required dependencies
 ```shell
-npm init -y && npm install express mongoose stargate-mongoose --engine-strict
+npm init -y && npm install express mongoose astra-mongoose
 ```
 OR
 ```shell
-yarn init -y && yarn add express mongoose stargate-mongoose
+yarn init -y && yarn add express mongoose astra-mongoose
 ```
 
 
@@ -51,9 +51,8 @@ yarn init -y && yarn add express mongoose stargate-mongoose
 //imports
 const express = require('express');
 const mongoose = require('mongoose');
-const stargate_mongoose = require('stargate-mongoose');
+const { driver } = require('astra-mongoose');
 const Schema = mongoose.Schema;
-const driver = stargate_mongoose.driver;
 
 //override the default native driver
 mongoose.setDriver(driver);
@@ -101,32 +100,34 @@ docker compose -f bin/docker-compose.yml down -v
 
 ## Architecture
 ### High level architecture
-<img src="stargate-mongoose-arch.png" alt="stargate-mongoose usage end to end architecture"/>
+<img src="astra-mongoose-arch.png" alt="astra-mongoose usage end to end architecture"/>
 
 ### Components
 - Cassandra Cluster - Apache Cassandra / DataStax Enterprise Cluster as backend database.
-- Stargate Coordinator Nodes - [Stargate](https://stargate.io/) is an open source Data API Gateway for Cassandra. Coordinator is one of the primary components of Stargate which connects the API layer to the backend database. More details can be found [here](https://stargate.io/docs/latest/concepts/concepts.html#stargate-v2-0).
-- Stargate Data API - [Data API](https://github.com/stargate/data-api) is an open source Data API that runs on top of Stargate's coordinator.
-- JavaScript Clients that use Mongoose - Mongoose is an elegant mongodb object modeling library for node.js applications. By implementing a driver required by the Mongoose interface to connect to the Data API instead of native mongodb access layer, now a JavaScript client can store/retrieve documents on an Apache Cassandra/DSE backend.
+- Data API - [Data API](https://github.com/stargate/data-api) is an open source HTTP API that allows interacting with Apache Cassandra/DSE Cluster.
+- JavaScript Clients that use Mongoose - Mongoose is an elegant MongoDB object modeling library for Node.js applications. By implementing a driver required by the Mongoose interface to connect to Data API instead of native MongoDB access layer, now a JavaScript client can store/retrieve documents on an Apache Cassandra/DSE Cluster.
+- Astra - [Astra](https://www.datastax.com/products/datastax-astra) is a managed DBaaS service that provides a fully managed Cassandra database service. Astra includes a managed Data API service that allows interacting with data stored in Astra.
+- Stargate - [Stargate](https://github.com/stargate/stargate) is an open source project that provides a RESTful API for interacting with Apache Cassandra/DSE Cluster. Data API currently relies on Stargate internally.
 
 The current implementation of the Data API uses DataStax Enterprise (DSE) as the backend database.
 
 ## Version compatibility
 | Component/Library Name | Version            |
 |------------------------|--------------------|
-| Mongoose               | ^7.5.0 \|\| ^8.0.0 |
+| Mongoose               | ^8.14.0            |
 | data-api               | 1.x                |
 | DataStax Enterprise    | 6.8.x              |
+| Astra                  | Current            |
 
 CI tests are run using the Stargate and Data API versions specified in the [api-compatibility.versions](api-compatibility.versions) file.
 
 ## Connecting to AstraDB
 
-Here's a quick way to connect to AstraDB using `stargate-mongoose` driver.
+Here's a quick way to connect to AstraDB using `astra-mongoose` driver.
 
 ```typescript
 const mongoose = require("mongoose");
-const { driver, createAstraUri } = require("stargate-mongoose");
+const { driver, createAstraUri } = require("astra-mongoose");
 
 const uri = createAstraUri(
   process.env.ASTRA_DB_API_ENDPOINT,
@@ -147,17 +148,17 @@ https://docs.datastax.com/en/astra/astra-db-vector/api-reference/data-api-with-m
 
 ## Sample Applications
 
-Sample applications developed using `stargate-mongoose` driver are available in below repository.
+Sample applications developed using `astra-mongoose` driver are available in below repository.
 
 https://github.com/stargate/stargate-mongoose-sample-apps
 
-## Features
+## Features Using Collections
 
 ### Connection APIs
 | <nobr>Operation Name</nobr> | Description                                                                                                                                           |
 |-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| createDatabase              | When flag `createNamespaceOnConnect` is set to `true` the keyspace passed on to the `mongoose.connect` function via the URL, is created automatically |
-| dropDatabase                | Drops the database                                                                                                                                    |
+| createDatabase              | When flag `createNamespaceOnConnect` is set to `true` the keyspace passed on to the `mongoose.connect` function via the URL, is created automatically. Not supported on Astra. |
+| dropDatabase                | Drops the database (not supported on Astra)                                                                                                                                    |
 | createCollection            | `mongoose.model('ModelName',modelSchema)` creates a collection as required                                                                            |
 | dropCollection              | `model.dropCollection()` drops the collection                                                                                                         |
 
@@ -166,7 +167,7 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 | <nobr>Operation Name</nobr> | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 |-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | countDocuments              | `Model.countDocuments(filter)` returns the count of documents                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| deleteMany                  | `Model.deleteMany(filter)`. This API will throw an error when more than 20 records are found to be deleted.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| deleteMany                  | `Model.deleteMany(filter)`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | deleteOne                   | `Model.deleteOne(filter, options)` options - `sort`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | find                        | `Model.find(filter, projection, options)`  options - `limit`, `pageState`, `skip`, `sort` (skip works only with sorting)                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | findOne                     | `Model.findOne(filter, options)` options - `sort` Example: `findOne({}, { sort: { username: -1 } })`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -188,9 +189,9 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 | $lt                | Example (age < 25): `{ 'age' : { '$lt' : 25 } }`                                                                                                |
 | $lte               | Example (age <= 25): `{ 'age' : { '$lte' : 25 } }`                                                                                              |
 | $ne                | Example: `{ 'first_name' : { '$ne' : 'jim' } }`                                                                                   |
-| $in                | Example: `{ '_id' : { '$in' : ['nyc', 'la'] } }` $in is not supported in non _id columns at the moment                                                         |
+| $in                | Example: `{ '_id' : { '$in' : ['nyc', 'la'] } }`                                                       |
 | $nin               | Example: `{ 'address.city' : { '$nin' : ['nyc', 'la'] } }`                                                                                      |
-| $not               | Not supported. Example: `{ 'first_name' : { '$not' : { '$eq' : 'jim' }}}`                                                                                      |
+| $not               | Not supported.                                                                                    |
 | $exists            | Example: `{ 'address.city' : { '$exists' : true} }`                                                                                                            |
 | $all               | Array operation. Matches if all the elements of an array matches the given values. Example: `{ 'tags' : { '$all' : [ 'home', 'school' ] } }`                   |
 | $elemMatch         | Not supported. Matches if the elements of an array in a document matches the given conditions. Example: `{'goals': { '$elemMatch': { '$gte': 2, '$lt': 10 }}}` |
@@ -231,16 +232,158 @@ https://github.com/stargate/stargate-mongoose-sample-apps
 
 ### Index Operations
 
-Index operations are not supported. There is one caveat for `ttl` indexes: When adding a document, you can add a `ttl` option (determined in seconds) that will behave in the similar way to a `ttl` index. For example, with the collection's client:
+Index operations are not supported.
+
+### Aggregation Operations
+
+Aggregation operations are not supported.
+
+### Transaction Operations
+
+Transaction operations are not supported.
+
+### Vector Search
+
+Vector search is supported. Define a `$vector` property in your schema, and you can sort documents by their distance to a given vector using `sort({ $vector: { $meta } })` as follows.
+
+```typescript
+const vectorSchema = new Schema(
+    {
+        $vector: { type: [Number], default: () => void 0, select: true },
+        name: 'String'
+    },
+    {
+        // Create a collection with a 2-dimensional $vector property
+        collectionOptions: { vector: { dimension: 2, metric: 'cosine' } },
+        autoCreate: false
+    }
+);
+const Vector = mongoose.model('Vector', vectorSchema);
+await Vector.createCollection();
+
+// Find vectors that are closest to [1, 99]
+const res = await Vector.find({}).sort({ $vector: { $meta: [1, 99] } });
+```
+
+### Vectorize
+
+Vectorize is supported. Define a `$vectorize` string property in your schema, and you can insert documents with a vector as follows.
+
+```typescript
+const vectorSchema = new Schema(
+    {
+        $vector: { type: [Number], default: () => void 0, dimension: 1024 },
+        $vectorize: { type: String },
+        name: 'String'
+    },
+    {
+        collectionOptions: {
+            vector: {
+                dimension: 1024,
+                metric: 'cosine',
+                service: { provider: 'nvidia', modelName: 'NV-Embed-QA' }
+            }
+        },
+        autoCreate: false
+    }
+);
+const Vector = mongooseInstance.model('Vector', vectorSchema);
+
+const { _id } = await Vector.create({ name: 'Moby-Dick', $vectorize: 'Call me Ishmael.' });
+// Need `select({ '*': 1 })` because Data API excludes $vector and $vectorize by default
+const doc = await Vector.findById(_id).select({ '*': 1 }).orFail();
+
+doc.$vectorize; // 'Call me Ishmael.'
+doc.$vector; // Length 1024 array of numbers calculated by the embedding provider
+```
+
+## Features Using Tables
+
+You can enable the `useTables` option in the connection string to use the Tables API as opposed to the Collections API.
+The following operations are supported in the tables API.
+
+### Connection APIs
+| <nobr>Operation Name</nobr> | Description                                                                                                                                           |
+|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| createDatabase              | When flag `createNamespaceOnConnect` is set to `true` the keyspace passed on to the `mongoose.connect` function via the URL, is created automatically. Not supported on Astra. |
+| dropDatabase                | Drops the database (not supported on Astra)                                                                                                                                    |
+| createTable            | `connection.createTable()`                                                                      |
+| dropTable              | `connection.dropTable()`
+
+### Table APIs
+| <nobr>Operation Name</nobr> | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| countDocuments              | Not supported                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| deleteMany                  | `Model.deleteMany(filter)`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| deleteOne                   | `Model.deleteOne(filter, options)` Must specify `_id` in filter                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| find                        | `Model.find(filter, projection, options)`  options - `limit`, `skip`, `sort` (skip works only with sorting)                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| findOne                     | `Model.findOne(filter, options)` options - `sort` Example: `findOne({}, { sort: { username: -1 } })`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| findOneAndDelete            | Not supported                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| findOneAndReplace           | Not supported |
+| findOneAndUpdate            | Not supported       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| insertMany                  | `Model.insertMany([{docs}], options)`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| insertOne                   | `Model.insertOne({doc})`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| updateMany                  | Not supported                                                                                                        |
+| updateOne                   | `Model.updateOne(filter, update, options)`<br>__options__<br>` upsert:` (default `false`)<br>`true` - if a document is not found for the given filter, a new document will be inserted with the values in the filter (eq condition) and the values in the `$set` and `$setOnInsert`operators.<br>`false` - new document will not be inserted when no match is found for the given filter              |
+
+### Filter Clause
+| Operator           | Description                                                                                                                                                    |
+|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| literal comparison | Equal to. Example: `{ 'first_name' : 'jim' }`                                                                                                                  |
+| $eq                | Example: `{ 'first_name' : { '$eq' : 'jim' } }`                                                                                                                |
+| $gt                | Example (age > 25): `{ 'age' : { '$gt' : 25 } }`                                                                                                |
+| $gte               | Example (age >= 25): `{ 'age' : { '$gte' : 25 } }`                                                                                              |
+| $lt                | Example (age < 25): `{ 'age' : { '$lt' : 25 } }`                                                                                                |
+| $lte               | Example (age <= 25): `{ 'age' : { '$lte' : 25 } }`                                                                                              |
+| $ne                | Example: `{ 'first_name' : { '$ne' : 'jim' } }`                                                                                   |
+| $in                | Example: `{ '_id' : { '$in' : ['nyc', 'la'] } }`                                                         |
+| $nin               | Example: `{ 'address.city' : { '$nin' : ['nyc', 'la'] } }`                                                                                      |
+| $not               | Not supported.                                                                                  |
+| $exists            | Not supported.                                                                                                            |
+| $all               | Not supported.                   |
+| $elemMatch         | Not supported. |
+| $size              | Not supported.                                                                                                       |
+| $and (implicit)    | Logical expression. Example : ` { '$and' : [ {first_name : 'jim'}, {'age' : {'$gt' : 25 } } ] } `                                                              |
+| $and (explicit)    | Not supported.                                                                   |
+| $or                | Not supported.
+
+### Sort Clause
+| Operator          | Description   |
+|-------------------|---------------|
+| Single Field Sort | Supported     |
+| Multi Field Sort  | Not supported |
+
+### Update Clause
+| Operator     | Description                                                                                                                                                                       |
+|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| $inc         | Not supported.                                                                                                                                           |
+| $min         | Not supported.                                                                            |
+| $max         | Not supported.                                                                          |
+| $rename      | Not supported.                                                                       |
+| $set         | Example: `{'update' : {'$set': {'location': 'New York'} }}`                                                                                                                       |
+| $setOnInsert | Not supported.                                                                                   |
+| $unset       | Example: `{'update' : {'$unset': [address.location] }}`                                                                                                                           |
+| $addToSet    | Not supported. |
+| $pop         | Not supported.                                                |
+| $pull        | Not supported                                                                                                                                                                     |
+| $push        | Not supported.                                                                                    |
+| $pullAll     | Not supported.                                                                                                                                                                     |
+
+### Index Operations
+
+Indexes are supported. Indexes can be created using the `createIndex` method on the collection object, or by defining an index in your Mongoose schema.
+However, indexes are limited to 1 key: compound indexes are not supported.
 
 ```javascript
-import { Client } from 'stargate-mongoose';
-// connect to Data API
-const client = await Client.connect(process.env.DATA_API_URI);
-// get a collection
-const collection = client.db().collection('docs');
-// insert and expire this document in 10 seconds
-await collection.insertOne({ hello: 'world' }, { ttl: 10 });
+const testSchema = new Schema({ testProperty: String, otherTestProperty: String });
+
+testSchema.index({ testProperty: 1 });
+const TestModel = mongoose.model('Test', testSchema);
+await TestModel.createIndexes(); // Creates the index on `testProperty`
+
+// Cannot do the following because it is a compound index (multiple keys).
+// Throws a "indexSpec must have exactly 1 key" error
+// testSchema.index({ testProperty: 1, otherTestProperty: 1 });
 ```
 
 ### Aggregation Operations
@@ -251,59 +394,68 @@ Aggregation operations are not supported.
 
 Transaction operations are not supported.
 
-## NodeJS MongoDB Driver Overriding (experimental)
+### Vector Search
 
-If you have an application that uses the NodeJS MongoDB driver, or a dependency that uses the NodeJS MongoDB driver, it is possible to override its use with the collections package of `stargate-mongoose`. This makes your application use Data API documents instead of MongoDB documents. Doing so requires code changes in your application that address the features section of this README, and a change in how you set up your client connection.
+Vector search is supported. Define a property of type `[Number]` with a `dimension` property and Mongoose will treat it as a vector when you use `tableDefinitionForSchema`.
 
-If your application uses `mongodb` you can override its usage like so:
+```typescript
+import { tableDefinitionFromSchema } from 'astra-mongoose';
 
-In your app's `mongodb` `package.json` entry:
-
-```
-"mongodb": "stargate-mongoose@0.2.0-ALPHA-3",
-```
-
-Then, re-install your dependencies
-
-```bash
-npm i
-```
-
-Finally, modify your connection so that your driver connects to Data API
-
-```javascript
-import { MongoClient } from 'stargate-mongoose';
-
-// connect to Data API
-const client = await MongoClient.connect(process.env.DATA_API_URI);
-```
-
-If you have an application dependency that uses `mongodb`, you can override its usage like so (this example uses `mongoose`):
-
-Add an override to your app's `package.json` (requires NPM 8.3+), also, add `stargate-mongoose as a dependency:
-
-```
-"dependencies": {
-    "stargate-mongoose": "^0.2.0-ALPHA-3"
-},
-"overrides": {
-    "mongoose": {
-        "mongodb":  "stargate-mongoose@0.2.0-ALPHA-3"
+const vectorSchema = new Schema(
+    {
+        vector: { type: [Number], default: () => void 0, dimension: 2 },
+        name: 'String'
+    },
+    {
+        autoCreate: false,
+        autoIndex: false,
+        versionKey: false
     }
-},
+);
+
+const Vector = mongoose.model('VectorTable', vectorSchema, 'vector_table');
+
+// Create table and vector index
+await mongoose.connection.createTable('vector_table', tableDefinitionFromSchema(vectorSchema));
+await mongoose.connection.collection('vector_table').createVectorIndex('vectortables', 'vector');
+
+// Find vectors that are closest to [1, 99]
+const res = await Vector.find({}, null, { includeSimilarity: true }).sort({ vector: { $meta: [1, 99] } });
 ```
 
-Then, re-install your dependencies
+### Vectorize
 
-```bash
-npm i
-```
+Vectorize is supported. Use the `Vectorize` type exported by astra-mongoose.
 
-Finally, modify your dependencies connection so that your driver connects to Data API
+```typescript
+import { tableDefinitionFromSchema, Vectorize } from 'astra-mongoose';
 
-```javascript
-import mongoose from 'mongoose';
+// Define raw document type override because Mongoose's TypeScript support can't infer the type of Vectorize
+interface IVector {
+    vector: string | number[] | null;
+    name?: string | null;
+}
+const vectorSchema = new Schema<IVector>({ name: 'String' }, { autoCreate: false });
+// Add the vectorize path using `schema.path()` and the `Vectorize` type for better TypeScript support.
+// You can also do `type: Vectorize, dimension: 1024` in your schema definition.
+vectorSchema.path('vector', new Vectorize('vector', {
+    default: [],
+    dimension: 1024,
+    service: {
+        provider: 'nvidia',
+        modelName: 'NV-Embed-QA'
+    }
+}));
 
-// connect to Data API
-await mongoose.connect(process.env.DATA_API_URI);
+const Vector = mongoose.model('vector', vectorSchema, 'vector_table');
+
+// Create table and vector index
+await mongoose.connection.createTable('vector_table', tableDefinitionFromSchema(vectorSchema));
+await mongoose.connection.collection('vector_table').createVectorIndex('vectortables', 'vector');
+
+await Vector.create({ name: 'Recipe', vector: 'My Taco Recipe: 1 corn tortilla, 2 oz ground beef' });
+await Vector.create({ name: 'Story', vector: 'Colorful butterflies soar high above the blooming garden' });
+
+const doc = await Vector.findOne().sort({ vector: { $meta: 'mexican food' } }).orFail();
+doc.name; // 'Recipe'
 ```

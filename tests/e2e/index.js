@@ -1,1 +1,1 @@
-require('stargate-mongoose');
+require('@datastax/astra-mongoose');

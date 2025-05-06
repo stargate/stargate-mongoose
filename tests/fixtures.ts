@@ -13,114 +13,9 @@
 // limitations under the License.
 
 import assert from 'assert';
-import { Client, ClientOptions } from '../src/collections/client';
 
 export const TEST_COLLECTION_NAME = 'collection1';
-
-export const getDataAPIClient = async () => {
-    if (!process.env.DATA_API_URI) {
-        return null;
-    }
-    const options: ClientOptions = { authHeaderName: process.env.AUTH_HEADER_NAME };
-    if (process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD) {
-        options.username = process.env.STARGATE_USERNAME;
-        options.password = process.env.STARGATE_PASSWORD;
-    }
-    //options.logLevel = 'debug';
-    return await Client.connect(process.env.DATA_API_URI, options);
-};
-
-export const getAstraClient = async () => {
-    if (!process.env.ASTRA_URI) {
-        return null;
-    }
-    const options: ClientOptions = { authHeaderName: process.env.AUTH_HEADER_NAME };
-    if (process.env.STARGATE_USERNAME && process.env.STARGATE_PASSWORD) {
-        options.username = process.env.STARGATE_USERNAME;
-        options.password = process.env.STARGATE_PASSWORD;
-    }
-    //options.logLevel = 'debug';
-    options.isAstra = true;
-    return await Client.connect(process.env.ASTRA_URI, options);
-};
-
-export const createSampleDoc = () => ({
-    _id: 'doc1',
-    username: 'aaron'
-});
-
-export interface Employee {
-  _id?: string;
-  username?: string;
-  human?: boolean;
-  age?: number;
-  password?: string | null;
-  address?: {
-    number?: number;
-    street?: string | null;
-    suburb?: string | null;
-    city?: string | null;
-    is_office?: boolean;
-    country?: string | null;
-  }
-}
-
-const sampleMultiLevelDoc: Employee = {
-    username: 'aaron',
-    human: true,
-    age: 47,
-    password: null,
-    address: {
-        number: 86,
-        street: 'monkey street',
-        suburb: null,
-        city: 'big banana',
-        is_office: false
-    }
-};
-
-export const createSampleDocWithMultiLevelWithId = (docId: string) => {
-    const sampleMultiLevelDocWithId = JSON.parse(JSON.stringify(sampleMultiLevelDoc)) as Employee; //parse and stringigy is to clone and modify only the new object
-    sampleMultiLevelDocWithId._id = docId;
-    return sampleMultiLevelDocWithId;
-};
-
-export const createSampleDocWithMultiLevel = () => (sampleMultiLevelDoc as Employee);
-
-export const createSampleDoc2WithMultiLevel = () => ({
-    username: 'jimr',
-    human: true,
-    age: 52,
-    password: 'gasxaq==',
-    address: {
-        number: 45,
-        street: 'main street',
-        suburb: 'not null',
-        city: 'nyc',
-        is_office: true,
-        country: 'usa'
-    }
-} as Employee);
-
-export const createSampleDoc3WithMultiLevel = () => ({
-    username: 'saml',
-    human: false,
-    age: 25,
-    password: 'jhkasfka==',
-    address: {
-        number: 123,
-        street: 'church street',
-        suburb: null,
-        city: 'la',
-        is_office: true,
-        country: 'usa'
-    }
-} as Employee);
-
-export const sampleUsersList = Array.of(createSampleDocWithMultiLevel(), createSampleDoc2WithMultiLevel(), createSampleDoc3WithMultiLevel()) as Employee[];
-
-export const getSampleDocs = (numUsers: number) =>
-    Array.from({ length: numUsers }, createSampleDoc);
+export const TEST_TABLE_NAME = 'table1';
 
 export const sleep = async (ms = 100) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -132,19 +27,17 @@ export const isAstra = process.env.TEST_DOC_DB === 'astra' && !!process.env.ASTR
 export const testClient = process.env.TEST_DOC_DB === 'astra' ?
     (process.env.ASTRA_URI ?
         {
-            client: getAstraClient(),
             isAstra,
-            uri: process.env.ASTRA_URI
+            uri: process.env.ASTRA_URI,
+            options: {isAstra: true}
         } : null)
     : (process.env.TEST_DOC_DB === 'dataapi' ? (process.env.DATA_API_URI ?
         {
-            client: getDataAPIClient(),
             isAstra,
-            uri: process.env.DATA_API_URI
+            uri: process.env.DATA_API_URI,
+            options: {
+                username: process.env.STARGATE_USERNAME,
+                password: process.env.STARGATE_PASSWORD
+            }
         } : null
     ) : null);
-
-after(async function() {
-    const client = await testClient?.client;
-    client?.close();
-});

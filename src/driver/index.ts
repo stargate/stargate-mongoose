@@ -14,11 +14,15 @@
 
 export { Connection } from './connection';
 export { Collection, OperationNotSupportedError } from './collection';
+export { Vectorize, VectorizeOptions } from './vectorize';
 
 import { Connection } from './connection';
 import { Mongoose } from 'mongoose';
-import { handleVectorFieldsProjection } from './plugins';
+import { handleVectorFieldsProjection, addVectorDimensionValidator, findAndRerankStatic } from './plugins';
 
-export const plugins = [handleVectorFieldsProjection];
+export const plugins = [handleVectorFieldsProjection, addVectorDimensionValidator, findAndRerankStatic];
 
-export type StargateMongoose = Mongoose & { connection: Connection, connections: Connection[] };
+import { Vectorize } from './vectorize';
+export const SchemaTypes = { Vectorize };
+
+export type AstraMongoose = Mongoose & { connection: Connection, connections: Connection[] };

@@ -12,24 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export { Client } from './client';
-export { Collection } from './collection';
+/**
+ * Base class for astra-mongoose-specific errors.
+ */
 
-export {
-    FindOneAndDeleteOptions,
-    FindOneAndReplaceOptions,
-    FindOneAndUpdateOptions,
-    FindOneOptions,
-    FindOptions,
-    IndexingOptions,
-    InsertManyOptions,
-    UpdateManyOptions,
-    UpdateOneOptions,
-    DeleteOneOptions,
-    VectorOptions
-} from './options';
+export class AstraMongooseError extends Error {
+    extra?: Record<string, unknown>;
 
-// alias for MongoClient shimming
-export { Client as MongoClient } from './client';
-
-export { createAstraUri, createStargateUri } from './utils';
+    constructor(message: string, extra?: Record<string, unknown>) {
+        super(message);
+        this.name = 'AstraMongooseError';
+        this.extra = extra;
+    }
+}

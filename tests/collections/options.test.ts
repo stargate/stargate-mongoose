@@ -14,9 +14,14 @@
 
 import assert from 'assert';
 import mongoose from 'mongoose';
-import { Product } from '../mongooseFixtures';
+import { Product, createMongooseCollections } from '../../tests/mongooseFixtures';
 
 describe('Options tests', async () => {
+    before(async function() {
+        this.timeout(120_000);
+        await createMongooseCollections(false);
+    });
+
     beforeEach(async function() {
         await Product.deleteMany({});
     });
@@ -29,7 +34,7 @@ describe('Options tests', async () => {
         it('should cleanup insertManyOptions', async () => {
             // @ts-expect-error
             const products: Product[] = [new Product({ name: 'Product 2', price: 10, isCertified: true }), new Product({ name: 'Product 1', price: 10, isCertified: false})];
-            //rawResult options should be cleaned up by stargate-mongoose, but 'ordered' should be preserved
+            //rawResult options should be cleaned up by astra-mongoose, but 'ordered' should be preserved
             const insertManyResp = await Product.insertMany(products, { ordered: true, rawResult: false });
             assert.strictEqual(insertManyResp.length, 2);
             assert.strictEqual(insertManyResp[0].name, 'Product 2');
@@ -56,23 +61,24 @@ describe('Options tests', async () => {
             assert.strictEqual(insertManyResp[0].name, 'Product 2');
             assert.strictEqual(insertManyResp[1].name, 'Product 1');
             assert.strictEqual(insertManyResp[2].name, 'Product 3');
-            //rawResult options should be cleaned up by stargate-mongoose, but 'upsert' should be preserved
-            const updateOneResp = await Product.updateOne({ name: 'Product 4' },
-                { $set : { isCertified : true }, $inc: { price: 5 } },
-                { upsert: true, rawResult: false, sort: { name : 1 } } as unknown as Record<string, never>
+            //rawResult options should be cleaned up by astra-mongoose, but 'upsert' should be preserved
+            const updateOneResp = await Product.updateOne({ _id: new mongoose.Types.ObjectId() },
+                { $set: { isCertified: true, name: 'Product 4', price: 5 } },
+                { upsert: true, rawResult: false, setDefaultsOnInsert: false } as unknown as Record<string, never>
             );
-            assert.ok(updateOneResp.acknowledged);
-            assert.strictEqual(updateOneResp.matchedCount, 0);
-            assert.strictEqual(updateOneResp.modifiedCount, 0);
-            assert.strictEqual(updateOneResp.upsertedCount, 1);
-            assert.ok(updateOneResp.upsertedId);
+            if (!process.env.DATA_API_TABLES) {
+                assert.strictEqual(updateOneResp.matchedCount, 0);
+                assert.strictEqual(updateOneResp.modifiedCount, 0);
+                assert.strictEqual(updateOneResp.upsertedCount, 1);
+                assert.ok(updateOneResp.upsertedId);
+            }
             //find product 4
             const product4 = await Product.findOne({ name : 'Product 4' });
             assert.strictEqual(product4?.name, 'Product 4');
             assert.strictEqual(product4?.price, 5);
             assert.strictEqual(product4?.isCertified, true);
         });
-        it('should cleanup updateManyOptions', async () => {
+        it('should cleanup updateManyOptions', async function() {
             // @ts-expect-error
             const products: Product[] = [new Product({ name: 'Product 2', price: 10, isCertified: true, category: 'cat1' }), new Product({ name: 'Product 1', price: 10, isCertified: false, category: 'cat1' }), new Product({ name: 'Product 3', price: 10, isCertified: false, category: 'cat2' })];
             const insertManyResp = await Product.insertMany(products, { ordered: true, rawResult: false });
@@ -80,16 +86,15 @@ describe('Options tests', async () => {
             assert.strictEqual(insertManyResp[0].name, 'Product 2');
             assert.strictEqual(insertManyResp[1].name, 'Product 1');
             assert.strictEqual(insertManyResp[2].name, 'Product 3');
-            //rawResult options should be cleaned up by stargate-mongoose, but 'upsert' should be preserved
+            //rawResult options should be cleaned up by astra-mongoose, but 'upsert' should be preserved
             const updateManyResp = await Product.updateMany(
                 { category: 'cat1' },
                 { $set : { isCertified : true }, $inc: { price: 5 } },
                 { upsert: true, rawResult: false, sort: { name : 1 } } as unknown as Record<string, never>
             );
-            assert.ok(updateManyResp.acknowledged);
             assert.strictEqual(updateManyResp.matchedCount, 2);
             assert.strictEqual(updateManyResp.modifiedCount, 2);
-            assert.strictEqual(updateManyResp.upsertedCount, undefined);
+            assert.strictEqual(updateManyResp.upsertedCount, 0);
             assert.strictEqual(updateManyResp.upsertedId, undefined);
             //find product 4
             const cat1Products = await Product.find({ category : 'cat1' });
@@ -100,49 +105,41 @@ describe('Options tests', async () => {
             });
         });
         it('should cleanup deleteOneOptions', async () => {
-            // @ts-expect-error
             const product1 = new Product({ name: 'Product 1', price: 10, isCertified: true });
             await product1.save();
-            //runValidations is not a flag supported by Data API, so it should be removed by stargate-mongoose
-            await Product.deleteOne({ name: 'Product 1' }, { runValidations: true } as unknown as Record<string, never>);
+            //runValidations is not a flag supported by Data API, so it should be removed by astra-mongoose
+            await Product.deleteOne({ _id: product1._id }, { runValidations: true } as unknown as Record<string, never>);
             const product1Deleted = await Product.findOne({ name: 'Product 1' });
             assert.strictEqual(product1Deleted, null);
         });
         it('should cleanup findOptions', async () => {
             //create 20 products using Array with id suffixed to prduct name
-            // @ts-expect-error
-            let products: Product[] = [];
+            let products: ReturnType<(typeof Product)['hydrate']>[] = [];
             for (let i = 0; i < 20; i++) {
-                // @ts-expect-error
                 products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true }));
             }
             await Product.insertMany(products, { ordered: true, rawResult: false });
             //insert next 20 products using Array with id suffixed to product name
-            // @ts-expect-error
             products = [];
             for (let i = 20; i < 40; i++) {
-                // @ts-expect-error
                 products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true }));
             }
             await Product.insertMany(products, { ordered: true, rawResult: false });
             //find 30 products with rawResult option
-            //rawResult must be removed and the limit must be preserved by stargate-mongoose
+            //rawResult must be removed and the limit must be preserved by astra-mongoose
             const findResp = await Product.find({ }, {}, { rawResult: false, limit : 30 });
             assert.strictEqual(findResp.length, 30);
         });
-        it('should cleanup findOneAndReplaceOptions', async () => {
+        it('should cleanup findOneAndReplaceOptions', async function() {
             //create 20 products using Array with id suffixed to prduct name
-            // @ts-expect-error
-            const products: Product[] = [];
+            const products: ReturnType<(typeof Product)['hydrate']>[] = [];
             for (let i = 0; i < 20; i++) {
-                // @ts-expect-error
                 products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true }));
             }
             await Product.insertMany(products, { ordered: true, rawResult: false });
-            //findOneAndReplace with rawResult option
             const findOneAndReplaceResp = await Product.findOneAndReplace({ name: 'Product 25' },
                 { price: 20, isCertified: false, name: 'Product 25'},
-                { rawResult: false, upsert: true, returnDocument: 'after' }
+                { upsert: true, returnDocument: 'after' }
             );
             assert.strictEqual(findOneAndReplaceResp.isCertified,false);
             assert.strictEqual(findOneAndReplaceResp.price,20);
@@ -153,16 +150,13 @@ describe('Options tests', async () => {
             assert.strictEqual(product25?.price,20);
             assert.strictEqual(product25?.name,'Product 25');
         });
-        it('should cleanup findOneAndDeleteOptions', async () => {
+        it('should cleanup findOneAndDeleteOptions', async function() {
             //create 20 products using Array with id suffixed to prduct name
-            // @ts-expect-error
-            const products: Product[] = [];
+            const products: ReturnType<(typeof Product)['hydrate']>[] = [];
             for (let i = 0; i < 20; i++) {
                 if(i === 5 || i === 6) {
-                    // @ts-expect-error
                     products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true, category: 'cat 6' }));
                 } else {
-                    // @ts-expect-error
                     products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true, category: `cat ${i}` }));
                 }
             }
@@ -179,12 +173,10 @@ describe('Options tests', async () => {
             assert.strictEqual(product6?.isCertified, true);
             assert.strictEqual(product6?.category, 'cat 6');
         });
-        it('should cleanup findOneAndUpdateOptions', async () => {
+        it('should cleanup findOneAndUpdateOptions', async function() {
             //create 20 products using Array with id suffixed to product name
-            // @ts-expect-error
-            const products: Product[] = [];
+            const products: ReturnType<(typeof Product)['hydrate']>[] = [];
             for (let i = 0; i < 20; i++) {
-                // @ts-expect-error
                 products.push(new Product({ name: `Product ${i}`, price: 10, isCertified: true }));
             }
             await Product.insertMany(products, { ordered: true, rawResult: false });
