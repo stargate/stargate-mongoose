@@ -31,7 +31,7 @@ yarn init -y && yarn add express mongoose astra-mongoose
 - Set up an Astra database using the instructions here: https://docs.datastax.com/en/astra/astra-db-vector/api-reference/data-api-with-mongoosejs.html and get a `ASTRA_API_ENDPOINT` and `ASTRA_APPLICATION_TOKEN`.
 - Create a file called `index.js` under the 'sample-app' directory and copy below code into the file.
 ```javascript
-//imports
+// Imports
 const express = require('express');
 const mongoose = require('mongoose');
 const { driver, createAstraUri } = require('@datastax/astra-mongoose');
