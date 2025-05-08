@@ -6,14 +6,15 @@
 2. [Architecture](#architecture)
 3. [Version compatibility](#version-compatibility)
 4. [Sample Applications](#sample-applications)
-5. [Features Using Collections](#features-using-collections)
-6. [Features Using Tables](#features-using-tables)
-7. [API Reference](APIReference.md)
-8. [Developer Guide](DEVGUIDE.md)
+5. [Connecting to DSE/HCD](#connecting-to-dse-hcd)
+6. [Features Using Collections](#features-using-collections)
+7. [Features Using Tables](#features-using-tables)
+8. [API Reference](APIReference.md)
+9. [Developer Guide](DEVGUIDE.md)
 
 ## Quickstart
 Prerequisites:
-node (>=20.0.0), npm/yarn
+Node.js (>=20.0.0), npm/yarn
 
 - Create a sample project called 'sample-app'
 ```shell
@@ -28,7 +29,7 @@ OR
 ```shell
 yarn init -y && yarn add express mongoose astra-mongoose
 ```
-- Set up an Astra database using the instructions here: https://docs.datastax.com/en/astra/astra-db-vector/api-reference/data-api-with-mongoosejs.html and get a `ASTRA_API_ENDPOINT` and `ASTRA_APPLICATION_TOKEN`.
+- [Set up an Astra database using the instructions here](https://docs.datastax.com/en/astra-db-serverless/integrations/data-api-with-mongoosejs.html#quickstart). Save your `ASTRA_API_ENDPOINT` and `ASTRA_APPLICATION_TOKEN`.
 - Create a file called `index.js` under the 'sample-app' directory and copy below code into the file.
 ```javascript
 // Imports
@@ -117,6 +118,31 @@ CI tests are run using the Stargate and Data API versions specified in the [api-
 Sample applications developed using `astra-mongoose` driver are available in below repository.
 
 https://github.com/stargate/stargate-mongoose-sample-apps
+
+## Connecting to DSE/HCD
+
+Astra-mongoose also supports connecting to self-hosted Data API instances backed by DSE/HCD.
+Astra-mongoose has a `bin/start_data_api.sh` script that you can run to start a local Data API instance backed by DSE using docker-compose for testing and development purposes.
+
+```shell
+./bin/start_data_api.sh
+```
+
+You can then connect to your local Data API instance using `mongoose.connect()` with `isAstra: false` as follows.
+
+```javascript
+const mongoose = require('mongoose');
+const { driver } = require('@datastax/astra-mongoose');
+
+// Override the default Mongoose driver
+mongoose.setDriver(driver);
+
+await mongoose.connect('http://localhost:8181/v1/testks1', {
+  isAstra: false,
+  username: 'cassandra',
+  password: 'cassandra'
+});
+```
 
 ## Features Using Collections
 
