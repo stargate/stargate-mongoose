@@ -46,7 +46,7 @@ const uri = createAstraUri(
   process.env.ASTRA_APPLICATION_TOKEN
 );
 
-//Set up mongoose
+// Set up mongoose
 mongoose.connect(uri);
 const Product = mongoose.model('Product', new Schema({ name: String, price: Number }));
 Object.values(mongoose.connection.models).map(Model => Model.init());
