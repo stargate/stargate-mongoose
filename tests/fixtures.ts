@@ -27,6 +27,7 @@ export const isAstra = process.env.TEST_DOC_DB === 'astra' && !!process.env.ASTR
 export const testClient = process.env.TEST_DOC_DB === 'astra' ?
     (process.env.ASTRA_URI ?
         {
+            // Explicitly setting isAstra to true to align with the new default behavior.
             isAstra: true,
             uri: process.env.ASTRA_URI,
             options: {}
