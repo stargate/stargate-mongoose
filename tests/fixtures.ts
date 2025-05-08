@@ -27,15 +27,16 @@ export const isAstra = process.env.TEST_DOC_DB === 'astra' && !!process.env.ASTR
 export const testClient = process.env.TEST_DOC_DB === 'astra' ?
     (process.env.ASTRA_URI ?
         {
-            isAstra,
+            isAstra: true,
             uri: process.env.ASTRA_URI,
-            options: {isAstra: true}
+            options: {}
         } : null)
     : (process.env.TEST_DOC_DB === 'dataapi' ? (process.env.DATA_API_URI ?
         {
-            isAstra,
+            isAstra: false,
             uri: process.env.DATA_API_URI,
             options: {
+                isAstra: false,
                 username: process.env.STARGATE_USERNAME,
                 password: process.env.STARGATE_PASSWORD
             }

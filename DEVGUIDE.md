@@ -69,7 +69,6 @@ import { driver } from 'astra-mongoose';
 
 mongoose.setDriver(driver);
 mongoose.connect(process.env.ASTRA_URI, {
-  isAstra: true,
   logging: 'all' // astra-db-ts logging config
 });
 
