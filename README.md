@@ -1,12 +1,12 @@
 # astra-mongoose ![ci-tests](https://github.com/stargate/stargate-mongoose/actions/workflows/ci-tests.yml/badge.svg)
 
-`astra-mongoose` is a Mongoose driver for [Data API](https://github.com/stargate/data-api) which runs on top of Apache Cassandra / DataStax Enterprise.
+`astra-mongoose` is a Mongoose driver for [Data API](https://github.com/stargate/data-api). It supports connecting to [DataStax Astra](https://astra.datastax.com/) as well as self-hosted Data API on top of Apache Cassandra / DataStax Enterprise.
 
 1. [Quickstart](#quickstart)
 2. [Architecture](#architecture)
 3. [Version compatibility](#version-compatibility)
-4. [Connecting to AstraDB](#connecting-to-astradb)
-5. [Sample Applications](#sample-applications)
+4. [Sample Applications](#sample-applications)
+5. [Connecting to DSE/HCD](#connecting-to-dse-hcd)
 6. [Features Using Collections](#features-using-collections)
 7. [Features Using Tables](#features-using-tables)
 8. [API Reference](APIReference.md)
@@ -14,23 +14,8 @@
 
 ## Quickstart
 Prerequisites:
-node (>=20.0.0), npm/yarn, Docker (for testing locally using docker compose)
-- Start `Docker` on your local machine.
-- Clone this repository
-```shell
-git clone https://github.com/stargate/stargate-mongoose.git
-cd stargate-mongoose
-```
-- Execute below script and wait for it to complete, which starts a simple Data API on local with a DSE 6.8 (DataStax Enterprise) as database backend.
+Node.js (>=20.0.0), npm/yarn
 
-For macOS/Linux
-```shell
-bin/start_data_api.sh
-```
-For Windows
-```shell
-bin\start_data_api.cmd
-```
 - Create a sample project called 'sample-app'
 ```shell
 mkdir sample-app
@@ -44,26 +29,30 @@ OR
 ```shell
 yarn init -y && yarn add express mongoose astra-mongoose
 ```
-
-
+- [Set up an Astra database using the instructions here](https://docs.datastax.com/en/astra-db-serverless/integrations/data-api-with-mongoosejs.html#quickstart). Save your `ASTRA_API_ENDPOINT` and `ASTRA_APPLICATION_TOKEN`.
 - Create a file called `index.js` under the 'sample-app' directory and copy below code into the file.
-```typescript
-//imports
+```javascript
+// Imports
 const express = require('express');
 const mongoose = require('mongoose');
-const { driver } = require('astra-mongoose');
+const { driver, createAstraUri } = require('@datastax/astra-mongoose');
 const Schema = mongoose.Schema;
 
-//override the default native driver
+// Override the default Mongoose driver
 mongoose.setDriver(driver);
 
-//Set up mongoose & end points definition
+// Create a connection string for Astra
+const uri = createAstraUri(
+  process.env.ASTRA_API_ENDPOINT,
+  process.env.ASTRA_APPLICATION_TOKEN
+);
+
+// Set up mongoose
+mongoose.connect(uri);
 const Product = mongoose.model('Product', new Schema({ name: String, price: Number }));
-mongoose.connect('http://localhost:8181/v1/inventory', {
-    username: 'cassandra',
-    password: 'cassandra'
-});
 Object.values(mongoose.connection.models).map(Model => Model.init());
+
+// Set up Express app with endpoints
 const app = express();
 app.get('/addproduct', (req, res) => {
     const newProduct = new Product(
@@ -88,14 +77,17 @@ app.listen(PORT, HOST, () => {
     console.log('http://localhost:' + PORT + '/getproducts');
 });
 ```
-- Execute below to run the app & navigate to the urls listed on the console
+- Execute below to run the app
 ```shell
 node index.js
 ```
-
-- Stop the Data API once the test is complete
+- Create a product
 ```shell
-docker compose -f bin/docker-compose.yml down -v
+curl http://localhost:8097/addproduct
+```
+- View the newly created product
+```shell
+curl http://localhost:8097/getproducts
 ```
 
 ## Architecture
@@ -121,36 +113,36 @@ The current implementation of the Data API uses DataStax Enterprise (DSE) as the
 
 CI tests are run using the Stargate and Data API versions specified in the [api-compatibility.versions](api-compatibility.versions) file.
 
-## Connecting to AstraDB
-
-Here's a quick way to connect to AstraDB using `astra-mongoose` driver.
-
-```typescript
-const mongoose = require("mongoose");
-const { driver, createAstraUri } = require("astra-mongoose");
-
-const uri = createAstraUri(
-  process.env.ASTRA_DB_API_ENDPOINT,
-  process.env.ASTRA_DB_APPLICATION_TOKEN,
-  process.env.ASTRA_DB_NAMESPACE // optional
-);
-
-mongoose.setDriver(driver);
-
-await mongoose.connect(uri, {
-  isAstra: true,
-});
-```
-
-And the step-by-step instructions with a sample application can be found here in below guide.
-
-https://docs.datastax.com/en/astra/astra-db-vector/api-reference/data-api-with-mongoosejs.html
-
 ## Sample Applications
 
 Sample applications developed using `astra-mongoose` driver are available in below repository.
 
 https://github.com/stargate/stargate-mongoose-sample-apps
+
+## Connecting to DSE/HCD
+
+Astra-mongoose also supports connecting to self-hosted Data API instances backed by DSE/HCD.
+Astra-mongoose has a `bin/start_data_api.sh` script that you can run to start a local Data API instance backed by DSE using docker-compose for testing and development purposes.
+
+```shell
+./bin/start_data_api.sh
+```
+
+You can then connect to your local Data API instance using `mongoose.connect()` with `isAstra: false` as follows.
+
+```javascript
+const mongoose = require('mongoose');
+const { driver } = require('@datastax/astra-mongoose');
+
+// Override the default Mongoose driver
+mongoose.setDriver(driver);
+
+await mongoose.connect('http://localhost:8181/v1/testks1', {
+  isAstra: false,
+  username: 'cassandra',
+  password: 'cassandra'
+});
+```
 
 ## Features Using Collections
 

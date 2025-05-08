@@ -240,7 +240,7 @@ export class Connection extends MongooseConnection {
      * @param uri the connection string
      * @param options
      */
-    async openUri(uri: string, options: ConnectOptionsInternal) {
+    async openUri(uri: string, options?: ConnectOptionsInternal) {
         let _fireAndForget: boolean | undefined = false;
         if (options && '_fireAndForget' in options) {
             _fireAndForget = !!options._fireAndForget;
@@ -282,7 +282,7 @@ export class Connection extends MongooseConnection {
      * @param uri the connection string
      * @param options
      */
-    async createClient(uri: string, options: ConnectOptionsInternal) {
+    async createClient(uri: string, options?: ConnectOptionsInternal) {
         this._connectionString = uri;
         this._closeCalled = false;
         this.readyState = STATES.connecting;
@@ -291,19 +291,19 @@ export class Connection extends MongooseConnection {
 
         const dbOptions = { dataApiPath: baseApiPath };
 
-        this._debug = options.debug;
+        this._debug = options?.debug;
 
-        const isAstra = options?.isAstra;
+        const isAstra = options?.isAstra ?? true;
         const { adminToken, environment } = isAstra
             ? { adminToken: applicationToken, environment: 'astra' as const }
             : {
                 adminToken: new UsernamePasswordTokenProvider(
-                    options.username || throwMissingUsernamePassword(),
-                    options.password || throwMissingUsernamePassword()
+                    options?.username || throwMissingUsernamePassword(),
+                    options?.password || throwMissingUsernamePassword()
                 ),
                 environment: 'dse' as const
             };
-        const client = new DataAPIClient(adminToken, { environment, logging: options.logging });
+        const client = new DataAPIClient(adminToken, { environment, logging: options?.logging });
         const db = options?.isTable
             ? new TablesDb(client.db(baseUrl, dbOptions), keyspaceName)
             : new CollectionsDb(client.db(baseUrl, dbOptions), keyspaceName);

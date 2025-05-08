@@ -227,7 +227,9 @@ describe('TABLES: driver based tests', async () => {
             mongooseInstance.setDriver(AstraMongooseDriver);
             mongooseInstance.set('autoCreate', false);
             mongooseInstance.set('autoIndex', false);
-            const options = isAstra ? { isAstra: true } : { username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
+            const options = isAstra
+                ? {}
+                : { isAstra: false, username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
 
             await mongooseInstance.connect(dbUri, options);
 
