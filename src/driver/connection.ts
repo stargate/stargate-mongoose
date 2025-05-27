@@ -304,10 +304,7 @@ export class Connection extends MongooseConnection {
                 ),
                 environment: 'dse' as const
             };
-        const clientOptions: DataAPIClientOptions = { environment, logging: options?.logging };
-        if (options?.httpOptions != null) {
-            clientOptions.httpOptions = options.httpOptions;
-        }
+        const clientOptions: DataAPIClientOptions = { environment, logging: options?.logging, ...(options?.httpOptions ?? {}) };
         const client = new DataAPIClient(adminToken, clientOptions);
         const db = options?.isTable
             ? new TablesDb(client.db(baseUrl, dbOptions), keyspaceName)
