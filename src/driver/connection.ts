@@ -16,20 +16,21 @@ import { Collection, MongooseCollectionOptions } from './collection';
 import {
     AstraDbAdmin,
     CollectionDescriptor,
+    CreateAstraKeyspaceOptions,
+    CreateCollectionOptions,
+    CreateDataAPIKeyspaceOptions,
     CreateTableDefinition,
+    CreateTableOptions,
+    DataAPIClientOptions,
     DataAPIDbAdmin,
-    LoggingEvent,
+    DropCollectionOptions,
+    DropTableOptions,
     ListCollectionsOptions,
     ListTablesOptions,
+    LoggingEvent,
     RawDataAPIResponse,
     TableDescriptor,
-    DropCollectionOptions,
-    CreateTableOptions,
-    DropTableOptions,
-    CreateAstraKeyspaceOptions,
-    CreateDataAPIKeyspaceOptions,
-    CreateCollectionOptions,
-    WithTimeout
+    WithTimeout,
 } from '@datastax/astra-db-ts';
 import { CollectionsDb, TablesDb } from './db';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
@@ -303,7 +304,11 @@ export class Connection extends MongooseConnection {
                 ),
                 environment: 'dse' as const
             };
-        const client = new DataAPIClient(adminToken, { environment, logging: options?.logging });
+        const clientOptions: DataAPIClientOptions = { environment, logging: options?.logging };
+        if (options?.httpOptions != null) {
+            clientOptions.httpOptions = options.httpOptions;
+        }
+        const client = new DataAPIClient(adminToken, clientOptions);
         const db = options?.isTable
             ? new TablesDb(client.db(baseUrl, dbOptions), keyspaceName)
             : new CollectionsDb(client.db(baseUrl, dbOptions), keyspaceName);
