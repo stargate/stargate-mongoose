@@ -18,7 +18,8 @@ import {
     CollectionSerDesConfig,
     CollectionVectorOptions,
     RerankedResult,
-    TableSerDesConfig
+    TableSerDesConfig,
+    HttpOptions,
 } from '@datastax/astra-db-ts';
 
 export * as driver from './driver';
@@ -49,6 +50,7 @@ declare module 'mongoose' {
         sanitizeFilter?: boolean;
         username?: string;
         password?: string;
+        httpOptions?: HttpOptions
     }
 
     interface InsertManyOptions {

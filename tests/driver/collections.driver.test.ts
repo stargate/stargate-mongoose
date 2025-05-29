@@ -14,6 +14,7 @@
 
 import assert from 'assert';
 import mongoose from 'mongoose';
+import sinon from 'sinon';
 import * as AstraMongooseDriver from '../../src/driver';
 import { testClient, TEST_COLLECTION_NAME } from '../fixtures';
 import { CartModelType, ProductModelType, createMongooseCollections, testDebug } from '../mongooseFixtures';
@@ -272,5 +273,27 @@ describe('COLLECTIONS: driver based tests', async () => {
             );
             mongooseInstance.connection.getClient().close();
         });
+    });
+
+    it('allows setting fetcher option', async () => {
+        const mongooseInstance = new mongoose.Mongoose().setDriver(AstraMongooseDriver);
+        mongooseInstance.set('autoCreate', false);
+        mongooseInstance.set('autoIndex', false);
+        const httpOptions = {
+            client: 'custom',
+            fetcher: {
+                fetch: sinon.stub().callsFake(() => Promise.resolve({
+                    body: JSON.stringify({ status: { collections: ['testabc', 'testdef'] } })
+                }))
+            }
+        } as const;
+        const options = isAstra
+            ? { httpOptions }
+            : { httpOptions, isAstra: false, username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
+
+        await mongooseInstance.connect(dbUri, options);
+        const res = await mongooseInstance.connection.listCollections({ nameOnly: true });
+        assert.ok(httpOptions.fetcher.fetch.calledOnce);
+        assert.deepStrictEqual(res, ['testabc', 'testdef']);
     });
 });

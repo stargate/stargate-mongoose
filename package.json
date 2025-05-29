@@ -72,6 +72,7 @@
     "jsdoc-to-markdown": "^9.1.1",
     "mongoose": "^8.14.0",
     "nyc": "^17.1.0",
+    "sinon": "^15.0.1",
     "ts-mocha": "^11.1.0",
     "typescript": "5.x",
     "typescript-eslint": "~8.28"
