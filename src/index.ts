@@ -22,7 +22,9 @@ import {
     HttpOptions,
 } from '@datastax/astra-db-ts';
 
-export * as driver from './driver';
+import * as driver from './driver';
+export { driver };
+
 export { default as createAstraUri } from './createAstraUri';
 export { default as tableDefinitionFromSchema } from './tableDefinitionFromSchema';
 
