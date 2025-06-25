@@ -1246,4 +1246,52 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.ok(!doc.$vector);
         });
     });
+
+    describe('$match', function () {
+        it('works on $lexical field', async function () {
+            this.timeout(120_000);
+
+            const lexicalSchema = new Schema(
+                {
+                    $lexical: { type: String },
+                    name: 'String'
+                },
+                {
+                    collectionOptions: {
+                        lexical: {
+                            enabled: true,
+                            analyzer: 'STANDARD',
+                        }
+                    },
+                    autoCreate: false
+                }
+            );
+            const LexicalModel = mongooseInstance.model('Lexical', lexicalSchema, TEST_COLLECTION_NAME);
+            await mongooseInstance.connection.dropCollection(TEST_COLLECTION_NAME);
+            await LexicalModel.createCollection();
+
+            await LexicalModel.create([
+                { name: 'test 1', $lexical: 'the quick brown fox jumped over the lazy dog' },
+                { name: 'test 2', $lexical: 'the lazy red hen sat beside the sleepy dog' }
+            ]);
+            let docs = await LexicalModel.find({ $lexical: { $match: 'jumped' } });
+            assert.strictEqual(docs.length, 1);
+            assert.strictEqual(docs[0].name, 'test 1');
+
+            docs = await LexicalModel.find({ $lexical: { $match: 'sat' } });
+            assert.strictEqual(docs.length, 1);
+            assert.strictEqual(docs[0].name, 'test 2');
+
+            /*await LexicalModel.deleteMany({});
+            await LexicalModel.create([
+                { name: 'test A1', $lexical: 'badgers are small, burrowing mammals known for their bold behavior and distinctive striped faces.' },
+                { name: 'test A2', $lexical: 'badger badger badger mushroom mushroom' },
+                { name: 'test A3', $lexical: 'the quick brown fox jumped over the lazy dog' }
+            ]);
+            docs = await LexicalModel.find({ $lexical: { $match: 'badger' } }).sort({ $lexical: 'badger' });
+            assert.strictEqual(docs.length, 2);
+            assert.strictEqual(docs[0].name, 'test A1');
+            assert.strictEqual(docs[1].name, 'test A2');*/
+        });
+    });
 });
