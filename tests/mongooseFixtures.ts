@@ -1,4 +1,4 @@
-import { testClient } from './fixtures';
+import { TEST_COLLECTION_NAME, testClient } from './fixtures';
 import { Schema, Mongoose, Model, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 import * as AstraMongooseDriver from '../src/driver';
 import assert from 'assert';
@@ -114,6 +114,9 @@ export async function createMongooseCollections(isTable: boolean) {
             mongooseInstanceTables.connection.collection(CartTablesModel.collection.collectionName).collection.on('commandStarted', ev => {
                 console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
             });
+            mongooseInstance.connection.collection(TEST_COLLECTION_NAME).collection.on('commandStarted', ev => {
+                console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
+            });
         }
 
         return { mongooseInstance: mongooseInstanceTables, Product: ProductTablesModel, Cart: CartTablesModel };
@@ -144,6 +147,9 @@ export async function createMongooseCollections(isTable: boolean) {
                 console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
             });
             mongooseInstance.connection.collection(Cart.collection.collectionName).collection.on('commandStarted', ev => {
+                console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
+            });
+            mongooseInstance.connection.collection(TEST_COLLECTION_NAME).collection.on('commandStarted', ev => {
                 console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
             });
         }

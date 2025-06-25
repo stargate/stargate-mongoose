@@ -1282,16 +1282,16 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.strictEqual(docs.length, 1);
             assert.strictEqual(docs[0].name, 'test 2');
 
-            /*await LexicalModel.deleteMany({});
+            await LexicalModel.deleteMany({});
             await LexicalModel.create([
-                { name: 'test A1', $lexical: 'badgers are small, burrowing mammals known for their bold behavior and distinctive striped faces.' },
+                { name: 'test A1', $lexical: 'the badger is a small, burrowing mammal known for its bold behavior and distinctive striped face.' },
                 { name: 'test A2', $lexical: 'badger badger badger mushroom mushroom' },
                 { name: 'test A3', $lexical: 'the quick brown fox jumped over the lazy dog' }
             ]);
-            docs = await LexicalModel.find({ $lexical: { $match: 'badger' } }).sort({ $lexical: 'badger' });
+            docs = await LexicalModel.find({ $lexical: { $match: 'badger' } }).sort({ $lexical: { $meta: 'badger' } });
             assert.strictEqual(docs.length, 2);
             assert.strictEqual(docs[0].name, 'test A1');
-            assert.strictEqual(docs[1].name, 'test A2');*/
+            assert.strictEqual(docs[1].name, 'test A2');
         });
     });
 });
