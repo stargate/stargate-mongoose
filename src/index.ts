@@ -60,7 +60,8 @@ declare module 'mongoose' {
     }
 
     interface SchemaOptions {
-        serdes?: CollectionSerDesConfig | TableSerDesConfig
+        serdes?: CollectionSerDesConfig | TableSerDesConfig;
+        udtName?: string;
     }
 
     function setDriver(driver: typeof AstraMongooseDriver): AstraMongoose;

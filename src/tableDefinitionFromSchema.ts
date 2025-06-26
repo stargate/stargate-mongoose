@@ -32,6 +32,7 @@ export default function tableDefinitionFromSchema(schema: Schema): CreateTableDe
     const schemaTypesForNestedPath: Record<string, SchemaType[]> = {};
     for (const path of Object.keys(schema.paths)) {
         const schemaType = schema.paths[path];
+
         const type = mongooseTypeToDataAPIType(schemaType.instance);
         const isNestedOrMap = path.indexOf('.') !== -1;
         if (isNestedOrMap) {
@@ -43,86 +44,120 @@ export default function tableDefinitionFromSchema(schema: Schema): CreateTableDe
                     schema
                 });
             }
-            const nestedPath = split[0];
-            if (schemaTypesForNestedPath[nestedPath] == null) {
-                schemaTypesForNestedPath[nestedPath] = [];
+
+            // @ts-expect-error Mongoose TypeScript types don't have schema options
+            if (!schemaType.schema?.options?.udtName) {
+                // Maps of UDTs will be handled separately in the `instance === 'Map'` path
+                const nestedPath = split[0];
+                if (schemaTypesForNestedPath[nestedPath] == null) {
+                    schemaTypesForNestedPath[nestedPath] = [];
+                }
+                schemaTypesForNestedPath[nestedPath].push(schemaType);
             }
-            schemaTypesForNestedPath[nestedPath].push(schemaType);
         } else if (type) {
             tableDefinition.columns[path] = { type };
         } else if (schemaType.instance === 'Array' || schemaType.instance === 'Vectorize') {
             if (schemaType.schema) {
-                throw new AstraMongooseError(`Cannot convert schema to Data API table definition: DocumentArray "${path}" is not supported`, {
-                    path,
-                    type,
-                    schema
-                });
-            }
-            // Arrays always have an embedded schema type
-            const embeddedSchemaType = schemaType.getEmbeddedSchemaType() as SchemaType;
-            if (schemaType.options.dimension != null) {
-                // If dimension, assume we're creating a vector column
-                if (embeddedSchemaType.instance !== 'Number') {
-                    throw new AstraMongooseError(`Cannot convert schema to Data API table definition: vector column at "${path}" must be an array of numbers`, {
+                // @ts-expect-error Mongoose schemas don't have options property in TS
+                if (schemaType.schema.options.udtName) {
+                    tableDefinition.columns[path] = {
+                        type: 'list',
+                        // @ts-expect-error Astra-db-ts doesn't support UDT yet, and Mongoose schemas don't have options property in TS
+                        valueType: { type: 'userDefined', udtName: schemaType.schema.options.udtName }
+                    };
+                } else {
+                    throw new AstraMongooseError(`Cannot convert schema to Data API table definition: DocumentArray "${path}" is not supported`, {
                         path,
                         type,
                         schema
                     });
                 }
-                tableDefinition.columns[path] = { type: 'vector', dimension: schemaType.options.dimension };
-                if (schemaType.instance === 'Vectorize' && schemaType.options.service != null) {
-                    tableDefinition.columns[path].service = schemaType.options.service;
-                }
+
             } else {
-                const valueType = mongooseTypeToDataAPIType(embeddedSchemaType.instance);
-                if (valueType == null) {
-                    throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported array type at path "${path}"`, {
-                        path,
-                        valueType,
-                        type,
-                        schema
-                    });
+                // Arrays always have an embedded schema type
+                const embeddedSchemaType = schemaType.getEmbeddedSchemaType() as SchemaType;
+                if (schemaType.options.dimension != null) {
+                    // If dimension, assume we're creating a vector column
+                    if (embeddedSchemaType.instance !== 'Number') {
+                        throw new AstraMongooseError(`Cannot convert schema to Data API table definition: vector column at "${path}" must be an array of numbers`, {
+                            path,
+                            type,
+                            schema
+                        });
+                    }
+                    tableDefinition.columns[path] = { type: 'vector', dimension: schemaType.options.dimension };
+                    if (schemaType.instance === 'Vectorize' && schemaType.options.service != null) {
+                        tableDefinition.columns[path].service = schemaType.options.service;
+                    }
+                } else {
+                    const valueType = mongooseTypeToDataAPIType(embeddedSchemaType.instance);
+                    if (valueType == null) {
+                        throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported array type at path "${path}"`, {
+                            path,
+                            valueType,
+                            type,
+                            schema
+                        });
+                    }
+                    tableDefinition.columns[path] = { type: 'list', valueType };
                 }
-                tableDefinition.columns[path] = { type: 'list', valueType };
             }
         } else if (schemaType.instance === 'Embedded') {
-            const dataAPITypes: Set<AllowedDataAPITypes> = new Set();
-            for (const subpath of Object.keys(schemaType.schema.paths)) {
-                const isNested = subpath.indexOf('.') !== -1;
-                if (isNested) {
-                    throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported nested path underneath subdocument at path "${path}.${subpath}"`, {
-                        path,
-                        subpath,
-                        schema
-                    });
-                }
-                const type = mongooseTypeToDataAPIType(schemaType.schema.paths[subpath].instance);
-                if (type == null) {
-                    throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported type in subdocument at path "${path}.${subpath}"`, {
-                        path,
-                        subpath,
-                        type,
-                        schema
-                    });
-                }
-                dataAPITypes.add(type);
-            }
-            // If all keys have same data type, then can just make map of that data type
-            if (dataAPITypes.size === 1) {
-                tableDefinition.columns[path] = { type: 'map', keyType: 'text', valueType: [...dataAPITypes][0] };
+            // @ts-expect-error Mongoose schemas don't have options property in TS
+            if (schemaType.schema.options.udtName) {
+                // @ts-expect-error Astra-db-ts doesn't support UDT yet, and Mongoose schemas don't have options property in TS
+                tableDefinition.columns[path] = { type: 'userDefined', udtName: schemaType.schema.options.udtName };
             } else {
-                if (dataAPITypes.has('blob')) {
-                    throw new AstraMongooseError(`Cannot convert schema to Data API table definition: subdocuments with Buffer at "${path}" are not supported`, {
-                        path,
-                        type,
-                        schema
-                    });
+                const dataAPITypes: Set<AllowedDataAPITypes> = new Set();
+                for (const subpath of Object.keys(schemaType.schema.paths)) {
+                    const isNested = subpath.indexOf('.') !== -1;
+                    if (isNested) {
+                        throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported nested path underneath subdocument at path "${path}.${subpath}"`, {
+                            path,
+                            subpath,
+                            schema
+                        });
+                    }
+                    const type = mongooseTypeToDataAPIType(schemaType.schema.paths[subpath].instance);
+                    if (type == null) {
+                        throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported type in subdocument at path "${path}.${subpath}"`, {
+                            path,
+                            subpath,
+                            type,
+                            schema
+                        });
+                    }
+                    dataAPITypes.add(type);
                 }
-                tableDefinition.columns[path] = { type: 'map', keyType: 'text', valueType: 'text' };
+                // If all keys have same data type, then can just make map of that data type
+                if (dataAPITypes.size === 1) {
+                    tableDefinition.columns[path] = { type: 'map', keyType: 'text', valueType: [...dataAPITypes][0] };
+                } else {
+                    if (dataAPITypes.has('blob')) {
+                        throw new AstraMongooseError(`Cannot convert schema to Data API table definition: subdocuments with Buffer at "${path}" are not supported`, {
+                            path,
+                            type,
+                            schema
+                        });
+                    }
+                    tableDefinition.columns[path] = { type: 'map', keyType: 'text', valueType: 'text' };
+                }
             }
         } else if (schemaType.instance === 'Map') {
-            // Maps are handled by the isNestedOrMap code path
-            continue;
+            // @ts-expect-error Mongoose TypeScript types don't have schema options
+            if (schemaType.getEmbeddedSchemaType()?.schema?.options?.udtName) {
+                // Special handling for maps of UDTs
+                tableDefinition.columns[path] = {
+                    type: 'map',
+                    keyType: 'text',
+                    // @ts-expect-error Astra-db-ts doesn't support UDT yet
+                    valueType: {
+                        type: 'userDefined',
+                        // @ts-expect-error Mongoose TypeScript types don't have schema options
+                        udtName: schemaType.getEmbeddedSchemaType().schema.options.udtName
+                    }
+                };
+            }
         } else {
             throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported type at path "${path}"`, {
                 path,

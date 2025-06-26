@@ -323,4 +323,66 @@ describe('tableDefinitionFromSchema', () => {
             message: 'Cannot convert schema to Data API table definition: vector column at "arr" must be an array of numbers'
         });
     });
+
+    it('handles UDT', () => {
+        const subschema = new Schema({
+            line1: String,
+            line2: String,
+            city: String,
+            state: String,
+            zip: String,
+            country: String
+        }, { udtName: 'Address' });
+
+        const udtType = tableDefinitionFromSchema(subschema);
+        assert.deepStrictEqual(udtType, {
+            primaryKey: '_id',
+            columns: {
+                _id: { type: 'text' },
+                __v: { type: 'int' },
+                line1: { type: 'text' },
+                line2: { type: 'text' },
+                city: { type: 'text' },
+                state: { type: 'text' },
+                zip: { type: 'text' },
+                country: { type: 'text' }
+            }
+        });
+
+        const testSchema = new Schema({
+            address: { type: subschema },
+            savedAddresses: [subschema],
+            addressesByName: {
+                type: Map,
+                of: subschema
+            }
+        });
+        assert.deepStrictEqual(tableDefinitionFromSchema(testSchema), {
+            primaryKey: '_id',
+            columns: {
+                _id: { type: 'text' },
+                __v: { type: 'int' },
+                address: { type: 'userDefined', udtName: 'Address' },
+                savedAddresses: { type: 'list', valueType: { type: 'userDefined', udtName: 'Address' } },
+                addressesByName: { type: 'map', keyType: 'text', valueType: { type: 'userDefined', udtName: 'Address' } }
+            }
+        });
+    });
+
+    it('creates vector column with service if array of numbers has dimension and service property (Vectorize)', () => {
+        const testSchema = new Schema({
+            arr: { type: 'Vectorize', dimension: 3, service: { provider: 'openai' } }
+        });
+
+        const result = tableDefinitionFromSchema(testSchema);
+
+        assert.deepStrictEqual(result, {
+            primaryKey: '_id',
+            columns: {
+                '_id': { type: 'text' },
+                '__v': { type: 'int' },
+                'arr': { type: 'vector', dimension: 3, service: { provider: 'openai' } }
+            }
+        });
+    });
 });
