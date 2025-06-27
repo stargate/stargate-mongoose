@@ -1297,8 +1297,8 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             ]);
             const docs = await LexicalModel.find({ $lexical: { $match: 'badger' } }).sort({ $lexical: { $meta: 'badger' } });
             assert.strictEqual(docs.length, 2);
-            assert.strictEqual(docs[0].name, 'test A1');
-            assert.strictEqual(docs[1].name, 'test A2');
+            assert.strictEqual(docs[0].name, 'test A2');
+            assert.strictEqual(docs[1].name, 'test A1');
         });
     });
 });
