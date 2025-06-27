@@ -1251,7 +1251,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         const lexicalSchema = new Schema(
             {
                 $lexical: { type: String },
-                name: 'String'
+                name: { type: String }
             },
             {
                 collectionOptions: {

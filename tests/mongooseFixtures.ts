@@ -114,7 +114,7 @@ export async function createMongooseCollections(isTable: boolean) {
             mongooseInstanceTables.connection.collection(CartTablesModel.collection.collectionName).collection.on('commandStarted', ev => {
                 console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
             });
-            mongooseInstance.connection.collection(TEST_COLLECTION_NAME).collection.on('commandStarted', ev => {
+            mongooseInstanceTables.connection.collection(TEST_COLLECTION_NAME).collection.on('commandStarted', ev => {
                 console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
             });
         }
