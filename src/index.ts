@@ -20,6 +20,7 @@ import {
     RerankedResult,
     TableSerDesConfig,
     HttpOptions,
+    CollectionLexicalOptions,
 } from '@datastax/astra-db-ts';
 
 import * as driver from './driver';
@@ -42,6 +43,7 @@ declare module 'mongodb' {
         vector?: CollectionVectorOptions;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         indexing?: CollectionIndexingOptions<any>;
+        lexical?: CollectionLexicalOptions;
     }
 }
 
