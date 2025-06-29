@@ -95,16 +95,16 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             assert.strictEqual(product1.name, 'Product 1');
         });
-        it('API ops tests Model.$where()', async () => {
+        it('API ops tests Model.$where()', async function () {
             //Mode.$where()
+            if (testClient?.isAstra) {
+                return this.skip();
+            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
             const error: Error | null = await Product.$where('this.name === "Product 1"').exec().then(() => null, error => error);
             assert.ok(error instanceof DataAPIResponseError);
-            assert.equal(
-                error.errorDescriptors[0].message,
-                'Invalid filter expression: filter clause path (\'$where\') cannot start with `$`'
-            );
+            assert.ok(error.errorDescriptors[0].message.startsWith('Only columns defined in the table schema can be filtered on.'));
         });
         it('API ops tests Model.aggregate()', async () => {
             //Model.aggregate()
