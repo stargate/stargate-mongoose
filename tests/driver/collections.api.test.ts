@@ -1267,6 +1267,10 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
 
         before(async function () {
             this.timeout(120_000);
+            if (testClient!.isAstra) {
+                return this.skip();
+            }
+
             await mongooseInstance.connection.dropCollection(TEST_COLLECTION_NAME);
             LexicalModel = mongooseInstance.model('Lexical', lexicalSchema, TEST_COLLECTION_NAME);
             await LexicalModel.createCollection();

@@ -101,9 +101,9 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             await product1.save();
             const error: Error | null = await Product.$where('this.name === "Product 1"').exec().then(() => null, error => error);
             assert.ok(error instanceof DataAPIResponseError);
-            assert.ok(
-                error.errorDescriptors[0].message.startsWith('Only columns defined in the table schema can be filtered on.'),
-                error.errorDescriptors[0].message
+            assert.equal(
+                error.errorDescriptors[0].message,
+                'Invalid filter expression: filter clause path (\'$where\') cannot start with `$`'
             );
         });
         it('API ops tests Model.aggregate()', async () => {
