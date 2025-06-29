@@ -1,7 +1,7 @@
 {
   "name": "@datastax/astra-mongoose",
   "version": "1.0.2",
-  "description": "Astra's NodeJS Mongoose compatability client",
+  "description": "Astra's NodeJS Mongoose compatibility client",
   "contributors": [
     "CRW (http://barnyrubble.tumblr.com/)",
     "Valeri Karpov (https://github.com/vkarpov15)",
@@ -22,11 +22,12 @@
     "nosql",
     "orm",
     "db",
-    "jsonapi"
+    "astra"
   ],
   "homepage": "https://github.com/stargate/stargate-mongoose",
   "license": "Apache-2.0",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "mocha": {
     "timeout": 30000
   },
@@ -66,7 +67,7 @@
     "@babel/preset-env": "^7.18.2",
     "@babel/preset-typescript": "^7.17.12",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^18.19.67",
+    "@types/node": "^20.18.1",
     "@types/sinon": "^17.0.4",
     "eslint": "^9.23.0",
     "jsdoc-babel": "^0.5.0",
