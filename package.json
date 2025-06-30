@@ -55,6 +55,7 @@
     "test-dataapi": "env TEST_DOC_DB=dataapi node --env-file=.env ./node_modules/.bin/nyc --check-coverage --reporter=text --reporter=lcov ts-mocha --forbid-only -p tsconfig.json tests/**/*.test.ts tests/*.test.ts",
     "preinstall": "npm run update-version-file",
     "build": "npm run update-version-file && tsc --project tsconfig.build.json",
+    "build:test": "tsc",
     "build:docs": "jsdoc2md -t APIReference.hbs --files src/**/*.ts --files src/*.ts --configure ./jsdoc2md.json > APIReference.md",
     "update-version-file": "node -p \"'export const LIB_NAME = \\'' + require('./package.json').name + '\\';'\" > src/version.ts && node -p \"'export const LIB_VERSION = \\'' + require('./package.json').version + '\\';'\" >> src/version.ts"
   },
