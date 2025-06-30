@@ -801,7 +801,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         });
         it('API ops tests setClient()', async function() {
             assert.throws(
-                () => mongooseInstance.connection.setClient(mongooseInstance.connection.client as DataAPIClient),
+                () => mongooseInstance.connection.setClient(),
                 /SetClient not supported/
             );
         });
