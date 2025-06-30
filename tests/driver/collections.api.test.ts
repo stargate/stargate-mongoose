@@ -24,7 +24,7 @@ import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '../../src/driver';
 import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections, testDebug } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
-import { FindCursor, DataAPIResponseError, DataAPIClient } from '@datastax/astra-db-ts';
+import { FindCursor, DataAPIResponseError } from '@datastax/astra-db-ts';
 import { Long, UUID } from 'bson';
 import type { AstraMongoose } from '../../src';
 

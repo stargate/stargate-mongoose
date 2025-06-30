@@ -21,7 +21,7 @@ import * as AstraMongooseDriver from '../../src/driver';
 import {OperationNotSupportedError} from '../../src/driver';
 import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
-import { DataAPIResponseError, DataAPIClient } from '@datastax/astra-db-ts';
+import { DataAPIResponseError } from '@datastax/astra-db-ts';
 import type { AstraMongoose } from '../../src';
 
 describe('TABLES: Mongoose Model API level tests', async () => {
