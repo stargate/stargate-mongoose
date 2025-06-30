@@ -14,7 +14,7 @@
 
 import assert from 'assert';
 import mongoose from 'mongoose';
-import { Product, createMongooseCollections } from '../../tests/mongooseFixtures';
+import { Product, ProductHydratedDoc, createMongooseCollections } from '../../tests/mongooseFixtures';
 
 describe('Options tests', async () => {
     before(async function() {
@@ -32,8 +32,10 @@ describe('Options tests', async () => {
 
     describe('options cleanup tests', () => {
         it('should cleanup insertManyOptions', async () => {
-            // @ts-expect-error
-            const products: Product[] = [new Product({ name: 'Product 2', price: 10, isCertified: true }), new Product({ name: 'Product 1', price: 10, isCertified: false})];
+            const products: ProductHydratedDoc[] = [
+                new Product({ name: 'Product 2', price: 10, isCertified: true }),
+                new Product({ name: 'Product 1', price: 10, isCertified: false})
+            ];
             //rawResult options should be cleaned up by astra-mongoose, but 'ordered' should be preserved
             const insertManyResp = await Product.insertMany(products, { ordered: true, rawResult: false });
             assert.strictEqual(insertManyResp.length, 2);
@@ -52,10 +54,11 @@ describe('Options tests', async () => {
             assert.strictEqual(productNames.size, 0);
         });
         it('should cleanup updateOneOptions', async () => {
-            // @ts-expect-error
-            const products: Product[] = [new Product({ name: 'Product 2', price: 10, isCertified: true }),
+            const products: ProductHydratedDoc[] = [
+                new Product({ name: 'Product 2', price: 10, isCertified: true }),
                 new Product({ name: 'Product 1', price: 10, isCertified: false }),
-                new Product({ name: 'Product 3', price: 10, isCertified: true })];
+                new Product({ name: 'Product 3', price: 10, isCertified: true })
+            ];
             const insertManyResp = await Product.insertMany(products, { ordered: true, rawResult: false });
             assert.strictEqual(insertManyResp.length, 3);
             assert.strictEqual(insertManyResp[0].name, 'Product 2');
@@ -79,8 +82,11 @@ describe('Options tests', async () => {
             assert.strictEqual(product4?.isCertified, true);
         });
         it('should cleanup updateManyOptions', async function() {
-            // @ts-expect-error
-            const products: Product[] = [new Product({ name: 'Product 2', price: 10, isCertified: true, category: 'cat1' }), new Product({ name: 'Product 1', price: 10, isCertified: false, category: 'cat1' }), new Product({ name: 'Product 3', price: 10, isCertified: false, category: 'cat2' })];
+            const products: ProductHydratedDoc[] = [
+                new Product({ name: 'Product 2', price: 10, isCertified: true, category: 'cat1' }),
+                new Product({ name: 'Product 1', price: 10, isCertified: false, category: 'cat1' }),
+                new Product({ name: 'Product 3', price: 10, isCertified: false, category: 'cat2' })
+            ];
             const insertManyResp = await Product.insertMany(products, { ordered: true, rawResult: false });
             assert.strictEqual(insertManyResp.length, 3);
             assert.strictEqual(insertManyResp[0].name, 'Product 2');

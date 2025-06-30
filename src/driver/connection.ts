@@ -348,7 +348,7 @@ export class Connection extends MongooseConnection {
      * @ignore
      */
 
-    setClient(_client: DataAPIClient) {
+    setClient() {
         throw new AstraMongooseError('SetClient not supported');
     }
 
@@ -380,7 +380,7 @@ export class Connection extends MongooseConnection {
      * @returns Client
      * @ignore
      */
-    doClose(_force?: boolean) {
+    doClose() {
         if (this.client != null) {
             this.client.close();
         }
