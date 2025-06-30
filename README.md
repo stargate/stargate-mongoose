@@ -23,14 +23,65 @@ cd sample-app
 ```
 - Initialize and add required dependencies
 ```shell
-npm init -y && npm install express mongoose astra-mongoose
+npm init -y && npm install express mongoose @datastax/astra-mongoose
 ```
 OR
 ```shell
-yarn init -y && yarn add express mongoose astra-mongoose
+yarn init -y && yarn add express mongoose @datastax/astra-mongoose
 ```
 - [Set up an Astra database using the instructions here](https://docs.datastax.com/en/astra-db-serverless/integrations/data-api-with-mongoosejs.html#quickstart). Save your `ASTRA_API_ENDPOINT` and `ASTRA_APPLICATION_TOKEN`.
-- Create a file called `index.js` under the 'sample-app' directory and copy below code into the file.
+- Create a file called `index.js` under the 'sample-app' directory and copy either of the snippets below into the file.
+
+ESM:
+
+```javascript
+// Imports
+import express from 'express';
+import mongoose from 'mongoose';
+import { driver, createAstraUri } from '@datastax/astra-mongoose';
+const Schema = mongoose.Schema;
+
+// Override the default Mongoose driver
+mongoose.setDriver(driver);
+
+// Create a connection string for Astra
+const uri = createAstraUri(
+  process.env.ASTRA_API_ENDPOINT,
+  process.env.ASTRA_APPLICATION_TOKEN
+);
+
+// Set up mongoose
+await mongoose.connect(uri);
+const Product = mongoose.model('Product', new Schema({ name: String, price: Number }));
+Object.values(mongoose.connection.models).map(Model => Model.init());
+
+// Set up Express app with endpoints
+const app = express();
+app.get('/addproduct', (req, res) => {
+    const newProduct = new Product(
+        {
+            name: 'product' + Math.floor(Math.random() * 99 + 1),
+            price: '' + Math.floor(Math.random() * 900 + 100)
+        });
+    newProduct.save();
+    res.send('Added a product!');
+});
+app.get('/getproducts', (req, res) => {
+    Product.find()
+        .then(products => res.json(products));
+});
+
+// Start server
+const HOST = '0.0.0.0';
+const PORT = 8097;
+await app.listen(PORT, HOST);
+console.log(`Running on http://${HOST}:${PORT}`);
+console.log('http://localhost:' + PORT + '/addproduct');
+console.log('http://localhost:' + PORT + '/getproducts');
+```
+
+CommonJS:
+
 ```javascript
 // Imports
 const express = require('express');
@@ -68,7 +119,7 @@ app.get('/getproducts', (req, res) => {
         .then(products => res.json(products));
 });
 
-//Start server
+// Start server
 const HOST = '0.0.0.0';
 const PORT = 8097;
 app.listen(PORT, HOST, () => {
@@ -115,7 +166,7 @@ CI tests are run using the Stargate and Data API versions specified in the [api-
 
 ## Sample Applications
 
-Sample applications developed using `astra-mongoose` driver are available in below repository.
+Sample applications developed using `@datastax/astra-mongoose` driver are available in below repository.
 
 https://github.com/stargate/stargate-mongoose-sample-apps
 
@@ -391,7 +442,7 @@ Transaction operations are not supported.
 Vector search is supported. Define a property of type `[Number]` with a `dimension` property and Mongoose will treat it as a vector when you use `tableDefinitionForSchema`.
 
 ```typescript
-import { tableDefinitionFromSchema } from 'astra-mongoose';
+import { tableDefinitionFromSchema } from '@datastax/astra-mongoose';
 
 const vectorSchema = new Schema(
     {
@@ -420,7 +471,7 @@ const res = await Vector.find({}, null, { includeSimilarity: true }).sort({ vect
 Vectorize is supported. Use the `Vectorize` type exported by astra-mongoose.
 
 ```typescript
-import { tableDefinitionFromSchema, Vectorize } from 'astra-mongoose';
+import { tableDefinitionFromSchema, Vectorize } from '@datastax/astra-mongoose';
 
 // Define raw document type override because Mongoose's TypeScript support can't infer the type of Vectorize
 interface IVector {

@@ -14,7 +14,7 @@ jobs:
       STARGATE_PASSWORD: cassandra
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JSON API
+      - name: Set up Data API
         run: |
           chmod +x bin/start_data_api.sh
           bin/start_data_api.sh

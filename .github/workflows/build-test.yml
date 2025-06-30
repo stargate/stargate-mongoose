@@ -1,0 +1,22 @@
+name: Build Test
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setting up the node version
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.19.0
+      - name: setup project
+        run: npm i
+      - name: run build
+        run: |
+          npm run build:test

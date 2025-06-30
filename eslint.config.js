@@ -50,30 +50,10 @@ module.exports = [
             'quotes': ['warn', 'single'],
             'prefer-const': 'warn',
             'no-extra-semi': 'warn',
-            'no-trailing-spaces': 'warn'
-        }
-    },
-    {
-        files: [
-            'src/**/*.ts',
-            'tests/**/*.ts'
-        ],
-        rules: {
+            'no-trailing-spaces': 'warn',
             'no-dupe-keys': 'error',
             'no-unreachable': 'error',
-            '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
-            '@typescript-eslint/no-unused-vars': [
-                'warn',
-                { 'argsIgnorePattern': '^_' }
-            ]
-        }
-    },
-    {
-        files: [
-            'tests/**/*.ts'
-        ],
-        rules: {
-            '@typescript-eslint/ban-ts-comment': ['warn', { 'ts-expect-error': false }]
+            '@typescript-eslint/consistent-type-definitions': ['error', 'interface']
         }
     }
 ];
