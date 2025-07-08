@@ -417,7 +417,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param ops
      * @param options
      */
-    bulkWrite(_ops: Record<string, unknown>[], _options?: Record<string, unknown>) {
+    bulkWrite() {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'bulkWrite', arguments);
         throw new OperationNotSupportedError('bulkWrite() Not Implemented');
@@ -428,7 +428,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param pipeline
      * @param options
      */
-    aggregate(_pipeline: Record<string, unknown>[], _options?: Record<string, unknown>) {
+    aggregate() {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'aggregate', arguments);
         throw new OperationNotSupportedError('aggregate() Not Implemented');

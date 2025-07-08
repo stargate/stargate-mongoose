@@ -1,7 +1,7 @@
 {
   "name": "@datastax/astra-mongoose",
   "version": "1.0.2",
-  "description": "Astra's NodeJS Mongoose compatability client",
+  "description": "Astra's NodeJS Mongoose compatibility client",
   "contributors": [
     "CRW (http://barnyrubble.tumblr.com/)",
     "Valeri Karpov (https://github.com/vkarpov15)",
@@ -22,11 +22,12 @@
     "nosql",
     "orm",
     "db",
-    "jsonapi"
+    "astra"
   ],
   "homepage": "https://github.com/stargate/stargate-mongoose",
   "license": "Apache-2.0",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "mocha": {
     "timeout": 30000
   },
@@ -54,6 +55,7 @@
     "test-dataapi": "env TEST_DOC_DB=dataapi node --env-file=.env ./node_modules/.bin/nyc --check-coverage --reporter=text --reporter=lcov ts-mocha --forbid-only -p tsconfig.json tests/**/*.test.ts tests/*.test.ts",
     "preinstall": "npm run update-version-file",
     "build": "npm run update-version-file && tsc --project tsconfig.build.json",
+    "build:test": "tsc",
     "build:docs": "jsdoc2md -t APIReference.hbs --files src/**/*.ts --files src/*.ts --configure ./jsdoc2md.json > APIReference.md",
     "update-version-file": "node -p \"'export const LIB_NAME = \\'' + require('./package.json').name + '\\';'\" > src/version.ts && node -p \"'export const LIB_VERSION = \\'' + require('./package.json').version + '\\';'\" >> src/version.ts"
   },
@@ -66,17 +68,17 @@
     "@babel/preset-env": "^7.18.2",
     "@babel/preset-typescript": "^7.17.12",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^18.19.67",
+    "@types/node": "^20.18.1",
     "@types/sinon": "^17.0.4",
     "eslint": "^9.23.0",
     "jsdoc-babel": "^0.5.0",
     "jsdoc-to-markdown": "^9.1.1",
     "mongoose": "^8.16.1",
     "nyc": "^17.1.0",
-    "sinon": "^15.0.1",
+    "sinon": "^16.1.1",
     "ts-mocha": "^11.1.0",
     "typescript": "5.x",
-    "typescript-eslint": "~8.28"
+    "typescript-eslint": "^8.35.0"
   },
   "dependencies": {
     "@datastax/astra-db-ts": "2.0.1"
