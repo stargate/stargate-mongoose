@@ -24,7 +24,7 @@ import {randomUUID} from 'crypto';
 import {OperationNotSupportedError} from '../../src/driver';
 import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections, testDebug } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
-import { FindCursor, DataAPIResponseError, DataAPIClient } from '@datastax/astra-db-ts';
+import { FindCursor, DataAPIResponseError } from '@datastax/astra-db-ts';
 import { Long, UUID } from 'bson';
 import type { AstraMongoose } from '../../src';
 
@@ -59,7 +59,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.strictEqual(savedRow.price, 10);
             assert.strictEqual(savedRow.isCertified, true);
             assert.strictEqual(savedRow.category, 'cat 1');
-            // @ts-expect-error
+            // @ts-expect-error extraCol isn't in schema
             assert.strictEqual(savedRow.extraCol, undefined);
             //strict is false, so extraCol should be saved
             const saveResponseWithStrictFalse = await new Product({
@@ -296,8 +296,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         it('API ops tests Model.db', async () => {
             const conn = Product.db as unknown as AstraMongooseDriver.Connection;
             assert.strictEqual(conn.keyspaceName, parseUri(testClient!.uri).keyspaceName);
-            // @ts-expect-error
-            assert.strictEqual(conn.db.name, parseUri(testClient!.uri).keyspaceName);
+            assert.strictEqual(conn.db!.name, parseUri(testClient!.uri).keyspaceName);
         });
         it('API ops tests Model.deleteMany()', async function() {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
@@ -345,7 +344,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 category: 'cat 1',
                 url: 'http://product1.com'
             });
-            // @ts-expect-error
+            // @ts-expect-error url is not defined in the schema
             assert.ok(!regularProduct.url);
             await regularProduct.save();
             const regularProductSaved = await Product.findOne({name: 'Product 1'}).orFail();
@@ -353,7 +352,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.strictEqual(regularProductSaved.price, 10);
             assert.strictEqual(regularProductSaved.isCertified, true);
             assert.strictEqual(regularProductSaved.category, 'cat 1');
-            // @ts-expect-error
+            // @ts-expect-error url is not defined in the schema
             assert.ok(!regularProductSaved.url);
             const onlineProduct = new OnlineProduct({
                 name: 'Product 2',
@@ -534,34 +533,6 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             }
             const respUnordered: InsertManyResult<unknown> = await Product.insertMany(docs, { ordered: false, rawResult: true });
             assert.strictEqual(respUnordered.insertedCount, 21);
-        });
-        it.skip('API ops tests Model.insertMany() with returnDocumentResponses', async () => {
-            const product1Id = new mongoose.Types.ObjectId('0'.repeat(24));
-            const product2Id = new mongoose.Types.ObjectId('1'.repeat(24));
-            const product3Id = new mongoose.Types.ObjectId('2'.repeat(24));
-            const product1 = {_id: product1Id, name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'};
-            const product2 = {_id: product2Id, name: 'Product 2', price: 10, isCertified: true, category: 'cat 2'};
-            const product3 = {_id: product3Id, name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'};
-            const respWithResponses = await Product.insertMany(
-                [product1, product2, product3],
-                {returnDocumentResponses: true, rawResult: true}
-            );
-            // @ts-expect-error
-            assert.deepStrictEqual(respWithResponses.documentResponses, [
-                { _id: '0'.repeat(24), status: 'OK' },
-                { _id: '1'.repeat(24), status: 'OK' },
-                { _id: '2'.repeat(24), status: 'OK' }
-            ]);
-
-            const err = await Product.insertMany(
-                [product1, product2, product3],
-                {returnDocumentResponses: true}
-            ).then(() => null, err => err);
-            assert.deepStrictEqual(err.status.documentResponses, [
-                { _id: '0'.repeat(24), status: 'ERROR', errorsIdx: 0 },
-                { _id: '1'.repeat(24), status: 'ERROR', errorsIdx: 1 },
-                { _id: '2'.repeat(24), status: 'ERROR', errorsIdx: 2 }
-            ]);
         });
         //Model.inspect can not be tested since it is a helper for console logging. More info here: https://mongoosejs.com/docs/api/model.html#Model.inspect()
         it('API ops tests Model.listIndexes()', async () => {
@@ -830,7 +801,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         });
         it('API ops tests setClient()', async function() {
             assert.throws(
-                () => mongooseInstance.connection.setClient(mongooseInstance.connection.client as DataAPIClient),
+                () => mongooseInstance.connection.setClient(),
                 /SetClient not supported/
             );
         });
@@ -1244,6 +1215,61 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             const doc = await Vector.findById(_id).select({ '$vectorize': 0 }).orFail();
             assert.strictEqual(doc.name, 'Moby-Dick');
             assert.ok(!doc.$vector);
+        });
+    });
+
+    describe('$match', function () {
+        const lexicalSchema = new Schema(
+            {
+                $lexical: { type: String },
+                name: { type: String }
+            },
+            {
+                collectionOptions: {
+                    lexical: {
+                        enabled: true,
+                        analyzer: 'STANDARD',
+                    }
+                },
+                autoCreate: false
+            }
+        );
+        let LexicalModel: Model<InferSchemaType<typeof lexicalSchema>>;
+
+        before(async function () {
+            this.timeout(120_000);
+            await mongooseInstance.connection.dropCollection(TEST_COLLECTION_NAME);
+            LexicalModel = mongooseInstance.model('Lexical', lexicalSchema, TEST_COLLECTION_NAME);
+            await LexicalModel.createCollection();
+        });
+
+        it('works on $lexical field', async function () {
+            await LexicalModel.deleteMany({});
+            await LexicalModel.create([
+                { name: 'test 1', $lexical: 'the quick brown fox jumped over the lazy dog' },
+                { name: 'test 2', $lexical: 'the lazy red hen sat beside the sleepy dog' }
+            ]);
+            let docs = await LexicalModel.find({ $lexical: { $match: 'jumped' } });
+            assert.strictEqual(docs.length, 1);
+            assert.strictEqual(docs[0].name, 'test 1');
+
+            docs = await LexicalModel.find({ $lexical: { $match: 'sat' } });
+            assert.strictEqual(docs.length, 1);
+            assert.strictEqual(docs[0].name, 'test 2');
+        });
+
+        it.skip('sorts results by $lexical field', async function () {
+            // Ensure collection is clean and has the right docs
+            await LexicalModel.deleteMany({});
+            await LexicalModel.create([
+                { name: 'test A1', $lexical: 'the badger is a small, burrowing mammal known for its bold behavior and distinctive striped face.' },
+                { name: 'test A2', $lexical: 'badger badger badger mushroom mushroom' },
+                { name: 'test A3', $lexical: 'the quick brown fox jumped over the lazy dog' }
+            ]);
+            const docs = await LexicalModel.find({ $lexical: { $match: 'badger' } }).sort({ $lexical: { $meta: 'badger' } });
+            assert.strictEqual(docs.length, 2);
+            assert.strictEqual(docs[0].name, 'test A2');
+            assert.strictEqual(docs[1].name, 'test A1');
         });
     });
 });
