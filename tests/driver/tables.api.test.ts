@@ -96,7 +96,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             assert.strictEqual(product1.name, 'Product 1');
         });
         it('API ops tests Model.$where()', async function () {
-            //Mode.$where()
+            //Model.$where()
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
             const error: Error | null = await Product.$where('this.name === "Product 1"').exec().then(() => null, error => error);
