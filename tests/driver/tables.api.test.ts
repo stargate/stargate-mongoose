@@ -97,14 +97,19 @@ describe('TABLES: Mongoose Model API level tests', async () => {
         });
         it('API ops tests Model.$where()', async function () {
             //Mode.$where()
-            if (testClient?.isAstra) {
-                return this.skip();
-            }
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
             const error: Error | null = await Product.$where('this.name === "Product 1"').exec().then(() => null, error => error);
             assert.ok(error instanceof DataAPIResponseError);
-            assert.ok(error.errorDescriptors[0].message.startsWith('Only columns defined in the table schema can be filtered on.'));
+
+            const { message } = error.errorDescriptors[0];
+            if (testClient?.isAstra) {
+                // Astra looks to still be using data-api v1.0.26 or earlier, so use the assertion from:
+                // https://github.com/stargate/stargate-mongoose/commit/0d6152220473afa3af4e864eb47e39fd8f5b1dae
+                assert.strictEqual(message, 'Invalid filter expression: filter clause path (\'$where\') cannot start with `$`');
+            } else {
+                assert.ok(message.startsWith('Only columns defined in the table schema can be filtered on.'), message);
+            }
         });
         it('API ops tests Model.aggregate()', async () => {
             //Model.aggregate()
