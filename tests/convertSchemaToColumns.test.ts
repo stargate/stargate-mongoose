@@ -204,6 +204,18 @@ describe('convertSchemaToColumns', () => {
         });
     });
 
+    it('throws on map of custom schematype', () => {
+        const testSchema = new Schema({
+            myMap: { type: 'Map', of: 'Mixed' }
+        });
+
+        assert.throws(() => {
+            convertSchemaToColumns(testSchema);
+        }, {
+            message: 'Cannot convert schema to Data API table definition: unsupported type at path "myMap"'
+        });
+    });
+
     it('throws on nested paths in subdocuments', () => {
         const testSchema = new Schema({
             subdoc: new Schema({
@@ -328,6 +340,36 @@ describe('convertSchemaToColumns', () => {
             addressesByName: {
                 type: Map,
                 of: subschema
+            }
+        });
+        assert.deepStrictEqual(convertSchemaToColumns(testSchema), {
+            _id: { type: 'text' },
+            __v: { type: 'int' },
+            address: { type: 'userDefined', udtName: 'Address' },
+            savedAddresses: { type: 'list', valueType: { type: 'userDefined', udtName: 'Address' } },
+            addressesByName: { type: 'map', keyType: 'text', valueType: { type: 'userDefined', udtName: 'Address' } }
+        });
+    });
+
+    it('handles UDT in schematype options', () => {
+        const subschema = new Schema({
+            line1: String,
+            line2: String,
+            city: String,
+            state: String,
+            zip: String,
+            country: String
+        });
+
+        const testSchema = new Schema({
+            address: { type: subschema, udtName: 'Address' },
+            savedAddresses: [{ type: subschema, udtName: 'Address' }],
+            addressesByName: {
+                type: Map,
+                of: {
+                    type: subschema,
+                    udtName: 'Address'
+                }
             }
         });
         assert.deepStrictEqual(convertSchemaToColumns(testSchema), {

@@ -41,9 +41,12 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
                     schema
                 });
             }
+            // Skip map embeddedSchemaTypes
+            if (split[1] === '$*') {
+                continue;
+            }
 
-            // @ts-expect-error Mongoose TypeScript types don't have schema options
-            if (!schemaType.schema?.options?.udtName) {
+            if (getUDTNameFromSchemaType(schemaType) == null) {
                 // Maps of UDTs will be handled separately in the `instance === 'Map'` path
                 const nestedPath = split[0];
                 if (schemaTypesForNestedPath[nestedPath] == null) {
@@ -55,12 +58,13 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
             columns[path] = { type };
         } else if (schemaType.instance === 'Array' || schemaType.instance === 'Vectorize') {
             if (schemaType.schema) {
-                // @ts-expect-error Mongoose schemas don't have options property in TS
-                if (schemaType.schema.options.udtName) {
+                const udtName = getUDTNameFromSchemaType(schemaType);
+
+                if (udtName) {
                     columns[path] = {
                         type: 'list',
-                        // @ts-expect-error Astra-db-ts doesn't support UDT yet, and Mongoose schemas don't have options property in TS
-                        valueType: { type: 'userDefined', udtName: schemaType.schema.options.udtName }
+                        // @ts-expect-error Astra-db-ts doesn't support UDT yet
+                        valueType: { type: 'userDefined', udtName }
                     };
                 } else {
                     throw new AstraMongooseError(`Cannot convert schema to Data API table definition: DocumentArray "${path}" is not supported`, {
@@ -100,10 +104,10 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
                 }
             }
         } else if (schemaType.instance === 'Embedded') {
-            // @ts-expect-error Mongoose schemas don't have options property in TS
-            if (schemaType.schema.options.udtName) {
+            const udtName = getUDTNameFromSchemaType(schemaType);
+            if (udtName) {
                 // @ts-expect-error Astra-db-ts doesn't support UDT yet, and Mongoose schemas don't have options property in TS
-                columns[path] = { type: 'userDefined', udtName: schemaType.schema.options.udtName };
+                columns[path] = { type: 'userDefined', udtName };
             } else {
                 const dataAPITypes: Set<AllowedDataAPITypes> = new Set();
                 for (const subpath of Object.keys(schemaType.schema.paths)) {
@@ -140,9 +144,12 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
                     columns[path] = { type: 'map', keyType: 'text', valueType: 'text' };
                 }
             }
-        } else if (schemaType.instance === 'Map') {
-            // @ts-expect-error Mongoose TypeScript types don't have schema options
-            if (schemaType.getEmbeddedSchemaType()?.schema?.options?.udtName) {
+        } else if (schemaType.instance === 'Map' && schemaType.getEmbeddedSchemaType()) {
+            const valueType = mongooseTypeToDataAPIType(schemaType.getEmbeddedSchemaType()!.instance);
+            const udtName = getUDTNameFromSchemaType(schemaType);
+            if (valueType != null) {
+                columns[path] = { type: 'map', keyType: 'text', valueType };
+            } else if (udtName) {
                 // Special handling for maps of UDTs
                 columns[path] = {
                     type: 'map',
@@ -150,10 +157,15 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
                     // @ts-expect-error Astra-db-ts doesn't support UDT yet
                     valueType: {
                         type: 'userDefined',
-                        // @ts-expect-error Mongoose TypeScript types don't have schema options
-                        udtName: schemaType.getEmbeddedSchemaType().schema.options.udtName
+                        udtName
                     }
                 };
+            } else {
+                throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported type at path "${schemaType.path}"`, {
+                    path,
+                    type,
+                    schema
+                });
             }
         } else {
             throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported type at path "${path}"`, {
@@ -163,7 +175,6 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
         }
     }
 
-    // Also handles maps
     for (const nestedPath of Object.keys(schemaTypesForNestedPath)) {
         const dataAPITypes: Set<AllowedDataAPITypes> = new Set();
         for (const schemaType of schemaTypesForNestedPath[nestedPath]) {
@@ -217,6 +228,33 @@ function mongooseTypeToDataAPIType(type: string): AllowedDataAPITypes | null {
         return 'int';
     } else if (type === 'Double') {
         return 'double';
+    }
+    return null;
+}
+
+function getUDTNameFromSchemaType(schemaType: SchemaType | undefined): string | null {
+    if (schemaType == null) {
+        return null;
+    }
+    if (schemaType.options?.udtName) {
+        return schemaType.options.udtName;
+    }
+    // Remove this when https://github.com/Automattic/mongoose/pull/15523 is released
+    // @ts-expect-error Mongoose schematypes don't have schemaOptions property in TS.
+    if (schemaType.schemaOptions?.udtName) {
+        // @ts-expect-error Mongoose schematypes don't have schemaOptions property in TS.
+        return schemaType.schemaOptions.udtName;
+    }
+    const embedded = schemaType.getEmbeddedSchemaType?.();
+    const embeddedUdtName = getUDTNameFromSchemaType(embedded);
+    if (embeddedUdtName) {
+        return embeddedUdtName;
+    }
+    // `new Schema({}, { udtName })`
+    // @ts-expect-error Mongoose schemas don't have options property in TS
+    if (schemaType.schema?.options?.udtName) {
+        // @ts-expect-error Mongoose schemas don't have options property in TS
+        return schemaType.schema.options.udtName;
     }
     return null;
 }
