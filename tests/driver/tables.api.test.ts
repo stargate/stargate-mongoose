@@ -103,13 +103,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             assert.ok(error instanceof DataAPIResponseError);
 
             const { message } = error.errorDescriptors[0];
-            if (testClient?.isAstra) {
-                // Astra looks to still be using data-api v1.0.26 or earlier, so use the assertion from:
-                // https://github.com/stargate/stargate-mongoose/commit/0d6152220473afa3af4e864eb47e39fd8f5b1dae
-                assert.strictEqual(message, 'Invalid filter expression: filter clause path (\'$where\') cannot start with `$`');
-            } else {
-                assert.ok(message.startsWith('Only columns defined in the table schema can be filtered on.'), message);
-            }
+            assert.ok(message.startsWith('Only columns defined in the table schema can be filtered on.'), message);
         });
         it('API ops tests Model.aggregate()', async () => {
             //Model.aggregate()

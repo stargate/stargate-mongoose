@@ -1238,12 +1238,6 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
 
         before(async function () {
             this.timeout(120_000);
-            // $match currently not supported in Astra likely due to Data API not upgraded yet.
-            // Using $match throws the following error:
-            // "Unsupported filter operator: $match"
-            if (testClient!.isAstra) {
-                return this.skip();
-            }
 
             await mongooseInstance.connection.dropCollection(TEST_COLLECTION_NAME);
             LexicalModel = mongooseInstance.model('Lexical', lexicalSchema, TEST_COLLECTION_NAME);
