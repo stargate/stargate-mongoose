@@ -41,12 +41,10 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
                     schema
                 });
             }
-            // Skip map embeddedSchemaTypes, those are handled in the instance === 'Map' path
-            if (split[1] === '$*') {
-                continue;
-            }
 
-            if (getUDTNameFromSchemaType(schemaType) == null) {
+            // Nested paths aren't listed in `schema.paths`, so store their subpaths to process them later on a
+            // per-nested-path basis.
+            if (schema.pathType(split[0]) === 'nested') {
                 const nestedPath = split[0];
                 if (schemaTypesForNestedPath[nestedPath] == null) {
                     schemaTypesForNestedPath[nestedPath] = [];
