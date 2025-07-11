@@ -80,7 +80,7 @@ describe('convertSchemaToColumns', () => {
         });
     });
 
-    it('stores subdocument with multiple different path types as map of text', () => {
+    it('throws on subdocument with multiple different path types', () => {
         const testSchema = new Schema({
             subdoc: new Schema({
                 name: String,
@@ -88,12 +88,10 @@ describe('convertSchemaToColumns', () => {
             }, { _id: false })
         });
 
-        const result = convertSchemaToColumns(testSchema);
-
-        assert.deepStrictEqual(result, {
-            '_id': { type: 'text' },
-            '__v': { type: 'int' },
-            'subdoc': { type: 'map', keyType: 'text', valueType: 'text' }
+        assert.throws(() => {
+            convertSchemaToColumns(testSchema);
+        }, {
+            message: 'Cannot convert schema to Data API table definition: nested paths with different data types "subdoc" are not supported'
         });
     });
 
@@ -114,7 +112,7 @@ describe('convertSchemaToColumns', () => {
         });
     });
 
-    it('stores nested paths with multiple different path types as map of text', () => {
+    it('throws on nested paths with multiple different path types', () => {
         const testSchema = new Schema({
             user: {
                 name: String,
@@ -122,12 +120,10 @@ describe('convertSchemaToColumns', () => {
             }
         });
 
-        const result = convertSchemaToColumns(testSchema);
-
-        assert.deepStrictEqual(result, {
-            '_id': { type: 'text' },
-            '__v': { type: 'int' },
-            'user': { type: 'map', keyType: 'text', valueType: 'text' }
+        assert.throws(() => {
+            convertSchemaToColumns(testSchema);
+        }, {
+            message: 'Cannot convert schema to Data API table definition: nested paths with different data types "user" are not supported'
         });
     });
 

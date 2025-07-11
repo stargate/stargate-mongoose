@@ -129,18 +129,22 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
                     }
                     dataAPITypes.add(type);
                 }
+
+                if (dataAPITypes.has('blob')) {
+                    throw new AstraMongooseError(`Cannot convert schema to Data API table definition: subdocuments with Buffer at "${path}" are not supported`, {
+                        path,
+                        type,
+                        schema
+                    });
+                }
                 // If all keys have same data type, then can just make map of that data type
                 if (dataAPITypes.size === 1) {
                     columns[path] = { type: 'map', keyType: 'text', valueType: [...dataAPITypes][0] };
                 } else {
-                    if (dataAPITypes.has('blob')) {
-                        throw new AstraMongooseError(`Cannot convert schema to Data API table definition: subdocuments with Buffer at "${path}" are not supported`, {
-                            path,
-                            type,
-                            schema
-                        });
-                    }
-                    columns[path] = { type: 'map', keyType: 'text', valueType: 'text' };
+                    throw new AstraMongooseError(`Cannot convert schema to Data API table definition: nested paths with different data types "${path}" are not supported`, {
+                        path,
+                        schema
+                    });
                 }
             }
         } else if (schemaType.instance === 'Map' && schemaType.getEmbeddedSchemaType()) {
@@ -197,7 +201,10 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
         if (dataAPITypes.size === 1) {
             columns[nestedPath] = { type: 'map', keyType: 'text', valueType: [...dataAPITypes][0] };
         } else {
-            columns[nestedPath] = { type: 'map', keyType: 'text', valueType: 'text' };
+            throw new AstraMongooseError(`Cannot convert schema to Data API table definition: nested paths with different data types "${nestedPath}" are not supported`, {
+                nestedPath,
+                schema
+            });
         }
     }
 
