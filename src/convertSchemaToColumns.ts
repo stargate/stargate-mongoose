@@ -245,7 +245,7 @@ function getUDTNameFromSchemaType(schemaType: SchemaType | undefined): string | 
         // @ts-expect-error Mongoose schematypes don't have schemaOptions property in TS.
         return schemaType.schemaOptions.udtName;
     }
-    const embedded = schemaType.getEmbeddedSchemaType?.();
+    const embedded = schemaType.getEmbeddedSchemaType();
     const embeddedUdtName = getUDTNameFromSchemaType(embedded);
     if (embeddedUdtName) {
         return embeddedUdtName;
