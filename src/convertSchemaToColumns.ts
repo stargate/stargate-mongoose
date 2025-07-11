@@ -55,6 +55,7 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
             columns[path] = { type };
         } else if (schemaType.instance === 'Array' || schemaType.instance === 'Vectorize') {
             if (schemaType.schema) {
+                // If `schema` is set, this is a DocumentArray
                 const udtName = getUDTNameFromSchemaType(schemaType);
 
                 if (udtName) {
@@ -70,7 +71,6 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
                         schema
                     });
                 }
-
             } else {
                 // Arrays always have an embedded schema type
                 const embeddedSchemaType = schemaType.getEmbeddedSchemaType() as SchemaType;
@@ -106,44 +106,11 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
                 // @ts-expect-error Astra-db-ts doesn't support UDT yet, and Mongoose schemas don't have options property in TS
                 columns[path] = { type: 'userDefined', udtName };
             } else {
-                const dataAPITypes: Set<AllowedDataAPITypes> = new Set();
-                for (const subpath of Object.keys(schemaType.schema.paths)) {
-                    const isNested = subpath.indexOf('.') !== -1;
-                    if (isNested) {
-                        throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported nested path underneath subdocument at path "${path}.${subpath}"`, {
-                            path,
-                            subpath,
-                            schema
-                        });
-                    }
-                    const type = mongooseTypeToDataAPIType(schemaType.schema.paths[subpath].instance);
-                    if (type == null) {
-                        throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported type in subdocument at path "${path}.${subpath}"`, {
-                            path,
-                            subpath,
-                            type,
-                            schema
-                        });
-                    }
-                    dataAPITypes.add(type);
-                }
-
-                if (dataAPITypes.has('blob')) {
-                    throw new AstraMongooseError(`Cannot convert schema to Data API table definition: subdocuments with Buffer at "${path}" are not supported`, {
-                        path,
-                        type,
-                        schema
-                    });
-                }
-                // If all keys have same data type, then can just make map of that data type
-                if (dataAPITypes.size === 1) {
-                    columns[path] = { type: 'map', keyType: 'text', valueType: [...dataAPITypes][0] };
-                } else {
-                    throw new AstraMongooseError(`Cannot convert schema to Data API table definition: nested paths with different data types "${path}" are not supported`, {
-                        path,
-                        schema
-                    });
-                }
+                columns[path] = {
+                    type: 'map',
+                    keyType: 'text',
+                    valueType: getValueTypeFromNestedSchemaTypes(path, Object.values(schemaType.schema.paths), true)
+                };
             }
         } else if (schemaType.instance === 'Map' && schemaType.getEmbeddedSchemaType()) {
             const valueType = mongooseTypeToDataAPIType(schemaType.getEmbeddedSchemaType()!.instance);
@@ -177,36 +144,48 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
     }
 
     for (const nestedPath of Object.keys(schemaTypesForNestedPath)) {
-        const dataAPITypes: Set<AllowedDataAPITypes> = new Set();
-        for (const schemaType of schemaTypesForNestedPath[nestedPath]) {
-            const type = mongooseTypeToDataAPIType(schemaType.instance);
-            if (type == null) {
-                throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported type at path "${schemaType.path}"`, {
-                    nestedPath,
-                    type,
-                    schema
-                });
-            }
-            dataAPITypes.add(type);
-        }
-        if (dataAPITypes.has('blob')) {
-            throw new AstraMongooseError(`Cannot convert schema to Data API table definition: nested paths with Buffer at "${nestedPath}" are not supported`, {
-                nestedPath,
-                schema
-            });
-        }
-        // If all keys have same data type, then can just make map of that data type
-        if (dataAPITypes.size === 1) {
-            columns[nestedPath] = { type: 'map', keyType: 'text', valueType: [...dataAPITypes][0] };
-        } else {
-            throw new AstraMongooseError(`Cannot convert schema to Data API table definition: nested paths with different data types "${nestedPath}" are not supported`, {
-                nestedPath,
-                schema
-            });
-        }
+        columns[nestedPath] = {
+            type: 'map',
+            keyType: 'text',
+            valueType: getValueTypeFromNestedSchemaTypes(nestedPath, schemaTypesForNestedPath[nestedPath], false)
+        };
     }
 
     return columns;
+}
+
+function getValueTypeFromNestedSchemaTypes(nestedPath: string, schemaTypes: SchemaType[], isSubdocument: boolean): AllowedDataAPITypes {
+    const dataAPITypes: Set<AllowedDataAPITypes> = new Set();
+    for (const schemaType of schemaTypes) {
+        const hasNested = schemaType.path.indexOf('.') !== -1;
+        if (hasNested && isSubdocument) {
+            throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported nested path underneath subdocument at path "${nestedPath}.${schemaType.path}"`, {
+                nestedPath
+            });
+        }
+        const type = mongooseTypeToDataAPIType(schemaType.instance);
+        if (type == null) {
+            const fullPath = isSubdocument ? `${nestedPath}.${schemaType.path}` : schemaType.path;
+            throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported type at path "${fullPath}"`, {
+                nestedPath,
+                type
+            });
+        }
+        dataAPITypes.add(type);
+    }
+    if (dataAPITypes.has('blob')) {
+        throw new AstraMongooseError(`Cannot convert schema to Data API table definition: nested Buffer at "${nestedPath}" is not supported`, {
+            nestedPath
+        });
+    }
+    // If all keys have same data type, then we can use that data type
+    if (dataAPITypes.size === 1) {
+        return Array.from(dataAPITypes)[0];
+    } else {
+        throw new AstraMongooseError(`Cannot convert schema to Data API table definition: nested paths with different data types "${nestedPath}" are not supported`, {
+            nestedPath
+        });
+    }
 }
 
 function mongooseTypeToDataAPIType(type: string): AllowedDataAPITypes | null {

@@ -238,7 +238,7 @@ describe('convertSchemaToColumns', () => {
         assert.throws(() => {
             convertSchemaToColumns(testSchema);
         }, {
-            message: 'Cannot convert schema to Data API table definition: unsupported type in subdocument at path "subdoc.test"'
+            message: 'Cannot convert schema to Data API table definition: unsupported type at path "subdoc.test"'
         });
     });
 
@@ -252,7 +252,7 @@ describe('convertSchemaToColumns', () => {
         assert.throws(() => {
             convertSchemaToColumns(testSchema);
         }, {
-            message: 'Cannot convert schema to Data API table definition: subdocuments with Buffer at "subdoc" are not supported'
+            message: 'Cannot convert schema to Data API table definition: nested Buffer at "subdoc" is not supported'
         });
     });
 
@@ -292,7 +292,7 @@ describe('convertSchemaToColumns', () => {
         assert.throws(() => {
             convertSchemaToColumns(testSchema);
         }, {
-            message: 'Cannot convert schema to Data API table definition: nested paths with Buffer at "nested" are not supported'
+            message: 'Cannot convert schema to Data API table definition: nested Buffer at "nested" is not supported'
         });
     });
 
