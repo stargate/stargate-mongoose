@@ -41,13 +41,12 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
                     schema
                 });
             }
-            // Skip map embeddedSchemaTypes
+            // Skip map embeddedSchemaTypes, those are handled in the instance === 'Map' path
             if (split[1] === '$*') {
                 continue;
             }
 
             if (getUDTNameFromSchemaType(schemaType) == null) {
-                // Maps of UDTs will be handled separately in the `instance === 'Map'` path
                 const nestedPath = split[0];
                 if (schemaTypesForNestedPath[nestedPath] == null) {
                     schemaTypesForNestedPath[nestedPath] = [];
