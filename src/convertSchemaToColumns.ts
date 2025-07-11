@@ -215,29 +215,30 @@ function mongooseTypeToDataAPIType(type: string): AllowedDataAPITypes | null {
     return null;
 }
 
-function getUDTNameFromSchemaType(schemaType: SchemaType | undefined): string | null {
-    if (schemaType == null) {
-        return null;
+function getUDTNameFromSchemaType(schemaType: SchemaType): string | null {
+    if (schemaType.instance === 'Array' && schemaType.schema) {
+        // @ts-expect-error Mongoose schemas don't have options property in TS
+        return schemaType.schemaOptions?.udtName ?? schemaType.schema?.options?.udtName ?? null;
     }
+
     if (schemaType.options?.udtName) {
         return schemaType.options.udtName;
-    }
-    // Remove this when https://github.com/Automattic/mongoose/pull/15523 is released
-    // @ts-expect-error Mongoose schematypes don't have schemaOptions property in TS.
-    if (schemaType.schemaOptions?.udtName) {
-        // @ts-expect-error Mongoose schematypes don't have schemaOptions property in TS.
-        return schemaType.schemaOptions.udtName;
-    }
-    const embedded = schemaType.getEmbeddedSchemaType();
-    const embeddedUdtName = getUDTNameFromSchemaType(embedded);
-    if (embeddedUdtName) {
-        return embeddedUdtName;
     }
     // `new Schema({}, { udtName })`
     // @ts-expect-error Mongoose schemas don't have options property in TS
     if (schemaType.schema?.options?.udtName) {
         // @ts-expect-error Mongoose schemas don't have options property in TS
         return schemaType.schema.options.udtName;
+    }
+
+    const embeddedSchemaType = schemaType.getEmbeddedSchemaType();
+    if (embeddedSchemaType?.options?.udtName) {
+        return embeddedSchemaType?.options?.udtName;
+    }
+    // @ts-expect-error Mongoose schemas don't have options property in TS
+    if (embeddedSchemaType?.schema?.options?.udtName) {
+        // @ts-expect-error Mongoose schemas don't have options property in TS
+        return embeddedSchemaType?.schema?.options?.udtName;
     }
     return null;
 }
