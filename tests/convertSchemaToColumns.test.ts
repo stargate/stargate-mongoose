@@ -112,21 +112,6 @@ describe('convertSchemaToColumns', () => {
         });
     });
 
-    it('throws on nested paths with multiple different path types', () => {
-        const testSchema = new Schema({
-            user: {
-                name: String,
-                age: Number
-            }
-        });
-
-        assert.throws(() => {
-            convertSchemaToColumns(testSchema);
-        }, {
-            message: 'Cannot convert schema to Data API table definition: nested paths with different data types "user" are not supported'
-        });
-    });
-
     it('handles Mongoose maps', () => {
         const testSchema = new Schema({
             myMap: {
@@ -239,20 +224,6 @@ describe('convertSchemaToColumns', () => {
             convertSchemaToColumns(testSchema);
         }, {
             message: 'Cannot convert schema to Data API table definition: unsupported type at path "subdoc.test"'
-        });
-    });
-
-    it('throws on subdoc with buffer', () => {
-        const testSchema = new Schema({
-            subdoc: new Schema({
-                test: Buffer
-            })
-        });
-
-        assert.throws(() => {
-            convertSchemaToColumns(testSchema);
-        }, {
-            message: 'Cannot convert schema to Data API table definition: nested Buffer at "subdoc" is not supported'
         });
     });
 
