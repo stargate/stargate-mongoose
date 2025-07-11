@@ -95,16 +95,15 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             assert.strictEqual(product1.name, 'Product 1');
         });
-        it('API ops tests Model.$where()', async () => {
-            //Mode.$where()
+        it('API ops tests Model.$where()', async function () {
+            //Model.$where()
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
             const error: Error | null = await Product.$where('this.name === "Product 1"').exec().then(() => null, error => error);
             assert.ok(error instanceof DataAPIResponseError);
-            assert.ok(
-                error.errorDescriptors[0].message.startsWith('Only columns defined in the table schema can be filtered on.'),
-                error.errorDescriptors[0].message
-            );
+
+            const { message } = error.errorDescriptors[0];
+            assert.ok(message.startsWith('Only columns defined in the table schema can be filtered on.'), message);
         });
         it('API ops tests Model.aggregate()', async () => {
             //Model.aggregate()
