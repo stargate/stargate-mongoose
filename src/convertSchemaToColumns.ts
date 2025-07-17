@@ -21,12 +21,14 @@ type AllowedDataAPITypes = 'text' | 'double' | 'timestamp' | 'boolean' | 'decima
 /**
  * Given a Mongoose schema, create an equivalent Data API table definition for use with `createTable()`
  */
-export default function convertSchemaToColumns(schema: Schema): CreateTableColumnDefinitions {
+export default function convertSchemaToColumns(schema: Schema, udtName?: string): CreateTableColumnDefinitions {
     const columns: CreateTableColumnDefinitions = {
         _id: { type: 'text' },
         __v: { type: 'int' }
     };
     const schemaTypesForNestedPath: Record<string, SchemaType[]> = {};
+    // @ts-expect-error Mongoose schemas don't have `options` property in TypeScript currently
+    udtName = udtName ?? schema.options?.udtName;
     for (const path of Object.keys(schema.paths)) {
         const schemaType = schema.paths[path];
 
@@ -54,15 +56,21 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
         } else if (type) {
             columns[path] = { type };
         } else if (schemaType.instance === 'Array' || schemaType.instance === 'Vectorize') {
+            if (udtName != null) {
+                throw new AstraMongooseError(
+                    'Cannot convert schema to Data API table definition: cannot store an array in a UDT',
+                    { path, type }
+                );
+            }
             if (schemaType.schema) {
                 // If `schema` is set, this is a DocumentArray
-                const udtName = getUDTNameFromSchemaType(schemaType);
+                const schemaTypeUDTName = getUDTNameFromSchemaType(schemaType);
 
-                if (udtName) {
+                if (schemaTypeUDTName) {
                     columns[path] = {
                         type: 'list',
                         // @ts-expect-error Astra-db-ts doesn't support UDT yet
-                        valueType: { type: 'userDefined', udtName }
+                        valueType: { type: 'userDefined', udtName: schemaTypeUDTName }
                     };
                 } else {
                     throw new AstraMongooseError(`Cannot convert schema to Data API table definition: DocumentArray "${path}" is not supported`, {
@@ -101,10 +109,16 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
                 }
             }
         } else if (schemaType.instance === 'Embedded') {
-            const udtName = getUDTNameFromSchemaType(schemaType);
-            if (udtName) {
+            if (udtName != null) {
+                throw new AstraMongooseError('Cannot convert schema to Data API table definition: cannot store a subdocument in a UDT', {
+                    path,
+                    type
+                });
+            }
+            const schemaTypeUDTName = getUDTNameFromSchemaType(schemaType);
+            if (schemaTypeUDTName) {
                 // @ts-expect-error Astra-db-ts doesn't support UDT yet, and Mongoose schemas don't have options property in TS
-                columns[path] = { type: 'userDefined', udtName };
+                columns[path] = { type: 'userDefined', udtName: schemaTypeUDTName };
             } else {
                 columns[path] = {
                     type: 'map',
@@ -113,11 +127,17 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
                 };
             }
         } else if (schemaType.instance === 'Map' && schemaType.getEmbeddedSchemaType()) {
+            if (udtName != null) {
+                throw new AstraMongooseError('Cannot convert schema to Data API table definition: cannot store a map in a UDT', {
+                    path,
+                    type
+                });
+            }
             const valueType = mongooseTypeToDataAPIType(schemaType.getEmbeddedSchemaType()!.instance);
-            const udtName = getUDTNameFromSchemaType(schemaType);
+            const schemaTypeUDTName = getUDTNameFromSchemaType(schemaType);
             if (valueType != null) {
                 columns[path] = { type: 'map', keyType: 'text', valueType };
-            } else if (udtName) {
+            } else if (schemaTypeUDTName) {
                 // Special handling for maps of UDTs
                 columns[path] = {
                     type: 'map',
@@ -125,7 +145,7 @@ export default function convertSchemaToColumns(schema: Schema): CreateTableColum
                     // @ts-expect-error Astra-db-ts doesn't support UDT yet
                     valueType: {
                         type: 'userDefined',
-                        udtName
+                        udtName: schemaTypeUDTName
                     }
                 };
             } else {

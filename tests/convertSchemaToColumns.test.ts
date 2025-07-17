@@ -361,4 +361,37 @@ describe('convertSchemaToColumns', () => {
             'arr': { type: 'vector', dimension: 3, service: { provider: 'openai' } }
         });
     });
+
+    it('throws error if schema with udtName option has an array', () => {
+        const testSchema = new Schema({
+            addresses: [String]
+        }, { udtName: 'user' });
+
+        assert.throws(
+            () => convertSchemaToColumns(testSchema),
+            { message: 'Cannot convert schema to Data API table definition: cannot store an array in a UDT' }
+        );
+    });
+
+    it('throws error if schema with udtName option has a map', () => {
+        const testSchema = new Schema({
+            addresses: { type: 'Map', of: String }
+        }, { udtName: 'user' });
+
+        assert.throws(
+            () => convertSchemaToColumns(testSchema),
+            { message: 'Cannot convert schema to Data API table definition: cannot store a map in a UDT' }
+        );
+    });
+
+    it('throws error if schema with udtName option has a subdoc', () => {
+        const testSchema = new Schema({
+            address: new Schema({ line1: String, city: String, state: String })
+        }, { udtName: 'user' });
+
+        assert.throws(
+            () => convertSchemaToColumns(testSchema),
+            { message: 'Cannot convert schema to Data API table definition: cannot store a subdocument in a UDT' }
+        );
+    });
 });
