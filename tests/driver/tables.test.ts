@@ -84,7 +84,7 @@ describe('TABLES: basic operations and data types', function() {
             employee: Schema.Types.ObjectId,
             friends: [String],
             salary: Schema.Types.Decimal128,
-            favorites: { type: Map, of: String },
+            favorites: { type: Map, of: { type: String, required: true } },
             uniqueId: Schema.Types.UUID,
             category: BigInt,
             buf: Buffer,

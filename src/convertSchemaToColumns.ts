@@ -126,14 +126,21 @@ export default function convertSchemaToColumns(schema: Schema, udtName?: string)
                     valueType: getValueTypeFromNestedSchemaTypes(path, Object.values(schemaType.schema.paths), true)
                 };
             }
-        } else if (schemaType.instance === 'Map' && schemaType.getEmbeddedSchemaType()) {
+        } else if (schemaType.instance === 'Map') {
             if (udtName != null) {
                 throw new AstraMongooseError('Cannot convert schema to Data API table definition: cannot store a map in a UDT', {
                     path,
                     type
                 });
             }
-            const valueType = mongooseTypeToDataAPIType(schemaType.getEmbeddedSchemaType()!.instance);
+            const embeddedSchemaType = schemaType.getEmbeddedSchemaType() as SchemaType;
+            if (!isSchemaTypeRequired(embeddedSchemaType)) {
+                throw new AstraMongooseError(
+                    `Cannot convert schema to Data API table definition: values for map path "${path}" must be required`,
+                    { path, type }
+                );
+            }
+            const valueType = mongooseTypeToDataAPIType(embeddedSchemaType!.instance);
             const schemaTypeUDTName = getUDTNameFromSchemaType(schemaType);
             if (valueType != null) {
                 columns[path] = { type: 'map', keyType: 'text', valueType };
@@ -149,11 +156,10 @@ export default function convertSchemaToColumns(schema: Schema, udtName?: string)
                     }
                 };
             } else {
-                throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported type at path "${schemaType.path}"`, {
-                    path,
-                    type,
-                    schema
-                });
+                throw new AstraMongooseError(
+                    `Cannot convert schema to Data API table definition: unsupported type at path "${schemaType.path}"`,
+                    { path, type }
+                );
             }
         } else {
             throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported type at path "${path}"`, {
@@ -184,12 +190,18 @@ function getValueTypeFromNestedSchemaTypes(nestedPath: string, schemaTypes: Sche
             });
         }
         const type = mongooseTypeToDataAPIType(schemaType.instance);
+        const fullPath = isSubdocument ? `${nestedPath}.${schemaType.path}` : schemaType.path;
         if (type == null) {
-            const fullPath = isSubdocument ? `${nestedPath}.${schemaType.path}` : schemaType.path;
-            throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported type at path "${fullPath}"`, {
-                nestedPath,
-                type
-            });
+            throw new AstraMongooseError(
+                `Cannot convert schema to Data API table definition: unsupported type at path "${fullPath}"`,
+                { nestedPath, type }
+            );
+        }
+        if (!isSchemaTypeRequired(schemaType)) {
+            throw new AstraMongooseError(
+                `Cannot convert schema to Data API table definition: nested path "${fullPath}" must be required`,
+                { nestedPath, type }
+            );
         }
         dataAPITypes.add(type);
     }
@@ -261,4 +273,18 @@ function getUDTNameFromSchemaType(schemaType: SchemaType): string | null {
         return embeddedSchemaType?.schema?.options?.udtName;
     }
     return null;
+}
+
+function isSchemaTypeRequired(schemaType: SchemaType): boolean {
+    const requiredOption = schemaType.options.required;
+    if (typeof requiredOption === 'boolean') {
+        return requiredOption;
+    }
+    if (typeof requiredOption === 'function') {
+        return false;
+    }
+    if (Array.isArray(requiredOption)) {
+        return requiredOption[0];
+    }
+    return false;
 }

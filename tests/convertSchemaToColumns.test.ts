@@ -66,8 +66,53 @@ describe('convertSchemaToColumns', () => {
     it('handles subdocuments with paths that are all the same type', () => {
         const testSchema = new Schema({
             subdoc: new Schema({
-                num1: Number,
-                num2: Number
+                num1: { type: Number, required: true },
+                num2: { type: Number, required: true }
+            }, { _id: false })
+        });
+
+        const result = convertSchemaToColumns(testSchema);
+
+        assert.deepStrictEqual(result, {
+            '_id': { type: 'text' },
+            '__v': { type: 'int' },
+            'subdoc': { type: 'map', keyType: 'text', valueType: 'double' }
+        });
+    });
+
+    it('throws subdocuments with paths that are all the same type but not all required', () => {
+        const testSchema = new Schema({
+            subdoc: new Schema({
+                num1: { type: Number, required: true },
+                num2: { type: Number, required: false }
+            }, { _id: false })
+        });
+
+        assert.throws(
+            () => convertSchemaToColumns(testSchema),
+            { message: 'Cannot convert schema to Data API table definition: nested path "subdoc.num2" must be required' }
+        )
+    });
+
+    it('throws subdocuments with paths that are all the same type but one uses required function', () => {
+        const testSchema = new Schema({
+            subdoc: new Schema({
+                num1: { type: Number, required: true },
+                num2: { type: Number, required: () => false }
+            }, { _id: false })
+        });
+
+        assert.throws(
+            () => convertSchemaToColumns(testSchema),
+            { message: 'Cannot convert schema to Data API table definition: nested path "subdoc.num2" must be required' }
+        )
+    });
+
+    it('handles subdocuments with paths that are all the same type using required: array syntax', () => {
+        const testSchema = new Schema({
+            subdoc: new Schema({
+                num1: { type: Number, required: [true, 'num1 is required'] },
+                num2: { type: Number, required: [true, 'num2 is required'] }
             }, { _id: false })
         });
 
@@ -83,8 +128,8 @@ describe('convertSchemaToColumns', () => {
     it('throws on subdocument with multiple different path types', () => {
         const testSchema = new Schema({
             subdoc: new Schema({
-                name: String,
-                age: Number
+                name: { type: String, required: true },
+                age: { type: Number, required: true }
             }, { _id: false })
         });
 
@@ -98,8 +143,8 @@ describe('convertSchemaToColumns', () => {
     it('handles nested paths with paths that are all the same type', () => {
         const testSchema = new Schema({
             numbers: {
-                favorite: Number,
-                age: Number
+                favorite: { type: Number, required: true },
+                age: { type: Number, required: true }
             }
         });
 
@@ -116,7 +161,7 @@ describe('convertSchemaToColumns', () => {
         const testSchema = new Schema({
             myMap: {
                 type: Map,
-                of: 'Decimal128'
+                of: { type: 'Decimal128', required: true }
             }
         });
 
@@ -127,6 +172,20 @@ describe('convertSchemaToColumns', () => {
             '__v': { type: 'int' },
             'myMap': { type: 'map', keyType: 'text', valueType: 'decimal' }
         });
+    });
+
+    it('throws if map value is not required', () => {
+        const testSchema = new Schema({
+            myMap: {
+                type: Map,
+                of: 'Decimal128'
+            }
+        });
+
+        assert.throws(
+            () => convertSchemaToColumns(testSchema),
+            /Cannot convert schema to Data API table definition: values for map path "myMap" must be required/
+        );
     });
 
     it('creates vector column if array of numbers has dimension property', () => {
@@ -187,7 +246,7 @@ describe('convertSchemaToColumns', () => {
 
     it('throws on map of custom schematype', () => {
         const testSchema = new Schema({
-            myMap: { type: 'Map', of: 'Mixed' }
+            myMap: { type: 'Map', of: { type: 'Mixed', required: true } }
         });
 
         assert.throws(() => {
@@ -256,7 +315,7 @@ describe('convertSchemaToColumns', () => {
     it('throws on nested Buffer path', () => {
         const testSchema = new Schema({
             nested: {
-                test: 'Buffer'
+                test: { type: 'Buffer', required: true }
             }
         });
 
@@ -306,7 +365,7 @@ describe('convertSchemaToColumns', () => {
             savedAddresses: [subschema],
             addressesByName: {
                 type: Map,
-                of: subschema
+                of: { type: subschema, required: true }
             }
         });
         assert.deepStrictEqual(convertSchemaToColumns(testSchema), {
@@ -335,7 +394,8 @@ describe('convertSchemaToColumns', () => {
                 type: Map,
                 of: {
                     type: subschema,
-                    udtName: 'Address'
+                    udtName: 'Address',
+                    required: true
                 }
             }
         });
