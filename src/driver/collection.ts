@@ -133,6 +133,12 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         const collection = this.connection.db!.collection<DocType>(this.name, collectionOptions);
         this._collection = collection;
 
+        // Bubble up collection-level events from astra-db-ts to the main connection
+        collection.on('commandStarted', ev => this.connection.emit('commandStarted', ev));
+        collection.on('commandFailed', ev => this.connection.emit('commandFailed', ev));
+        collection.on('commandSucceeded', ev => this.connection.emit('commandSucceeded', ev));
+        collection.on('commandWarnings', ev => this.connection.emit('commandWarnings', ev));
+
         return collection;
     }
 
