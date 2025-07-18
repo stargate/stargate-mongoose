@@ -54,6 +54,7 @@ import {
     TableUpdateFilter,
     TableUpdateOneOptions,
     TableVectorIndexOptions,
+    TableTextIndexOptions,
 } from '@datastax/astra-db-ts';
 import { SchemaOptions } from 'mongoose';
 import deserializeDoc from '../deserializeDoc';
@@ -482,7 +483,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
     async createIndex(
         indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
-        options?: (TableCreateVectorIndexOptions | TableCreateIndexOptions) & { name?: string, vector?: boolean }
+        options?: (TableCreateVectorIndexOptions | TableCreateIndexOptions | TableTextIndexOptions) & { name?: string, vector?: boolean, analyzer?: TableTextIndexOptions['analyzer'] }
     ): Promise<void> {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'createIndex', arguments);
@@ -500,13 +501,20 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
                 { ifNotExists: true, ...(options as TableCreateVectorIndexOptions) }
             );
         }
+        if (options?.analyzer) {
+            return this.collection.createTextIndex(
+                options?.name ?? column,
+                column,
+                { ifNotExists: true, options: options as TableTextIndexOptions }
+            );
+        }
 
         return this.collection.createIndex(
             options?.name ?? column,
             indexSpec[column] === '$keys' || indexSpec[column] === '$values'
                 ? { [column]: indexSpec[column] } as unknown as TableCreateIndexColumn<DocType>
                 : column,
-            { ifNotExists: true, ...(options as TableCreateIndexOptions) }
+            { ifNotExists: true, ...(options as TableIndexOptions | undefined) }
         );
     }
 

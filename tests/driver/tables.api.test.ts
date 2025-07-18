@@ -22,7 +22,9 @@ import {OperationNotSupportedError} from '../../src/driver';
 import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
 import { DataAPIResponseError } from '@datastax/astra-db-ts';
-import type { AstraMongoose } from '../../src';
+import { tableDefinitionFromSchema, type AstraMongoose } from '../../src';
+
+const TEST_TABLE_NAME = 'table1';
 
 describe('TABLES: Mongoose Model API level tests', async () => {
     let Product: ProductModelType;
@@ -689,6 +691,57 @@ describe('TABLES: Mongoose Model API level tests', async () => {
         });
         it('API ops tests Model.findAndRerank()', async function() {
             await assert.rejects(Product.findAndRerank({ name: 'test' }), /Cannot use findAndRerank\(\) with tables/);
+        });
+    });
+
+    describe('text indexes', function () {
+        const lexicalSchema = new Schema(
+            {
+                content: {
+                    type: String,
+                    index: {
+                        name: 'content_text',
+                        analyzer: {
+                            tokenizer: { name: 'standard' },
+                            filters: [{ name: 'lowercase' }, { name: 'stop' }, { name: 'porterstem' }, { name: 'asciifolding' }]
+                        }
+                    }
+                },
+                name: { type: String }
+            },
+            {
+                autoCreate: false,
+                autoIndex: false
+            }
+        );
+        let LexicalModel: mongoose.Model<InferSchemaType<typeof lexicalSchema>>;
+
+        before(async function () {
+            this.timeout(120_000);
+
+            await mongooseInstance.connection.dropCollection(TEST_TABLE_NAME);
+            LexicalModel = mongooseInstance.model('Lexical', lexicalSchema, TEST_TABLE_NAME);
+
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(lexicalSchema));
+        });
+
+        it('creates a text index', async function () {
+            await LexicalModel.createIndexes();
+            const indexes = await mongooseInstance.connection.collection(TEST_TABLE_NAME).listIndexes().toArray();
+            assert.strictEqual(indexes.length, 1);
+            assert.strictEqual(indexes[0].name, 'content_text');
+            assert.strictEqual(indexes[0].definition.column, 'content');
+
+            // @ts-expect-error analyzer doesn't exist in TS but exists at runtime
+            assert.strictEqual(indexes[0].definition.options!.analyzer.tokenizer!.name, 'standard');
+            // @ts-expect-error analyzer doesn't exist in TS but exists at runtime
+            assert.strictEqual(indexes[0].definition.options!.analyzer.filters![0].name, 'lowercase');
+            // @ts-expect-error analyzer doesn't exist in TS but exists at runtime
+            assert.strictEqual(indexes[0].definition.options!.analyzer.filters![1].name, 'stop');
+            // @ts-expect-error analyzer doesn't exist in TS but exists at runtime
+            assert.strictEqual(indexes[0].definition.options!.analyzer.filters![2].name, 'porterstem');
+            // @ts-expect-error analyzer doesn't exist in TS but exists at runtime
+            assert.strictEqual(indexes[0].definition.options!.analyzer.filters![3].name, 'asciifolding');
         });
     });
 });
