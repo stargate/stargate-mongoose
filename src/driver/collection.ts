@@ -40,7 +40,6 @@ import {
     Table as AstraTable,
     TableCreateIndexColumn,
     TableCreateIndexOptions,
-    TableCreateVectorIndexOptions,
     TableDeleteManyOptions,
     TableDeleteOneOptions,
     TableDropIndexOptions,
@@ -51,10 +50,10 @@ import {
     TableInsertOneOptions,
     TableOptions,
     TableIndexOptions,
+    TableTextIndexOptions,
     TableUpdateFilter,
     TableUpdateOneOptions,
-    TableVectorIndexOptions,
-    TableTextIndexOptions,
+    TableVectorIndexOptions
 } from '@datastax/astra-db-ts';
 import { SchemaOptions } from 'mongoose';
 import deserializeDoc from '../deserializeDoc';
@@ -474,16 +473,20 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async createIndex(
         indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
-        options: TableCreateVectorIndexOptions & { name?: string, vector: true }
+        options: TableVectorIndexOptions & { name?: string, vector: true, textIndex?: false }
     ): Promise<void>;
     async createIndex(
         indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
-        options?: TableCreateIndexOptions & { name?: string, vector?: false }
+        options?: TableTextIndexOptions & { name?: string, vector?: false, textIndex: true }
+    ): Promise<void>;
+    async createIndex(
+        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
+        options?: TableCreateIndexOptions & { name?: string, vector?: false, textIndex?: false }
     ): Promise<void>;
 
     async createIndex(
         indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
-        options?: (TableCreateVectorIndexOptions | TableCreateIndexOptions | TableTextIndexOptions) & { name?: string, vector?: boolean, analyzer?: TableTextIndexOptions['analyzer'] }
+        options?: (TableTextIndexOptions | TableIndexOptions | TableVectorIndexOptions) & { name?: string, vector?: boolean, textIndex?: boolean }
     ): Promise<void> {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'createIndex', arguments);
@@ -493,15 +496,16 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (Object.keys(indexSpec).length !== 1) {
             throw new TypeError('createIndex indexSpec must have exactly 1 key');
         }
+
         const [column] = Object.keys(indexSpec);
         if (options?.vector) {
             return this.collection.createVectorIndex(
                 options?.name ?? column,
                 column,
-                { ifNotExists: true, ...(options as TableCreateVectorIndexOptions) }
+                { ifNotExists: true, options: options as TableVectorIndexOptions }
             );
         }
-        if (options?.analyzer) {
+        if (options?.textIndex) {
             return this.collection.createTextIndex(
                 options?.name ?? column,
                 column,
@@ -514,7 +518,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             indexSpec[column] === '$keys' || indexSpec[column] === '$values'
                 ? { [column]: indexSpec[column] } as unknown as TableCreateIndexColumn<DocType>
                 : column,
-            { ifNotExists: true, ...(options as TableIndexOptions | undefined) }
+            { ifNotExists: true, options: options as TableIndexOptions }
         );
     }
 
