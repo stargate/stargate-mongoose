@@ -16,6 +16,10 @@ import { Collection, MongooseCollectionOptions } from './collection';
 import {
     AstraDbAdmin,
     CollectionDescriptor,
+    CommandFailedEvent,
+    CommandStartedEvent,
+    CommandSucceededEvent,
+    CommandWarningsEvent,
     CreateAstraKeyspaceOptions,
     CreateCollectionOptions,
     CreateDataAPIKeyspaceOptions,
@@ -56,6 +60,13 @@ interface ConnectOptionsInternal extends ConnectOptions {
     bufferCommands?: boolean;
     debug?: boolean | ((name: string, fn: string, ...args: unknown[]) => void) | null;
     logging?: LoggingEvent
+}
+
+interface ConnectionEvents {
+  commandStarted: CommandStartedEvent;
+  commandFailed: CommandFailedEvent;
+  commandSucceeded: CommandSucceededEvent;
+  commandWarnings: CommandWarningsEvent;
 }
 
 /**
@@ -331,6 +342,13 @@ export class Connection extends MongooseConnection {
 
         this.readyState = STATES.connected;
         this.onOpen();
+
+        // Bubble up db-level events from astra-db-ts to the main connection
+        db.astraDb.on('commandStarted', ev => this.emit('commandStarted', ev));
+        db.astraDb.on('commandFailed', ev => this.emit('commandFailed', ev));
+        db.astraDb.on('commandSucceeded', ev => this.emit('commandSucceeded', ev));
+        db.astraDb.on('commandWarnings', ev => this.emit('commandWarnings', ev));
+
         return this;
 
         function throwMissingUsernamePassword(): string {
@@ -385,6 +403,30 @@ export class Connection extends MongooseConnection {
             this.client.close();
         }
         return this;
+    }
+
+    // @ts-expect-error Mongoose connection is typed as any here
+    override on<K extends keyof ConnectionEvents>(
+        event: K,
+        listener: (event: ConnectionEvents[K]) => void
+    ): this {
+        return super.on(event, listener);
+    }
+
+    // @ts-expect-error Mongoose connection is typed as any here
+    override once<K extends keyof ConnectionEvents>(
+        event: K,
+        listener: (event: ConnectionEvents[K]) => void
+    ): this {
+        return super.once(event, listener);
+    }
+
+    // @ts-expect-error Mongoose connection is typed as any here
+    override emit<K extends keyof ConnectionEvents>(
+        event: K,
+        eventData: ConnectionEvents[K]
+    ): boolean {
+        return super.emit(event, eventData);
     }
 }
 
