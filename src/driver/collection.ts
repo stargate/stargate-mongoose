@@ -79,13 +79,19 @@ type UpdateOneOptions = (Omit<CollectionUpdateOneOptions, 'sort'> | Omit<TableUp
 
 interface AstraMongooseIndexDescription {
     name: string,
-    definition: { column: string | ({ [key: string]: '$keys' | '$values' }), options?: TableIndexOptions | TableVectorIndexOptions },
+    definition: {
+      column: string | ({ [key: string]: '$keys' | '$values' }),
+      options?: TableIndexOptions | TableVectorIndexOptions | TableTextIndexOptions;
+    },
     key: Record<string, 1 | -1 | '$keys' | '$values'>
 }
 
 interface AstraIndexDescription {
   name: string;
-  definition: { column: string | ({ [key: string]: '$keys' | '$values' }), options?: TableIndexOptions | TableVectorIndexOptions };
+  definition: {
+    column: string | ({ [key: string]: '$keys' | '$values' }),
+    options?: TableIndexOptions | TableVectorIndexOptions | TableTextIndexOptions;
+  };
   indexType: string;
 }
 

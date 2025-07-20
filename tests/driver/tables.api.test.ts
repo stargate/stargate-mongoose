@@ -21,7 +21,7 @@ import * as AstraMongooseDriver from '../../src/driver';
 import {OperationNotSupportedError} from '../../src/driver';
 import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
-import { DataAPIResponseError } from '@datastax/astra-db-ts';
+import { DataAPIResponseError, TableTextIndexOptions } from '@datastax/astra-db-ts';
 import { tableDefinitionFromSchema, type AstraMongoose } from '../../src';
 
 const TEST_TABLE_NAME = 'table1';
@@ -733,16 +733,15 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             assert.strictEqual(indexes[0].name, 'content_text');
             assert.strictEqual(indexes[0].definition.column, 'content');
 
-            // @ts-expect-error analyzer doesn't exist in TS but exists at runtime
-            assert.strictEqual(indexes[0].definition.options!.analyzer.tokenizer!.name, 'standard');
-            // @ts-expect-error analyzer doesn't exist in TS but exists at runtime
-            assert.strictEqual(indexes[0].definition.options!.analyzer.filters![0].name, 'lowercase');
-            // @ts-expect-error analyzer doesn't exist in TS but exists at runtime
-            assert.strictEqual(indexes[0].definition.options!.analyzer.filters![1].name, 'stop');
-            // @ts-expect-error analyzer doesn't exist in TS but exists at runtime
-            assert.strictEqual(indexes[0].definition.options!.analyzer.filters![2].name, 'porterstem');
-            // @ts-expect-error analyzer doesn't exist in TS but exists at runtime
-            assert.strictEqual(indexes[0].definition.options!.analyzer.filters![3].name, 'asciifolding');
+            const options = indexes[0].definition.options as TableTextIndexOptions;
+            assert.ok(typeof options.analyzer === 'object');
+            assert.ok(typeof options.analyzer.tokenizer === 'object');
+            assert.strictEqual((options.analyzer.tokenizer as Record<string, unknown>).name, 'standard');
+            assert.ok(Array.isArray(options.analyzer.filters));
+            assert.strictEqual(options.analyzer.filters[0].name, 'lowercase');
+            assert.strictEqual(options.analyzer.filters[1].name, 'stop');
+            assert.strictEqual(options.analyzer.filters[2].name, 'porterstem');
+            assert.strictEqual(options.analyzer.filters[3].name, 'asciifolding');
         });
     });
 });
