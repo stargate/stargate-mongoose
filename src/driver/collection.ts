@@ -472,21 +472,21 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param options
      */
     async createIndex(
-        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
-        options: TableVectorIndexOptions & { name?: string, vector: true, textIndex?: false }
+        indexSpec: Record<string, true | 1>,
+        options: TableVectorIndexOptions & { name?: string, vector: true }
+    ): Promise<void>;
+    async createIndex(
+        indexSpec: Record<string, 'text'>,
+        options?: TableTextIndexOptions & { name?: string, vector?: false }
     ): Promise<void>;
     async createIndex(
         indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
-        options?: TableTextIndexOptions & { name?: string, vector?: false, textIndex: true }
-    ): Promise<void>;
-    async createIndex(
-        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
-        options?: TableCreateIndexOptions & { name?: string, vector?: false, textIndex?: false }
+        options?: TableCreateIndexOptions & { name?: string, vector?: false }
     ): Promise<void>;
 
     async createIndex(
-        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
-        options?: (TableTextIndexOptions | TableIndexOptions | TableVectorIndexOptions) & { name?: string, vector?: boolean, textIndex?: boolean }
+        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values' | 'text'>,
+        options?: (TableTextIndexOptions | TableIndexOptions | TableVectorIndexOptions) & { name?: string, vector?: boolean }
     ): Promise<void> {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'createIndex', arguments);
@@ -497,29 +497,33 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             throw new TypeError('createIndex indexSpec must have exactly 1 key');
         }
 
-        const [column] = Object.keys(indexSpec);
+        const [[column, indexModifier]] = Object.entries(indexSpec);
         if (options?.vector) {
+            // Vector index: `myVector: { type: [Number], index: { vector: true } }`
             return this.collection.createVectorIndex(
                 options?.name ?? column,
                 column,
                 { ifNotExists: true, options: options as TableVectorIndexOptions }
             );
-        }
-        if (options?.textIndex) {
+        } else if (indexModifier === 'text') {
+            // Text index: `content: { type: String, index: { text: true, analyzer: ... } }`
+            // Checks `indexModifier` rather than `options?.text` because Mongoose has special handling for `index: { text: true }`
+            // due to MongoDB index definitions.
             return this.collection.createTextIndex(
                 options?.name ?? column,
                 column,
                 { ifNotExists: true, options: options as TableTextIndexOptions }
             );
+        } else {
+            // Standard index: `test: { type: Number, index: true }`
+            return this.collection.createIndex(
+                options?.name ?? column,
+                indexModifier === '$keys' || indexModifier === '$values'
+                    ? { [column]: indexModifier } as TableCreateIndexColumn<unknown>
+                    : column,
+                { ifNotExists: true, options: options as TableIndexOptions }
+            );
         }
-
-        return this.collection.createIndex(
-            options?.name ?? column,
-            indexSpec[column] === '$keys' || indexSpec[column] === '$values'
-                ? { [column]: indexSpec[column] } as unknown as TableCreateIndexColumn<DocType>
-                : column,
-            { ifNotExists: true, options: options as TableIndexOptions }
-        );
     }
 
     /**

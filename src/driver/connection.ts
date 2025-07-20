@@ -67,6 +67,12 @@ interface ConnectionEvents {
   commandFailed: CommandFailedEvent;
   commandSucceeded: CommandSucceededEvent;
   commandWarnings: CommandWarningsEvent;
+  // These Mongoose events don't emit any event details
+  disconnected: undefined;
+  connected: undefined;
+  connecting: undefined;
+  disconnecting: undefined;
+  close: undefined;
 }
 
 /**
@@ -340,14 +346,16 @@ export class Connection extends MongooseConnection {
         this.keyspaceName = keyspaceName;
         this.baseApiPath = baseApiPath;
 
-        this.readyState = STATES.connected;
-        this.onOpen();
-
         // Bubble up db-level events from astra-db-ts to the main connection
         db.astraDb.on('commandStarted', ev => this.emit('commandStarted', ev));
         db.astraDb.on('commandFailed', ev => this.emit('commandFailed', ev));
         db.astraDb.on('commandSucceeded', ev => this.emit('commandSucceeded', ev));
         db.astraDb.on('commandWarnings', ev => this.emit('commandWarnings', ev));
+
+        setImmediate(() => {
+            this.readyState = STATES.connected;
+            this.onOpen();
+        });
 
         return this;
 

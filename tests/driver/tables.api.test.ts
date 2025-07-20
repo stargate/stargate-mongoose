@@ -701,7 +701,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                     type: String,
                     index: {
                         name: 'content_text',
-                        textIndex: true,
+                        text: true,
                         analyzer: {
                             tokenizer: { name: 'standard' },
                             filters: [{ name: 'lowercase' }, { name: 'stop' }, { name: 'porterstem' }, { name: 'asciifolding' }]
