@@ -394,7 +394,7 @@ export class Connection extends MongooseConnection {
      * @ignore
      */
 
-    setClient(): this {
+    setClient(): never {
         throw new AstraMongooseError('SetClient not supported');
     }
 
@@ -416,7 +416,7 @@ export class Connection extends MongooseConnection {
      * @ignore
      */
 
-    startSession(): Promise<ClientSession> {
+    startSession(): never {
         throw new AstraMongooseError('startSession() Not Implemented');
     }
 
