@@ -58,7 +58,7 @@ import {
 import { SchemaOptions } from 'mongoose';
 import { Writable } from 'stream';
 import deserializeDoc from '../deserializeDoc';
-import { IndexSpecification, Sort as MongoDBSort } from 'mongodb';
+import { IndexSpecification, Sort as MongoDBSort, WithId } from 'mongodb';
 import { serialize } from '../serialize';
 import { setDefaultIdForUpdate, setDefaultIdForReplace } from '../setDefaultIdForUpsert';
 
@@ -114,6 +114,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     _collection?: AstraCollection<DocType> | AstraTable<DocType>;
     _closed: boolean;
     connection: Connection;
+    // @ts-expect-error In MongoDB collection, `options()` is a function that runs the options command, but Mongoose sets to an object
     options?: (TableOptions | CollectionOptions) & MongooseCollectionOptions;
     name: string;
 
@@ -192,27 +193,34 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param filter
      * @param options
      */
-    async findOne(filter: Filter, options?: FindOneOptions) {
+    async findOne(filter?: Filter, options?: Omit<FindOneOptions, 'maxTimeMS'> & { maxTimeMS?: number }) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'findOne', arguments);
 
-        const requestOptions: CollectionFindOneOptions | TableFindOneOptions = options != null && options.sort != null
-            ? { ...options, sort: processSortOption(options.sort) }
-            : { ...options, sort: undefined };
+        const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
+        const requestOptions: CollectionFindOneOptions | TableFindOneOptions = remainingOptions.sort != null
+            ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
+            : { ...remainingOptions, sort: undefined };
 
-        filter = serialize(filter, this.isTable);
+        filter = serialize(filter ?? {}, this.isTable);
 
-        return this.collection.findOne(filter, requestOptions).then(doc => deserializeDoc<DocType>(doc));
+        return this.collection.findOne(filter, requestOptions).then(doc => deserializeDoc<WithId<DocType>>(doc));
     }
 
     /**
      * Insert a single document into the collection.
      * @param doc
      */
-    async insertOne(doc: Record<string, unknown>, options?: CollectionInsertOneOptions | TableInsertOneOptions) {
+    async insertOne(doc: Record<string, unknown>, options?: (CollectionInsertOneOptions | TableInsertOneOptions) & { maxTimeMS?: number }) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'insertOne', arguments);
-        return this.collection.insertOne(serialize(doc, this.isTable) as DocType, options);
+        const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
+        return this.collection.insertOne(serialize(doc, this.isTable) as DocType, remainingOptions).then(res => ({
+            ...res,
+            // make insertedIds match the MongoDB driver collection's return type
+            insertedId: res.insertedId as unknown as WithId<DocType>['_id'],
+            acknowledged: true
+        }));
     }
 
     /**
@@ -220,11 +228,16 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param documents
      * @param options
      */
-    async insertMany(documents: Record<string, unknown>[], options?: CollectionInsertManyOptions | TableInsertManyOptions) {
+    async insertMany(documents: Record<string, unknown>[], options?: CollectionInsertManyOptions | TableInsertManyOptions | { ordered?: boolean }) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'insertMany', arguments);
         documents = documents.map(doc => serialize(doc, this.isTable));
-        return this.collection.insertMany(documents as DocType[], options);
+        return this.collection.insertMany(documents as DocType[], options).then(res => ({
+            ...res,
+            // make insertedIds match the MongoDB driver collection's return type
+            insertedIds: res.insertedIds as unknown as WithId<DocType>['_id'][],
+            acknowledged: true
+        }));
     }
 
     /**
@@ -233,7 +246,17 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param update
      * @param options
      */
-    async findOneAndUpdate(filter: Filter, update: CollectionUpdateFilter<DocType>, options: FindOneAndUpdateOptions) {
+
+    // @ts-expect-error CollectionUpdateFilter is not compatibile with MongoDB UpdateFilter currently
+    async findOneAndUpdate(
+        filter: Filter,
+        update: CollectionUpdateFilter<DocType> | Record<string, unknown>[],
+        options: FindOneAndUpdateOptions
+    ) {
+        if (Array.isArray(update)) {
+            throw new AstraMongooseError('Astra-mongoose does not support update pipelines', { update });
+        }
+
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'findOneAndUpdate', arguments);
         if (this.collection instanceof AstraTable) {
@@ -260,22 +283,39 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param filter
      * @param options
      */
-    async findOneAndDelete(filter: Filter, options: FindOneAndDeleteOptions) {
+
+    async findOneAndDelete(
+      filter: Filter,
+      options: (Omit<FindOneAndReplaceOptions, 'maxTimeMS'> & { maxTimeMS?: number; includeResultMetadata: true })
+    ): Promise<{ value: WithId<DocType> | null, ok: 1 }>;
+
+    async findOneAndDelete(
+      filter: Filter,
+      options: (Omit<FindOneAndReplaceOptions, 'maxTimeMS'> & { maxTimeMS?: number; includeResultMetadata: false })
+    ): Promise<WithId<DocType> | null>;
+
+    async findOneAndDelete(
+      filter?: Filter,
+      options?: (Omit<FindOneAndReplaceOptions, 'maxTimeMS'> & { maxTimeMS?: number; })
+    ): Promise<WithId<DocType> | null>;
+
+    async findOneAndDelete(filter?: Filter, options?: Omit<FindOneAndDeleteOptions, 'maxTimeMS'> & { maxTimeMS?: number }) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'findOneAndDelete', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findOneAndDelete() with tables');
         }
-        const requestOptions: CollectionFindOneAndDeleteOptions = options.sort != null
-            ? { ...options, sort: processSortOption(options.sort) }
-            : { ...options, sort: undefined };
-        filter = serialize(filter);
+        const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
+        const requestOptions: CollectionFindOneAndDeleteOptions = remainingOptions.sort != null
+            ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
+            : { ...remainingOptions, sort: undefined };
+        filter = serialize(filter ?? {});
 
         return this.collection.findOneAndDelete(filter, requestOptions).then((value: Record<string, unknown> | null) => {
             if (options?.includeResultMetadata) {
-                return { value: deserializeDoc<DocType>(value) };
+                return { value: deserializeDoc<WithId<DocType>>(value), ok: 1 };
             }
-            return deserializeDoc<DocType>(value);
+            return deserializeDoc<WithId<DocType>>(value);
         });
     }
 
@@ -285,10 +325,29 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param newDoc
      * @param options
      */
+
+    async findOneAndReplace(
+      filter: Filter,
+      newDoc: Record<string, unknown>,
+      options: (Omit<FindOneAndReplaceOptions, 'maxTimeMS'> & { maxTimeMS?: number; includeResultMetadata: true })
+    ): Promise<{ value: WithId<DocType> | null, ok: 1 }>;
+
+    async findOneAndReplace(
+      filter: Filter,
+      newDoc: Record<string, unknown>,
+      options: (Omit<FindOneAndReplaceOptions, 'maxTimeMS'> & { maxTimeMS?: number; includeResultMetadata: false })
+    ): Promise<WithId<DocType> | null>;
+
+    async findOneAndReplace(
+      filter: Filter,
+      newDoc: Record<string, unknown>,
+      options?: (Omit<FindOneAndReplaceOptions, 'maxTimeMS'> & { maxTimeMS?: number; })
+    ): Promise<WithId<DocType> | null>;
+
     async findOneAndReplace(
         filter: Filter,
         newDoc: Record<string, unknown>,
-        options: Omit<FindOneAndReplaceOptions, 'maxTimeMS'> & { maxTimeMS?: number }
+        options?: Omit<FindOneAndReplaceOptions, 'maxTimeMS'> & { maxTimeMS?: number }
     ) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'findOneAndReplace', arguments);
@@ -305,9 +364,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
         return this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((value: Record<string, unknown> | null) => {
             if (options?.includeResultMetadata) {
-                return { value: deserializeDoc<DocType>(value) };
+                return { value: deserializeDoc<WithId<DocType>>(value), ok: 1 };
             }
-            return deserializeDoc<DocType>(value);
+            return deserializeDoc<WithId<DocType>>(value);
         });
     }
 
