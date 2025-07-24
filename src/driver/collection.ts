@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { default as MongooseCollection } from 'mongoose/lib/collection';
+import { AstraMongooseError } from '../astraMongooseError';
+import MongooseCollection from 'mongoose/lib/collection';
+import type { Connection as MongooseConnection } from 'mongoose';
 import type { Connection } from './connection';
 import {
     Collection as AstraCollection,
@@ -39,8 +41,6 @@ import {
     Sort as SortOptionInternal,
     Table as AstraTable,
     TableCreateIndexColumn,
-    TableCreateIndexOptions,
-    TableCreateVectorIndexOptions,
     TableDeleteManyOptions,
     TableDeleteOneOptions,
     TableDropIndexOptions,
@@ -51,17 +51,19 @@ import {
     TableInsertOneOptions,
     TableOptions,
     TableIndexOptions,
+    TableTextIndexOptions,
     TableUpdateFilter,
     TableUpdateOneOptions,
-    TableVectorIndexOptions,
+    TableVectorIndexOptions
 } from '@datastax/astra-db-ts';
 import { SchemaOptions } from 'mongoose';
+import { Writable } from 'stream';
 import deserializeDoc from '../deserializeDoc';
-import { inspect } from 'util';
+import { IndexSpecification, Sort as MongoDBSort, WithId } from 'mongodb';
 import { serialize } from '../serialize';
 import { setDefaultIdForUpdate, setDefaultIdForReplace } from '../setDefaultIdForUpsert';
 
-export type MongooseSortOption = Record<string, 1 | -1 | { $meta: Array<number> } | { $meta: string }>;
+export type MongooseSortOption = MongoDBSort | Record<string, 1 | -1 | { $meta: Array<number> }>;
 
 type FindOptions = (Omit<CollectionFindOptions, 'sort'> | Omit<TableFindOptions, 'sort'>) & { sort?: MongooseSortOption };
 type FindOneOptions = (Omit<CollectionFindOneOptions, 'sort'> | Omit<TableFindOneOptions, 'sort'>) & { sort?: MongooseSortOption };
@@ -79,13 +81,19 @@ type UpdateOneOptions = (Omit<CollectionUpdateOneOptions, 'sort'> | Omit<TableUp
 
 interface AstraMongooseIndexDescription {
     name: string,
-    definition: { column: string | ({ [key: string]: '$keys' | '$values' }), options?: TableIndexOptions | TableVectorIndexOptions },
+    definition: {
+      column: string | ({ [key: string]: '$keys' | '$values' }),
+      options?: TableIndexOptions | TableVectorIndexOptions | TableTextIndexOptions;
+    },
     key: Record<string, 1 | -1 | '$keys' | '$values'>
 }
 
 interface AstraIndexDescription {
   name: string;
-  definition: { column: string | ({ [key: string]: '$keys' | '$values' }), options?: TableIndexOptions | TableVectorIndexOptions };
+  definition: {
+    column: string | ({ [key: string]: '$keys' | '$values' }),
+    options?: TableIndexOptions | TableVectorIndexOptions | TableTextIndexOptions;
+  };
   indexType: string;
 }
 
@@ -111,7 +119,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     name: string;
 
     constructor(name: string, conn: Connection, options?: (TableOptions | CollectionOptions) & MongooseCollectionOptions) {
-        super(name, conn, options);
+        // Astra-mongoose connection does inherit from MongooseConnection, but in a slightly incompatible way currently,
+        // so we need an `as`.
+        super(name, conn as unknown as MongooseConnection, options);
         this.connection = conn;
         this._closed = false;
         this.options = options;
@@ -153,14 +163,15 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * Count documents in the collection that match the given filter.
      * @param filter
      */
-    async countDocuments(filter: Filter, options?: CollectionCountDocumentsOptions) {
+    async countDocuments(filter: Filter, options?: Omit<CollectionCountDocumentsOptions, 'maxTimeMS'> & { maxTimeMS?: number }) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'countDocuments', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'countDocuments', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use countDocuments() with tables');
         }
+        const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
         filter = serialize(filter);
-        return this.collection.countDocuments(filter, 1000, options);
+        return this.collection.countDocuments(filter, 1000, remainingOptions);
     }
 
     /**
@@ -169,13 +180,16 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param options
      * @param callback
      */
-    find(filter: Filter, options: FindOptions) {
+
+    find(filter?: Filter, options?: Omit<FindOptions, 'maxTimeMS' | 'timeout'> & { maxTimeMS?: number, timeout?: boolean }) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'find', arguments);
-        const requestOptions: CollectionFindOptions | TableFindOptions = options != null && options.sort != null
-            ? { ...options, sort: processSortOption(options.sort) }
-            : { ...options, sort: undefined };
-        filter = serialize(filter, this.isTable);
+        _logFunctionCall(this, this.connection.debug, this.name, 'find', arguments);
+
+        const remainingOptions = options == null ? {} : checkForTimeoutOption(checkForMaxTimeMS(options));
+        const requestOptions: CollectionFindOptions | TableFindOptions = remainingOptions.sort != null
+            ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
+            : { ...remainingOptions, sort: undefined };
+        filter = serialize(filter ?? {}, this.isTable);
 
         return this.collection.find(filter, requestOptions).map(doc => deserializeDoc<DocType>(doc) as DocType);
     }
@@ -185,27 +199,34 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param filter
      * @param options
      */
-    async findOne(filter: Filter, options?: FindOneOptions) {
+    async findOne(filter?: Filter, options?: Omit<FindOneOptions, 'maxTimeMS' | 'timeout'> & { maxTimeMS?: number, timeout?: boolean }) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'findOne', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'findOne', arguments);
 
-        const requestOptions: CollectionFindOneOptions | TableFindOneOptions = options != null && options.sort != null
-            ? { ...options, sort: processSortOption(options.sort) }
-            : { ...options, sort: undefined };
+        const remainingOptions = options == null ? {} : checkForTimeoutOption(checkForMaxTimeMS(options));
+        const requestOptions: CollectionFindOneOptions | TableFindOneOptions = remainingOptions.sort != null
+            ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
+            : { ...remainingOptions, sort: undefined };
 
-        filter = serialize(filter, this.isTable);
+        filter = serialize(filter ?? {}, this.isTable);
 
-        return this.collection.findOne(filter, requestOptions).then(doc => deserializeDoc<DocType>(doc));
+        return this.collection.findOne(filter, requestOptions).then(doc => deserializeDoc<WithId<DocType>>(doc));
     }
 
     /**
      * Insert a single document into the collection.
      * @param doc
      */
-    async insertOne(doc: Record<string, unknown>, options?: CollectionInsertOneOptions | TableInsertOneOptions) {
+    async insertOne(doc: Record<string, unknown>, options?: (CollectionInsertOneOptions | TableInsertOneOptions) & { maxTimeMS?: number }) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'insertOne', arguments);
-        return this.collection.insertOne(serialize(doc, this.isTable) as DocType, options);
+        _logFunctionCall(this, this.connection.debug, this.name, 'insertOne', arguments);
+        const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
+        return this.collection.insertOne(serialize(doc, this.isTable) as DocType, remainingOptions).then(res => ({
+            ...res,
+            // make insertedIds match the MongoDB driver collection's return type
+            insertedId: res.insertedId as unknown as WithId<DocType>['_id'],
+            acknowledged: true
+        }));
     }
 
     /**
@@ -213,11 +234,16 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param documents
      * @param options
      */
-    async insertMany(documents: Record<string, unknown>[], options?: CollectionInsertManyOptions | TableInsertManyOptions) {
+    async insertMany(documents: readonly Record<string, unknown>[], options?: CollectionInsertManyOptions | TableInsertManyOptions | { ordered?: boolean }) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'insertMany', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'insertMany', arguments);
         documents = documents.map(doc => serialize(doc, this.isTable));
-        return this.collection.insertMany(documents as DocType[], options);
+        return this.collection.insertMany(documents as DocType[], options).then(res => ({
+            ...res,
+            // make insertedIds match the MongoDB driver collection's return type
+            insertedIds: res.insertedIds as unknown as WithId<DocType>['_id'][],
+            acknowledged: true
+        }));
     }
 
     /**
@@ -226,9 +252,18 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param update
      * @param options
      */
-    async findOneAndUpdate(filter: Filter, update: CollectionUpdateFilter<DocType>, options: FindOneAndUpdateOptions) {
+
+    async findOneAndUpdate(
+        filter: Filter,
+        update: CollectionUpdateFilter<DocType> | Record<string, unknown>[],
+        options: FindOneAndUpdateOptions
+    ) {
+        if (Array.isArray(update)) {
+            throw new AstraMongooseError('Astra-mongoose does not support update pipelines', { update });
+        }
+
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'findOneAndUpdate', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'findOneAndUpdate', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findOneAndUpdate() with tables');
         }
@@ -253,22 +288,39 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param filter
      * @param options
      */
-    async findOneAndDelete(filter: Filter, options: FindOneAndDeleteOptions) {
+
+    async findOneAndDelete(
+      filter: Filter,
+      options: (Omit<FindOneAndReplaceOptions, 'maxTimeMS'> & { maxTimeMS?: number; includeResultMetadata: true })
+    ): Promise<{ value: WithId<DocType> | null, ok: 1 }>;
+
+    async findOneAndDelete(
+      filter: Filter,
+      options: (Omit<FindOneAndReplaceOptions, 'maxTimeMS'> & { maxTimeMS?: number; includeResultMetadata: false })
+    ): Promise<WithId<DocType> | null>;
+
+    async findOneAndDelete(
+      filter?: Filter,
+      options?: (Omit<FindOneAndReplaceOptions, 'maxTimeMS'> & { maxTimeMS?: number; })
+    ): Promise<WithId<DocType> | null>;
+
+    async findOneAndDelete(filter?: Filter, options?: Omit<FindOneAndDeleteOptions, 'maxTimeMS'> & { maxTimeMS?: number }) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'findOneAndDelete', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'findOneAndDelete', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findOneAndDelete() with tables');
         }
-        const requestOptions: CollectionFindOneAndDeleteOptions = options.sort != null
-            ? { ...options, sort: processSortOption(options.sort) }
-            : { ...options, sort: undefined };
-        filter = serialize(filter);
+        const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
+        const requestOptions: CollectionFindOneAndDeleteOptions = remainingOptions.sort != null
+            ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
+            : { ...remainingOptions, sort: undefined };
+        filter = serialize(filter ?? {});
 
         return this.collection.findOneAndDelete(filter, requestOptions).then((value: Record<string, unknown> | null) => {
             if (options?.includeResultMetadata) {
-                return { value: deserializeDoc<DocType>(value) };
+                return { value: deserializeDoc<WithId<DocType>>(value), ok: 1 };
             }
-            return deserializeDoc<DocType>(value);
+            return deserializeDoc<WithId<DocType>>(value);
         });
     }
 
@@ -278,24 +330,48 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param newDoc
      * @param options
      */
-    async findOneAndReplace(filter: Filter, newDoc: Record<string, unknown>, options: FindOneAndReplaceOptions) {
+
+    async findOneAndReplace(
+      filter: Filter,
+      newDoc: Record<string, unknown>,
+      options: (Omit<FindOneAndReplaceOptions, 'maxTimeMS'> & { maxTimeMS?: number; includeResultMetadata: true })
+    ): Promise<{ value: WithId<DocType> | null, ok: 1 }>;
+
+    async findOneAndReplace(
+      filter: Filter,
+      newDoc: Record<string, unknown>,
+      options: (Omit<FindOneAndReplaceOptions, 'maxTimeMS'> & { maxTimeMS?: number; includeResultMetadata: false })
+    ): Promise<WithId<DocType> | null>;
+
+    async findOneAndReplace(
+      filter: Filter,
+      newDoc: Record<string, unknown>,
+      options?: (Omit<FindOneAndReplaceOptions, 'maxTimeMS'> & { maxTimeMS?: number; })
+    ): Promise<WithId<DocType> | null>;
+
+    async findOneAndReplace(
+        filter: Filter,
+        newDoc: Record<string, unknown>,
+        options?: Omit<FindOneAndReplaceOptions, 'maxTimeMS'> & { maxTimeMS?: number }
+    ) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'findOneAndReplace', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'findOneAndReplace', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findOneAndReplace() with tables');
         }
-        const requestOptions: CollectionFindOneAndReplaceOptions = options.sort != null
-            ? { ...options, sort: processSortOption(options.sort) }
-            : { ...options, sort: undefined };
+        const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
+        const requestOptions: CollectionFindOneAndReplaceOptions = remainingOptions.sort != null
+            ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
+            : { ...remainingOptions, sort: undefined };
         filter = serialize(filter);
         setDefaultIdForReplace(filter, newDoc, requestOptions);
         newDoc = serialize(newDoc);
 
         return this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((value: Record<string, unknown> | null) => {
             if (options?.includeResultMetadata) {
-                return { value: deserializeDoc<DocType>(value) };
+                return { value: deserializeDoc<WithId<DocType>>(value), ok: 1 };
             }
-            return deserializeDoc<DocType>(value);
+            return deserializeDoc<WithId<DocType>>(value);
         });
     }
 
@@ -303,11 +379,16 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * Delete one or more documents in a collection that match the given filter.
      * @param filter
      */
-    async deleteMany(filter: Filter, options?: CollectionDeleteManyOptions | TableDeleteManyOptions) {
+    async deleteMany(filter: Filter, options?: Omit<CollectionDeleteManyOptions | TableDeleteManyOptions, 'maxTimeMS'> & { maxTimeMS?: number }) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'deleteMany', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'deleteMany', arguments);
         filter = serialize(filter, this.isTable);
-        return this.collection.deleteMany(filter, options);
+        const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
+        const res = await this.collection.deleteMany(filter, remainingOptions);
+        if (res == null) {
+            return { acknowledged: true, deletedCount: -1 };
+        }
+        return { ...res, acknowledged: true };
     }
 
     /**
@@ -316,14 +397,19 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param options
      * @param callback
      */
-    async deleteOne(filter: Filter, options: DeleteOneOptions) {
+    async deleteOne(filter: Filter, options?: Omit<DeleteOneOptions, 'maxTimeMS'> & { maxTimeMS?: number }) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'deleteOne', arguments);
-        const requestOptions: CollectionDeleteOneOptions | TableDeleteOneOptions = options.sort != null
-            ? { ...options, sort: processSortOption(options.sort) }
-            : { ...options, sort: undefined };
+        _logFunctionCall(this, this.connection.debug, this.name, 'deleteOne', arguments);
+        const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
+        const requestOptions: CollectionDeleteOneOptions | TableDeleteOneOptions = remainingOptions?.sort != null
+            ? { ...remainingOptions, sort: processSortOption(remainingOptions?.sort) }
+            : { ...remainingOptions, sort: undefined };
         filter = serialize(filter, this.isTable);
-        return this.collection.deleteOne(filter as TableFilter<DocType>, requestOptions);
+        const res = await this.collection.deleteOne(filter as TableFilter<DocType>, requestOptions);
+        if (res == null) {
+            return { acknowledged: true, deletedCount: -1 };
+        }
+        return { ...res, acknowledged: true };
     }
 
     /**
@@ -333,19 +419,26 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param replacement
      * @param options
      */
-    async replaceOne(filter: Filter, replacement: Record<string, unknown>, options: ReplaceOneOptions) {
+    async replaceOne(
+        filter: Filter,
+        replacement: Record<string, unknown>,
+        options?: Omit<ReplaceOneOptions, 'maxTimeMS'> & { maxTimeMS?: number }
+    ) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'replaceOne', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'replaceOne', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use replaceOne() with tables');
         }
-        const requestOptions: CollectionReplaceOneOptions = options.sort != null
-            ? { ...options, sort: processSortOption(options.sort) }
-            : { ...options, sort: undefined };
+
+        const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
+        const requestOptions: CollectionReplaceOneOptions = remainingOptions?.sort != null
+            ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
+            : { ...remainingOptions, sort: undefined };
         filter = serialize(filter);
         setDefaultIdForReplace(filter, replacement, requestOptions);
         replacement = serialize(replacement);
-        return this.collection.replaceOne(filter, replacement, requestOptions);
+        return this.collection.replaceOne(filter, replacement, requestOptions)
+            .then(res => ({ ...res, acknowledged: true, upsertedId: null }));
     }
 
     /**
@@ -354,12 +447,22 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param update
      * @param options
      */
-    async updateOne(filter: Filter, update: CollectionUpdateFilter<DocType> | TableUpdateFilter<DocType>, options: UpdateOneOptions) {
+
+    async updateOne(
+        filter: Filter,
+        update: CollectionUpdateFilter<DocType> | TableUpdateFilter<DocType> | Record<string, unknown>[],
+        options?: Omit<UpdateOneOptions, 'maxTimeMS'> & { maxTimeMS?: number }
+    ) {
+        if (Array.isArray(update)) {
+            throw new AstraMongooseError('Astra-mongoose does not support update pipelines', { update });
+        }
+
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'updateOne', arguments);
-        const requestOptions: CollectionUpdateOneOptions | TableUpdateOneOptions = options.sort != null
-            ? { ...options, sort: processSortOption(options.sort) }
-            : { ...options, sort: undefined };
+        _logFunctionCall(this, this.connection.debug, this.name, 'updateOne', arguments);
+        const remainingOptions = checkForMaxTimeMS(options ?? {});
+        const requestOptions: CollectionUpdateOneOptions | TableUpdateOneOptions = remainingOptions.sort != null
+            ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
+            : { ...remainingOptions, sort: undefined };
         filter = serialize(filter, this.isTable);
         // `setDefaultIdForUpdate` currently would not work with tables because tables don't support `$setOnInsert`.
         // But `setDefaultIdForUpdate` would also never use `$setOnInsert` if `updateOne` is used correctly because tables
@@ -371,7 +474,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         return this.collection.updateOne(filter as TableFilter<DocType>, update, requestOptions).then(res => {
             // Mongoose currently has a bug where null response from updateOne() throws an error that we can't
             // catch here for unknown reasons. See Automattic/mongoose#15126. Tables API returns null here.
-            return res ?? {};
+            return res ?
+                { ...res, acknowledged: true } :
+                { acknowledged: true, matchedCount: 1, upsertedId: null, modifiedCount: -1, upsertedCount: -1 };
         });
     }
 
@@ -381,24 +486,29 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param update
      * @param options
      */
-    async updateMany(filter: Filter, update: CollectionUpdateFilter<DocType>, options: CollectionUpdateManyOptions) {
+
+    async updateMany(filter: Filter, update: CollectionUpdateFilter<DocType> | Record<string, unknown>[], options: CollectionUpdateManyOptions) {
+        if (Array.isArray(update)) {
+            throw new AstraMongooseError('Astra-mongoose does not support update pipelines', { update });
+        }
+
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'updateMany', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'updateMany', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use updateMany() with tables');
         }
         filter = serialize(filter, this.isTable);
         setDefaultIdForUpdate(filter, update, options);
         update = serialize(update, this.isTable);
-        return this.collection.updateMany(filter, update, options);
+        return this.collection.updateMany(filter, update, options).then(res => ({ ...res, acknowledged: true }));
     }
 
     /**
      * Get the estimated number of documents in a collection based on collection metadata
      */
-    async estimatedDocumentCount(options?: CollectionEstimatedDocumentCountOptions) {
+    async estimatedDocumentCount(options?: CollectionEstimatedDocumentCountOptions & { maxTimeMS: never }) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'estimatedDocumentCount', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'estimatedDocumentCount', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use estimatedDocumentCount() with tables');
         }
@@ -411,7 +521,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async runCommand(command: Record<string, unknown>, options?: Omit<RunCommandOptions, 'table' | 'collection' | 'keyspace'>) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'runCommand', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'runCommand', arguments);
         return this.connection.db!.astraDb.command(
             command,
             this.isTable ? { table: this.name, ...options } : { collection: this.name, ...options }
@@ -423,9 +533,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param ops
      * @param options
      */
-    bulkWrite() {
+    bulkWrite(): never {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'bulkWrite', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'bulkWrite', arguments);
         throw new OperationNotSupportedError('bulkWrite() Not Implemented');
     }
 
@@ -434,9 +544,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param pipeline
      * @param options
      */
-    aggregate() {
+    aggregate(): never {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'aggregate', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'aggregate', arguments);
         throw new OperationNotSupportedError('aggregate() Not Implemented');
     }
 
@@ -444,9 +554,10 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * Returns a list of all indexes on the collection. Returns a pseudo-cursor for Mongoose compatibility.
      * Only works in tables mode, throws an error in collections mode.
      */
+
     listIndexes(): { toArray: () => Promise<AstraMongooseIndexDescription[]> } {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'listIndexes', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'listIndexes', arguments);
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use listIndexes() with collections');
         }
@@ -471,43 +582,51 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param indexSpec MongoDB-style index spec for Mongoose compatibility
      * @param options
      */
-    async createIndex(
-        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
-        options: TableCreateVectorIndexOptions & { name?: string, vector: true }
-    ): Promise<void>;
-    async createIndex(
-        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
-        options?: TableCreateIndexOptions & { name?: string, vector?: false }
-    ): Promise<void>;
+
 
     async createIndex(
-        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
-        options?: (TableCreateVectorIndexOptions | TableCreateIndexOptions) & { name?: string, vector?: boolean }
-    ): Promise<void> {
+        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values' | 'text'> | IndexSpecification,
+        options?: (TableTextIndexOptions | TableIndexOptions | TableVectorIndexOptions) & { name?: string, vector?: boolean }
+    ) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'createIndex', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'createIndex', arguments);
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use createIndex() with collections');
         }
         if (Object.keys(indexSpec).length !== 1) {
             throw new TypeError('createIndex indexSpec must have exactly 1 key');
         }
-        const [column] = Object.keys(indexSpec);
+
+        const [[column, indexModifier]] = Object.entries(indexSpec);
+        const indexName = options?.name ?? column;
         if (options?.vector) {
-            return this.collection.createVectorIndex(
-                options?.name ?? column,
+            // Vector index: `myVector: { type: [Number], index: { vector: true } }`
+            await this.collection.createVectorIndex(
+                indexName,
                 column,
-                { ifNotExists: true, ...(options as TableCreateVectorIndexOptions) }
+                { ifNotExists: true, options: options as TableVectorIndexOptions }
+            );
+        } else if (indexModifier === 'text') {
+            // Text index: `content: { type: String, index: { text: true, analyzer: ... } }`
+            // Checks `indexModifier` rather than `options?.text` because Mongoose has special handling for `index: { text: true }`
+            // due to MongoDB index definitions.
+            await this.collection.createTextIndex(
+                indexName,
+                column,
+                { ifNotExists: true, options: options as TableTextIndexOptions }
+            );
+        } else {
+            // Standard index: `test: { type: Number, index: true }`
+            await this.collection.createIndex(
+                indexName,
+                indexModifier === '$keys' || indexModifier === '$values'
+                    ? { [column]: indexModifier } as TableCreateIndexColumn<unknown>
+                    : column,
+                { ifNotExists: true, options: options as TableIndexOptions }
             );
         }
 
-        return this.collection.createIndex(
-            options?.name ?? column,
-            indexSpec[column] === '$keys' || indexSpec[column] === '$values'
-                ? { [column]: indexSpec[column] } as unknown as TableCreateIndexColumn<DocType>
-                : column,
-            { ifNotExists: true, ...(options as TableCreateIndexOptions) }
-        );
+        return indexName;
     }
 
     /**
@@ -515,13 +634,14 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      *
      * @param name
      */
-    async dropIndex(name: string, options?: TableDropIndexOptions) {
+    async dropIndex(name: string, options?: TableDropIndexOptions & { maxTimeMS: undefined }) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'dropIndex', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'dropIndex', arguments);
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use dropIndex() with collections');
         }
         await this.connection.db!.astraDb.dropTableIndex(name, options);
+        return {};
     }
 
     /**
@@ -531,7 +651,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async findAndRerank(filter: Filter, options?: CollectionFindAndRerankOptions) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'findAndRerank', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'findAndRerank', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findAndRerank() with tables');
         }
@@ -543,9 +663,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      *
      * @ignore
      */
-    watch() {
+    watch(): never {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'watch', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'watch', arguments);
         throw new OperationNotSupportedError('watch() Not Implemented');
     }
 
@@ -554,30 +674,36 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      *
      * @ignore
      */
-    distinct() {
+    distinct(): never {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'distinct', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'distinct', arguments);
         throw new OperationNotSupportedError('distinct() Not Implemented');
     }
 }
 
 function processSortOption(sort: MongooseSortOption): SortOptionInternal {
     const result: SortOptionInternal = {};
-    for (const key of Object.keys(sort)) {
-        const sortValue = sort[key];
-        if (sortValue == null || typeof sortValue !== 'object') {
-            result[key] = sortValue;
-            continue;
-        }
+    if (typeof sort === 'object' && sort != null && !Array.isArray(sort) && !(sort instanceof Map)) {
+        const sortObj = sort as Record<string, SortDirection | { $meta: number[] | string }>;
+        for (const key of Object.keys(sortObj)) {
+            const sortValue = sortObj[key];
+            if (sortValue == null || typeof sortValue !== 'object') {
+                result[key] = sortValue;
+                continue;
+            }
 
-        const $meta = typeof sortValue === 'object' && sortValue.$meta;
-        if ($meta) {
-            // Astra-db-ts 1.x does not currently support using fields other than $vector and $vectorize
-            // for vector sort and vectorize sort, but that works in tables. astra-mongoose added
-            // support in PR #258
-            result[key] = $meta as unknown as SortDirection;
+            const $meta = typeof sortValue === 'object' && sortValue.$meta;
+            if ($meta) {
+                // Astra-db-ts 1.x does not currently support using fields other than $vector and $vectorize
+                // for vector sort and vectorize sort, but that works in tables. astra-mongoose added
+                // support in PR #258
+                result[key] = $meta as unknown as SortDirection;
+            }
         }
+    } else {
+        throw new Error('Sort must be an object');
     }
+
 
     return result;
 }
@@ -596,10 +722,36 @@ export class OperationNotSupportedError extends Error {
  * @param args arguments passed to the function
  */
 
-function _logFunctionCall(debug: ((name: string, fn: string, ...args: unknown[]) => void) | boolean | null | undefined, collectionName: string, functionName: string, args: IArguments) {
+function _logFunctionCall(
+    collection: Collection,
+    debug: boolean | { color?: boolean, shell?: boolean } | Writable | ((name: string, fn: string, ...args: unknown[]) => void) | null | undefined,
+    collectionName: string,
+    functionName: string,
+    args: IArguments
+) {
     if (typeof debug === 'function') {
         debug(collectionName, functionName, ...args);
-    } else if (debug) {
-        console.log(`${collectionName}.${functionName}(${[...args].map(arg => inspect(arg, { colors: true })).join(', ')})`);
+    } else if (debug instanceof Writable) {
+        collection.$printToStream(collectionName, functionName, args, debug);
+    } else if (typeof debug === 'boolean' && debug) {
+        collection.$print(collectionName, functionName, Array.from(args), true, false);
+    } else if (typeof debug === 'object' && debug && !(debug instanceof Writable)) {
+        collection.$print(collectionName, functionName, Array.from(args), debug.color, debug.shell);
     }
+}
+
+function checkForTimeoutOption<T extends { timeout?: unknown }>(options: T): Omit<T, 'timeout'> {
+    const { timeout, ...remainingOptions } = options;
+    if (timeout != null) {
+        throw new OperationNotSupportedError('Cannot use timeout');
+    }
+    return remainingOptions;
+}
+
+function checkForMaxTimeMS<T extends { maxTimeMS?: unknown }>(options: T): Omit<T, 'maxTimeMS'> {
+    const { maxTimeMS, ...remainingOptions } = options;
+    if (maxTimeMS != null) {
+        throw new OperationNotSupportedError('Cannot use maxTimeMS');
+    }
+    return remainingOptions;
 }

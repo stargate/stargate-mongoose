@@ -125,11 +125,6 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             } else {
                 await User.deleteMany({});
             }
-            if (testDebug) {
-                mongooseInstance.connection.collection(TEST_COLLECTION_NAME).collection.on('commandStarted', ev => {
-                    console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
-                });
-            }
             const employeeIdVal = new mongoose.Types.ObjectId();
             //generate a random uuid
             const uniqueIdVal = randomUUID();
@@ -741,7 +736,13 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         });
         it('API ops tests createConnection() with uri and options', async function() {
             const connection = mongooseInstance.createConnection(testClient!.uri, testClient!.options) as unknown as AstraMongooseDriver.Connection;
-            await connection.asPromise();
+
+            await Promise.all([
+                connection.asPromise(),
+                new Promise((resolve) => connection.on('connected', resolve)),
+                new Promise((resolve) => connection.once('connected', resolve))
+            ]);
+
             const promise = connection.listCollections({ nameOnly: false });
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
 
