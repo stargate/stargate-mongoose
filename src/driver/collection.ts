@@ -115,7 +115,6 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     _collection?: AstraCollection<DocType> | AstraTable<DocType>;
     _closed: boolean;
     connection: Connection;
-    // @ts-expect-error In MongoDB collection, `options()` is a function that runs the options command, but Mongoose sets to an object
     options?: (TableOptions | CollectionOptions) & MongooseCollectionOptions;
     name: string;
 
@@ -182,7 +181,6 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param callback
      */
 
-    // @ts-expect-error astra-db-ts cursors do not extend MongoDB FindCursor
     find(filter?: Filter, options?: Omit<FindOptions, 'maxTimeMS' | 'timeout'> & { maxTimeMS?: number, timeout?: boolean }) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'find', arguments);
@@ -255,7 +253,6 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param options
      */
 
-    // @ts-expect-error CollectionUpdateFilter is not compatibile with MongoDB UpdateFilter currently
     async findOneAndUpdate(
         filter: Filter,
         update: CollectionUpdateFilter<DocType> | Record<string, unknown>[],
@@ -451,7 +448,6 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param options
      */
 
-    // @ts-expect-error CollectionUpdateFilter is not compatibile with MongoDB UpdateFilter currently
     async updateOne(
         filter: Filter,
         update: CollectionUpdateFilter<DocType> | TableUpdateFilter<DocType> | Record<string, unknown>[],
@@ -479,8 +475,8 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             // Mongoose currently has a bug where null response from updateOne() throws an error that we can't
             // catch here for unknown reasons. See Automattic/mongoose#15126. Tables API returns null here.
             return res ?
-                { ...res, acknowledged: true, upsertedId: null } :
-                { acknowledged: true, matchedCount: -1, upsertedId: null, modifiedCount: -1, upsertedCount: -1 };
+                { ...res, acknowledged: true } :
+                { acknowledged: true, matchedCount: 1, upsertedId: null, modifiedCount: -1, upsertedCount: -1 };
         });
     }
 
@@ -491,7 +487,6 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param options
      */
 
-    // @ts-expect-error CollectionUpdateFilter is not compatibile with MongoDB UpdateFilter currently
     async updateMany(filter: Filter, update: CollectionUpdateFilter<DocType> | Record<string, unknown>[], options: CollectionUpdateManyOptions) {
         if (Array.isArray(update)) {
             throw new AstraMongooseError('Astra-mongoose does not support update pipelines', { update });
@@ -560,7 +555,6 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * Only works in tables mode, throws an error in collections mode.
      */
 
-    // @ts-expect-error we don't return a full cursor here to avoid having to implement a full cursor
     listIndexes(): { toArray: () => Promise<AstraMongooseIndexDescription[]> } {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'listIndexes', arguments);
@@ -738,7 +732,6 @@ function _logFunctionCall(
     if (typeof debug === 'function') {
         debug(collectionName, functionName, ...args);
     } else if (debug instanceof Writable) {
-        // @ts-expect-error $printToStream is not part of Mongoose's TypeScript types currently but exists at runtime
         collection.$printToStream(collectionName, functionName, args, debug);
     } else if (typeof debug === 'boolean' && debug) {
         collection.$print(collectionName, functionName, Array.from(args), true, false);
