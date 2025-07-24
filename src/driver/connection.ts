@@ -41,7 +41,7 @@ import {
 } from '@datastax/astra-db-ts';
 import { CollectionsDb, TablesDb } from './db';
 import { Connection as MongooseConnection } from 'mongoose';
-import type { ConnectOptions, Mongoose, Model, ClientSession } from 'mongoose';
+import type { ConnectOptions, Mongoose, Model } from 'mongoose';
 import { STATES } from 'mongoose';
 import { URL } from 'url';
 import { Writable } from 'stream';

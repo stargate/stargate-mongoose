@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { AstraMongooseError } from '../astraMongooseError';
-import { Collection as MongooseCollection } from 'mongoose';
+import MongooseCollection from 'mongoose/lib/collection';
+import type { Connection as MongooseConnection } from 'mongoose';
 import type { Connection } from './connection';
 import {
     Collection as AstraCollection,
@@ -119,7 +120,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     name: string;
 
     constructor(name: string, conn: Connection, options?: (TableOptions | CollectionOptions) & MongooseCollectionOptions) {
-        super(name, conn, options);
+        // Astra-mongoose connection does inherit from MongooseConnection, but in a slightly incompatible way currently,
+        // so we need an `as`.
+        super(name, conn as unknown as MongooseConnection, options);
         this.connection = conn;
         this._closed = false;
         this.options = options;
@@ -161,14 +164,15 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * Count documents in the collection that match the given filter.
      * @param filter
      */
-    async countDocuments(filter: Filter, options?: CollectionCountDocumentsOptions) {
+    async countDocuments(filter: Filter, options?: Omit<CollectionCountDocumentsOptions, 'maxTimeMS'> & { maxTimeMS?: number }) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'countDocuments', arguments);
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use countDocuments() with tables');
         }
+        const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
         filter = serialize(filter);
-        return this.collection.countDocuments(filter, 1000, options);
+        return this.collection.countDocuments(filter, 1000, remainingOptions);
     }
 
     /**
@@ -177,13 +181,17 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param options
      * @param callback
      */
-    find(filter: Filter, options: FindOptions) {
+
+    // @ts-expect-error astra-db-ts cursors do not extend MongoDB FindCursor
+    find(filter?: Filter, options?: Omit<FindOptions, 'maxTimeMS' | 'timeout'> & { maxTimeMS?: number, timeout?: boolean }) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'find', arguments);
-        const requestOptions: CollectionFindOptions | TableFindOptions = options != null && options.sort != null
-            ? { ...options, sort: processSortOption(options.sort) }
-            : { ...options, sort: undefined };
-        filter = serialize(filter, this.isTable);
+
+        const remainingOptions = options == null ? {} : checkForTimeoutOption(checkForMaxTimeMS(options));
+        const requestOptions: CollectionFindOptions | TableFindOptions = remainingOptions.sort != null
+            ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
+            : { ...remainingOptions, sort: undefined };
+        filter = serialize(filter ?? {}, this.isTable);
 
         return this.collection.find(filter, requestOptions).map(doc => deserializeDoc<DocType>(doc) as DocType);
     }
@@ -193,11 +201,11 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param filter
      * @param options
      */
-    async findOne(filter?: Filter, options?: Omit<FindOneOptions, 'maxTimeMS'> & { maxTimeMS?: number }) {
+    async findOne(filter?: Filter, options?: Omit<FindOneOptions, 'maxTimeMS' | 'timeout'> & { maxTimeMS?: number, timeout?: boolean }) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'findOne', arguments);
 
-        const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
+        const remainingOptions = options == null ? {} : checkForTimeoutOption(checkForMaxTimeMS(options));
         const requestOptions: CollectionFindOneOptions | TableFindOneOptions = remainingOptions.sort != null
             ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
             : { ...remainingOptions, sort: undefined };
@@ -228,7 +236,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param documents
      * @param options
      */
-    async insertMany(documents: Record<string, unknown>[], options?: CollectionInsertManyOptions | TableInsertManyOptions | { ordered?: boolean }) {
+    async insertMany(documents: readonly Record<string, unknown>[], options?: CollectionInsertManyOptions | TableInsertManyOptions | { ordered?: boolean }) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'insertMany', arguments);
         documents = documents.map(doc => serialize(doc, this.isTable));
@@ -447,7 +455,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     async updateOne(
         filter: Filter,
         update: CollectionUpdateFilter<DocType> | TableUpdateFilter<DocType> | Record<string, unknown>[],
-        options: UpdateOneOptions
+        options?: Omit<UpdateOneOptions, 'maxTimeMS'> & { maxTimeMS?: number }
     ) {
         if (Array.isArray(update)) {
             throw new AstraMongooseError('Astra-mongoose does not support update pipelines', { update });
@@ -455,9 +463,10 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'updateOne', arguments);
-        const requestOptions: CollectionUpdateOneOptions | TableUpdateOneOptions = options.sort != null
-            ? { ...options, sort: processSortOption(options.sort) }
-            : { ...options, sort: undefined };
+        const remainingOptions = checkForMaxTimeMS(options ?? {});
+        const requestOptions: CollectionUpdateOneOptions | TableUpdateOneOptions = remainingOptions.sort != null
+            ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
+            : { ...remainingOptions, sort: undefined };
         filter = serialize(filter, this.isTable);
         // `setDefaultIdForUpdate` currently would not work with tables because tables don't support `$setOnInsert`.
         // But `setDefaultIdForUpdate` would also never use `$setOnInsert` if `updateOne` is used correctly because tables
@@ -469,7 +478,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         return this.collection.updateOne(filter as TableFilter<DocType>, update, requestOptions).then(res => {
             // Mongoose currently has a bug where null response from updateOne() throws an error that we can't
             // catch here for unknown reasons. See Automattic/mongoose#15126. Tables API returns null here.
-            return res ?? {};
+            return res ?
+                { ...res, acknowledged: true, upsertedId: null } :
+                { acknowledged: true, matchedCount: -1, upsertedId: null, modifiedCount: -1, upsertedCount: -1 };
         });
     }
 
@@ -494,7 +505,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         filter = serialize(filter, this.isTable);
         setDefaultIdForUpdate(filter, update, options);
         update = serialize(update, this.isTable);
-        return this.collection.updateMany(filter, update, options);
+        return this.collection.updateMany(filter, update, options).then(res => ({ ...res, acknowledged: true }));
     }
 
     /**
@@ -734,6 +745,14 @@ function _logFunctionCall(
     } else if (typeof debug === 'object' && debug && !(debug instanceof Writable)) {
         collection.$print(collectionName, functionName, Array.from(args), debug.color, debug.shell);
     }
+}
+
+function checkForTimeoutOption<T extends { timeout?: unknown }>(options: T): Omit<T, 'timeout'> {
+    const { timeout, ...remainingOptions } = options;
+    if (timeout != null) {
+        throw new OperationNotSupportedError('Cannot use timeout');
+    }
+    return remainingOptions;
 }
 
 function checkForMaxTimeMS<T extends { maxTimeMS?: unknown }>(options: T): Omit<T, 'maxTimeMS'> {
