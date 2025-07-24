@@ -1228,7 +1228,10 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 collectionOptions: {
                     lexical: {
                         enabled: true,
-                        analyzer: 'STANDARD',
+                        analyzer: {
+                            tokenizer: { name: 'standard' },
+                            filters: [{ name: 'lowercase' }, { name: 'stop' }, { name: 'porterstem' }, { name: 'asciifolding' }]
+                        },
                     }
                 },
                 autoCreate: false
@@ -1250,11 +1253,11 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 { name: 'test 1', $lexical: 'the quick brown fox jumped over the lazy dog' },
                 { name: 'test 2', $lexical: 'the lazy red hen sat beside the sleepy dog' }
             ]);
-            let docs = await LexicalModel.find({ $lexical: { $match: 'jumped' } });
+            let docs = await LexicalModel.find({ $lexical: { $match: 'jump' } });
             assert.strictEqual(docs.length, 1);
             assert.strictEqual(docs[0].name, 'test 1');
 
-            docs = await LexicalModel.find({ $lexical: { $match: 'sat' } });
+            docs = await LexicalModel.find({ $lexical: { $match: 'SAT' } });
             assert.strictEqual(docs.length, 1);
             assert.strictEqual(docs[0].name, 'test 2');
         });
