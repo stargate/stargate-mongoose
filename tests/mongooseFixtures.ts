@@ -1,5 +1,5 @@
 import { TEST_COLLECTION_NAME, testClient } from './fixtures';
-import { Schema, Mongoose, Model, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
+import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 import * as AstraMongooseDriver from '../src/driver';
 import assert from 'assert';
 import { plugins } from '../src/driver';
@@ -34,10 +34,10 @@ for (const plugin of plugins) {
     mongooseInstance.plugin(plugin);
 }
 
-export type CartModelType = Model<InferSchemaType<typeof cartSchema>>;
-export type ProductModelType = Model<InferSchemaType<typeof productSchema>>;
 export const Cart = mongooseInstance.model('Cart', cartSchema);
 export const Product = mongooseInstance.model('Product', productSchema);
+export type CartModelType = typeof Cart;
+export type ProductModelType = typeof Product;
 export type ProductHydratedDoc = ReturnType<(typeof Product)['hydrate']>;
 export type ProductRawDoc = SubdocsToPOJOs<InferSchemaType<typeof productSchema>>;
 
