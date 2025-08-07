@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TEST_COLLECTION_NAME, testClient } from './fixtures';
-import { Schema, Mongoose, Model, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
+import { testClient } from './fixtures';
+import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 import * as AstraMongooseDriver from '../src/driver';
 import assert from 'assert';
 import { plugins } from '../src/driver';
