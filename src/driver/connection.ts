@@ -160,7 +160,6 @@ export class Connection extends MongooseConnection {
      * Get current debug setting, accounting for potential changes to global debug config (`mongoose.set('debug', true | false)`)
      */
     get debug() {
-        // @ts-expect-error base is not part of Mongoose TypeScript types currently
         const base = this.base as Mongoose;
         return this._debug ?? base.get('debug');
     }

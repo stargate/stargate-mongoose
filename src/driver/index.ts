@@ -20,8 +20,6 @@ import { Connection } from './connection';
 import { Mongoose, Schema } from 'mongoose';
 import { handleVectorFieldsProjection, addVectorDimensionValidator, findAndRerankStatic } from './plugins';
 
-// @ts-expect-error workaround to allow Mongoose to handle $match, this syntax isn't part
-// of Mongoose's public API
 Schema.Types.String.prototype.$conditionalHandlers.$match = v => v;
 
 export const plugins = [handleVectorFieldsProjection, addVectorDimensionValidator, findAndRerankStatic];
