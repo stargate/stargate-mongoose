@@ -40,7 +40,7 @@ import {
     WithTimeout,
 } from '@datastax/astra-db-ts';
 import { CollectionsDb, TablesDb } from './db';
-import { Connection as MongooseConnection } from 'mongoose';
+import { BaseConnection as MongooseConnection } from 'mongoose';
 import type { ConnectOptions, Mongoose, Model } from 'mongoose';
 import { STATES } from 'mongoose';
 import { URL } from 'url';
@@ -136,6 +136,7 @@ export class Connection extends MongooseConnection {
     // @ts-expect-error astra-mongoose collection currently doesn't fully extend from Mongoose collection in a TypeScript-compatible way.
     collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: MongooseCollectionOptions): Collection<DocType> {
         if (!(name in this.collections)) {
+            // @ts-expect-error astra-mongoose collection currently doesn't fully extend from Mongoose collection in a TypeScript-compatible way.
             this.collections[name] = new Collection<DocType>(name, this, options);
         }
         return super.collection(name, options) as unknown as Collection<DocType>;
@@ -272,7 +273,7 @@ export class Connection extends MongooseConnection {
      * @param options
      */
 
-    // @ts-expect-error astra-mongoose connection currently doesn't fully extend from Mongoose connection in a TypeScript-compatible way.
+    // @ts-expect-error astra-mongoose connection currently doesn't fully extend from Mongoose connection in a TypeScript-compatible way because of collections
     async openUri(uri: string, options?: ConnectOptionsInternal) {
         let _fireAndForget: boolean | undefined = false;
         if (options && '_fireAndForget' in options) {
