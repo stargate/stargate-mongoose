@@ -48,10 +48,10 @@ for (const plugin of plugins) {
     mongooseInstance.plugin(plugin);
 }
 
-export type CartModelType = Model<InferSchemaType<typeof cartSchema>>;
-export type ProductModelType = Model<InferSchemaType<typeof productSchema>>;
 export const Cart = mongooseInstance.model('Cart', cartSchema);
 export const Product = mongooseInstance.model('Product', productSchema);
+export type CartModelType = typeof Cart;
+export type ProductModelType = typeof Product;
 export type ProductHydratedDoc = ReturnType<(typeof Product)['hydrate']>;
 export type ProductRawDoc = SubdocsToPOJOs<InferSchemaType<typeof productSchema>>;
 
