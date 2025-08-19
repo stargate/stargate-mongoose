@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { testClient } from './fixtures';
-import { Schema, Mongoose, Model, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
+import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 import * as AstraMongooseDriver from '../src/driver';
 import assert from 'assert';
 import { plugins } from '../src/driver';
