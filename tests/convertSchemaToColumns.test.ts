@@ -91,7 +91,7 @@ describe('convertSchemaToColumns', () => {
         assert.throws(
             () => convertSchemaToColumns(testSchema),
             { message: 'Cannot convert schema to Data API table definition: nested path "subdoc.num2" must be required' }
-        )
+        );
     });
 
     it('throws subdocuments with paths that are all the same type but one uses required function', () => {
@@ -105,7 +105,7 @@ describe('convertSchemaToColumns', () => {
         assert.throws(
             () => convertSchemaToColumns(testSchema),
             { message: 'Cannot convert schema to Data API table definition: nested path "subdoc.num2" must be required' }
-        )
+        );
     });
 
     it('handles subdocuments with paths that are all the same type using required: array syntax', () => {
