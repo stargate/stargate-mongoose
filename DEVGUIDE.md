@@ -74,13 +74,18 @@ mongoose.connect(process.env.ASTRA_URI, {
 
 const TestModel = mongoose.model('Test', mongoose.Schema({ name: String }), 'test');
 
-// Listen to astra-db-ts events directly on the astra-db-ts collection or table.
-mongoose.connection.collection('test').collection.on('commandStarted', ev => {
+// Astra-mongoose bubbles up events from astra-mongoose collections and dbs to the connection object
+mongoose.connection.on('commandStarted', ev => {
   console.log(ev);
 });
 
 
 await TestModel.findOne(); // Prints "CommandStartedEvent { ... }"
+
+// Alternatively, can listen to astra-db-ts events directly on the raw astra-db-ts collection
+mongoose.connection.collection('test').collection.on('commandStarted', ev => {
+  console.log(ev);
+});
 ```
 
 Astra-mongoose's tests use the above pattern to log requests sent to Data API.

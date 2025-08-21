@@ -1,5 +1,19 @@
-import { TEST_COLLECTION_NAME, testClient } from './fixtures';
-import { Schema, Mongoose, Model, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
+// Copyright DataStax, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import { testClient } from './fixtures';
+import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 import * as AstraMongooseDriver from '../src/driver';
 import assert from 'assert';
 import { plugins } from '../src/driver';
@@ -34,10 +48,10 @@ for (const plugin of plugins) {
     mongooseInstance.plugin(plugin);
 }
 
-export type CartModelType = Model<InferSchemaType<typeof cartSchema>>;
-export type ProductModelType = Model<InferSchemaType<typeof productSchema>>;
 export const Cart = mongooseInstance.model('Cart', cartSchema);
 export const Product = mongooseInstance.model('Product', productSchema);
+export type CartModelType = typeof Cart;
+export type ProductModelType = typeof Product;
 export type ProductHydratedDoc = ReturnType<(typeof Product)['hydrate']>;
 export type ProductRawDoc = SubdocsToPOJOs<InferSchemaType<typeof productSchema>>;
 
@@ -108,13 +122,7 @@ export async function createMongooseCollections(isTable: boolean) {
         }
 
         if (testDebug) {
-            mongooseInstanceTables.connection.collection(ProductTablesModel.collection.collectionName).collection.on('commandStarted', ev => {
-                console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
-            });
-            mongooseInstanceTables.connection.collection(CartTablesModel.collection.collectionName).collection.on('commandStarted', ev => {
-                console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
-            });
-            mongooseInstanceTables.connection.collection(TEST_COLLECTION_NAME).collection.on('commandStarted', ev => {
+            mongooseInstanceTables.connection.on('commandStarted', ev => {
                 console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
             });
         }
@@ -143,13 +151,7 @@ export async function createMongooseCollections(isTable: boolean) {
         }
 
         if (testDebug) {
-            mongooseInstance.connection.collection(Product.collection.collectionName).collection.on('commandStarted', ev => {
-                console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
-            });
-            mongooseInstance.connection.collection(Cart.collection.collectionName).collection.on('commandStarted', ev => {
-                console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
-            });
-            mongooseInstance.connection.collection(TEST_COLLECTION_NAME).collection.on('commandStarted', ev => {
+            mongooseInstance.connection.db!.astraDb.on('commandStarted', ev => {
                 console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
             });
         }

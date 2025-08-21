@@ -39,19 +39,17 @@ describe('TABLES: vector search', function() {
             versionKey: false
         }
     );
-    let Vector: Model<InferSchemaType<typeof vectorSchema>>;
+    const Vector = mongooseInstance.model(
+        'VectorTable',
+        vectorSchema,
+        'vector_table'
+    );
 
     before(async () => {
         await createMongooseCollections(true);
     });
 
     before(async function() {
-        Vector = mongooseInstance.model(
-            'VectorTable',
-            vectorSchema,
-            'vector_table'
-        );
-
         const existingTables = await mongooseInstance.connection.listTables();
         const vectorTable = existingTables.find(t => t.name === 'vector_table');
         const hasValidVectorDefinition = vectorTable?.definition.columns.vector?.type === 'vector' &&
