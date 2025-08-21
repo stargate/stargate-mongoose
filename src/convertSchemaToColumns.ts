@@ -27,7 +27,6 @@ export default function convertSchemaToColumns(schema: Schema, udtName?: string)
         __v: { type: 'int' }
     };
     const schemaTypesForNestedPath: Record<string, SchemaType[]> = {};
-    // @ts-expect-error Mongoose schemas don't have `options` property in TypeScript currently
     udtName = udtName ?? schema.options?.udtName;
     for (const path of Object.keys(schema.paths)) {
         const schemaType = schema.paths[path];
@@ -67,9 +66,9 @@ export default function convertSchemaToColumns(schema: Schema, udtName?: string)
                 const schemaTypeUDTName = getUDTNameFromSchemaType(schemaType);
 
                 if (schemaTypeUDTName) {
+                    // @ts-expect-error Astra-db-ts doesn't support UDT yet
                     columns[path] = {
                         type: 'list',
-                        // @ts-expect-error Astra-db-ts doesn't support UDT yet
                         valueType: { type: 'userDefined', udtName: schemaTypeUDTName }
                     };
                 } else {
@@ -146,10 +145,10 @@ export default function convertSchemaToColumns(schema: Schema, udtName?: string)
                 columns[path] = { type: 'map', keyType: 'text', valueType };
             } else if (schemaTypeUDTName) {
                 // Special handling for maps of UDTs
+                // @ts-expect-error Astra-db-ts doesn't support UDT yet
                 columns[path] = {
                     type: 'map',
                     keyType: 'text',
-                    // @ts-expect-error Astra-db-ts doesn't support UDT yet
                     valueType: {
                         type: 'userDefined',
                         udtName: schemaTypeUDTName
@@ -257,9 +256,7 @@ function getUDTNameFromSchemaType(schemaType: SchemaType): string | null {
         return schemaType.options.udtName;
     }
     // `new Schema({}, { udtName })`
-    // @ts-expect-error Mongoose schemas don't have options property in TS
     if (schemaType.schema?.options?.udtName) {
-        // @ts-expect-error Mongoose schemas don't have options property in TS
         return schemaType.schema.options.udtName;
     }
 
@@ -267,9 +264,7 @@ function getUDTNameFromSchemaType(schemaType: SchemaType): string | null {
     if (embeddedSchemaType?.options?.udtName) {
         return embeddedSchemaType?.options?.udtName;
     }
-    // @ts-expect-error Mongoose schemas don't have options property in TS
     if (embeddedSchemaType?.schema?.options?.udtName) {
-        // @ts-expect-error Mongoose schemas don't have options property in TS
         return embeddedSchemaType?.schema?.options?.udtName;
     }
     return null;
