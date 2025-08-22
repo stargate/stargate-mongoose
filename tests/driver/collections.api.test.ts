@@ -264,7 +264,10 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         it('API ops tests Model.countDocuments()', async function() {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
             await product1.save();
-            const countResp = await Product.countDocuments({name: 'Product 1'});
+            let countResp = await Product.countDocuments({name: 'Product 1'});
+            assert.strictEqual(countResp, 1);
+
+            countResp = await Product.collection.countDocuments({name: 'Product 1'});
             assert.strictEqual(countResp, 1);
         });
         it('API ops tests Model.create()', async () => {
@@ -310,6 +313,9 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
 
             const count = await Product.countDocuments();
             assert.strictEqual(count, 0);
+
+            deleteManyResp = await Product.collection.deleteMany({});
+            assert.strictEqual(deleteManyResp.deletedCount, -1);
         });
         it('API ops tests Model.deleteOne()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
@@ -406,10 +412,10 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 nameArray.delete(doc.name);
             }
 
-            // Supports callbacks because some older versions of Mongoose require callbacks.
-            /*await new Promise((resolve, reject) => {
+            const rawFindResp = await Product.collection.find().toArray();
+            assert.strictEqual(rawFindResp.length, 3);
 
-            });*/
+            assert.throws(() => Product.collection.find({}, { sort: 'test' }).toArray(), /Sort must be an object/);
         });
         it('API ops tests Model.findById()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
@@ -440,6 +446,9 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             await Product.insertMany([product1, product2, product3]);
             const findResp = await Product.findOne({category: 'cat 1'});
             assert.strictEqual(findResp?.category, 'cat 1');
+
+            const rawFindResp = await Product.collection.findOne();
+            assert.ok(rawFindResp?.category);
         });
         it('API ops tests Model.findOneAndDelete()', async function() {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
@@ -458,6 +467,11 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             );
             assert.strictEqual(withMetadata.value!.name, 'Product 1');
             assert.strictEqual(withMetadata.value!.category, 'cat 2');
+
+            const raw = await Product.collection.findOneAndDelete(
+                {name: 'Product 2'}
+            );
+            assert.strictEqual(raw!.name, 'Product 2');
         });
         it('API ops tests Model.findOneAndReplace()', async function() {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
@@ -487,6 +501,10 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             doc = await Product.findOneAndReplace({_id: doc!._id}, {name: 'Product 21'}, {returnDocument: 'after', upsert: true});
             assert.strictEqual(doc!.name, 'Product 21');
             assert.strictEqual(doc!.category, undefined);
+
+            const rawDoc = await Product.collection.findOneAndReplace({_id: doc!._id}, {name: 'Product 22'});
+            assert.strictEqual(rawDoc!.name, 'Product 21');
+            assert.strictEqual(rawDoc!.category, undefined);
         });
         it('API ops tests Model.findOneAndUpdate()', async function() {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
@@ -504,6 +522,12 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 {includeResultMetadata: true, returnDocument: 'after'}
             );
             assert.strictEqual(withMetadata.value!.name, 'Product 42');
+
+            // assert that using with update pipeline rejects
+            await assert.rejects(
+                Product.findOneAndUpdate({category: 'cat 1'}, [{$set: {name: 'Product 43'}}]),
+                /Astra-mongoose does not support update pipelines/
+            );
         });
         it('API ops tests Model.insertMany()', async () => {
             const product1Id = new mongoose.Types.ObjectId('0'.repeat(24));
@@ -575,6 +599,9 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.equal(cat2.name, 'Product 2');
             const replaced = await Product.findOne({name: 'Product 5'}).orFail();
             assert.equal(replaced.category, 'cat 3');
+
+            await Product.collection.replaceOne({name: 'Product 5'}, {name: 'Product 6', category: 'cat 3'});
+            await Product.findOne({name: 'Product 6'}).orFail();
         });
         //Model.schema() is skipped since it doesn't make any database calls. More info here: https://mongoosejs.com/docs/api/model.html#Model.schema
         it('API ops tests Model.startSession()', async () => {
@@ -612,6 +639,11 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             productNames.delete('Product 1');
             assert.strictEqual(productNames.has('Product 2'), true);
             productNames.delete('Product 2');
+
+            await assert.rejects(
+                Product.updateMany({name: 'Product 1'}, [{$set: {name: 'Product 43'}}]),
+                /Astra-mongoose does not support update pipelines/
+            );
         });
         it('API ops tests Model.updateOne()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
@@ -622,8 +654,17 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.strictEqual(updateOneResp.matchedCount, 1);
             assert.strictEqual(updateOneResp.modifiedCount, 1);
             assert.strictEqual(updateOneResp.upsertedCount, 0);
-            const findUpdatedDoc = await Product.findOne({category: 'cat 3'});
+            let findUpdatedDoc = await Product.findOne({category: 'cat 3'});
             assert.strictEqual(findUpdatedDoc?.name, 'Product 3');
+
+            await Product.collection.updateOne({ name: 'Product 3' }, { $set: { name: 'Product 3 Updated' } });
+            findUpdatedDoc = await Product.findOne({name: 'Product 3 Updated'});
+            assert.strictEqual(findUpdatedDoc?.name, 'Product 3 Updated');
+
+            await assert.rejects(
+                Product.updateOne({name: 'Product 1'}, [{$set: {name: 'Product 43'}}]),
+                /Astra-mongoose does not support update pipelines/
+            );
         });
         it('API ops tests Model.updateOne() with upsert', async function() {
             const _id = new mongoose.Types.ObjectId();
@@ -793,6 +834,9 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             await connection.asPromise();
             await connection.close();
             await assert.rejects(connection.listCollections({}), /Connection is not connected/);
+
+            const connection2 = mongooseInstance.createConnection();
+            assert.throws(() => connection2.asPromise(), /Connection not initialized/);
         });
         it('API ops tests dropIndex()', async function() {
             await assert.rejects(
@@ -804,6 +848,19 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.throws(
                 () => mongooseInstance.connection.setClient(),
                 /SetClient not supported/
+            );
+        });
+
+        it('API ops throws on timeout option', async function() {
+            await assert.rejects(
+                () => Product.collection.findOne({}, { timeout: true }),
+                /Cannot use timeout/
+            );
+        });
+        it('API ops throws on maxTimeMS option', async function() {
+            await assert.rejects(
+                () => Product.collection.findOne({}, { maxTimeMS: 1000 }),
+                /Cannot use maxTimeMS/
             );
         });
     });

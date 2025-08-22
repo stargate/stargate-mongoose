@@ -60,6 +60,7 @@ import { SchemaOptions } from 'mongoose';
 import { Writable } from 'stream';
 import deserializeDoc from '../deserializeDoc';
 import { IndexSpecification, Sort as MongoDBSort, WithId, InferIdType } from 'mongodb';
+import { inspect } from 'util';
 import { serialize } from '../serialize';
 import { setDefaultIdForUpdate, setDefaultIdForReplace } from '../setDefaultIdForUpsert';
 
@@ -110,6 +111,8 @@ export interface MongooseCollectionOptions {
     autoCreate?: boolean
 }
 
+const DEFAULT_DEBUG_INSPECT_DEPTH = 3;
+
 /**
  * Collection operations supported by the driver. This class is called "Collection" for consistency with Mongoose, because
  * in Mongoose a Collection is the interface that Models and Queries use to communicate with the database. However, from
@@ -117,7 +120,7 @@ export interface MongooseCollectionOptions {
  * `isTable` option. Needs to be a separate class because Mongoose only supports one collection class.
  */
 export class Collection<DocType extends Record<string, unknown> = Record<string, unknown>> extends MongooseCollection<DocType> {
-    debugType = 'AstraMongooseCollecGtion';
+    debugType = 'AstraMongooseCollection';
     _collection?: AstraCollection<DocType> | AstraTable<DocType>;
     _closed: boolean;
     connection: Connection;
@@ -309,11 +312,11 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     ): Promise<WithId<DocType> | null>;
 
     async findOneAndDelete(
-      filter?: Filter,
+      filter: Filter,
       options?: FindOneAndDeleteOptions
     ): Promise<WithId<DocType> | null>;
 
-    async findOneAndDelete(filter?: Filter, options?: FindOneAndDeleteOptions) {
+    async findOneAndDelete(filter: Filter, options?: FindOneAndDeleteOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'findOneAndDelete', arguments);
         if (this.collection instanceof AstraTable) {
@@ -323,7 +326,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         const requestOptions: CollectionFindOneAndDeleteOptions = remainingOptions.sort != null
             ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
             : { ...remainingOptions, sort: undefined };
-        filter = serialize(filter ?? {});
+        filter = serialize(filter);
 
         return this.collection.findOneAndDelete(filter, requestOptions).then((value: Record<string, unknown> | null) => {
             if (options?.includeResultMetadata) {
@@ -744,12 +747,11 @@ function _logFunctionCall<CollectionType extends Collection<any>>(
     if (typeof debug === 'function') {
         debug(collectionName, functionName, ...args);
     } else if (debug instanceof Writable) {
-        // @ts-expect-error $printToStream not part of Mongoose public API
-        collection.$printToStream(collectionName, functionName, args, debug);
+        debug.write(`${collectionName}.${functionName}(${Array.from(args).map(arg => inspect(arg)).join(', ')})`, 'utf8');
     } else if (typeof debug === 'boolean' && debug) {
-        collection.$print(collectionName, functionName, Array.from(args), true, false);
+        console.info(`${collectionName}.${functionName}(${Array.from(args).map(arg => inspect(arg, undefined, DEFAULT_DEBUG_INSPECT_DEPTH, true)).join(', ')})`);
     } else if (typeof debug === 'object' && debug && !(debug instanceof Writable)) {
-        collection.$print(collectionName, functionName, Array.from(args), debug.color, debug.shell);
+        console.info(`${collectionName}.${functionName}(${Array.from(args).map(arg => inspect(arg, undefined, DEFAULT_DEBUG_INSPECT_DEPTH, debug.color)).join(', ')})`);
     }
 }
 
