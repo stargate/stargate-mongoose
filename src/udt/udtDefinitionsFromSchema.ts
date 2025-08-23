@@ -18,7 +18,10 @@ import { Schema } from 'mongoose';
 import convertSchemaToColumns from '../convertSchemaToColumns';
 import getUDTNameFromSchemaType from './getUDTNameFromSchemaType';
 
-interface UDTDefinition { name: string; definition: CreateTableColumnDefinitions; }
+interface UDTDefinition {
+    name: string;
+    definition: { fields: CreateTableColumnDefinitions; };
+}
 
 /**
  * Given a Mongoose schema, get the definitions of all the UDTs used by this schema.
@@ -35,17 +38,22 @@ export default function udtDefinitionsFromSchema(schema: Schema): Record<string,
         }
         const udtSchema = schemaType.schema ?? schemaType.getEmbeddedSchemaType()?.schema;
         if (!udtSchema) {
-            throw new AstraMongooseError(`Schema type ${path} is not a valid schema`);
+            throw new AstraMongooseError(`Path ${path} cannot store a UDT, must be a subdocument, document array, or map.`);
         }
-        const definition = convertSchemaToColumns(udtSchema);
+        const fields = convertSchemaToColumns(udtSchema);
         if (result[udtName]) {
-            if (JSON.stringify(result[udtName].definition) !== JSON.stringify(definition)) {
+            // Currently do not support multiple definitions for the same UDT no matter how slight
+            // the difference. `JSON.stringify()` is used for deep equality comparison to ensure we can
+            // return an AstraMongooseError. In the future we may consider supporting the case where one UDT
+            // has a subset of the other's columns. We may also consider using assert.deepStrictEqual() here
+            // to provide a more detailed error message.
+            if (JSON.stringify(result[udtName].definition.fields) !== JSON.stringify(fields)) {
                 throw new AstraMongooseError(`Conflicting definition for UDT ${udtName} at ${path}`);
             }
             continue;
         }
 
-        result[udtName] = { name: udtName, definition };
+        result[udtName] = { name: udtName, definition: { fields } };
     }
 
     return result;
