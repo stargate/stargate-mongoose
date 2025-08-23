@@ -15,6 +15,7 @@
 import { CreateTableColumnDefinitions } from '@datastax/astra-db-ts';
 import { Schema, SchemaType } from 'mongoose';
 import { AstraMongooseError } from './astraMongooseError';
+import getUDTNameFromSchemaType from './udt/getUDTNameFromSchemaType';
 
 type AllowedDataAPITypes = 'text' | 'double' | 'timestamp' | 'boolean' | 'decimal' | 'varint' | 'blob' | 'uuid' | 'int';
 
@@ -242,30 +243,6 @@ function mongooseTypeToDataAPIType(type: string): AllowedDataAPITypes | null {
         return 'int';
     } else if (type === 'Double') {
         return 'double';
-    }
-    return null;
-}
-
-function getUDTNameFromSchemaType(schemaType: SchemaType): string | null {
-    if (schemaType.instance === 'Array' && schemaType.schema) {
-        // @ts-expect-error Mongoose schemas don't have options property in TS
-        return schemaType.schemaOptions?.udtName ?? schemaType.schema?.options?.udtName ?? null;
-    }
-
-    if (schemaType.options?.udtName) {
-        return schemaType.options.udtName;
-    }
-    // `new Schema({}, { udtName })`
-    if (schemaType.schema?.options?.udtName) {
-        return schemaType.schema.options.udtName;
-    }
-
-    const embeddedSchemaType = schemaType.getEmbeddedSchemaType();
-    if (embeddedSchemaType?.options?.udtName) {
-        return embeddedSchemaType?.options?.udtName;
-    }
-    if (embeddedSchemaType?.schema?.options?.udtName) {
-        return embeddedSchemaType?.schema?.options?.udtName;
     }
     return null;
 }
