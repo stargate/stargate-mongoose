@@ -28,6 +28,8 @@ export { driver };
 
 export { default as createAstraUri } from './createAstraUri';
 export { default as tableDefinitionFromSchema } from './tableDefinitionFromSchema';
+export { default as convertSchemaToColumns } from './convertSchemaToColumns';
+export { default as udtDefinitionsFromSchema } from './udt/udtDefinitionsFromSchema';
 
 import * as AstraMongooseDriver from './driver';
 import type { Mongoose } from 'mongoose';
@@ -62,7 +64,8 @@ declare module 'mongoose' {
     }
 
     interface SchemaOptions {
-        serdes?: CollectionSerDesConfig | TableSerDesConfig
+        serdes?: CollectionSerDesConfig | TableSerDesConfig;
+        udtName?: string;
     }
 
     function setDriver(driver: typeof AstraMongooseDriver): AstraMongoose;
