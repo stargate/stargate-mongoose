@@ -30,6 +30,8 @@ jobs:
           node-version: 20.19.0
       - name: setup project
         run: npm i
+      - name: copy env file
+        run: cp .env.example .env
       - name: run tests
         run: |
           npm run test-dataapi
