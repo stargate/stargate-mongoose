@@ -2,8 +2,6 @@
 ## Classes
 
 <dl>
-<dt><a href="#AstraMongooseError">AstraMongooseError</a></dt>
-<dd><p>Base class for astra-mongoose-specific errors.</p></dd>
 <dt><a href="#Collection">Collection</a></dt>
 <dd><p>Collection operations supported by the driver. This class is called &quot;Collection&quot; for consistency with Mongoose, because
 in Mongoose a Collection is the interface that Models and Queries use to communicate with the database. However, from
@@ -23,6 +21,8 @@ for tables and CollectionsDb class for collections.</p></dd>
 <dt><a href="#Vectorize">Vectorize</a></dt>
 <dd><p>Vectorize is a custom Mongoose SchemaType that allows you set a vector value to a string
 for tables mode vectorize API. A Vectorize path is an array of numbers that can also be set to a string.</p></dd>
+<dt><a href="#AstraMongooseError">AstraMongooseError</a></dt>
+<dd><p>Base class for astra-mongoose-specific errors.</p></dd>
 </dl>
 
 ## Members
@@ -37,8 +37,6 @@ for tables mode vectorize API. A Vectorize path is an array of numbers that can 
 ## Functions
 
 <dl>
-<dt><a href="#createAstraUri">createAstraUri()</a></dt>
-<dd><p>Create an Astra connection URI while connecting to Astra Data API.</p></dd>
 <dt><a href="#handleVectorFieldsProjection">handleVectorFieldsProjection()</a></dt>
 <dd><p>Mongoose plugin to handle adding <code>$vector</code> to the projection by default if <code>$vector</code> has <code>select: true</code>.
 Because <code>$vector</code> is deselected by default, this plugin makes it possible for the user to include <code>$vector</code>
@@ -48,16 +46,12 @@ by default from their schema.</p>
 <dd><p>Mongoose plugin to validate arrays of numbers that have a <code>dimension</code> property. Ensure that the array
 is either nullish or has a length equal to the dimension.</p>
 <p>You do not need to call this function directly. Mongoose applies this plugin automatically when you call <code>setDriver()</code>.</p></dd>
+<dt><a href="#createAstraUri">createAstraUri()</a></dt>
+<dd><p>Create an Astra connection URI while connecting to Astra Data API.</p></dd>
 <dt><a href="#tableDefinitionFromSchema">tableDefinitionFromSchema()</a></dt>
 <dd><p>Given a Mongoose schema, create an equivalent Data API table definition for use with <code>createTable()</code></p></dd>
 </dl>
 
-<a name="AstraMongooseError"></a>
-
-## AstraMongooseError
-<p>Base class for astra-mongoose-specific errors.</p>
-
-**Kind**: global class  
 <a name="Collection"></a>
 
 ## Collection
@@ -89,6 +83,7 @@ an Astra perspective, this class can be a wrapper around a Collection <strong>or
     * [.listIndexes()](#Collection+listIndexes)
     * [.createIndex(indexSpec, options)](#Collection+createIndex)
     * [.dropIndex(name)](#Collection+dropIndex)
+    * [.findAndRerank(filter, options)](#Collection+findAndRerank)
 
 <a name="Collection+countDocuments"></a>
 
@@ -321,6 +316,18 @@ Only works in tables mode, throws an error in collections mode.</p>
 | Param |
 | --- |
 | name | 
+
+<a name="Collection+findAndRerank"></a>
+
+### collection.findAndRerank(filter, options)
+<p>Finds documents that match the filter and reranks them based on the provided options.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param |
+| --- |
+| filter | 
+| options | 
 
 <a name="Connection"></a>
 
@@ -685,6 +692,12 @@ the one exception being strings.</p>
 <p>Overwritten to account for Mongoose SchemaArray constructor taking different arguments than Vectorize</p>
 
 **Kind**: instance method of [<code>Vectorize</code>](#Vectorize)  
+<a name="AstraMongooseError"></a>
+
+## AstraMongooseError
+<p>Base class for astra-mongoose-specific errors.</p>
+
+**Kind**: global class  
 <a name="BaseDb"></a>
 
 ## BaseDb ⇐ [<code>BaseDb</code>](#BaseDb)
@@ -812,12 +825,6 @@ error for Mongoose <code>syncIndexes()</code> compatibility reasons.</p>
 <p>Send a CreateCollection command to Data API.</p>
 
 **Kind**: instance method of [<code>CollectionsDb</code>](#CollectionsDb)  
-<a name="createAstraUri"></a>
-
-## createAstraUri()
-<p>Create an Astra connection URI while connecting to Astra Data API.</p>
-
-**Kind**: global function  
 <a name="handleVectorFieldsProjection"></a>
 
 ## handleVectorFieldsProjection()
@@ -833,6 +840,12 @@ by default from their schema.</p>
 <p>Mongoose plugin to validate arrays of numbers that have a <code>dimension</code> property. Ensure that the array
 is either nullish or has a length equal to the dimension.</p>
 <p>You do not need to call this function directly. Mongoose applies this plugin automatically when you call <code>setDriver()</code>.</p>
+
+**Kind**: global function  
+<a name="createAstraUri"></a>
+
+## createAstraUri()
+<p>Create an Astra connection URI while connecting to Astra Data API.</p>
 
 **Kind**: global function  
 <a name="tableDefinitionFromSchema"></a>
