@@ -19,7 +19,6 @@ import * as AstraMongooseDriver from '../../src/driver';
 import { testClient, TEST_COLLECTION_NAME } from '../fixtures';
 import { CartModelType, ProductModelType, createMongooseCollections, testDebug } from '../mongooseFixtures';
 import type { AstraMongoose } from '../../src';
-import { CommandStartedEvent } from '@datastax/astra-db-ts';
 
 describe('COLLECTIONS: driver based tests', async () => {
     let Product: ProductModelType;
