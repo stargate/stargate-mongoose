@@ -54,7 +54,9 @@ function serializeValue(data: any, isTable?: boolean): any {
         // Rely on astra driver to serialize dates
         return data;
     } else if (data instanceof Map && !isTable) {
-        return Object.fromEntries(data.entries());
+        return Object.fromEntries(
+            [...data.entries()].map(([key, value]) => [key, serializeValue(value, isTable)])
+        );
     } else if (data instanceof Binary) {
         if (data.sub_type === 3 || data.sub_type === 4) {
             // UUIDs, no need for explicit `instanceof UUID` check because bson UUID extends Binary

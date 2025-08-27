@@ -55,6 +55,7 @@ import {
     TableUpdateOneOptions,
     TableVectorIndexOptions,
 } from '@datastax/astra-db-ts';
+import { OperationNotSupportedError } from '../operationNotSupportedError';
 import { SchemaOptions } from 'mongoose';
 import deserializeDoc from '../deserializeDoc';
 import { inspect } from 'util';
@@ -580,13 +581,6 @@ function processSortOption(sort: MongooseSortOption): SortOptionInternal {
     }
 
     return result;
-}
-
-export class OperationNotSupportedError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = 'OperationNotSupportedError';
-    }
 }
 
 /*!
