@@ -14,9 +14,8 @@ then
   . $VERSIONS_FILE
 fi
 
-SGTAG=$stargate_version
+DSETAG=$dse_version
 DATAAPITAG=$data_api_version
-
 
 while getopts "qr:t:j:" opt; do
   case $opt in
@@ -45,24 +44,24 @@ while getopts "qr:t:j:" opt; do
   esac
 done
 
-if [ -z "$SGTAG" ]
+if [ -z "$DSETAG" ]
 then
-  echo "Missing Stargate version (option -t). For example -t v2.0.8"
+  echo "Missing DSE version. For example 6.9.13"
   exit 1
 fi
 
 if [ -z "$DATAAPITAG" ]
 then
-  echo "Missing Data API version (option -j). For example -j v1.0.0-ALPHA-1"
+  echo "Missing Data API version. For example v1.0.29"
   exit 1
 fi
 
 export LOGLEVEL
 export REQUESTLOG
-export SGTAG
 export DATAAPITAG
+export DSETAG
 
-echo "Running with Stargate $SGTAG, Data API $DATAAPITAG"
+echo "Running with DSE $DSETAG, Data API $DATAAPITAG"
 
 if which docker-compose
 then
