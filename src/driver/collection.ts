@@ -536,7 +536,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findAndRerank() with tables');
         }
-        return this.collection.findAndRerank(filter, options);
+        filter = serialize(filter, false);
+        return this.collection.findAndRerank(filter, options)
+            .map(result => ({ ...result, document: deserializeDoc(result.document) }));
     }
 
     /**
