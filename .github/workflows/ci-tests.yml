@@ -20,6 +20,9 @@ jobs:
         run: |
           chmod +x bin/start_data_api.sh
           bin/start_data_api.sh
+      - name: Wait for services
+        run: |
+          sleep 10
       - name: Setting up the node version
         uses: actions/setup-node@v3
         with:
