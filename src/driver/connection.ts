@@ -37,6 +37,7 @@ import {
     WithTimeout,
 } from '@datastax/astra-db-ts';
 import { CollectionsDb, TablesDb } from './db';
+import { OperationNotSupportedError } from '../operationNotSupportedError';
 import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
 import type { ConnectOptions, Mongoose, Model } from 'mongoose';
@@ -194,7 +195,7 @@ export class Connection extends MongooseConnection {
      * @ignore
      */
     async dropDatabase() {
-        throw new Error('dropDatabase() Not Implemented');
+        throw new OperationNotSupportedError('dropDatabase() Not Implemented');
     }
 
     /**
@@ -435,7 +436,6 @@ interface ParsedUri {
     baseApiPath: string;
     keyspaceName: string;
     applicationToken?: string;
-    authHeaderName?: string;
 }
 
 // Parse a connection URI in the format of: https://${baseUrl}/${baseAPIPath}/${keyspace}?applicationToken=${applicationToken}
@@ -443,24 +443,21 @@ export const parseUri = (uri: string): ParsedUri => {
     const parsedUrl = new URL(uri);
     const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
 
-    const keyspaceName = parsedUrl.pathname.substring(parsedUrl.pathname.lastIndexOf('/') + 1);
+
+    // Remove trailing slash from pathname before use
+    const pathname = parsedUrl.pathname.replace(/\/$/, '');
+    const keyspaceName = pathname.substring(pathname.lastIndexOf('/') + 1);
     // Remove the last part of the api path (which is assumed as the keyspace name). For example:
     //  /v1/testks1 => v1
     //  /apis/v1/testks1 => apis/v1
     //  /testks1 => '' (empty string)
-    const baseApiPath = parsedUrl.pathname.substring(1, parsedUrl.pathname.lastIndexOf('/'));
+    const baseApiPath = pathname.substring(1, pathname.lastIndexOf('/'));
 
     const applicationToken = parsedUrl.searchParams.get('applicationToken') ?? undefined;
-    const authHeaderName = parsedUrl.searchParams.get('authHeaderName') ?? undefined;
 
     // Check for duplicate application tokens
     if (parsedUrl.searchParams.getAll('applicationToken').length > 1) {
         throw new Error('Invalid URI: multiple application tokens');
-    }
-
-    // Check for duplicate auth header names
-    if (parsedUrl.searchParams.getAll('authHeaderName').length > 1) {
-        throw new Error('Invalid URI: multiple application auth header names');
     }
 
     if (keyspaceName.length === 0) {
@@ -470,7 +467,6 @@ export const parseUri = (uri: string): ParsedUri => {
         baseUrl,
         baseApiPath,
         keyspaceName,
-        applicationToken,
-        authHeaderName
+        applicationToken
     };
 };
