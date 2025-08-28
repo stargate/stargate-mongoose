@@ -22,8 +22,7 @@ jobs:
           bin/start_data_api.sh
       - name: Wait for services
         run: |
-          while ! nc -z localhost 8181; do sleep 1; done
-          while ! nc -z localhost 8081; do sleep 1; done
+          sleep 10
       - name: Setting up the node version
         uses: actions/setup-node@v3
         with:
