@@ -12,9 +12,9 @@ services:
       - CLUSTER_NAME=dse-${DSETAG}-cluster
       - DS_LICENSE=accept
     volumes:
-      - ${PWD}/dse.yaml:/opt/dse/resources/dse/conf/dse.yaml
+      - ${PWD}/bin/dse.yaml:/opt/dse/resources/dse/conf/dse.yaml
     ports:
-      - "9042:9042" 
+      - "9042:9042"
     healthcheck:
       test: [ "CMD-SHELL", "cqlsh -u cassandra -p cassandra -e 'describe keyspaces'" ]
       interval: 15s
