@@ -22,13 +22,16 @@ type AllowedDataAPITypes = 'text' | 'double' | 'timestamp' | 'boolean' | 'decima
  * Given a Mongoose schema, create an equivalent Data API table definition for use with `createTable()`
  */
 export default function tableDefinitionFromSchema(schema: Schema): CreateTableDefinition {
+    const versionKey = schema.options.versionKey;
     const tableDefinition: CreateTableDefinition = {
         primaryKey: '_id',
         columns: {
-            _id: { type: 'text' },
-            __v: { type: 'int' }
+            _id: { type: 'text' }
         }
     };
+    if (typeof versionKey === 'string') {
+        tableDefinition.columns[versionKey] = { type: 'int' };
+    }
     const schemaTypesForNestedPath: Record<string, SchemaType[]> = {};
     for (const path of Object.keys(schema.paths)) {
         const schemaType = schema.paths[path];
