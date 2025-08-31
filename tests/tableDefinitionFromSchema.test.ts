@@ -52,24 +52,6 @@ describe('tableDefinitionFromSchema', () => {
         });
     });
 
-    it('handles custom version key', () => {
-        const testSchema = new Schema(
-            { tags: [String] },
-            { versionKey: 'myVersionKey' }
-        );
-
-        const result = tableDefinitionFromSchema(testSchema);
-
-        assert.deepStrictEqual(result, {
-            primaryKey: '_id',
-            columns: {
-                '_id': { type: 'text' },
-                'myVersionKey': { type: 'int' },
-                'tags': { type: 'list', valueType: 'text' }
-            }
-        });
-    })
-
     it('generates table definition from schema with array of primitives', () => {
         const testSchema = new Schema({
             tags: [String]
@@ -339,6 +321,24 @@ describe('tableDefinitionFromSchema', () => {
             tableDefinitionFromSchema(testSchema);
         }, {
             message: 'Cannot convert schema to Data API table definition: vector column at "arr" must be an array of numbers'
+        });
+    });
+
+    it('handles custom version key', () => {
+        const testSchema = new Schema(
+            { tags: [String] },
+            { versionKey: 'myVersionKey' }
+        );
+
+        const result = tableDefinitionFromSchema(testSchema);
+
+        assert.deepStrictEqual(result, {
+            primaryKey: '_id',
+            columns: {
+                '_id': { type: 'text' },
+                'myVersionKey': { type: 'int' },
+                'tags': { type: 'list', valueType: 'text' }
+            }
         });
     });
 });
