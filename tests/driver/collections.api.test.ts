@@ -146,7 +146,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 mixedData: {a: 1, b: 'test'},
                 employee: employeeIdVal,
                 friends: ['friend 1', 'friend 2'],
-                salary: mongoose.Types.Decimal128.fromString('100.25'),
+                salary: mongoose.Types.Decimal128.fromString('90071992547409910.12'), // Number.MAX_SAFE_INTEGER * 10 + 0.12 as string
                 favorites: new Map([['food', 'pizza'], ['drink', 'cola']]),
                 nestedSchema: {
                     address: {
@@ -157,7 +157,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 },
                 nestedMap: new Map([['key1', new Map([['subkey1', 'value1'], ['subkey2', 'value2']])]]),
                 uniqueId: new UUID(uniqueIdVal),
-                category: BigInt(100),
+                category: BigInt('90071992547409912'), // Number.MAX_SAFE_INTEGER * 10 + 2 as string
                 documentArray: [{ name: 'test document array' }],
                 buf: Buffer.from('hello', 'utf8'),
                 long: new Long(99n),
@@ -172,7 +172,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.strictEqual(saveResponse.employee!.toString(), employeeIdVal.toString());
             assert.strictEqual(saveResponse.friends[0], 'friend 1');
             assert.strictEqual(saveResponse.friends[1], 'friend 2');
-            assert.strictEqual(saveResponse.salary!.toString(), '100.25');
+            assert.strictEqual(saveResponse.salary!.toString(), '90071992547409910.12');
             assert.strictEqual(saveResponse.favorites!.get('food'), 'pizza');
             assert.strictEqual(saveResponse.favorites!.get('drink'), 'cola');
             assert.strictEqual(saveResponse.nestedSchema!.address!.street, 'street 1');
@@ -183,7 +183,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             // @ts-expect-error Mongoose types don't handle nested maps well
             assert.strictEqual(saveResponse.nestedMap!.get('key1')!.get('subkey2'), 'value2');
             assert.strictEqual(saveResponse.uniqueId!.toString(), uniqueIdVal.toString());
-            assert.strictEqual(saveResponse.category!.toString(), '100');
+            assert.strictEqual(saveResponse.category!.toString(), '90071992547409912');
             assert.strictEqual(saveResponse.documentArray[0].name, 'test document array');
             assert.strictEqual(saveResponse.buf!.toString('utf8'), 'hello');
             assert.strictEqual(saveResponse.long!.toString(), '99');
@@ -199,7 +199,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.strictEqual(findOneResponse.employee!.toString(), employeeIdVal.toString());
             assert.strictEqual(findOneResponse.friends[0], 'friend 1');
             assert.strictEqual(findOneResponse.friends[1], 'friend 2');
-            assert.strictEqual(findOneResponse.salary!.toString(), '100.25');
+            assert.strictEqual(findOneResponse.salary!.toString(), '90071992547409910.12');
             assert.strictEqual(findOneResponse.favorites!.get('food'), 'pizza');
             assert.strictEqual(findOneResponse.favorites!.get('drink'), 'cola');
             assert.strictEqual(findOneResponse.nestedSchema!.address!.street, 'street 1');
@@ -210,7 +210,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             // @ts-expect-error Mongoose types don't handle nested maps well
             assert.strictEqual(findOneResponse.nestedMap!.get('key1')!.get('subkey2'), 'value2');
             assert.strictEqual(findOneResponse.uniqueId!.toString(), uniqueIdVal.toString());
-            assert.strictEqual(findOneResponse.category!.toString(), '100');
+            assert.strictEqual(findOneResponse.category!.toString(), '90071992547409912');
             assert.strictEqual(findOneResponse.documentArray[0].name, 'test document array');
             assert.strictEqual(findOneResponse.buf!.toString('utf8'), 'hello');
             assert.strictEqual(findOneResponse.long!.toString(), '99');

@@ -46,8 +46,8 @@ function serializeValue(data: any, isTable?: boolean): any {
     if (data instanceof ObjectId) {
         return data.toHexString();
     } else if (data instanceof mongoose.Types.Decimal128) {
-        //Decimal128 handling
-        return Number(data.toString());
+        // Decimal128 handling: for collections, store as string to avoid loss of precision
+        return isTable ? Number(data.toString()) : data.toString();
     } else if (data instanceof Double) {
         return Number(data.valueOf());
     } else if (data instanceof Date) {
