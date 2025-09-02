@@ -23,7 +23,6 @@ jobs:
       - name: Wait for services
         run: |
           while ! nc -z localhost 8181; do sleep 1; done
-          while ! nc -z localhost 8081; do sleep 1; done
       - name: Setting up the node version
         uses: actions/setup-node@v3
         with:
