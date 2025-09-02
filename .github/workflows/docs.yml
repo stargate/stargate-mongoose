@@ -1,0 +1,27 @@
+name: Documentation Build
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setting up the node version
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.19.0
+      - name: setup project
+        run: npm i
+      - run: npm run build:docs
+      - run: |
+          if git diff --exit-code -- APIReference.md; then
+            echo "No changes detected in APIReference.md"
+          else
+            echo "Changes detected in APIReference.md, please run \`npm run build:docs\` and commit the changes"
+            exit 1
+          fi
