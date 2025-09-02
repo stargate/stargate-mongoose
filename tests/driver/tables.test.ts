@@ -98,7 +98,6 @@ describe('TABLES: basic operations and data types', function() {
             primaryKey: '_id',
             columns: {
                 _id: { type: 'text' },
-                __v: { type: 'int' },
                 name: { type: 'text' },
                 age: { type: 'double' },
                 dob: { type: 'timestamp' },

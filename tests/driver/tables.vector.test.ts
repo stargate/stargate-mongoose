@@ -262,6 +262,21 @@ describe('TABLES: vectorize', function () {
         );
     });
 
+    it('throws an error if vectorize dimension is negative', async function () {
+        assert.throws(
+            () => {
+                new Vectorize('vector', {
+                    dimension: -1,
+                    service: {
+                        provider: 'nvidia',
+                        modelName: 'NV-Embed-QA'
+                    }
+                });
+            },
+            /`dimension` option for vectorize paths must be a positive integer, got: -1/
+        );
+    });
+
     it('handles required vectorize', async function () {
         const vectorSchema = new Schema<IVector>({ name: 'String' }, { autoCreate: false });
         vectorSchema.path('vector', new Vectorize('vector', {

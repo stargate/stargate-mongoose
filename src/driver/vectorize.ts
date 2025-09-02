@@ -36,6 +36,11 @@ export class Vectorize extends Schema.Types.Array {
     constructor(key: string, options: VectorizeOptions) {
         super(key, { type: 'Number' });
         this.options = options;
+        if (typeof options?.dimension === 'number' && options.dimension <= 0) {
+            throw new AstraMongooseError('`dimension` option for vectorize paths must be a positive integer, got: ' + options?.dimension, {
+                options
+            });
+        }
         this.instance = 'Vectorize';
         if (options?.index) {
             this.index.call(this, options.index);
@@ -62,7 +67,10 @@ export class Vectorize extends Schema.Types.Array {
      * Overwritten to account for Mongoose SchemaArray constructor taking different arguments than Vectorize
      */
     clone(): Vectorize {
-        const options = Object.assign({}, this.options) as VectorizeOptions;
+        const options = { ...this.options } as VectorizeOptions;
+        if (options?.service) {
+            options.service = { ...options.service };
+        }
         const schematype = new Vectorize(this.path, options);
         schematype.validators = this.validators.slice();
         // @ts-expect-error Mongoose doesn't expose the type of `requiredValidator`
