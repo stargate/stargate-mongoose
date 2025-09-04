@@ -649,10 +649,20 @@ describe('TABLES: Mongoose Model API level tests', async () => {
         });
         it('API ops tests createConnection() with queueing', async function() {
             const connection = mongooseInstance.createConnection() as unknown as AstraMongooseDriver.Connection;
+            const eventPromiseOnce = new Promise<void>((resolve) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                connection.once('open' as any, () => resolve());
+            });
+            const eventPromiseOn = new Promise<void>((resolve) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                connection.on('open' as any, () => resolve());
+            });
             const promise = connection.listTables({ nameOnly: false });
 
             await connection.openUri(testClient!.uri, testClient!.options);
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
+            await eventPromiseOnce;
+            await eventPromiseOn;
         });
         it('API ops tests createConnection() with no buffering', async function() {
             const connection = mongooseInstance.createConnection(testClient!.uri, { ...testClient!.options, bufferCommands: false }) as unknown as AstraMongooseDriver.Connection;
