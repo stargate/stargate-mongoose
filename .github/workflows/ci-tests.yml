@@ -31,6 +31,12 @@ jobs:
         run: npm i
       - name: copy env file
         run: cp .env.example .env
+      - name: Create test keyspace with RF=1
+        run: |
+          docker exec dse-1 cqlsh -u cassandra -p cassandra -e "
+            CREATE KEYSPACE IF NOT EXISTS testks1
+            WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+          "
       - name: run tests
         run: |
           npm run test-dataapi
