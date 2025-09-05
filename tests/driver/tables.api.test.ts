@@ -21,8 +21,11 @@ import * as AstraMongooseDriver from '../../src/driver';
 import {OperationNotSupportedError} from '../../src/driver';
 import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
-import { DataAPIResponseError } from '@datastax/astra-db-ts';
+import { DataAPIResponseError, TableTextIndexOptions } from '@datastax/astra-db-ts';
 import type { AstraMongoose } from '../../src';
+import { tableDefinitionFromSchema } from '../../src';
+
+const TEST_TABLE_NAME = 'table1';
 
 describe('TABLES: Mongoose Model API level tests', async () => {
     let Product: ProductModelType;
@@ -699,6 +702,57 @@ describe('TABLES: Mongoose Model API level tests', async () => {
         });
         it('API ops tests Model.findAndRerank()', async function() {
             await assert.rejects(Product.findAndRerank({ name: 'test' }), /Cannot use findAndRerank\(\) with tables/);
+        });
+    });
+
+    describe('text indexes', function () {
+        const lexicalSchema = new Schema(
+            {
+                content: {
+                    type: String,
+                    index: {
+                        name: 'content_text',
+                        text: true,
+                        analyzer: {
+                            tokenizer: { name: 'standard' },
+                            filters: [{ name: 'lowercase' }, { name: 'stop' }, { name: 'porterstem' }, { name: 'asciifolding' }]
+                        }
+                    }
+                },
+                name: { type: String }
+            },
+            {
+                autoCreate: false,
+                autoIndex: false
+            }
+        );
+        let LexicalModel: mongoose.Model<InferSchemaType<typeof lexicalSchema>>;
+
+        before(async function () {
+            this.timeout(120_000);
+
+            await mongooseInstance.connection.dropCollection(TEST_TABLE_NAME);
+            LexicalModel = mongooseInstance.model('Lexical', lexicalSchema, TEST_TABLE_NAME);
+
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(lexicalSchema));
+        });
+
+        it('creates a text index', async function () {
+            await LexicalModel.createIndexes();
+            const indexes = await mongooseInstance.connection.collection(TEST_TABLE_NAME).listIndexes().toArray();
+            assert.strictEqual(indexes.length, 1);
+            assert.strictEqual(indexes[0].name, 'content_text');
+            assert.strictEqual(indexes[0].definition.column, 'content');
+
+            const options = indexes[0].definition.options as TableTextIndexOptions;
+            assert.ok(typeof options.analyzer === 'object');
+            assert.ok(typeof options.analyzer.tokenizer === 'object');
+            assert.strictEqual((options.analyzer.tokenizer as Record<string, unknown>).name, 'standard');
+            assert.ok(Array.isArray(options.analyzer.filters));
+            assert.strictEqual(options.analyzer.filters[0].name, 'lowercase');
+            assert.strictEqual(options.analyzer.filters[1].name, 'stop');
+            assert.strictEqual(options.analyzer.filters[2].name, 'porterstem');
+            assert.strictEqual(options.analyzer.filters[3].name, 'asciifolding');
         });
     });
 });
