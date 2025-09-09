@@ -486,7 +486,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         }
 
         const [[column, indexModifier]] = Object.entries(indexSpec);
-        const indexName = options?.name ?? column;
+        const indexName = options?.name ?? `${column}_index`;
         if (options?.vector) {
             // Vector index: `myVector: { type: [Number], index: { vector: true } }`
             await this.collection.createVectorIndex(
