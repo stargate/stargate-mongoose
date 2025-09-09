@@ -42,7 +42,6 @@ import {
 import { CollectionsDb, TablesDb } from './db';
 import { BaseConnection as MongooseConnection } from 'mongoose';
 import { OperationNotSupportedError } from '../operationNotSupportedError';
-import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
 import type { ConnectOptions, Mongoose, Model } from 'mongoose';
 import { URL } from 'url';
@@ -171,6 +170,7 @@ export class Connection extends MongooseConnection {
       * Get current debug setting, accounting for potential changes to global debug config (`mongoose.set('debug', true | false)`)
       */
     get debug(): boolean | ((name: string, fn: string, ...args: unknown[]) => void) | null | undefined {
+        // @ts-expect-error Mongoose global currently doesn't export options
         return this._debug ?? this.base?.options?.debug;
     }
 

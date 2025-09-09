@@ -64,7 +64,6 @@ import { IndexSpecification, Sort as MongoDBSort, WithId, InferIdType } from 'mo
 import { inspect } from 'util';
 import { serialize } from '../serialize';
 import { setDefaultIdForUpdate, setDefaultIdForReplace } from '../setDefaultIdForUpsert';
-import { IndexSpecification } from 'mongodb';
 
 export type MongooseSortOption = MongoDBSort | Record<string, 1 | -1 | { $meta: Array<number> }>;
 
