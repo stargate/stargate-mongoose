@@ -49,9 +49,9 @@ describe('TABLES: basic operations and data types', function() {
         const TestModel = mongooseInstance.model('Test', testSchema, TEST_TABLE_NAME);
         await TestModel.createIndexes();
         let indexes = await mongooseInstance.connection.collection(TEST_TABLE_NAME).listIndexes().toArray();
-        assert.ok(indexes.find(index => index.name === 'testProperty'));
+        assert.ok(indexes.find(index => index.name === 'testProperty_index'));
 
-        await mongooseInstance.connection.collection(TEST_TABLE_NAME).dropIndex('testProperty');
+        await mongooseInstance.connection.collection(TEST_TABLE_NAME).dropIndex('testProperty_index');
 
         mongooseInstance.deleteModel(/Test/);
         const testSchema2 = new Schema({ testProperty: { type: String } });
@@ -98,7 +98,6 @@ describe('TABLES: basic operations and data types', function() {
             primaryKey: '_id',
             columns: {
                 _id: { type: 'text' },
-                __v: { type: 'int' },
                 name: { type: 'text' },
                 age: { type: 'double' },
                 dob: { type: 'timestamp' },

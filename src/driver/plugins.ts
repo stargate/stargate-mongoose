@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import type { Schema, SchemaType } from 'mongoose';
+import { AstraMongooseError } from '../astraMongooseError';
 import { CollectionFindAndRerankOptions } from '@datastax/astra-db-ts';
 import { Collection } from './collection';
 
@@ -67,6 +68,12 @@ export function addVectorDimensionValidator(schema: Schema) {
         const isValidArray = schemaType.instance === 'Array' || schemaType.instance === 'Vectorize';
         if (isValidArray && schemaType.getEmbeddedSchemaType()?.instance === 'Number' && typeof schemaType.options?.dimension === 'number') {
             const dimension = schemaType.options?.dimension;
+            if (dimension <= 0) {
+                throw new AstraMongooseError('`dimension` option for vectorize paths must be a positive integer, got: ' + dimension, {
+                    options: schemaType.options,
+                    path: schemaType.path,
+                });
+            }
             schemaType.validate((value: number[] | string | null) => {
                 if (value == null) {
                     return true;

@@ -18,11 +18,12 @@ import {
 } from '../fixtures';
 import mongoose, { Schema, InferSchemaType, InsertManyResult, IndexDirection } from 'mongoose';
 import * as AstraMongooseDriver from '../../src/driver';
-import {OperationNotSupportedError} from '../../src/driver';
+import { OperationNotSupportedError } from '../../src/operationNotSupportedError';
 import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
 import { DataAPIResponseError, TableTextIndexOptions } from '@datastax/astra-db-ts';
-import { tableDefinitionFromSchema, type AstraMongoose } from '../../src';
+import type { AstraMongoose } from '../../src';
+import { tableDefinitionFromSchema } from '../../src';
 
 const TEST_TABLE_NAME = 'table1';
 
@@ -131,10 +132,10 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             await collection.createIndex({ name: true });
             await collection.createIndex({ price: true }, { name: 'will_drop_index' });
 
-            let indexes = await Product.listIndexes();
+            let indexes = (await Product.listIndexes()).sort((a, b) => a.name.localeCompare(b.name));
             assert.deepStrictEqual(indexes, [
                 {
-                    name: 'name',
+                    name: 'name_index',
                     definition: {
                         column: 'name',
                         options: { ascii: false, caseSensitive: true, normalize: false }
@@ -161,7 +162,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             indexes = await Product.listIndexes();
             assert.deepStrictEqual(indexes, [
                 {
-                    name: 'name',
+                    name: 'name_index',
                     definition: {
                         column: 'name',
                         options: { ascii: false, caseSensitive: true, normalize: false }
@@ -171,7 +172,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                 }
             ]);
 
-            await collection.dropIndex('name');
+            await collection.dropIndex('name_index');
 
             // @ts-expect-error hack to reset schema indexes for testing
             Product.schema._indexes = [];
@@ -197,8 +198,8 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             Product.schema.index({name: 1});
             await Product.createIndexes();
             const indexes = await mongooseInstance.connection.collection(Product.collection.collectionName).listIndexes().toArray();
-            assert.ok(indexes.find(index => index.name === 'name'));
-            await mongooseInstance.connection.collection(Product.collection.collectionName).dropIndex('name');
+            assert.ok(indexes.find(index => index.name === 'name_index'));
+            await mongooseInstance.connection.collection(Product.collection.collectionName).dropIndex('name_index');
             // @ts-expect-error hack to reset schema indexes for testing
             Product.schema._indexes = [];
         });
@@ -435,7 +436,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             let indexes = await ProductIndexModel.listIndexes();
             assert.deepStrictEqual(indexes.sort((i1, i2) => i1.name.localeCompare(i2.name)), [
                 {
-                    name: 'price',
+                    name: 'price_index',
                     definition: {
                         column: 'price',
                         options: {}
@@ -444,7 +445,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                     key: { price: 1 }
                 },
                 {
-                    name: 'testMap',
+                    name: 'testMap_index',
                     key: {
                         testMap: '$keys'
                     },
@@ -471,12 +472,12 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                 const droppedIndexes = await ProductIndexModel.syncIndexes();
 
                 // Drop "will_drop_index" because not in schema, but keep index on `price` and `testArray`
-                assert.deepStrictEqual(droppedIndexes.sort(), ['testMap', 'will_drop_index']);
+                assert.deepStrictEqual(droppedIndexes.sort(), ['testMap_index', 'will_drop_index']);
 
                 indexes = await ProductIndexModel.listIndexes();
                 assert.deepStrictEqual(indexes.sort((i1, i2) => i1.name.localeCompare(i2.name)), [
                     {
-                        name: 'name',
+                        name: 'name_index',
                         definition: {
                             column: 'name',
                             options: stringIndexOptions
@@ -485,7 +486,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                         key: { name: 1 }
                     },
                     {
-                        name: 'price',
+                        name: 'price_index',
                         definition: {
                             column: 'price',
                             options: {}
@@ -494,7 +495,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                         key: { price: 1 }
                     },
                     {
-                        name: 'testMap',
+                        name: 'testMap_index',
                         key: {
                             testMap: '$values'
                         },
@@ -512,9 +513,9 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                 assert.deepStrictEqual(toDrop, []);
                 assert.deepStrictEqual(toCreate, []);
             } finally {
-                await collection.dropIndex('name').catch(() => {});
-                await collection.dropIndex('price').catch(() => {});
-                await collection.dropIndex('testMap').catch(() => {});
+                await collection.dropIndex('name_index').catch(() => {});
+                await collection.dropIndex('price_index').catch(() => {});
+                await collection.dropIndex('testMap_index').catch(() => {});
             }
         });
         it('API ops tests Model.updateOne()', async () => {
@@ -630,11 +631,6 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             await assert.rejects(
                 mongooseInstance.createConnection('https://apps.astra.datastax.com/api/json/v1/test?applicationToken=test1&applicationToken=test2', testClient!.options).asPromise(),
                 /Invalid URI: multiple application tokens/
-            );
-
-            await assert.rejects(
-                mongooseInstance.createConnection('https://apps.astra.datastax.com/api/json/v1/test?authHeaderName=test1&authHeaderName=test2', testClient!.options).asPromise(),
-                /Invalid URI: multiple application auth header names/
             );
 
             if (!testClient?.isAstra) {

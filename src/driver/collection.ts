@@ -56,6 +56,7 @@ import {
     TableUpdateOneOptions,
     TableVectorIndexOptions
 } from '@datastax/astra-db-ts';
+import { OperationNotSupportedError } from '../operationNotSupportedError';
 import { SchemaOptions } from 'mongoose';
 import { Writable } from 'stream';
 import deserializeDoc from '../deserializeDoc';
@@ -63,6 +64,7 @@ import { IndexSpecification, Sort as MongoDBSort, WithId, InferIdType } from 'mo
 import { inspect } from 'util';
 import { serialize } from '../serialize';
 import { setDefaultIdForUpdate, setDefaultIdForReplace } from '../setDefaultIdForUpsert';
+import { IndexSpecification } from 'mongodb';
 
 export type MongooseSortOption = MongoDBSort | Record<string, 1 | -1 | { $meta: Array<number> }>;
 
@@ -596,8 +598,6 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param indexSpec MongoDB-style index spec for Mongoose compatibility
      * @param options
      */
-
-
     async createIndex(
         indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values' | 'text'> | IndexSpecification,
         options?: (TableTextIndexOptions | TableIndexOptions | TableVectorIndexOptions) & { name?: string, vector?: boolean }
@@ -612,7 +612,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         }
 
         const [[column, indexModifier]] = Object.entries(indexSpec);
-        const indexName = options?.name ?? column;
+        const indexName = options?.name ?? `${column}_index`;
         if (options?.vector) {
             // Vector index: `myVector: { type: [Number], index: { vector: true } }`
             await this.collection.createVectorIndex(
@@ -669,7 +669,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findAndRerank() with tables');
         }
-        return this.collection.findAndRerank(filter, options);
+        filter = serialize(filter, false);
+        return this.collection.findAndRerank(filter, options)
+            .map(result => ({ ...result, document: deserializeDoc(result.document) }));
     }
 
     /**
@@ -720,13 +722,6 @@ function processSortOption(sort: MongooseSortOption): SortOptionInternal {
 
 
     return result;
-}
-
-export class OperationNotSupportedError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = 'OperationNotSupportedError';
-    }
 }
 
 /*!
