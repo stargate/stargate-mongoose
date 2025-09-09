@@ -54,6 +54,7 @@ import {
     TableUpdateOneOptions,
     TableVectorIndexOptions,
 } from '@datastax/astra-db-ts';
+import { OperationNotSupportedError } from '../operationNotSupportedError';
 import { SchemaOptions } from 'mongoose';
 import deserializeDoc from '../deserializeDoc';
 import { inspect } from 'util';
@@ -541,7 +542,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findAndRerank() with tables');
         }
-        return this.collection.findAndRerank(filter, options);
+        filter = serialize(filter, false);
+        return this.collection.findAndRerank(filter, options)
+            .map(result => ({ ...result, document: deserializeDoc(result.document) }));
     }
 
     /**
@@ -586,13 +589,6 @@ function processSortOption(sort: MongooseSortOption): SortOptionInternal {
     }
 
     return result;
-}
-
-export class OperationNotSupportedError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = 'OperationNotSupportedError';
-    }
 }
 
 /*!
