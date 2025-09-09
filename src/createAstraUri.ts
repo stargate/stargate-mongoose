@@ -22,7 +22,6 @@ export default function createAstraUri (
     apiToken: string,
     namespace?: string,
     baseApiPath?: string,
-    authHeaderName?: string,
 ) {
     const uri = new url.URL(apiEndpoint);
     let contextPath = '';
@@ -31,9 +30,6 @@ export default function createAstraUri (
     uri.pathname = contextPath;
     if (apiToken) {
         uri.searchParams.append('applicationToken', apiToken);
-    }
-    if (authHeaderName) {
-        uri.searchParams.append('authHeaderName', authHeaderName);
     }
     return uri.toString();
 }

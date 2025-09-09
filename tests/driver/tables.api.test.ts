@@ -18,7 +18,7 @@ import {
 } from '../fixtures';
 import mongoose, { Schema, InferSchemaType, InsertManyResult, IndexDirection } from 'mongoose';
 import * as AstraMongooseDriver from '../../src/driver';
-import {OperationNotSupportedError} from '../../src/driver';
+import { OperationNotSupportedError } from '../../src/operationNotSupportedError';
 import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
 import { DataAPIResponseError } from '@datastax/astra-db-ts';
@@ -628,11 +628,6 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             await assert.rejects(
                 mongooseInstance.createConnection('https://apps.astra.datastax.com/api/json/v1/test?applicationToken=test1&applicationToken=test2', testClient!.options).asPromise(),
                 /Invalid URI: multiple application tokens/
-            );
-
-            await assert.rejects(
-                mongooseInstance.createConnection('https://apps.astra.datastax.com/api/json/v1/test?authHeaderName=test1&authHeaderName=test2', testClient!.options).asPromise(),
-                /Invalid URI: multiple application auth header names/
             );
 
             if (!testClient?.isAstra) {
