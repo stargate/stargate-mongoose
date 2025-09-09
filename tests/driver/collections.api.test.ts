@@ -178,9 +178,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.strictEqual(saveResponse.nestedSchema!.address!.street, 'street 1');
             assert.strictEqual(saveResponse.nestedSchema!.address!.city, 'city 1');
             assert.strictEqual(saveResponse.nestedSchema!.address!.state, 'state 1');
-            // @ts-expect-error Mongoose types don't handle nested maps well
             assert.strictEqual(saveResponse.nestedMap!.get('key1')!.get('subkey1'), 'value1');
-            // @ts-expect-error Mongoose types don't handle nested maps well
             assert.strictEqual(saveResponse.nestedMap!.get('key1')!.get('subkey2'), 'value2');
             assert.strictEqual(saveResponse.uniqueId!.toString(), uniqueIdVal.toString());
             assert.strictEqual(saveResponse.category!.toString(), '90071992547409912');
@@ -205,9 +203,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.strictEqual(findOneResponse.nestedSchema!.address!.street, 'street 1');
             assert.strictEqual(findOneResponse.nestedSchema!.address!.city, 'city 1');
             assert.strictEqual(findOneResponse.nestedSchema!.address!.state, 'state 1');
-            // @ts-expect-error Mongoose types don't handle nested maps well
             assert.strictEqual(findOneResponse.nestedMap!.get('key1')!.get('subkey1'), 'value1');
-            // @ts-expect-error Mongoose types don't handle nested maps well
             assert.strictEqual(findOneResponse.nestedMap!.get('key1')!.get('subkey2'), 'value2');
             assert.strictEqual(findOneResponse.uniqueId!.toString(), uniqueIdVal.toString());
             assert.strictEqual(findOneResponse.category!.toString(), '90071992547409912');
