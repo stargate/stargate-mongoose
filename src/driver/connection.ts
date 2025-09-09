@@ -469,6 +469,10 @@ export const parseUri = (uri: string): ParsedUri => {
 
 
     // Remove trailing slash from pathname before use
+    //  /v1/testks1/ => /v1/testks1
+    //  /apis/v1/testks1/ => /apis/v1/testks1
+    //  /testks1/ => /testks1
+    //  / => '' (empty string)
     const pathname = parsedUrl.pathname.replace(/\/$/, '');
     const keyspaceName = pathname.substring(pathname.lastIndexOf('/') + 1);
     // Remove the last part of the api path (which is assumed as the keyspace name). For example:
