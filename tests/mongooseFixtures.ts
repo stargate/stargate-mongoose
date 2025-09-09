@@ -16,6 +16,7 @@ import { testClient } from './fixtures';
 import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 import * as AstraMongooseDriver from '../src/driver';
 import assert from 'assert';
+import compareTableDefinitions from './compareTableDefinitions';
 import { plugins } from '../src/driver';
 import tableDefinitionFromSchema from '../src/tableDefinitionFromSchema';
 
@@ -86,7 +87,11 @@ export async function createMongooseCollections(isTable: boolean) {
     }
 
     const tableNames = await mongooseInstance.connection.listTables({ nameOnly: true });
+    const tables = await mongooseInstance.connection.listTables({ nameOnly: false });
     const collectionNames = await mongooseInstance.connection.listCollections({ nameOnly: true });
+
+    const cartTableDefinition = tableDefinitionFromSchema(CartTablesModel.schema);
+    const cartTable = tables.find(t => t.name === CartTablesModel.collection.collectionName);
 
     if (isTable) {
         if (collectionNames.includes(CartTablesModel.collection.collectionName)) {
@@ -95,8 +100,17 @@ export async function createMongooseCollections(isTable: boolean) {
         if (collectionNames.includes(ProductTablesModel.collection.collectionName)) {
             await mongooseInstance.connection.dropCollection(ProductTablesModel.collection.collectionName);
         }
-        if (!tableNames.includes(CartTablesModel.collection.collectionName)) {
-            await mongooseInstance.connection.createTable(CartTablesModel.collection.collectionName, tableDefinitionFromSchema(CartTablesModel.schema));
+        if (!cartTable) {
+            await mongooseInstance.connection.createTable(
+                CartTablesModel.collection.collectionName,
+                cartTableDefinition
+            );
+        } else if (!compareTableDefinitions(cartTable.definition.columns, cartTableDefinition.columns)) {
+            await mongooseInstance.connection.dropTable(CartTablesModel.collection.collectionName);
+            await mongooseInstance.connection.createTable(
+                CartTablesModel.collection.collectionName,
+                cartTableDefinition
+            );
         }
         if (!tableNames.includes(ProductTablesModel.collection.collectionName)) {
             await mongooseInstance.connection.createTable(ProductTablesModel.collection.collectionName, {
