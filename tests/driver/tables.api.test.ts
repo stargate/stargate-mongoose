@@ -376,6 +376,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
             await Product.insertMany([product1, product2, product3]);
             const cart1 = new Cart({name: 'Cart 1', products: [product1._id, product2._id]});
+            await Cart.deleteMany({});
             await Cart.insertMany([cart1]);
 
             type CartModel = ReturnType<(typeof Cart)['hydrate']>;
