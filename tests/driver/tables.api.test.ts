@@ -18,11 +18,14 @@ import {
 } from '../fixtures';
 import mongoose, { Schema, InferSchemaType, InsertManyResult, IndexDirection } from 'mongoose';
 import * as AstraMongooseDriver from '../../src/driver';
-import {OperationNotSupportedError} from '../../src/driver';
+import { OperationNotSupportedError } from '../../src/operationNotSupportedError';
 import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections } from '../mongooseFixtures';
 import { parseUri } from '../../src/driver/connection';
-import { DataAPIResponseError } from '@datastax/astra-db-ts';
+import { DataAPIResponseError, TableTextIndexOptions } from '@datastax/astra-db-ts';
 import type { AstraMongoose } from '../../src';
+import { tableDefinitionFromSchema } from '../../src';
+
+const TEST_TABLE_NAME = 'table1';
 
 describe('TABLES: Mongoose Model API level tests', async () => {
     let Product: ProductModelType;
@@ -129,10 +132,10 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             await collection.createIndex({ name: true });
             await collection.createIndex({ price: true }, { name: 'will_drop_index' });
 
-            let indexes = await Product.listIndexes();
+            let indexes = (await Product.listIndexes()).sort((a, b) => a.name.localeCompare(b.name));
             assert.deepStrictEqual(indexes, [
                 {
-                    name: 'name',
+                    name: 'name_index',
                     definition: {
                         column: 'name',
                         options: { ascii: false, caseSensitive: true, normalize: false }
@@ -159,7 +162,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             indexes = await Product.listIndexes();
             assert.deepStrictEqual(indexes, [
                 {
-                    name: 'name',
+                    name: 'name_index',
                     definition: {
                         column: 'name',
                         options: { ascii: false, caseSensitive: true, normalize: false }
@@ -169,7 +172,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                 }
             ]);
 
-            await collection.dropIndex('name');
+            await collection.dropIndex('name_index');
 
             // @ts-expect-error hack to reset schema indexes for testing
             Product.schema._indexes = [];
@@ -195,8 +198,8 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             Product.schema.index({name: 1});
             await Product.createIndexes();
             const indexes = await mongooseInstance.connection.collection(Product.collection.collectionName).listIndexes().toArray();
-            assert.ok(indexes.find(index => index.name === 'name'));
-            await mongooseInstance.connection.collection(Product.collection.collectionName).dropIndex('name');
+            assert.ok(indexes.find(index => index.name === 'name_index'));
+            await mongooseInstance.connection.collection(Product.collection.collectionName).dropIndex('name_index');
             // @ts-expect-error hack to reset schema indexes for testing
             Product.schema._indexes = [];
         });
@@ -373,6 +376,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
             await Product.insertMany([product1, product2, product3]);
             const cart1 = new Cart({name: 'Cart 1', products: [product1._id, product2._id]});
+            await Cart.deleteMany({});
             await Cart.insertMany([cart1]);
 
             type CartModel = ReturnType<(typeof Cart)['hydrate']>;
@@ -433,7 +437,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             let indexes = await ProductIndexModel.listIndexes();
             assert.deepStrictEqual(indexes.sort((i1, i2) => i1.name.localeCompare(i2.name)), [
                 {
-                    name: 'price',
+                    name: 'price_index',
                     definition: {
                         column: 'price',
                         options: {}
@@ -442,7 +446,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                     key: { price: 1 }
                 },
                 {
-                    name: 'testMap',
+                    name: 'testMap_index',
                     key: {
                         testMap: '$keys'
                     },
@@ -469,12 +473,12 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                 const droppedIndexes = await ProductIndexModel.syncIndexes();
 
                 // Drop "will_drop_index" because not in schema, but keep index on `price` and `testArray`
-                assert.deepStrictEqual(droppedIndexes.sort(), ['testMap', 'will_drop_index']);
+                assert.deepStrictEqual(droppedIndexes.sort(), ['testMap_index', 'will_drop_index']);
 
                 indexes = await ProductIndexModel.listIndexes();
                 assert.deepStrictEqual(indexes.sort((i1, i2) => i1.name.localeCompare(i2.name)), [
                     {
-                        name: 'name',
+                        name: 'name_index',
                         definition: {
                             column: 'name',
                             options: stringIndexOptions
@@ -483,7 +487,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                         key: { name: 1 }
                     },
                     {
-                        name: 'price',
+                        name: 'price_index',
                         definition: {
                             column: 'price',
                             options: {}
@@ -492,7 +496,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                         key: { price: 1 }
                     },
                     {
-                        name: 'testMap',
+                        name: 'testMap_index',
                         key: {
                             testMap: '$values'
                         },
@@ -510,9 +514,9 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                 assert.deepStrictEqual(toDrop, []);
                 assert.deepStrictEqual(toCreate, []);
             } finally {
-                await collection.dropIndex('name').catch(() => {});
-                await collection.dropIndex('price').catch(() => {});
-                await collection.dropIndex('testMap').catch(() => {});
+                await collection.dropIndex('name_index').catch(() => {});
+                await collection.dropIndex('price_index').catch(() => {});
+                await collection.dropIndex('testMap_index').catch(() => {});
             }
         });
         it('API ops tests Model.updateOne()', async () => {
@@ -630,11 +634,6 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                 /Invalid URI: multiple application tokens/
             );
 
-            await assert.rejects(
-                mongooseInstance.createConnection('https://apps.astra.datastax.com/api/json/v1/test?authHeaderName=test1&authHeaderName=test2', testClient!.options).asPromise(),
-                /Invalid URI: multiple application auth header names/
-            );
-
             if (!testClient?.isAstra) {
                 // Omit username and password from options
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -647,10 +646,20 @@ describe('TABLES: Mongoose Model API level tests', async () => {
         });
         it('API ops tests createConnection() with queueing', async function() {
             const connection = mongooseInstance.createConnection() as unknown as AstraMongooseDriver.Connection;
+            const eventPromiseOnce = new Promise<void>((resolve) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                connection.once('open' as any, () => resolve());
+            });
+            const eventPromiseOn = new Promise<void>((resolve) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                connection.on('open' as any, () => resolve());
+            });
             const promise = connection.listTables({ nameOnly: false });
 
             await connection.openUri(testClient!.uri, testClient!.options);
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
+            await eventPromiseOnce;
+            await eventPromiseOn;
         });
         it('API ops tests createConnection() with no buffering', async function() {
             const connection = mongooseInstance.createConnection(testClient!.uri, { ...testClient!.options, bufferCommands: false }) as unknown as AstraMongooseDriver.Connection;
@@ -689,6 +698,70 @@ describe('TABLES: Mongoose Model API level tests', async () => {
         });
         it('API ops tests Model.findAndRerank()', async function() {
             await assert.rejects(Product.findAndRerank({ name: 'test' }), /Cannot use findAndRerank\(\) with tables/);
+        });
+    });
+
+    describe('text indexes', function () {
+        const lexicalSchema = new Schema(
+            {
+                content: {
+                    type: String,
+                    index: {
+                        name: 'content_text',
+                        text: true,
+                        analyzer: {
+                            tokenizer: { name: 'standard' },
+                            filters: [{ name: 'lowercase' }, { name: 'stop' }, { name: 'porterstem' }, { name: 'asciifolding' }]
+                        }
+                    }
+                },
+                name: { type: String }
+            },
+            {
+                autoCreate: false,
+                autoIndex: false
+            }
+        );
+        let LexicalModel: mongoose.Model<InferSchemaType<typeof lexicalSchema>>;
+
+        before(async function () {
+            this.timeout(120_000);
+
+            await mongooseInstance.connection.dropCollection(TEST_TABLE_NAME);
+            LexicalModel = mongooseInstance.model('Lexical', lexicalSchema, TEST_TABLE_NAME);
+
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(lexicalSchema));
+        });
+
+        it('creates and uses a text index', async function () {
+            await LexicalModel.createIndexes();
+            const indexes = await mongooseInstance.connection.collection(TEST_TABLE_NAME).listIndexes().toArray();
+            assert.strictEqual(indexes.length, 1);
+            assert.strictEqual(indexes[0].name, 'content_text');
+            assert.strictEqual(indexes[0].definition.column, 'content');
+
+            const options = indexes[0].definition.options as TableTextIndexOptions;
+            assert.ok(typeof options.analyzer === 'object');
+            assert.ok(typeof options.analyzer.tokenizer === 'object');
+            assert.strictEqual((options.analyzer.tokenizer as Record<string, unknown>).name, 'standard');
+            assert.ok(Array.isArray(options.analyzer.filters));
+            assert.strictEqual(options.analyzer.filters[0].name, 'lowercase');
+            assert.strictEqual(options.analyzer.filters[1].name, 'stop');
+            assert.strictEqual(options.analyzer.filters[2].name, 'porterstem');
+            assert.strictEqual(options.analyzer.filters[3].name, 'asciifolding');
+
+            await LexicalModel.create([
+                { name: 'test 1', content: 'the quick brown fox jumped over the lazy dog' },
+                { name: 'test 2', content: 'the lazy red hen sat beside the sleepy dog' }
+            ]);
+
+            let docs = await LexicalModel.find({ content: { $match: 'jump' } });
+            assert.strictEqual(docs.length, 1);
+            assert.strictEqual(docs[0].name, 'test 1');
+
+            docs = await LexicalModel.find({ content: { $match: 'SAT' } });
+            assert.strictEqual(docs.length, 1);
+            assert.strictEqual(docs[0].name, 'test 2');
         });
     });
 });

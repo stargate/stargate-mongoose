@@ -1,31 +1,70 @@
 version: '2'
 
 services:
-  coordinator:
-    image: stargateio/coordinator-dse-next:${SGTAG}
+  dse-1:
+    image: datastax/dse-server:${DSETAG}
+    platform: linux/amd64
     networks:
       - stargate
+    mem_limit: 2500M
+    environment:
+      - MAX_HEAP_SIZE=1536M
+      - CLUSTER_NAME=dse-${DSETAG}-cluster
+      - DS_LICENSE=accept
+    volumes:
+      - ${PWD}/bin/dse.yaml:/opt/dse/resources/dse/conf/dse.yaml
     ports:
       - "9042:9042"
-      - "8081:8081"
-    mem_limit: 2G
-    environment:
-      - JAVA_OPTS="-Xmx1536M"
-      - CLUSTER_NAME=dse-${DSETAG}-cluster
-      - RACK_NAME=rack1
-      - DATACENTER_NAME=datacenter1
-      - ENABLE_AUTH=true
-      - DEVELOPER_MODE=true
     healthcheck:
-      test: curl -f http://localhost:8084/checker/readiness || exit 1
+      test: [ "CMD-SHELL", "cqlsh -u cassandra -p cassandra -e 'describe keyspaces'" ]
       interval: 15s
       timeout: 10s
-      retries: 10
+      retries: 20
+
+  dse-2:
+    image: datastax/dse-server:${DSETAG}
+    platform: linux/amd64
+    networks:
+      - stargate
+    mem_limit: 2500M
+    depends_on:
+      dse-1:
+        condition: service_healthy
+    environment:
+      - MAX_HEAP_SIZE=1536M
+      - SEEDS=dse-1
+      - CLUSTER_NAME=dse-${DSETAG}-cluster
+      - DS_LICENSE=accept
+    healthcheck:
+      test: [  "CMD-SHELL", "cqlsh -u cassandra -p cassandra -e 'describe keyspaces'" ]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+
+  dse-3:
+    image: datastax/dse-server:${DSETAG}
+    platform: linux/amd64
+    networks:
+      - stargate
+    mem_limit: 2500M
+    depends_on:
+      dse-1:
+        condition: service_healthy
+    environment:
+      - MAX_HEAP_SIZE=1536M
+      - SEEDS=dse-1
+      - CLUSTER_NAME=dse-${DSETAG}-cluster
+      - DS_LICENSE=accept
+    healthcheck:
+      test: [  "CMD-SHELL", "cqlsh -u cassandra -p cassandra -e 'describe keyspaces'" ]
+      interval: 15s
+      timeout: 10s
+      retries: 20
 
   dataapi:
     image: stargateio/data-api:${DATAAPITAG}
     depends_on:
-      coordinator:
+      dse-1:
         condition: service_healthy
     networks:
       - stargate
@@ -36,11 +75,12 @@ services:
       - JAVA_MAX_MEM_RATIO=75
       - JAVA_INITIAL_MEM_RATIO=50
       - GC_CONTAINER_OPTIONS=-XX:+UseG1GC
-      - QUARKUS_GRPC_CLIENTS_BRIDGE_HOST=coordinator
-      - QUARKUS_GRPC_CLIENTS_BRIDGE_PORT=8091
+      - STARGATE_JSONAPI_OPERATIONS_DATABASE_CONFIG_CASSANDRA_END_POINTS=dse-1
+      - STARGATE_JSONAPI_OPERATIONS_DATABASE_CONFIG_LOCAL_DATACENTER=dc1
       - QUARKUS_HTTP_ACCESS_LOG_ENABLED=${REQUESTLOG}
       - QUARKUS_LOG_LEVEL=${LOGLEVEL}
-      - STARGATE_JSONAPI_OPERATIONS_DATABASE_CONFIG_CASSANDRA_END_POINTS=coordinator
+      - STARGATE_JSONAPI_OPERATIONS_VECTORIZE_ENABLED=true
+      - JAVA_OPTS_APPEND=-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager
       - STARGATE_FEATURE_FLAGS_TABLES=true
     healthcheck:
       test: curl -f http://localhost:8181/stargate/health || exit 1

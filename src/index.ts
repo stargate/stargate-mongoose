@@ -37,6 +37,7 @@ import type { Mongoose } from 'mongoose';
 export { Vectorize, VectorizeOptions } from './driver';
 
 export { AstraMongooseError } from './astraMongooseError';
+export { OperationNotSupportedError } from './operationNotSupportedError';
 
 export type AstraMongoose = Omit<Mongoose, 'connection'> & { connection: AstraMongooseDriver.Connection };
 

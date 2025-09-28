@@ -13,7 +13,7 @@
 // limitations under the License.
 
 export { Connection } from './connection';
-export { Collection, OperationNotSupportedError } from './collection';
+export { Collection } from './collection';
 export { Vectorize, VectorizeOptions } from './vectorize';
 
 import { Connection } from './connection';

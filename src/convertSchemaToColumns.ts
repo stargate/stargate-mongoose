@@ -23,10 +23,13 @@ type AllowedDataAPITypes = 'text' | 'double' | 'timestamp' | 'boolean' | 'decima
  * Given a Mongoose schema, create an equivalent Data API table definition for use with `createTable()`
  */
 export default function convertSchemaToColumns(schema: Schema, udtName?: string): CreateTableColumnDefinitions {
+    const versionKey = schema.options.versionKey;
     const columns: CreateTableColumnDefinitions = {
-        _id: { type: 'text' },
-        __v: { type: 'int' }
+        _id: { type: 'text' }
     };
+    if (typeof versionKey === 'string') {
+        columns[versionKey] = { type: 'int' };
+    }
     const schemaTypesForNestedPath: Record<string, SchemaType[]> = {};
     udtName = udtName ?? schema.options?.udtName;
     for (const path of Object.keys(schema.paths)) {
@@ -123,7 +126,7 @@ export default function convertSchemaToColumns(schema: Schema, udtName?: string)
                 columns[path] = {
                     type: 'map',
                     keyType: 'text',
-                    valueType: getValueTypeFromNestedSchemaTypes(path, Object.values(schemaType.schema.paths), true)
+                    valueType: getValueTypeFromNestedSchemaTypes(path, Object.values(schemaType.schema!.paths), true)
                 };
             }
         } else if (schemaType.instance === 'Map') {

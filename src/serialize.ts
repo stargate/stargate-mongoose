@@ -46,15 +46,17 @@ function serializeValue(data: any, isTable?: boolean): any {
     if (data instanceof ObjectId) {
         return data.toHexString();
     } else if (data instanceof mongoose.Types.Decimal128) {
-        //Decimal128 handling
-        return Number(data.toString());
+        // Decimal128 handling: for collections, store as string to avoid loss of precision
+        return isTable ? Number(data.toString()) : data.toString();
     } else if (data instanceof Double) {
         return Number(data.valueOf());
     } else if (data instanceof Date) {
         // Rely on astra driver to serialize dates
         return data;
     } else if (data instanceof Map && !isTable) {
-        return Object.fromEntries(data.entries());
+        return Object.fromEntries(
+            [...data.entries()].map(([key, value]) => [key, serializeValue(value, isTable)])
+        );
     } else if (data instanceof Binary) {
         if (data.sub_type === 3 || data.sub_type === 4) {
             // UUIDs, no need for explicit `instanceof UUID` check because bson UUID extends Binary

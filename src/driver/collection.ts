@@ -39,8 +39,6 @@ import {
     Sort as SortOptionInternal,
     Table as AstraTable,
     TableCreateIndexColumn,
-    TableCreateIndexOptions,
-    TableCreateVectorIndexOptions,
     TableDeleteManyOptions,
     TableDeleteOneOptions,
     TableDropIndexOptions,
@@ -51,15 +49,18 @@ import {
     TableInsertOneOptions,
     TableOptions,
     TableIndexOptions,
+    TableTextIndexOptions,
     TableUpdateFilter,
     TableUpdateOneOptions,
     TableVectorIndexOptions,
 } from '@datastax/astra-db-ts';
+import { OperationNotSupportedError } from '../operationNotSupportedError';
 import { SchemaOptions } from 'mongoose';
 import deserializeDoc from '../deserializeDoc';
 import { inspect } from 'util';
 import { serialize } from '../serialize';
 import { setDefaultIdForUpdate, setDefaultIdForReplace } from '../setDefaultIdForUpsert';
+import { IndexSpecification } from 'mongodb';
 
 export type MongooseSortOption = Record<string, 1 | -1 | { $meta: Array<number> } | { $meta: string }>;
 
@@ -472,18 +473,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param options
      */
     async createIndex(
-        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
-        options: TableCreateVectorIndexOptions & { name?: string, vector: true }
-    ): Promise<void>;
-    async createIndex(
-        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
-        options?: TableCreateIndexOptions & { name?: string, vector?: false }
-    ): Promise<void>;
-
-    async createIndex(
-        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values'>,
-        options?: (TableCreateVectorIndexOptions | TableCreateIndexOptions) & { name?: string, vector?: boolean }
-    ): Promise<void> {
+        indexSpec: Record<string, boolean | 1 | -1 | '$keys' | '$values' | 'text'> | IndexSpecification,
+        options?: (TableTextIndexOptions | TableIndexOptions | TableVectorIndexOptions) & { name?: string, vector?: boolean }
+    ) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'createIndex', arguments);
         if (this.collection instanceof AstraCollection) {
@@ -492,22 +484,37 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (Object.keys(indexSpec).length !== 1) {
             throw new TypeError('createIndex indexSpec must have exactly 1 key');
         }
-        const [column] = Object.keys(indexSpec);
+
+        const [[column, indexModifier]] = Object.entries(indexSpec);
+        const indexName = options?.name ?? `${column}_index`;
         if (options?.vector) {
-            return this.collection.createVectorIndex(
-                options?.name ?? column,
+            // Vector index: `myVector: { type: [Number], index: { vector: true } }`
+            await this.collection.createVectorIndex(
+                indexName,
                 column,
-                { ifNotExists: true, ...(options as TableCreateVectorIndexOptions) }
+                { ifNotExists: true, options: options as TableVectorIndexOptions }
+            );
+        } else if (indexModifier === 'text') {
+            // Text index: `content: { type: String, index: { text: true, analyzer: ... } }`
+            // Checks `indexModifier` rather than `options?.text` because Mongoose has special handling for `index: { text: true }`
+            // due to MongoDB index definitions.
+            await this.collection.createTextIndex(
+                indexName,
+                column,
+                { ifNotExists: true, options: options as TableTextIndexOptions }
+            );
+        } else {
+            // Standard index: `test: { type: Number, index: true }`
+            await this.collection.createIndex(
+                indexName,
+                indexModifier === '$keys' || indexModifier === '$values'
+                    ? { [column]: indexModifier } as TableCreateIndexColumn<unknown>
+                    : column,
+                { ifNotExists: true, options: options as TableIndexOptions }
             );
         }
 
-        return this.collection.createIndex(
-            options?.name ?? column,
-            indexSpec[column] === '$keys' || indexSpec[column] === '$values'
-                ? { [column]: indexSpec[column] } as unknown as TableCreateIndexColumn<DocType>
-                : column,
-            { ifNotExists: true, ...(options as TableCreateIndexOptions) }
-        );
+        return indexName;
     }
 
     /**
@@ -535,7 +542,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findAndRerank() with tables');
         }
-        return this.collection.findAndRerank(filter, options);
+        filter = serialize(filter, false);
+        return this.collection.findAndRerank(filter, options)
+            .map(result => ({ ...result, document: deserializeDoc(result.document) }));
     }
 
     /**
@@ -580,13 +589,6 @@ function processSortOption(sort: MongooseSortOption): SortOptionInternal {
     }
 
     return result;
-}
-
-export class OperationNotSupportedError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = 'OperationNotSupportedError';
-    }
 }
 
 /*!

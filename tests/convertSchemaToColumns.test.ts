@@ -338,6 +338,21 @@ describe('convertSchemaToColumns', () => {
         });
     });
 
+    it('handles custom version key', () => {
+        const testSchema = new Schema(
+            { tags: [String] },
+            { versionKey: 'myVersionKey' }
+        );
+
+        const result = convertSchemaToColumns(testSchema);
+
+        assert.deepStrictEqual(result, {
+            '_id': { type: 'text' },
+            'myVersionKey': { type: 'int' },
+            'tags': { type: 'list', valueType: 'text' }
+        });
+    });
+
     it('handles UDT', () => {
         const subschema = new Schema({
             line1: String,
