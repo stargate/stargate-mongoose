@@ -90,7 +90,8 @@ export default function tableDefinitionFromSchema(schema: Schema): CreateTableDe
             }
         } else if (schemaType.instance === 'Embedded') {
             const dataAPITypes: Set<AllowedDataAPITypes> = new Set();
-            for (const subpath of Object.keys(schemaType.schema.paths)) {
+            // `schema` is always defined for subdocument schematypes.
+            for (const subpath of Object.keys(schemaType.schema!.paths)) {
                 const isNested = subpath.indexOf('.') !== -1;
                 if (isNested) {
                     throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported nested path underneath subdocument at path "${path}.${subpath}"`, {
@@ -99,7 +100,7 @@ export default function tableDefinitionFromSchema(schema: Schema): CreateTableDe
                         schema
                     });
                 }
-                const type = mongooseTypeToDataAPIType(schemaType.schema.paths[subpath].instance);
+                const type = mongooseTypeToDataAPIType(schemaType.schema!.paths[subpath].instance);
                 if (type == null) {
                     throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported type in subdocument at path "${path}.${subpath}"`, {
                         path,
