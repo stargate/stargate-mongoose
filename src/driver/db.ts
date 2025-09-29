@@ -148,13 +148,13 @@ export abstract class BaseDb {
      * @param definition The definition of the fields for the type.
      * @returns The result of the createType command.
      */
-    async createType(name: string, definition: { fields: CreateTableColumnDefinitions }) {
+    async createType(name: string, definition: { fields: CreateTableColumnDefinitions }): Promise<{ ok: 1 }> {
         return this.command({
             createType: {
                 name,
                 definition
             }
-        });
+        }).then(res => res.status as { ok: 1 });
     }
 
     /**
@@ -162,12 +162,12 @@ export abstract class BaseDb {
      * @param name The name of the type to drop.
      * @returns The result of the dropType command.
      */
-    async dropType(name: string) {
+    async dropType(name: string): Promise<{ ok: 1 }> {
         return this.command({
             dropType: {
                 name
             }
-        });
+        }).then(res => res.status as { ok: 1 });
     }
 
     /**
@@ -176,13 +176,16 @@ export abstract class BaseDb {
      * @param update The alterations to be made: renaming or adding fields.
      * @returns The result of the alterType command.
      */
-    async alterType(name: string, update: { rename?: { fields: Record<string, string> }, add?: { fields: CreateTableColumnDefinitions } }) {
+    async alterType(
+        name: string,
+        update: { rename?: { fields: Record<string, string> }, add?: { fields: CreateTableColumnDefinitions } }
+    ): Promise<{ ok: 1 }> {
         return this.command({
             alterType: {
                 name,
                 ...update
             }
-        });
+        }).then(res => res.status as { ok: 1 });
     }
 
     /**
