@@ -19,6 +19,7 @@ import { randomUUID } from 'crypto';
 import { UUID } from 'bson';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
 import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime } from '@datastax/astra-db-ts';
+import { BaseDb } from '../../src/driver/db';
 
 const TEST_TABLE_NAME = 'table1';
 
@@ -228,5 +229,52 @@ describe('TABLES: basic operations and data types', function() {
         assert.strictEqual(findOneResponse.get('timeSinceStart'), '15d');
         assert.strictEqual(findOneResponse.get('startDate'), '2022-01-02');
         assert.strictEqual(findOneResponse.get('timeOfDay'), '13:00:00.000000000');
+    });
+
+    describe('UDTs', () => {
+        beforeEach(async () => {
+            const Product = mongooseInstance!.model('Product');
+            const db = Product.db.db as unknown as BaseDb;
+            const types = await db.listTypes();
+            for (const type of types) {
+                await db.dropType(type);
+            }
+        });
+
+        it('supports creating and altering UDTs', async () => {
+            const Product = mongooseInstance!.model('Product');
+            const db = Product.db.db as unknown as BaseDb;
+
+            await db.createType('ProductType', {
+                fields: {
+                    name: { type: 'text' },
+                    price: { type: 'int' }
+                }
+            });
+
+            const typeNames = await db.listTypes();
+            assert.deepStrictEqual(typeNames, ['ProductType']);
+
+            const typeDefs = await db.listTypes({ explain: true });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            assert.deepStrictEqual(typeDefs.map((def: any) => def.definition.fields), [{
+                name: { type: 'text' },
+                price: { type: 'int' }
+            }]);
+
+            // Test altering the type to add a new "category" field
+            await db.alterType('ProductType', {
+                add: { fields: { category: { type: 'text' } } }
+            });
+
+            // Verify the field is present after alteration
+            const typeDefsAfterAlter = await db.listTypes({ explain: true });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            assert.deepStrictEqual(typeDefsAfterAlter.map((def: any) => def.definition.fields), [{
+                name: { type: 'text' },
+                price: { type: 'int' },
+                category: { type: 'text' }
+            }]);
+        });
     });
 });

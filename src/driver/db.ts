@@ -18,6 +18,7 @@ import {
     CollectionDescriptor,
     CollectionOptions,
     CreateTableDefinition,
+    CreateTableColumnDefinitions,
     Db as AstraDb,
     DropCollectionOptions,
     ListCollectionsOptions,
@@ -129,6 +130,59 @@ export abstract class BaseDb {
             return this.astraDb.listTables({ ...options, nameOnly: true });
         }
         return this.astraDb.listTables({ ...options, nameOnly: false });
+    }
+
+    /**
+     * List all user-defined types (UDTs) in the database.
+     * @returns An array of type descriptors.
+     */
+    async listTypes(options: { explain?: boolean } = {}) {
+        return this.command(
+            { listTypes: { options } }
+        ).then(res => res.status!.types);
+    }
+
+    /**
+     * Create a new user-defined type (UDT) with the specified name and fields definition.
+     * @param name The name of the type to create.
+     * @param definition The definition of the fields for the type.
+     * @returns The result of the createType command.
+     */
+    async createType(name: string, definition: { fields: CreateTableColumnDefinitions }) {
+        return this.command({
+            createType: {
+                name,
+                definition
+            }
+        });
+    }
+
+    /**
+     * Drop (delete) a user-defined type (UDT) by name.
+     * @param name The name of the type to drop.
+     * @returns The result of the dropType command.
+     */
+    async dropType(name: string) {
+        return this.command({
+            dropType: {
+                name
+            }
+        });
+    }
+
+    /**
+     * Alter a user-defined type (UDT) by renaming or adding fields.
+     * @param name The name of the type to alter.
+     * @param update The alterations to be made: renaming or adding fields.
+     * @returns The result of the alterType command.
+     */
+    async alterType(name: string, update: { rename?: { fields: Record<string, string> }, add?: { fields: CreateTableColumnDefinitions } }) {
+        return this.command({
+            alterType: {
+                name,
+                ...update
+            }
+        });
     }
 
     /**
