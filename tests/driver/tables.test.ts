@@ -233,8 +233,8 @@ describe('TABLES: basic operations and data types', function() {
 
     describe('UDTs', () => {
         beforeEach(async () => {
-            const Product = mongooseInstance!.model('Product');
-            const db = Product.db.db as unknown as BaseDb;
+            const db = mongooseInstance.connection.db;
+            assert.ok(db);
             const types = await db.listTypes();
             for (const type of types) {
                 await db.dropType(type);
@@ -242,8 +242,8 @@ describe('TABLES: basic operations and data types', function() {
         });
 
         it('supports creating and altering UDTs', async () => {
-            const Product = mongooseInstance!.model('Product');
-            const db = Product.db.db as unknown as BaseDb;
+            const db = mongooseInstance.connection.db;
+            assert.ok(db);
 
             await db.createType('ProductType', {
                 fields: {
