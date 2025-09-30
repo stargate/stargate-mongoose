@@ -24,9 +24,10 @@ type AllowedDataAPITypes = 'text' | 'double' | 'timestamp' | 'boolean' | 'decima
  */
 export default function convertSchemaToColumns(schema: Schema, udtName?: string): CreateTableColumnDefinitions {
     const versionKey = schema.options.versionKey;
-    const columns: CreateTableColumnDefinitions = {
-        _id: { type: 'text' }
-    };
+    const columns: CreateTableColumnDefinitions = {};
+    if (schema.options._id !== false) {
+        columns._id = { type: 'text' };
+    }
     if (typeof versionKey === 'string') {
         columns[versionKey] = { type: 'int' };
     }
