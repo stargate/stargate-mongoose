@@ -19,7 +19,6 @@ import { randomUUID } from 'crypto';
 import { UUID } from 'bson';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
 import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime } from '@datastax/astra-db-ts';
-import { BaseDb } from '../../src/driver/db';
 
 const TEST_TABLE_NAME = 'table1';
 
@@ -256,8 +255,7 @@ describe('TABLES: basic operations and data types', function() {
             assert.deepStrictEqual(typeNames, ['ProductType']);
 
             const typeDefs = await db.listTypes({ explain: true });
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            assert.deepStrictEqual(typeDefs.map((def: any) => def.definition.fields), [{
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition.fields), [{
                 name: { type: 'text' },
                 price: { type: 'int' }
             }]);
@@ -269,8 +267,7 @@ describe('TABLES: basic operations and data types', function() {
 
             // Verify the field is present after alteration
             const typeDefsAfterAlter = await db.listTypes({ explain: true });
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            assert.deepStrictEqual(typeDefsAfterAlter.map((def: any) => def.definition.fields), [{
+            assert.deepStrictEqual(typeDefsAfterAlter.map((def) => def.definition.fields), [{
                 name: { type: 'text' },
                 price: { type: 'int' },
                 category: { type: 'text' }

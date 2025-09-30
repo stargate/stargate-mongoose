@@ -136,6 +136,8 @@ export abstract class BaseDb {
      * List all user-defined types (UDTs) in the database.
      * @returns An array of type descriptors.
      */
+    async listTypes(options: { explain: true }): Promise<{ name: string, definition: { fields: CreateTableColumnDefinitions } }[]>;
+    async listTypes(options?: { explain?: boolean }): Promise<string[]>;
     async listTypes(options: { explain?: boolean } = {}) {
         return this.command(
             { listTypes: { options } }
