@@ -71,7 +71,6 @@ export default function convertSchemaToColumns(schema: Schema, udtName?: string)
                 const schemaTypeUDTName = getUDTNameFromSchemaType(schemaType);
 
                 if (schemaTypeUDTName) {
-                    // @ts-expect-error Astra-db-ts doesn't support UDT yet
                     columns[path] = {
                         type: 'list',
                         valueType: { type: 'userDefined', udtName: schemaTypeUDTName }
@@ -121,7 +120,6 @@ export default function convertSchemaToColumns(schema: Schema, udtName?: string)
             }
             const schemaTypeUDTName = getUDTNameFromSchemaType(schemaType);
             if (schemaTypeUDTName) {
-                // @ts-expect-error Astra-db-ts doesn't support UDT yet, and Mongoose schemas don't have options property in TS
                 columns[path] = { type: 'userDefined', udtName: schemaTypeUDTName };
             } else {
                 columns[path] = {
@@ -150,7 +148,6 @@ export default function convertSchemaToColumns(schema: Schema, udtName?: string)
                 columns[path] = { type: 'map', keyType: 'text', valueType };
             } else if (schemaTypeUDTName) {
                 // Special handling for maps of UDTs
-                // @ts-expect-error Astra-db-ts doesn't support UDT yet
                 columns[path] = {
                     type: 'map',
                     keyType: 'text',

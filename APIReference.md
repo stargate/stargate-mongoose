@@ -511,6 +511,10 @@ for tables and CollectionsDb class for collections.</p>
     * [.dropTable(name)](#BaseDb+dropTable)
     * [.listCollections(options)](#BaseDb+listCollections)
     * [.listTables()](#BaseDb+listTables)
+    * [.listTypes()](#BaseDb+listTypes) ⇒
+    * [.createType(name, definition)](#BaseDb+createType) ⇒
+    * [.dropType(name)](#BaseDb+dropType) ⇒
+    * [.alterType(name, update)](#BaseDb+alterType) ⇒
     * [.command(command)](#BaseDb+command)
 
 <a name="new_BaseDb_new"></a>
@@ -571,6 +575,51 @@ error for Mongoose <code>syncIndexes()</code> compatibility reasons.</p>
 <p>List all tables in the database.</p>
 
 **Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+<a name="BaseDb+listTypes"></a>
+
+### baseDb.listTypes() ⇒
+<p>List all user-defined types (UDTs) in the database.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>An array of type descriptors.</p>  
+<a name="BaseDb+createType"></a>
+
+### baseDb.createType(name, definition) ⇒
+<p>Create a new user-defined type (UDT) with the specified name and fields definition.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the createType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to create.</p> |
+| definition | <p>The definition of the fields for the type.</p> |
+
+<a name="BaseDb+dropType"></a>
+
+### baseDb.dropType(name) ⇒
+<p>Drop (delete) a user-defined type (UDT) by name.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the dropType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to drop.</p> |
+
+<a name="BaseDb+alterType"></a>
+
+### baseDb.alterType(name, update) ⇒
+<p>Alter a user-defined type (UDT) by renaming or adding fields.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the alterType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to alter.</p> |
+| update | <p>The alterations to be made: renaming or adding fields.</p> |
+
 <a name="BaseDb+command"></a>
 
 ### baseDb.command(command)
@@ -718,6 +767,10 @@ the one exception being strings.</p>
     * [.dropTable(name)](#BaseDb+dropTable)
     * [.listCollections(options)](#BaseDb+listCollections)
     * [.listTables()](#BaseDb+listTables)
+    * [.listTypes()](#BaseDb+listTypes) ⇒
+    * [.createType(name, definition)](#BaseDb+createType) ⇒
+    * [.dropType(name)](#BaseDb+dropType) ⇒
+    * [.alterType(name, update)](#BaseDb+alterType) ⇒
     * [.command(command)](#BaseDb+command)
 
 <a name="new_BaseDb_new"></a>
@@ -778,6 +831,51 @@ error for Mongoose <code>syncIndexes()</code> compatibility reasons.</p>
 <p>List all tables in the database.</p>
 
 **Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+<a name="BaseDb+listTypes"></a>
+
+### baseDb.listTypes() ⇒
+<p>List all user-defined types (UDTs) in the database.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>An array of type descriptors.</p>  
+<a name="BaseDb+createType"></a>
+
+### baseDb.createType(name, definition) ⇒
+<p>Create a new user-defined type (UDT) with the specified name and fields definition.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the createType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to create.</p> |
+| definition | <p>The definition of the fields for the type.</p> |
+
+<a name="BaseDb+dropType"></a>
+
+### baseDb.dropType(name) ⇒
+<p>Drop (delete) a user-defined type (UDT) by name.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the dropType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to drop.</p> |
+
+<a name="BaseDb+alterType"></a>
+
+### baseDb.alterType(name, update) ⇒
+<p>Alter a user-defined type (UDT) by renaming or adding fields.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the alterType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to alter.</p> |
+| update | <p>The alterations to be made: renaming or adding fields.</p> |
+
 <a name="BaseDb+command"></a>
 
 ### baseDb.command(command)
