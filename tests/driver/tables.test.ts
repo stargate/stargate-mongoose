@@ -381,5 +381,109 @@ describe('TABLES: basic operations and data types', function() {
             assert.strictEqual(rawDoc.product!.category, 'Test Category');
             assert.strictEqual(rawDoc.url, 'https://example.com');
         });
+
+        it('handles set of UDTs created from a schema definition', async () => {
+            const db = mongooseInstance.connection.db;
+            assert.ok(db);
+
+            const productSchema = new Schema(
+                {
+                    name: { type: String },
+                    price: { type: Number },
+                    category: { type: String }
+                },
+                { udtName: 'Product', versionKey: false, _id: false }
+            );
+
+            await db.createType('Product', { fields: convertSchemaToColumns(productSchema) });
+            const typeDefs = await db.listTypes({ explain: true });
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition.fields), [{
+                name: { type: 'text' },
+                price: { type: 'double' },
+                category: { type: 'text' }
+            }]);
+
+            const cartSchema = new Schema({
+                products: [productSchema]
+            });
+
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(cartSchema));
+
+            const TestModel = mongooseInstance.model('Test', cartSchema, TEST_TABLE_NAME);
+            const doc = await TestModel.create({
+                products: [
+                    { name: 'Test Product', price: 100, category: 'Test Category' },
+                    { name: 'Test Product 2', price: 200, category: 'Test Category 2' }
+                ]
+            });
+            assert.ok(doc);
+            assert.strictEqual(doc.products[0].name, 'Test Product');
+            assert.strictEqual(doc.products[0].price, 100);
+            assert.strictEqual(doc.products[0].category, 'Test Category');
+            assert.strictEqual(doc.products[1].name, 'Test Product 2');
+            assert.strictEqual(doc.products[1].price, 200);
+            assert.strictEqual(doc.products[1].category, 'Test Category 2');
+
+            const rawDoc = await TestModel.collection.findOne({ _id: doc._id });
+            assert.ok(rawDoc);
+            assert.strictEqual(rawDoc.products[0].name, 'Test Product');
+            assert.strictEqual(rawDoc.products[0].price, 100);
+            assert.strictEqual(rawDoc.products[0].category, 'Test Category');
+            assert.strictEqual(rawDoc.products[1].name, 'Test Product 2');
+            assert.strictEqual(rawDoc.products[1].price, 200);
+            assert.strictEqual(rawDoc.products[1].category, 'Test Category 2');
+        });
+
+        it('handles map of UDTs created from a schema definition', async () => {
+            const db = mongooseInstance.connection.db;
+            assert.ok(db);
+
+            const productSchema = new Schema(
+                {
+                    name: { type: String },
+                    price: { type: Number },
+                    category: { type: String }
+                },
+                { udtName: 'Product', versionKey: false, _id: false }
+            );
+
+            await db.createType('Product', { fields: convertSchemaToColumns(productSchema) });
+            const typeDefs = await db.listTypes({ explain: true });
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition.fields), [{
+                name: { type: 'text' },
+                price: { type: 'double' },
+                category: { type: 'text' }
+            }]);
+
+            const cartSchema = new Schema({
+                productsByCategory: { type: Map, of: { type: productSchema, required: true } }
+            });
+
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(cartSchema));
+
+            const TestModel = mongooseInstance.model('Test', cartSchema, TEST_TABLE_NAME);
+            const doc = await TestModel.create({
+                productsByCategory: {
+                    'Test Category': { name: 'Test Product', price: 100, category: 'Test Category' },
+                    'Test Category 2': { name: 'Test Product 2', price: 200, category: 'Test Category 2' }
+                }
+            });
+            assert.ok(doc);
+            assert.strictEqual(doc.productsByCategory!.get('Test Category')!.name, 'Test Product');
+            assert.strictEqual(doc.productsByCategory!.get('Test Category')!.price, 100);
+            assert.strictEqual(doc.productsByCategory!.get('Test Category')!.category, 'Test Category');
+            assert.strictEqual(doc.productsByCategory!.get('Test Category 2')!.name, 'Test Product 2');
+            assert.strictEqual(doc.productsByCategory!.get('Test Category 2')!.price, 200);
+            assert.strictEqual(doc.productsByCategory!.get('Test Category 2')!.category, 'Test Category 2');
+
+            const rawDoc = await TestModel.collection.findOne({ _id: doc._id });
+            assert.ok(rawDoc);
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category']!.name, 'Test Product');
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category']!.price, 100);
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category']!.category, 'Test Category');
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category 2']!.name, 'Test Product 2');
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category 2']!.price, 200);
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category 2']!.category, 'Test Category 2');
+        });
     });
 });
