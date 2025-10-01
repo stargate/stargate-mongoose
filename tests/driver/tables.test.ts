@@ -19,7 +19,7 @@ import { randomUUID } from 'crypto';
 import { UUID } from 'bson';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
 import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime } from '@datastax/astra-db-ts';
-import convertSchemaToColumns from '../../src/convertSchemaToColumns';
+import convertSchemaToUDTColumns from '../../src/udt/convertSchemaToUDTColumns';
 
 const TEST_TABLE_NAME = 'table1';
 
@@ -236,7 +236,7 @@ describe('TABLES: basic operations and data types', function() {
             await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
             const db = mongooseInstance.connection.db;
             assert.ok(db);
-            const types = await db.listTypes();
+            const types = await db.listTypes({ nameOnly: true });
             for (const type of types) {
                 await db.dropType(type);
             }
@@ -248,7 +248,7 @@ describe('TABLES: basic operations and data types', function() {
             await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
             const db = mongooseInstance.connection.db;
             assert.ok(db);
-            const types = await db.listTypes();
+            const types = await db.listTypes({ nameOnly: true });
             for (const type of types) {
                 await db.dropType(type);
             }
@@ -265,23 +265,25 @@ describe('TABLES: basic operations and data types', function() {
                 }
             });
 
-            const typeNames = await db.listTypes();
+            const typeNames = await db.listTypes({ nameOnly: true });
             assert.deepStrictEqual(typeNames, ['ProductType']);
 
-            const typeDefs = await db.listTypes({ explain: true });
-            assert.deepStrictEqual(typeDefs.map((def) => def.definition.fields), [{
+            const typeDefs = await db.listTypes({ nameOnly: false });
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition!.fields), [{
                 name: { type: 'text' },
                 price: { type: 'int' }
             }]);
 
             // Test altering the type to add a new "category" field
             await db.alterType('ProductType', {
-                add: { fields: { category: { type: 'text' } } }
+                operation: {
+                    add: { fields: { category: { type: 'text' } } }
+                }
             });
 
             // Verify the field is present after alteration
-            const typeDefsAfterAlter = await db.listTypes({ explain: true });
-            assert.deepStrictEqual(typeDefsAfterAlter.map((def) => def.definition.fields), [{
+            const typeDefsAfterAlter = await db.listTypes({ nameOnly: false });
+            assert.deepStrictEqual(typeDefsAfterAlter.map((def) => def.definition!.fields), [{
                 name: { type: 'text' },
                 price: { type: 'int' },
                 category: { type: 'text' }
@@ -301,9 +303,9 @@ describe('TABLES: basic operations and data types', function() {
                 { udtName: 'Product', versionKey: false, _id: false }
             );
 
-            await db.createType('Product', { fields: convertSchemaToColumns(productSchema) });
-            const typeDefs = await db.listTypes({ explain: true });
-            assert.deepStrictEqual(typeDefs.map((def) => def.definition.fields), [{
+            await db.createType('Product', { fields: convertSchemaToUDTColumns(productSchema) });
+            const typeDefs = await db.listTypes({ nameOnly: false });
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition!.fields), [{
                 name: { type: 'text' },
                 price: { type: 'double' },
                 category: { type: 'text' }
@@ -348,9 +350,9 @@ describe('TABLES: basic operations and data types', function() {
                 { versionKey: false, _id: false }
             );
 
-            await db.createType('Product', { fields: convertSchemaToColumns(productSchema) });
-            const typeDefs = await db.listTypes({ explain: true });
-            assert.deepStrictEqual(typeDefs.map((def) => def.definition.fields), [{
+            await db.createType('Product', { fields: convertSchemaToUDTColumns(productSchema) });
+            const typeDefs = await db.listTypes({ nameOnly: false });
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition!.fields), [{
                 name: { type: 'text' },
                 price: { type: 'double' },
                 category: { type: 'text' }
@@ -395,9 +397,9 @@ describe('TABLES: basic operations and data types', function() {
                 { udtName: 'Product', versionKey: false, _id: false }
             );
 
-            await db.createType('Product', { fields: convertSchemaToColumns(productSchema) });
-            const typeDefs = await db.listTypes({ explain: true });
-            assert.deepStrictEqual(typeDefs.map((def) => def.definition.fields), [{
+            await db.createType('Product', { fields: convertSchemaToUDTColumns(productSchema) });
+            const typeDefs = await db.listTypes();
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition!.fields), [{
                 name: { type: 'text' },
                 price: { type: 'double' },
                 category: { type: 'text' }
@@ -447,9 +449,9 @@ describe('TABLES: basic operations and data types', function() {
                 { udtName: 'Product', versionKey: false, _id: false }
             );
 
-            await db.createType('Product', { fields: convertSchemaToColumns(productSchema) });
-            const typeDefs = await db.listTypes({ explain: true });
-            assert.deepStrictEqual(typeDefs.map((def) => def.definition.fields), [{
+            await db.createType('Product', { fields: convertSchemaToUDTColumns(productSchema) });
+            const typeDefs = await db.listTypes();
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition!.fields), [{
                 name: { type: 'text' },
                 price: { type: 'double' },
                 category: { type: 'text' }

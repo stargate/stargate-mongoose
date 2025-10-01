@@ -46,6 +46,8 @@ by default from their schema.</p>
 <dd><p>Mongoose plugin to validate arrays of numbers that have a <code>dimension</code> property. Ensure that the array
 is either nullish or has a length equal to the dimension.</p>
 <p>You do not need to call this function directly. Mongoose applies this plugin automatically when you call <code>setDriver()</code>.</p></dd>
+<dt><a href="#convertSchemaToUDTColumns">convertSchemaToUDTColumns()</a></dt>
+<dd><p>Given a Mongoose schema, create an equivalent Data API table definition for use with <code>createTable()</code></p></dd>
 <dt><a href="#udtDefinitionsFromSchema">udtDefinitionsFromSchema()</a></dt>
 <dd><p>Given a Mongoose schema, get the definitions of all the UDTs used by this schema.
 Used to create all UDTs required by the schema before creating the table.</p></dd>
@@ -943,6 +945,12 @@ by default from their schema.</p>
 <p>Mongoose plugin to validate arrays of numbers that have a <code>dimension</code> property. Ensure that the array
 is either nullish or has a length equal to the dimension.</p>
 <p>You do not need to call this function directly. Mongoose applies this plugin automatically when you call <code>setDriver()</code>.</p>
+
+**Kind**: global function  
+<a name="convertSchemaToUDTColumns"></a>
+
+## convertSchemaToUDTColumns()
+<p>Given a Mongoose schema, create an equivalent Data API table definition for use with <code>createTable()</code></p>
 
 **Kind**: global function  
 <a name="udtDefinitionsFromSchema"></a>

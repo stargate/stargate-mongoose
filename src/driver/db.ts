@@ -13,23 +13,28 @@
 // limitations under the License.
 
 import {
+    AlterTypeOptions,
     Collection,
     Collection as AstraCollection,
     CollectionDescriptor,
     CollectionOptions,
+    CreateCollectionOptions,
     CreateTableDefinition,
-    CreateTableColumnDefinitions,
+    CreateTableOptions,
+    CreateTypeDefinition,
     Db as AstraDb,
     DropCollectionOptions,
+    DropTableOptions,
+    DropTypeOptions,
     ListCollectionsOptions,
     ListTablesOptions,
+    ListTypesOptions,
     RawDataAPIResponse,
+    SomeRow,
     Table as AstraTable,
     TableDescriptor,
     TableOptions,
-    CreateTableOptions,
-    DropTableOptions,
-    CreateCollectionOptions,
+    TypeDescriptor
 } from '@datastax/astra-db-ts';
 import { AstraMongooseError } from '../astraMongooseError';
 
@@ -136,12 +141,13 @@ export abstract class BaseDb {
      * List all user-defined types (UDTs) in the database.
      * @returns An array of type descriptors.
      */
-    async listTypes(options: { explain: true }): Promise<{ name: string, definition: { fields: CreateTableColumnDefinitions } }[]>;
-    async listTypes(options?: { explain?: boolean }): Promise<string[]>;
-    async listTypes(options: { explain?: boolean } = {}) {
-        return this.command(
-            { listTypes: { options } }
-        ).then(res => res.status!.types);
+    async listTypes(options: { nameOnly: true }): Promise<string[]>;
+    async listTypes(options?: { nameOnly?: false }): Promise<TypeDescriptor[]>;
+    async listTypes(options?: ListTypesOptions) {
+        if (options?.nameOnly) {
+            return this.astraDb.listTypes({ ...options, nameOnly: true });
+        }
+        return this.astraDb.listTypes({ ...options, nameOnly: false });
     }
 
     /**
@@ -150,13 +156,8 @@ export abstract class BaseDb {
      * @param definition The definition of the fields for the type.
      * @returns The result of the createType command.
      */
-    async createType(name: string, definition: { fields: CreateTableColumnDefinitions }): Promise<{ ok: 1 }> {
-        return this.command({
-            createType: {
-                name,
-                definition
-            }
-        }).then(res => res.status as { ok: 1 });
+    async createType(name: string, definition: CreateTypeDefinition) {
+        return this.astraDb.createType(name, { definition });
     }
 
     /**
@@ -164,12 +165,8 @@ export abstract class BaseDb {
      * @param name The name of the type to drop.
      * @returns The result of the dropType command.
      */
-    async dropType(name: string): Promise<{ ok: 1 }> {
-        return this.command({
-            dropType: {
-                name
-            }
-        }).then(res => res.status as { ok: 1 });
+    async dropType(name: string, options?: DropTypeOptions) {
+        return this.astraDb.dropType(name, options);
     }
 
     /**
@@ -178,16 +175,8 @@ export abstract class BaseDb {
      * @param update The alterations to be made: renaming or adding fields.
      * @returns The result of the alterType command.
      */
-    async alterType(
-        name: string,
-        update: { rename?: { fields: Record<string, string> }, add?: { fields: CreateTableColumnDefinitions } }
-    ): Promise<{ ok: 1 }> {
-        return this.command({
-            alterType: {
-                name,
-                ...update
-            }
-        }).then(res => res.status as { ok: 1 });
+    async alterType<UDTSchema extends SomeRow = SomeRow>(name: string, update: AlterTypeOptions<UDTSchema>) {
+        return this.astraDb.alterType(name, update);
     }
 
     /**
