@@ -13,22 +13,28 @@
 // limitations under the License.
 
 import {
+    AlterTypeOptions,
     Collection,
     Collection as AstraCollection,
     CollectionDescriptor,
     CollectionOptions,
+    CreateCollectionOptions,
     CreateTableDefinition,
+    CreateTableOptions,
+    CreateTypeDefinition,
     Db as AstraDb,
     DropCollectionOptions,
+    DropTableOptions,
+    DropTypeOptions,
     ListCollectionsOptions,
     ListTablesOptions,
+    ListTypesOptions,
     RawDataAPIResponse,
+    SomeRow,
     Table as AstraTable,
     TableDescriptor,
     TableOptions,
-    CreateTableOptions,
-    DropTableOptions,
-    CreateCollectionOptions,
+    TypeDescriptor
 } from '@datastax/astra-db-ts';
 import { AstraMongooseError } from '../astraMongooseError';
 
@@ -129,6 +135,48 @@ export abstract class BaseDb {
             return this.astraDb.listTables({ ...options, nameOnly: true });
         }
         return this.astraDb.listTables({ ...options, nameOnly: false });
+    }
+
+    /**
+     * List all user-defined types (UDTs) in the database.
+     * @returns An array of type descriptors.
+     */
+    async listTypes(options: { nameOnly: true }): Promise<string[]>;
+    async listTypes(options?: { nameOnly?: false }): Promise<TypeDescriptor[]>;
+    async listTypes(options?: ListTypesOptions) {
+        if (options?.nameOnly) {
+            return this.astraDb.listTypes({ ...options, nameOnly: true });
+        }
+        return this.astraDb.listTypes({ ...options, nameOnly: false });
+    }
+
+    /**
+     * Create a new user-defined type (UDT) with the specified name and fields definition.
+     * @param name The name of the type to create.
+     * @param definition The definition of the fields for the type.
+     * @returns The result of the createType command.
+     */
+    async createType(name: string, definition: CreateTypeDefinition) {
+        return this.astraDb.createType(name, { definition });
+    }
+
+    /**
+     * Drop (delete) a user-defined type (UDT) by name.
+     * @param name The name of the type to drop.
+     * @returns The result of the dropType command.
+     */
+    async dropType(name: string, options?: DropTypeOptions) {
+        return this.astraDb.dropType(name, options);
+    }
+
+    /**
+     * Alter a user-defined type (UDT) by renaming or adding fields.
+     * @param name The name of the type to alter.
+     * @param update The alterations to be made: renaming or adding fields.
+     * @returns The result of the alterType command.
+     */
+    async alterType<UDTSchema extends SomeRow = SomeRow>(name: string, update: AlterTypeOptions<UDTSchema>) {
+        return this.astraDb.alterType(name, update);
     }
 
     /**

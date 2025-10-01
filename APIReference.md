@@ -46,6 +46,13 @@ by default from their schema.</p>
 <dd><p>Mongoose plugin to validate arrays of numbers that have a <code>dimension</code> property. Ensure that the array
 is either nullish or has a length equal to the dimension.</p>
 <p>You do not need to call this function directly. Mongoose applies this plugin automatically when you call <code>setDriver()</code>.</p></dd>
+<dt><a href="#convertSchemaToUDTColumns">convertSchemaToUDTColumns()</a></dt>
+<dd><p>Given a Mongoose schema, create an equivalent Data API table definition for use with <code>createTable()</code></p></dd>
+<dt><a href="#udtDefinitionsFromSchema">udtDefinitionsFromSchema()</a></dt>
+<dd><p>Given a Mongoose schema, get the definitions of all the UDTs used by this schema.
+Used to create all UDTs required by the schema before creating the table.</p></dd>
+<dt><a href="#convertSchemaToColumns">convertSchemaToColumns()</a></dt>
+<dd><p>Given a Mongoose schema, create an equivalent Data API table definition for use with <code>createTable()</code></p></dd>
 <dt><a href="#createAstraUri">createAstraUri()</a></dt>
 <dd><p>Create an Astra connection URI while connecting to Astra Data API.</p></dd>
 <dt><a href="#tableDefinitionFromSchema">tableDefinitionFromSchema()</a></dt>
@@ -506,6 +513,10 @@ for tables and CollectionsDb class for collections.</p>
     * [.dropTable(name)](#BaseDb+dropTable)
     * [.listCollections(options)](#BaseDb+listCollections)
     * [.listTables()](#BaseDb+listTables)
+    * [.listTypes()](#BaseDb+listTypes) ⇒
+    * [.createType(name, definition)](#BaseDb+createType) ⇒
+    * [.dropType(name)](#BaseDb+dropType) ⇒
+    * [.alterType(name, update)](#BaseDb+alterType) ⇒
     * [.command(command)](#BaseDb+command)
 
 <a name="new_BaseDb_new"></a>
@@ -566,6 +577,51 @@ error for Mongoose <code>syncIndexes()</code> compatibility reasons.</p>
 <p>List all tables in the database.</p>
 
 **Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+<a name="BaseDb+listTypes"></a>
+
+### baseDb.listTypes() ⇒
+<p>List all user-defined types (UDTs) in the database.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>An array of type descriptors.</p>  
+<a name="BaseDb+createType"></a>
+
+### baseDb.createType(name, definition) ⇒
+<p>Create a new user-defined type (UDT) with the specified name and fields definition.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the createType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to create.</p> |
+| definition | <p>The definition of the fields for the type.</p> |
+
+<a name="BaseDb+dropType"></a>
+
+### baseDb.dropType(name) ⇒
+<p>Drop (delete) a user-defined type (UDT) by name.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the dropType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to drop.</p> |
+
+<a name="BaseDb+alterType"></a>
+
+### baseDb.alterType(name, update) ⇒
+<p>Alter a user-defined type (UDT) by renaming or adding fields.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the alterType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to alter.</p> |
+| update | <p>The alterations to be made: renaming or adding fields.</p> |
+
 <a name="BaseDb+command"></a>
 
 ### baseDb.command(command)
@@ -713,6 +769,10 @@ the one exception being strings.</p>
     * [.dropTable(name)](#BaseDb+dropTable)
     * [.listCollections(options)](#BaseDb+listCollections)
     * [.listTables()](#BaseDb+listTables)
+    * [.listTypes()](#BaseDb+listTypes) ⇒
+    * [.createType(name, definition)](#BaseDb+createType) ⇒
+    * [.dropType(name)](#BaseDb+dropType) ⇒
+    * [.alterType(name, update)](#BaseDb+alterType) ⇒
     * [.command(command)](#BaseDb+command)
 
 <a name="new_BaseDb_new"></a>
@@ -773,6 +833,51 @@ error for Mongoose <code>syncIndexes()</code> compatibility reasons.</p>
 <p>List all tables in the database.</p>
 
 **Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+<a name="BaseDb+listTypes"></a>
+
+### baseDb.listTypes() ⇒
+<p>List all user-defined types (UDTs) in the database.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>An array of type descriptors.</p>  
+<a name="BaseDb+createType"></a>
+
+### baseDb.createType(name, definition) ⇒
+<p>Create a new user-defined type (UDT) with the specified name and fields definition.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the createType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to create.</p> |
+| definition | <p>The definition of the fields for the type.</p> |
+
+<a name="BaseDb+dropType"></a>
+
+### baseDb.dropType(name) ⇒
+<p>Drop (delete) a user-defined type (UDT) by name.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the dropType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to drop.</p> |
+
+<a name="BaseDb+alterType"></a>
+
+### baseDb.alterType(name, update) ⇒
+<p>Alter a user-defined type (UDT) by renaming or adding fields.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the alterType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to alter.</p> |
+| update | <p>The alterations to be made: renaming or adding fields.</p> |
+
 <a name="BaseDb+command"></a>
 
 ### baseDb.command(command)
@@ -840,6 +945,25 @@ by default from their schema.</p>
 <p>Mongoose plugin to validate arrays of numbers that have a <code>dimension</code> property. Ensure that the array
 is either nullish or has a length equal to the dimension.</p>
 <p>You do not need to call this function directly. Mongoose applies this plugin automatically when you call <code>setDriver()</code>.</p>
+
+**Kind**: global function  
+<a name="convertSchemaToUDTColumns"></a>
+
+## convertSchemaToUDTColumns()
+<p>Given a Mongoose schema, create an equivalent Data API table definition for use with <code>createTable()</code></p>
+
+**Kind**: global function  
+<a name="udtDefinitionsFromSchema"></a>
+
+## udtDefinitionsFromSchema()
+<p>Given a Mongoose schema, get the definitions of all the UDTs used by this schema.
+Used to create all UDTs required by the schema before creating the table.</p>
+
+**Kind**: global function  
+<a name="convertSchemaToColumns"></a>
+
+## convertSchemaToColumns()
+<p>Given a Mongoose schema, create an equivalent Data API table definition for use with <code>createTable()</code></p>
 
 **Kind**: global function  
 <a name="createAstraUri"></a>
