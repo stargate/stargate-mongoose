@@ -17,7 +17,7 @@ import assert from 'assert';
 import convertSchemaToColumns from '../src/convertSchemaToColumns';
 
 describe('convertSchemaToColumns', () => {
-    it('generates table definition from schema with all data types', () => {
+    it('generates table definition from schema with all primitive data types', () => {
         const testSchema = new Schema({
             name: String,
             age: Number,
