@@ -38,13 +38,13 @@ import {
     SortDirection,
     Sort as SortOptionInternal,
     Table as AstraTable,
-    TableCreateIndexColumn,
     TableDeleteManyOptions,
     TableDeleteOneOptions,
     TableDropIndexOptions,
     TableFilter,
     TableFindOneOptions,
     TableFindOptions,
+    TableIndexColumn,
     TableInsertManyOptions,
     TableInsertOneOptions,
     TableOptions,
@@ -508,7 +508,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             await this.collection.createIndex(
                 indexName,
                 indexModifier === '$keys' || indexModifier === '$values'
-                    ? { [column]: indexModifier } as TableCreateIndexColumn<unknown>
+                    ? { [column]: indexModifier } as TableIndexColumn<unknown>
                     : column,
                 { ifNotExists: true, options: options as TableIndexOptions }
             );
