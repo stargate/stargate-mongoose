@@ -18,8 +18,9 @@ import { Schema, Types } from 'mongoose';
 import { randomUUID } from 'crypto';
 import { UUID } from 'bson';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
-import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime } from '@datastax/astra-db-ts';
+import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime, TableScalarColumnDefinition } from '@datastax/astra-db-ts';
 import convertSchemaToUDTColumns from '../../src/udt/convertSchemaToUDTColumns';
+import udtDefinitionsFromSchema from '../../src/udt/udtDefinitionsFromSchema';
 
 const TEST_TABLE_NAME = 'table1';
 
@@ -486,6 +487,93 @@ describe('TABLES: basic operations and data types', function() {
             assert.strictEqual(rawDoc.productsByCategory!['Test Category 2']!.name, 'Test Product 2');
             assert.strictEqual(rawDoc.productsByCategory!['Test Category 2']!.price, 200);
             assert.strictEqual(rawDoc.productsByCategory!['Test Category 2']!.category, 'Test Category 2');
+        });
+
+        it('syncTypes handles creating, dropping, and updating UDTs based on udtDefinitionsFromSchema', async () => {
+            // Test syncTypes and udtDefinitionsFromSchema
+            const db = mongooseInstance.connection.db;
+            assert.ok(db);
+
+            // Step 1: Define two UDT schemas
+            const pageSchema = new Schema(
+                {
+                    domain: String,
+                    title: String,
+                    url: String
+                },
+                { udtName: 'Page', versionKey: false, _id: false }
+            );
+            const productSchema = new Schema(
+                {
+                    name: { type: String },
+                    price: { type: Number }
+                },
+                { udtName: 'Product', versionKey: false, _id: false }
+            );
+            const clickedEventSchema = new Schema({
+                page: pageSchema,
+                product: productSchema,
+                timestamp: Date
+            });
+
+            // Step 2: Generate UDT definitions using udtDefinitionsFromSchema
+            const productUdtDefinitions = udtDefinitionsFromSchema(clickedEventSchema);
+            assert.ok(productUdtDefinitions['Page']);
+            assert.ok(productUdtDefinitions['Product']);
+
+            // First, ensure a clean slate
+            const typesAtStart = await db.listTypes({ nameOnly: true });
+            for (const type of typesAtStart) {
+                await db.dropType(type);
+            }
+            let currTypes = await db.listTypes({ nameOnly: true });
+            assert.deepStrictEqual(currTypes, []);
+
+            // Step 3: create a UDT that will be dropped and a Page UDT with slightly different fields
+            await db.createType('Page', {
+                fields: {
+                    title: { type: 'text' },
+                    content: { type: 'text' }
+                }
+            });
+
+            await db.createType('Taco', {
+                fields: {
+                    name: { type: 'text' },
+                    price: { type: 'decimal' }
+                }
+            });
+
+            currTypes = await db.listTypes({ nameOnly: true });
+            assert.deepStrictEqual(currTypes, ['Page', 'Taco']);
+
+            // Step 3: Use syncTypes to create the Brand and Product UDTs
+            const typesToSync = Object.entries(productUdtDefinitions).map(([name, def]) => ({ name, definition: def }));
+            const syncResult1 = await db.syncTypes(typesToSync);
+            assert.deepStrictEqual(syncResult1.created.sort(), ['Product']);
+            assert.deepStrictEqual(syncResult1.updated.sort(), ['Page']);
+            assert.deepStrictEqual(syncResult1.dropped.sort(), ['Taco']);
+
+            // Check that types now exist
+            const currTypes2 = await db.listTypes({ nameOnly: true });
+            assert.deepStrictEqual(currTypes2.sort(), ['Page', 'Product'].sort());
+
+            // Verify Brand has new field
+            const typeDefs = await db.listTypes({ nameOnly: false });
+            const brandDef = typeDefs.find(def => def.name === 'Page');
+            assert.deepStrictEqual(brandDef?.definition?.fields, {
+                title: { type: 'text' },
+                content: { type: 'text' },
+                domain: { type: 'text' },
+                url: { type: 'text' }
+            });
+
+            // Step 4: test syncTypes updating an existing field with an incompatible type
+            (typesToSync[0].definition.fields['title'] as TableScalarColumnDefinition).type = 'float';
+            await assert.rejects(
+                () => db.syncTypes(typesToSync),
+                /Error in syncTypes: Field 'title' in type 'Page' exists with different type. \(current: text, new: float\)/
+            );
         });
     });
 });
