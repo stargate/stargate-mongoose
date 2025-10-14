@@ -242,7 +242,7 @@ export abstract class BaseDb {
                         }
                     }
 
-                    if (Object.keys(fieldsToAdd).length > 0) {
+                    if (Object.keys(fieldsToAdd.fields).length > 0) {
                         await this.alterType(type.name, { operation: { add: fieldsToAdd } });
                         updated.push(type.name);
                     }
