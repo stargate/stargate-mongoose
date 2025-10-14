@@ -13,22 +13,17 @@
 // limitations under the License.
 
 import { AstraMongooseError } from '../astraMongooseError';
-import { CreateTableColumnDefinitions } from '@datastax/astra-db-ts';
+import { CreateTypeDefinition } from '@datastax/astra-db-ts';
 import { Schema } from 'mongoose';
-import convertSchemaToColumns from '../convertSchemaToColumns';
+import convertSchemaToUDTColumns from './convertSchemaToUDTColumns';
 import getUDTNameFromSchemaType from './getUDTNameFromSchemaType';
-
-interface UDTDefinition {
-    name: string;
-    definition: { fields: CreateTableColumnDefinitions; };
-}
 
 /**
  * Given a Mongoose schema, get the definitions of all the UDTs used by this schema.
  * Used to create all UDTs required by the schema before creating the table.
  */
-export default function udtDefinitionsFromSchema(schema: Schema): Record<string, UDTDefinition> {
-    const result: Record<string, UDTDefinition> = {};
+export default function udtDefinitionsFromSchema(schema: Schema): Record<string, CreateTypeDefinition> {
+    const result: Record<string, CreateTypeDefinition> = {};
 
     for (const path of Object.keys(schema.paths)) {
         const schemaType = schema.paths[path];
@@ -40,20 +35,20 @@ export default function udtDefinitionsFromSchema(schema: Schema): Record<string,
         if (!udtSchema) {
             throw new AstraMongooseError(`Path ${path} cannot store a UDT, must be a subdocument, document array, or map.`);
         }
-        const fields = convertSchemaToColumns(udtSchema);
+        const fields = convertSchemaToUDTColumns(udtSchema);
         if (result[udtName]) {
             // Currently do not support multiple definitions for the same UDT no matter how slight
             // the difference. `JSON.stringify()` is used for deep equality comparison to ensure we can
             // return an AstraMongooseError. In the future we may consider supporting the case where one UDT
             // has a subset of the other's columns. We may also consider using assert.deepStrictEqual() here
             // to provide a more detailed error message.
-            if (JSON.stringify(result[udtName].definition.fields) !== JSON.stringify(fields)) {
+            if (JSON.stringify(result[udtName].fields) !== JSON.stringify(fields)) {
                 throw new AstraMongooseError(`Conflicting definition for UDT ${udtName} at ${path}`);
             }
             continue;
         }
 
-        result[udtName] = { name: udtName, definition: { fields } };
+        result[udtName] = { fields };
     }
 
     return result;

@@ -39,18 +39,15 @@ describe('udtDefinitionsFromSchema', () => {
         const udtDefinitions = udtDefinitionsFromSchema(testSchema);
         assert.deepStrictEqual(udtDefinitions, {
             Address: {
-                name: 'Address',
-                definition: {
-                    fields: {
-                        _id: { type: 'text' },
-                        __v: { type: 'int' },
-                        line1: { type: 'text' },
-                        line2: { type: 'text' },
-                        city: { type: 'text' },
-                        state: { type: 'text' },
-                        zip: { type: 'text' },
-                        country: { type: 'text' }
-                    }
+                fields: {
+                    _id: { type: 'text' },
+                    __v: { type: 'int' },
+                    line1: { type: 'text' },
+                    line2: { type: 'text' },
+                    city: { type: 'text' },
+                    state: { type: 'text' },
+                    zip: { type: 'text' },
+                    country: { type: 'text' }
                 }
             }
         });
@@ -90,30 +87,24 @@ describe('udtDefinitionsFromSchema', () => {
         const udtDefinitions = udtDefinitionsFromSchema(testSchema);
         assert.deepStrictEqual(udtDefinitions, {
             Address: {
-                name: 'Address',
-                definition: {
-                    fields: {
-                        _id: { type: 'text' },
-                        __v: { type: 'int' },
-                        line1: { type: 'text' },
-                        line2: { type: 'text' },
-                        city: { type: 'text' },
-                        state: { type: 'text' },
-                        zip: { type: 'text' },
-                        country: { type: 'text' }
-                    }
+                fields: {
+                    _id: { type: 'text' },
+                    __v: { type: 'int' },
+                    line1: { type: 'text' },
+                    line2: { type: 'text' },
+                    city: { type: 'text' },
+                    state: { type: 'text' },
+                    zip: { type: 'text' },
+                    country: { type: 'text' }
                 }
             },
             Phone: {
-                name: 'Phone',
-                definition: {
-                    fields: {
-                        _id: { type: 'text' },
-                        __v: { type: 'int' },
-                        type: { type: 'text' },
-                        number: { type: 'text' },
-                        extension: { type: 'text' }
-                    }
+                fields: {
+                    _id: { type: 'text' },
+                    __v: { type: 'int' },
+                    type: { type: 'text' },
+                    number: { type: 'text' },
+                    extension: { type: 'text' }
                 }
             }
         });
