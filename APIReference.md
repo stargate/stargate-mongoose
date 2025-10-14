@@ -517,6 +517,7 @@ for tables and CollectionsDb class for collections.</p>
     * [.createType(name, definition)](#BaseDb+createType) ⇒
     * [.dropType(name)](#BaseDb+dropType) ⇒
     * [.alterType(name, update)](#BaseDb+alterType) ⇒
+    * [.syncTypes(types)](#BaseDb+syncTypes) ⇒
     * [.command(command)](#BaseDb+command)
 
 <a name="new_BaseDb_new"></a>
@@ -621,6 +622,24 @@ error for Mongoose <code>syncIndexes()</code> compatibility reasons.</p>
 | --- | --- |
 | name | <p>The name of the type to alter.</p> |
 | update | <p>The alterations to be made: renaming or adding fields.</p> |
+
+<a name="BaseDb+syncTypes"></a>
+
+### baseDb.syncTypes(types) ⇒
+<p>Synchronizes the set of user-defined types (UDTs) in the database. It makes existing types in the database
+match the list provided by <code>types</code>. New types that are missing are created, and types that exist in the database
+but are not in the input list are dropped. If a type is present in both, we add all the new type's fields to the existing type.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>An object describing which types were created, updated, or dropped.</p>  
+**Throws**:
+
+- [<code>AstraMongooseError</code>](#AstraMongooseError) <p>If an error occurs during type synchronization, with partial progress information in the error.</p>
+
+
+| Param | Description |
+| --- | --- |
+| types | <p>An array of objects each specifying the name and CreateTypeDefinition for a UDT to synchronize.</p> |
 
 <a name="BaseDb+command"></a>
 
@@ -773,6 +792,7 @@ the one exception being strings.</p>
     * [.createType(name, definition)](#BaseDb+createType) ⇒
     * [.dropType(name)](#BaseDb+dropType) ⇒
     * [.alterType(name, update)](#BaseDb+alterType) ⇒
+    * [.syncTypes(types)](#BaseDb+syncTypes) ⇒
     * [.command(command)](#BaseDb+command)
 
 <a name="new_BaseDb_new"></a>
@@ -877,6 +897,24 @@ error for Mongoose <code>syncIndexes()</code> compatibility reasons.</p>
 | --- | --- |
 | name | <p>The name of the type to alter.</p> |
 | update | <p>The alterations to be made: renaming or adding fields.</p> |
+
+<a name="BaseDb+syncTypes"></a>
+
+### baseDb.syncTypes(types) ⇒
+<p>Synchronizes the set of user-defined types (UDTs) in the database. It makes existing types in the database
+match the list provided by <code>types</code>. New types that are missing are created, and types that exist in the database
+but are not in the input list are dropped. If a type is present in both, we add all the new type's fields to the existing type.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>An object describing which types were created, updated, or dropped.</p>  
+**Throws**:
+
+- [<code>AstraMongooseError</code>](#AstraMongooseError) <p>If an error occurs during type synchronization, with partial progress information in the error.</p>
+
+
+| Param | Description |
+| --- | --- |
+| types | <p>An array of objects each specifying the name and CreateTypeDefinition for a UDT to synchronize.</p> |
 
 <a name="BaseDb+command"></a>
 
