@@ -18,7 +18,9 @@ import { Schema, Types } from 'mongoose';
 import { randomUUID } from 'crypto';
 import { UUID } from 'bson';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
-import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime } from '@datastax/astra-db-ts';
+import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime, TableScalarColumnDefinition } from '@datastax/astra-db-ts';
+import convertSchemaToUDTColumns from '../../src/udt/convertSchemaToUDTColumns';
+import udtDefinitionsFromSchema from '../../src/udt/udtDefinitionsFromSchema';
 
 const TEST_TABLE_NAME = 'table1';
 
@@ -84,7 +86,7 @@ describe('TABLES: basic operations and data types', function() {
             employee: Schema.Types.ObjectId,
             friends: [String],
             salary: Schema.Types.Decimal128,
-            favorites: { type: Map, of: String },
+            favorites: { type: Map, of: { type: String, required: true } },
             uniqueId: Schema.Types.UUID,
             category: BigInt,
             buf: Buffer,
@@ -228,5 +230,350 @@ describe('TABLES: basic operations and data types', function() {
         assert.strictEqual(findOneResponse.get('timeSinceStart'), '15d');
         assert.strictEqual(findOneResponse.get('startDate'), '2022-01-02');
         assert.strictEqual(findOneResponse.get('timeOfDay'), '13:00:00.000000000');
+    });
+
+    describe('UDTs', () => {
+        beforeEach(async () => {
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const db = mongooseInstance.connection.db;
+            assert.ok(db);
+            const types = await db.listTypes({ nameOnly: true });
+            for (const type of types) {
+                await db.dropType(type);
+            }
+
+            mongooseInstance.deleteModel(/Test/);
+        });
+
+        afterEach(async () => {
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const db = mongooseInstance.connection.db;
+            assert.ok(db);
+            const types = await db.listTypes({ nameOnly: true });
+            for (const type of types) {
+                await db.dropType(type);
+            }
+        });
+
+        it('supports creating and altering UDTs', async () => {
+            const db = mongooseInstance.connection.db;
+            assert.ok(db);
+
+            await db.createType('ProductType', {
+                fields: {
+                    name: { type: 'text' },
+                    price: { type: 'int' }
+                }
+            });
+
+            const typeNames = await db.listTypes({ nameOnly: true });
+            assert.deepStrictEqual(typeNames, ['ProductType']);
+
+            const typeDefs = await db.listTypes({ nameOnly: false });
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition!.fields), [{
+                name: { type: 'text' },
+                price: { type: 'int' }
+            }]);
+
+            // Test altering the type to add a new "category" field
+            await db.alterType('ProductType', {
+                operation: {
+                    add: { fields: { category: { type: 'text' } } }
+                }
+            });
+
+            // Verify the field is present after alteration
+            const typeDefsAfterAlter = await db.listTypes({ nameOnly: false });
+            assert.deepStrictEqual(typeDefsAfterAlter.map((def) => def.definition!.fields), [{
+                name: { type: 'text' },
+                price: { type: 'int' },
+                category: { type: 'text' }
+            }]);
+        });
+
+        it('handles UDTs created from a schema definition', async () => {
+            const db = mongooseInstance.connection.db;
+            assert.ok(db);
+
+            const productSchema = new Schema(
+                {
+                    name: { type: String },
+                    price: { type: Number },
+                    category: { type: String }
+                },
+                { udtName: 'Product', versionKey: false, _id: false }
+            );
+
+            await db.createType('Product', { fields: convertSchemaToUDTColumns(productSchema) });
+            const typeDefs = await db.listTypes({ nameOnly: false });
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition!.fields), [{
+                name: { type: 'text' },
+                price: { type: 'double' },
+                category: { type: 'text' }
+            }]);
+
+            const clickedEventSchema = new Schema({
+                product: productSchema,
+                url: String
+            });
+
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(clickedEventSchema));
+
+            const TestModel = mongooseInstance.model('Test', clickedEventSchema, TEST_TABLE_NAME);
+            const doc = await TestModel.create({
+                url: 'https://example.com',
+                product: { name: 'Test Product', price: 100, category: 'Test Category' }
+            });
+            assert.ok(doc);
+            assert.strictEqual(doc.product!.name, 'Test Product');
+            assert.strictEqual(doc.product!.price, 100);
+            assert.strictEqual(doc.product!.category, 'Test Category');
+            assert.strictEqual(doc.url, 'https://example.com');
+
+            const rawDoc = await TestModel.collection.findOne({ _id: doc._id });
+            assert.ok(rawDoc);
+            assert.strictEqual(rawDoc.product!.name, 'Test Product');
+            assert.strictEqual(rawDoc.product!.price, 100);
+            assert.strictEqual(rawDoc.product!.category, 'Test Category');
+            assert.strictEqual(rawDoc.url, 'https://example.com');
+        });
+
+        it('handles UDTs created from a schema definition with udtName', async () => {
+            const db = mongooseInstance.connection.db;
+            assert.ok(db);
+
+            const productSchema = new Schema(
+                {
+                    name: { type: String },
+                    price: { type: Number },
+                    category: { type: String }
+                },
+                { versionKey: false, _id: false }
+            );
+
+            await db.createType('Product', { fields: convertSchemaToUDTColumns(productSchema) });
+            const typeDefs = await db.listTypes({ nameOnly: false });
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition!.fields), [{
+                name: { type: 'text' },
+                price: { type: 'double' },
+                category: { type: 'text' }
+            }]);
+
+            const clickedEventSchema = new Schema({
+                product: { type: productSchema, udtName: 'Product' },
+                url: String
+            });
+
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(clickedEventSchema));
+
+            const TestModel = mongooseInstance.model('Test', clickedEventSchema, TEST_TABLE_NAME);
+            const doc = await TestModel.create({
+                url: 'https://example.com',
+                product: { name: 'Test Product', price: 100, category: 'Test Category' }
+            });
+            assert.ok(doc);
+            assert.strictEqual(doc.product!.name, 'Test Product');
+            assert.strictEqual(doc.product!.price, 100);
+            assert.strictEqual(doc.product!.category, 'Test Category');
+            assert.strictEqual(doc.url, 'https://example.com');
+
+            const rawDoc = await TestModel.collection.findOne({ _id: doc._id });
+            assert.ok(rawDoc);
+            assert.strictEqual(rawDoc.product!.name, 'Test Product');
+            assert.strictEqual(rawDoc.product!.price, 100);
+            assert.strictEqual(rawDoc.product!.category, 'Test Category');
+            assert.strictEqual(rawDoc.url, 'https://example.com');
+        });
+
+        it('handles set of UDTs created from a schema definition', async () => {
+            const db = mongooseInstance.connection.db;
+            assert.ok(db);
+
+            const productSchema = new Schema(
+                {
+                    name: { type: String },
+                    price: { type: Number },
+                    category: { type: String }
+                },
+                { udtName: 'Product', versionKey: false, _id: false }
+            );
+
+            await db.createType('Product', { fields: convertSchemaToUDTColumns(productSchema) });
+            const typeDefs = await db.listTypes();
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition!.fields), [{
+                name: { type: 'text' },
+                price: { type: 'double' },
+                category: { type: 'text' }
+            }]);
+
+            const cartSchema = new Schema({
+                products: [productSchema]
+            });
+
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(cartSchema));
+
+            const TestModel = mongooseInstance.model('Test', cartSchema, TEST_TABLE_NAME);
+            const doc = await TestModel.create({
+                products: [
+                    { name: 'Test Product', price: 100, category: 'Test Category' },
+                    { name: 'Test Product 2', price: 200, category: 'Test Category 2' }
+                ]
+            });
+            assert.ok(doc);
+            assert.strictEqual(doc.products[0].name, 'Test Product');
+            assert.strictEqual(doc.products[0].price, 100);
+            assert.strictEqual(doc.products[0].category, 'Test Category');
+            assert.strictEqual(doc.products[1].name, 'Test Product 2');
+            assert.strictEqual(doc.products[1].price, 200);
+            assert.strictEqual(doc.products[1].category, 'Test Category 2');
+
+            const rawDoc = await TestModel.collection.findOne({ _id: doc._id });
+            assert.ok(rawDoc);
+            assert.strictEqual(rawDoc.products[0].name, 'Test Product');
+            assert.strictEqual(rawDoc.products[0].price, 100);
+            assert.strictEqual(rawDoc.products[0].category, 'Test Category');
+            assert.strictEqual(rawDoc.products[1].name, 'Test Product 2');
+            assert.strictEqual(rawDoc.products[1].price, 200);
+            assert.strictEqual(rawDoc.products[1].category, 'Test Category 2');
+        });
+
+        it('handles map of UDTs created from a schema definition', async () => {
+            const db = mongooseInstance.connection.db;
+            assert.ok(db);
+
+            const productSchema = new Schema(
+                {
+                    name: { type: String },
+                    price: { type: Number },
+                    category: { type: String }
+                },
+                { udtName: 'Product', versionKey: false, _id: false }
+            );
+
+            await db.createType('Product', { fields: convertSchemaToUDTColumns(productSchema) });
+            const typeDefs = await db.listTypes();
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition!.fields), [{
+                name: { type: 'text' },
+                price: { type: 'double' },
+                category: { type: 'text' }
+            }]);
+
+            const cartSchema = new Schema({
+                productsByCategory: { type: Map, of: { type: productSchema, required: true } }
+            });
+
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(cartSchema));
+
+            const TestModel = mongooseInstance.model('Test', cartSchema, TEST_TABLE_NAME);
+            const doc = await TestModel.create({
+                productsByCategory: {
+                    'Test Category': { name: 'Test Product', price: 100, category: 'Test Category' },
+                    'Test Category 2': { name: 'Test Product 2', price: 200, category: 'Test Category 2' }
+                }
+            });
+            assert.ok(doc);
+            assert.strictEqual(doc.productsByCategory!.get('Test Category')!.name, 'Test Product');
+            assert.strictEqual(doc.productsByCategory!.get('Test Category')!.price, 100);
+            assert.strictEqual(doc.productsByCategory!.get('Test Category')!.category, 'Test Category');
+            assert.strictEqual(doc.productsByCategory!.get('Test Category 2')!.name, 'Test Product 2');
+            assert.strictEqual(doc.productsByCategory!.get('Test Category 2')!.price, 200);
+            assert.strictEqual(doc.productsByCategory!.get('Test Category 2')!.category, 'Test Category 2');
+
+            const rawDoc = await TestModel.collection.findOne({ _id: doc._id });
+            assert.ok(rawDoc);
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category']!.name, 'Test Product');
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category']!.price, 100);
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category']!.category, 'Test Category');
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category 2']!.name, 'Test Product 2');
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category 2']!.price, 200);
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category 2']!.category, 'Test Category 2');
+        });
+
+        it('syncTypes handles creating, dropping, and updating UDTs based on udtDefinitionsFromSchema', async () => {
+            // Test syncTypes and udtDefinitionsFromSchema
+            const db = mongooseInstance.connection.db;
+            assert.ok(db);
+
+            // Step 1: Define two UDT schemas
+            const pageSchema = new Schema(
+                {
+                    domain: String,
+                    title: String,
+                    url: String
+                },
+                { udtName: 'Page', versionKey: false, _id: false }
+            );
+            const productSchema = new Schema(
+                {
+                    name: { type: String },
+                    price: { type: Number }
+                },
+                { udtName: 'Product', versionKey: false, _id: false }
+            );
+            const clickedEventSchema = new Schema({
+                page: pageSchema,
+                product: productSchema,
+                timestamp: Date
+            });
+
+            // Step 2: Generate UDT definitions using udtDefinitionsFromSchema
+            const productUdtDefinitions = udtDefinitionsFromSchema(clickedEventSchema);
+            assert.ok(productUdtDefinitions['Page']);
+            assert.ok(productUdtDefinitions['Product']);
+
+            // First, ensure a clean slate
+            const typesAtStart = await db.listTypes({ nameOnly: true });
+            for (const type of typesAtStart) {
+                await db.dropType(type);
+            }
+            let currTypes = await db.listTypes({ nameOnly: true });
+            assert.deepStrictEqual(currTypes, []);
+
+            // Step 3: create a UDT that will be dropped and a Page UDT with slightly different fields
+            await db.createType('Page', {
+                fields: {
+                    title: { type: 'text' },
+                    content: { type: 'text' }
+                }
+            });
+
+            await db.createType('Taco', {
+                fields: {
+                    name: { type: 'text' },
+                    price: { type: 'decimal' }
+                }
+            });
+
+            currTypes = await db.listTypes({ nameOnly: true });
+            assert.deepStrictEqual(currTypes, ['Page', 'Taco']);
+
+            // Step 3: Use syncTypes to create the Brand and Product UDTs
+            const typesToSync = Object.entries(productUdtDefinitions).map(([name, def]) => ({ name, definition: def }));
+            const syncResult1 = await db.syncTypes(typesToSync);
+            assert.deepStrictEqual(syncResult1.created.sort(), ['Product']);
+            assert.deepStrictEqual(syncResult1.updated.sort(), ['Page']);
+            assert.deepStrictEqual(syncResult1.dropped.sort(), ['Taco']);
+
+            // Check that types now exist
+            const currTypes2 = await db.listTypes({ nameOnly: true });
+            assert.deepStrictEqual(currTypes2.sort(), ['Page', 'Product'].sort());
+
+            // Verify Brand has new field
+            const typeDefs = await db.listTypes({ nameOnly: false });
+            const brandDef = typeDefs.find(def => def.name === 'Page');
+            assert.deepStrictEqual(brandDef?.definition?.fields, {
+                title: { type: 'text' },
+                content: { type: 'text' },
+                domain: { type: 'text' },
+                url: { type: 'text' }
+            });
+
+            // Step 4: test syncTypes updating an existing field with an incompatible type
+            (typesToSync[0].definition.fields['title'] as TableScalarColumnDefinition).type = 'float';
+            await assert.rejects(
+                () => db.syncTypes(typesToSync),
+                /Error in syncTypes: Field 'title' in type 'Page' exists with different type. \(current: text, new: float\)/
+            );
+        });
     });
 });
