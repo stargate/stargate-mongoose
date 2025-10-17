@@ -246,7 +246,6 @@ export abstract class BaseDb {
                         await this.alterType(type.name, { operation: { add: fieldsToAdd } });
                         updated.push(type.name);
                     }
-                    continue;
                 }
             }
         } catch (err) {
