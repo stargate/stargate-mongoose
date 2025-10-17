@@ -1,6 +1,6 @@
 {
   "name": "@datastax/astra-mongoose",
-  "version": "1.0.6",
+  "version": "1.1.0",
   "description": "Astra's NodeJS Mongoose compatibility client",
   "contributors": [
     "CRW (http://barnyrubble.tumblr.com/)",
