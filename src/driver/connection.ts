@@ -15,6 +15,7 @@
 import { Collection, MongooseCollectionOptions } from './collection';
 import {
     AstraDbAdmin,
+    AlterTypeOptions,
     CollectionDescriptor,
     CommandFailedEvent,
     CommandStartedEvent,
@@ -25,15 +26,20 @@ import {
     CreateDataAPIKeyspaceOptions,
     CreateTableDefinition,
     CreateTableOptions,
+    CreateTypeDefinition,
     DataAPIClientOptions,
     DataAPIDbAdmin,
     DropCollectionOptions,
     DropTableOptions,
+    DropTypeOptions,
     ListCollectionsOptions,
     ListTablesOptions,
+    ListTypesOptions,
     LoggingEvent,
     RawDataAPIResponse,
+    SomeRow,
     TableDescriptor,
+    TypeDescriptor,
     WithTimeout,
 } from '@datastax/astra-db-ts';
 import { CollectionsDb, TablesDb } from './db';
@@ -42,6 +48,7 @@ import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
 import type { ConnectOptions, Mongoose, Model } from 'mongoose';
 import { URL } from 'url';
+import assert from 'assert';
 
 import {
     DataAPIClient,
@@ -118,9 +125,18 @@ export class Connection extends MongooseConnection {
         const shouldWaitForClient = (this.readyState === STATES.connecting || this.readyState === STATES.disconnected) && this._shouldBufferCommands();
         if (shouldWaitForClient) {
             await this._waitForConnect();
+            // Cannot happen, but this helps TypeScript infer the correct return type
+            assert.ok(this.db);
+            assert.ok(this.admin);
+            return { db: this.db, admin: this.admin };
         } else if (this.readyState !== STATES.connected) {
             throw new AstraMongooseError('Connection is not connected', { readyState: this.readyState });
         }
+
+        // Cannot happen, but this helps TypeScript infer the correct return type
+        assert.ok(this.db);
+        assert.ok(this.admin);
+        return { db: this.db, admin: this.admin };
     }
 
     /**
@@ -144,8 +160,8 @@ export class Connection extends MongooseConnection {
         name: string,
         options?: CreateCollectionOptions<DocType>
     ) {
-        await this._waitForClient();
-        return this.db!.createCollection<DocType>(name, options);
+        const { db } = await this._waitForClient();
+        return db.createCollection<DocType>(name, options);
     }
 
     /**
@@ -165,8 +181,8 @@ export class Connection extends MongooseConnection {
         definition: CreateTableDefinition,
         options?: Omit<CreateTableOptions, 'definition'>
     ) {
-        await this._waitForClient();
-        return this.db!.createTable<DocType>(name, definition, options);
+        const { db } = await this._waitForClient();
+        return db.createTable<DocType>(name, definition, options);
     }
 
     /**
@@ -174,8 +190,8 @@ export class Connection extends MongooseConnection {
       * @param name
       */
     async dropCollection(name: string, options?: DropCollectionOptions) {
-        await this._waitForClient();
-        return this.db!.dropCollection(name, options);
+        const { db } = await this._waitForClient();
+        return db.dropCollection(name, options);
     }
 
     /**
@@ -183,8 +199,8 @@ export class Connection extends MongooseConnection {
       * @param name The name of the table to drop
       */
     async dropTable(name: string, options?: DropTableOptions) {
-        await this._waitForClient();
-        return this.db!.dropTable(name, options);
+        const { db } = await this._waitForClient();
+        return db.dropTable(name, options);
     }
 
     /**
@@ -193,8 +209,8 @@ export class Connection extends MongooseConnection {
       * @param name The name of the keyspace to create
       */
     async createKeyspace(name: string, options?: CreateAstraKeyspaceOptions & CreateDataAPIKeyspaceOptions) {
-        await this._waitForClient();
-        return await this.admin!.createKeyspace(name, options);
+        const { admin } = await this._waitForClient();
+        return await admin.createKeyspace(name, options);
     }
 
     /**
@@ -214,11 +230,11 @@ export class Connection extends MongooseConnection {
     async listCollections(options?: ListCollectionsOptions & { nameOnly?: false }): Promise<CollectionDescriptor[]>;
 
     async listCollections(options?: ListCollectionsOptions) {
-        await this._waitForClient();
+        const { db } = await this._waitForClient();
         if (options?.nameOnly) {
-            return this.db!.listCollections({ ...options, nameOnly: true });
+            return db.listCollections({ ...options, nameOnly: true });
         }
-        return this.db!.listCollections({ ...options, nameOnly: false });
+        return db.listCollections({ ...options, nameOnly: false });
     }
 
     /**
@@ -229,11 +245,71 @@ export class Connection extends MongooseConnection {
     async listTables(options?: ListTablesOptions & { nameOnly?: false }): Promise<TableDescriptor[]>;
 
     async listTables(options?: ListTablesOptions) {
-        await this._waitForClient();
+        const { db } = await this._waitForClient();
         if (options?.nameOnly) {
-            return this.db!.listTables({ ...options, nameOnly: true });
+            return db.listTables({ ...options, nameOnly: true });
         }
-        return this.db!.listTables({ ...options, nameOnly: false });
+        return db.listTables({ ...options, nameOnly: false });
+    }
+
+    /**
+     * List all user-defined types (UDTs) in the database.
+     * @returns An array of type descriptors.
+     */
+    async listTypes(options: { nameOnly: true }): Promise<string[]>;
+    async listTypes(options?: { nameOnly?: false }): Promise<TypeDescriptor[]>;
+    async listTypes(options?: ListTypesOptions) {
+        const { db } = await this._waitForClient();
+        if (options?.nameOnly) {
+            return db.listTypes({ ...options, nameOnly: true });
+        }
+        return db.listTypes({ ...options, nameOnly: false });
+    }
+
+    /**
+     * Create a new user-defined type (UDT) with the specified name and fields definition.
+     * @param name The name of the type to create.
+     * @param definition The definition of the fields for the type.
+     * @returns The result of the createType command.
+     */
+    async createType(name: string, definition: CreateTypeDefinition) {
+        const { db } = await this._waitForClient();
+        return db.createType(name, definition);
+    }
+
+    /**
+     * Drop (delete) a user-defined type (UDT) by name.
+     * @param name The name of the type to drop.
+     * @returns The result of the dropType command.
+     */
+    async dropType(name: string, options?: DropTypeOptions) {
+        const { db } = await this._waitForClient();
+        return db.dropType(name, options);
+    }
+
+    /**
+     * Alter a user-defined type (UDT) by renaming or adding fields.
+     * @param name The name of the type to alter.
+     * @param update The alterations to be made: renaming or adding fields.
+     * @returns The result of the alterType command.
+     */
+    async alterType<UDTSchema extends SomeRow = SomeRow>(name: string, update: AlterTypeOptions<UDTSchema>) {
+        const { db } = await this._waitForClient();
+        return db.alterType(name, update);
+    }
+
+    /**
+     * Synchronizes the set of user-defined types (UDTs) in the database. It makes existing types in the database
+     * match the list provided by `types`. New types that are missing are created, and types that exist in the database
+     * but are not in the input list are dropped. If a type is present in both, we add all the new type's fields to the existing type.
+     *
+     * @param types An array of objects each specifying the name and CreateTypeDefinition for a UDT to synchronize.
+     * @returns An object describing which types were created, updated, or dropped.
+     * @throws {AstraMongooseError} If an error occurs during type synchronization, with partial progress information in the error.
+     */
+    async syncTypes(types: { name: string, definition: CreateTypeDefinition }[]) {
+        const { db } = await this._waitForClient();
+        return db.syncTypes(types);
     }
 
     /**
@@ -241,8 +317,8 @@ export class Connection extends MongooseConnection {
       * @param command The command to run
       */
     async runCommand(command: Record<string, unknown>): Promise<RawDataAPIResponse> {
-        await this._waitForClient();
-        return this.db!.command(command);
+        const { db } = await this._waitForClient();
+        return db.command(command);
     }
 
     /**
@@ -250,8 +326,8 @@ export class Connection extends MongooseConnection {
       */
 
     async listDatabases(options?: WithTimeout<'keyspaceAdminTimeoutMs'>): Promise<{ databases: { name: string }[] }> {
-        await this._waitForClient();
-        return { databases: await this.admin!.listKeyspaces(options).then(keyspaces => keyspaces.map(name => ({ name }))) };
+        const { admin } = await this._waitForClient();
+        return { databases: await admin.listKeyspaces(options).then(keyspaces => keyspaces.map(name => ({ name }))) };
     }
 
     /**
