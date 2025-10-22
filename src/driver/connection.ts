@@ -270,7 +270,7 @@ export class Connection extends MongooseConnection {
      * Create a new user-defined type (UDT) with the specified name and fields definition.
      * @param name The name of the type to create.
      * @param definition The definition of the fields for the type.
-     * @returns The result of the createType command.
+     * @returns {Promise<TypeDescriptor>} The created type descriptor.
      */
     async createType(name: string, definition: CreateTypeDefinition) {
         const { db } = await this._waitForClient();
