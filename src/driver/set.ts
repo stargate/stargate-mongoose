@@ -139,8 +139,10 @@ export class Set extends SchemaType {
 
         // Attach parent document for change tracking
         if (doc && this.path) {
-            (mongooseSet as any)._parent = doc;
-            (mongooseSet as any)._path = this.path;
+            // @ts-expect-error updating a private property
+            mongooseSet._parent = doc;
+            // @ts-expect-error updating a private property
+            mongooseSet._path = this.path;
         }
 
         return mongooseSet;
@@ -149,7 +151,7 @@ export class Set extends SchemaType {
     /**
     * Required for Mongoose to properly handle this schema type
     */
-    castForQuery($conditional: string, val: any): any {
+    castForQuery($conditional: string, val: unknown) {
         if (val == null) {
             return val;
         }
