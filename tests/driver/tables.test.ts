@@ -87,6 +87,18 @@ describe('TABLES: basic operations and data types', function() {
             friends: [String],
             salary: Schema.Types.Decimal128,
             favorites: { type: Map, of: { type: String, required: true } },
+            // __typehint tells Mongoose what the type is for the given field without needing to specify
+            // the type of all the other fields.
+            tags: {
+                type: Set,
+                of: { type: String, required: true },
+                __typehint: new Set<string>()
+            },
+            luckyNumbers: {
+                type: Set,
+                of: { type: Number, required: true },
+                __typehint: new Set<number>()
+            },
             uniqueId: Schema.Types.UUID,
             category: BigInt,
             buf: Buffer,
@@ -108,6 +120,8 @@ describe('TABLES: basic operations and data types', function() {
                 friends: { type: 'list', valueType: 'text' },
                 salary: { type: 'decimal' },
                 favorites: { type: 'map', keyType: 'text', valueType: 'text' },
+                tags: { type: 'set', valueType: 'text' },
+                luckyNumbers: { type: 'set', valueType: 'double' },
                 uniqueId: { type: 'uuid' },
                 category: { type: 'varint' },
                 buf: { type: 'blob' },
@@ -151,6 +165,8 @@ describe('TABLES: basic operations and data types', function() {
             friends: ['friend 1', 'friend 2'],
             salary: Types.Decimal128.fromString('100.25'),
             favorites: new Map([['food', 'pizza'], ['drink', 'cola']]),
+            tags: new Set(['mongodb', 'nodejs', 'cassandra']),
+            luckyNumbers: new Set([7, 13, 42]),
             nestedSchema: {
                 address: {
                     street: 'street 1',
@@ -175,6 +191,16 @@ describe('TABLES: basic operations and data types', function() {
         assert.strictEqual(saveResponse.salary!.toString(), '100.25');
         assert.strictEqual(saveResponse.favorites!.get('food'), 'pizza');
         assert.strictEqual(saveResponse.favorites!.get('drink'), 'cola');
+        assert.ok(saveResponse.tags instanceof Set);
+        assert.strictEqual(saveResponse.tags!.size, 3);
+        assert.ok(saveResponse.tags!.has('mongodb'));
+        assert.ok(saveResponse.tags!.has('nodejs'));
+        assert.ok(saveResponse.tags!.has('cassandra'));
+        assert.ok(saveResponse.luckyNumbers instanceof Set);
+        assert.strictEqual(saveResponse.luckyNumbers!.size, 3);
+        assert.ok(saveResponse.luckyNumbers!.has(7));
+        assert.ok(saveResponse.luckyNumbers!.has(13));
+        assert.ok(saveResponse.luckyNumbers!.has(42));
         assert.strictEqual(saveResponse.uniqueId!.toString(), uniqueIdVal.toString());
         assert.strictEqual(saveResponse.category, 42n);
         assert.strictEqual(saveResponse.buf!.toString('utf8'), 'hello');
@@ -207,6 +233,16 @@ describe('TABLES: basic operations and data types', function() {
         assert.strictEqual(findOneResponse.salary!.toString(), '100.25');
         assert.strictEqual(findOneResponse.favorites!.get('food'), 'pizza');
         assert.strictEqual(findOneResponse.favorites!.get('drink'), 'cola');
+        assert.ok(findOneResponse.tags instanceof Set);
+        assert.strictEqual(findOneResponse.tags!.size, 3);
+        assert.ok(findOneResponse.tags!.has('mongodb'));
+        assert.ok(findOneResponse.tags!.has('nodejs'));
+        assert.ok(findOneResponse.tags!.has('cassandra'));
+        assert.ok(findOneResponse.luckyNumbers instanceof Set);
+        assert.strictEqual(findOneResponse.luckyNumbers!.size, 3);
+        assert.ok(findOneResponse.luckyNumbers!.has(7));
+        assert.ok(findOneResponse.luckyNumbers!.has(13));
+        assert.ok(findOneResponse.luckyNumbers!.has(42));
         assert.strictEqual(findOneResponse.uniqueId!.toString(), uniqueIdVal.toString());
         assert.strictEqual(findOneResponse.category, 42n);
         assert.strictEqual(findOneResponse.buf!.toString('utf8'), 'hello');
@@ -230,6 +266,26 @@ describe('TABLES: basic operations and data types', function() {
         assert.strictEqual(findOneResponse.get('timeSinceStart'), '15d');
         assert.strictEqual(findOneResponse.get('startDate'), '2022-01-02');
         assert.strictEqual(findOneResponse.get('timeOfDay'), '13:00:00.000000000');
+
+        // Test Set modification and change tracking
+        findOneResponse.tags!.add('typescript');
+        findOneResponse.tags!.delete('nodejs');
+        findOneResponse.luckyNumbers!.add(99);
+        await findOneResponse.save();
+
+        const updatedResponse = await User.findOne({name: 'User 1'}).orFail();
+        assert.ok(updatedResponse.tags instanceof Set);
+        assert.strictEqual(updatedResponse.tags!.size, 3);
+        assert.ok(updatedResponse.tags!.has('mongodb'));
+        assert.ok(updatedResponse.tags!.has('cassandra'));
+        assert.ok(updatedResponse.tags!.has('typescript'));
+        assert.ok(!updatedResponse.tags!.has('nodejs'));
+        assert.ok(updatedResponse.luckyNumbers instanceof Set);
+        assert.strictEqual(updatedResponse.luckyNumbers!.size, 4);
+        assert.ok(updatedResponse.luckyNumbers!.has(7));
+        assert.ok(updatedResponse.luckyNumbers!.has(13));
+        assert.ok(updatedResponse.luckyNumbers!.has(42));
+        assert.ok(updatedResponse.luckyNumbers!.has(99));
     });
 
     describe('UDTs', () => {

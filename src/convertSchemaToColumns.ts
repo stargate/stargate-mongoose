@@ -162,6 +162,45 @@ export default function convertSchemaToColumns(schema: Schema, udtName?: string)
                     { path, type }
                 );
             }
+        } else if (schemaType.instance === 'Set') {
+            if (udtName != null) {
+                throw new AstraMongooseError('Cannot convert schema to Data API table definition: cannot store a set in a UDT', {
+                    path,
+                    type
+                });
+            }
+            const embeddedSchemaType = schemaType.getEmbeddedSchemaType() as SchemaType;
+            if (!embeddedSchemaType) {
+                throw new AstraMongooseError(
+                    `Cannot convert schema to Data API table definition: set path "${path}" must have an 'of' option`,
+                    { path, type }
+                );
+            }
+            if (!isSchemaTypeRequired(embeddedSchemaType)) {
+                throw new AstraMongooseError(
+                    `Cannot convert schema to Data API table definition: values for set path "${path}" must be required`,
+                    { path, type }
+                );
+            }
+            const valueType = mongooseTypeToDataAPIType(embeddedSchemaType.instance);
+            const schemaTypeUDTName = getUDTNameFromSchemaType(schemaType);
+            if (valueType != null) {
+                columns[path] = { type: 'set', valueType };
+            } else if (schemaTypeUDTName) {
+                // Special handling for sets of UDTs
+                columns[path] = {
+                    type: 'set',
+                    valueType: {
+                        type: 'userDefined',
+                        udtName: schemaTypeUDTName
+                    }
+                };
+            } else {
+                throw new AstraMongooseError(
+                    `Cannot convert schema to Data API table definition: unsupported type at path "${schemaType.path}"`,
+                    { path, type }
+                );
+            }
         } else {
             throw new AstraMongooseError(`Cannot convert schema to Data API table definition: unsupported type at path "${path}"`, {
                 path,
