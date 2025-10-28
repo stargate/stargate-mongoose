@@ -288,6 +288,159 @@ describe('TABLES: basic operations and data types', function() {
         assert.ok(updatedResponse.luckyNumbers!.has(99));
     });
 
+    describe('Sets', () => {
+        it('querying', async () => {
+            const modelName = 'User';
+            const userSchema = new Schema({
+                name: String,
+                // __typehint tells Mongoose what the type is for the given field without needing to specify
+                // the type of all the other fields.
+                tags: {
+                    type: Set,
+                    of: { type: String, required: true },
+                    __typehint: new Set<string>()
+                },
+                luckyNumbers: {
+                    type: Set,
+                    of: { type: Number, required: true },
+                    __typehint: new Set<number>()
+                },
+            }, { versionKey: false });
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const tableDefinition = tableDefinitionFromSchema(userSchema);
+            assert.deepStrictEqual(tableDefinition, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    name: { type: 'text' },
+                    tags: { type: 'set', valueType: 'text' },
+                    luckyNumbers: { type: 'set', valueType: 'double' }
+                }
+            });
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
+
+            const doc = await User.create({
+                name: 'John Doe',
+                tags: ['tag1', 'tag2'],
+                luckyNumbers: [1, 2, 3]
+            });
+
+            let user = await User.findOne({ tags: { $in: ['tag1'] } });
+            assert.ok(user);
+            assert.equal(user.name, 'John Doe');
+
+            user = await User.findOne({ tags: { $in: ['tag3'] } });
+            assert.ok(!user);
+
+            // Test casting
+            user = await User.findOne({ luckyNumbers: { $in: ['1'] } });
+            assert.ok(user);
+            assert.equal(user.name, 'John Doe');
+
+            user = await User.findOne({ luckyNumbers: { $all: [1, 2] } });
+            assert.ok(user);
+            assert.equal(user.name, 'John Doe');
+
+            user = await User.findOne({ luckyNumbers: { $all: [1, 4] } });
+            assert.ok(!user);
+
+            user = await User.findOne({ luckyNumbers: { $all: doc.luckyNumbers } });
+            assert.ok(user);
+            assert.equal(user.name, 'John Doe');
+
+            await assert.rejects(
+                () => User.find({ luckyNumbers: 'taco' }),
+                { message: 'Cannot cast value to Set: taco' }
+            );
+        });
+
+        it('clear and delete', async () => {
+            const modelName = 'User';
+            const userSchema = new Schema({
+                name: String,
+                // __typehint tells Mongoose what the type is for the given field without needing to specify
+                // the type of all the other fields.
+                tags: {
+                    type: Set,
+                    of: { type: 'String', required: true },
+                    __typehint: new Set<string>()
+                },
+                luckyNumbers: {
+                    type: Set,
+                    of: { type: 'Number', required: true },
+                    __typehint: new Set<number>()
+                },
+            }, { versionKey: false });
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const tableDefinition = tableDefinitionFromSchema(userSchema);
+            assert.deepStrictEqual(tableDefinition, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    name: { type: 'text' },
+                    tags: { type: 'set', valueType: 'text' },
+                    luckyNumbers: { type: 'set', valueType: 'double' }
+                }
+            });
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
+
+            const doc = await User.create({
+                name: 'John Doe',
+                tags: ['tag1', 'tag2'],
+                luckyNumbers: [1, 2, 3]
+            });
+
+          doc.luckyNumbers!.delete(2);
+          await doc.save();
+          let user = await User.findById(doc._id).orFail();
+          assert.strictEqual(user.luckyNumbers!.size, 2);
+          assert.ok(user.luckyNumbers!.has(1));
+          assert.ok(user.luckyNumbers!.has(3));
+          assert.strictEqual(user.tags!.size, 2);
+
+          doc.luckyNumbers!.clear();
+          await doc.save();
+          user = await User.findById(doc._id).orFail();
+          assert.strictEqual(user.luckyNumbers!.size, 0);
+          assert.strictEqual(user.tags!.size, 2);
+
+          doc.luckyNumbers = null;
+          await assert.rejects(
+              () => doc.save(),
+              /Cast to Set failed for value "null" \(type null\) at path "luckyNumbers"/
+          );
+        });
+
+        it('throws if unrecognized type', () => {
+            assert.rejects(
+                // @ts-expect-error 'Taco' is not a supported primitive type
+                () => new Schema({
+                    test: {
+                        type: Set,
+                        of: 'Taco'
+                    }
+                }),
+                /`of` option for Set must be a supported primitive type/
+            );
+        });
+
+        it('throws if no `of` option', () => {
+            assert.rejects(
+                // @ts-expect-error `of` option is required for Set paths
+                () => new Schema({
+                    test: {
+                        type: Set
+                    }
+                }),
+                /`of` option is required for Set paths/
+            );
+        });
+    });
+
     describe('UDTs', () => {
         beforeEach(async () => {
             await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);

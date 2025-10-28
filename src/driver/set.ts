@@ -14,6 +14,7 @@
 
 import { Schema, SchemaType, SchemaTypeOptions, Document } from 'mongoose';
 import { AstraMongooseError } from '../astraMongooseError';
+import assert from 'node:assert';
 
 export interface SetOptions<T = unknown> extends SchemaTypeOptions<T> {
   of: SchemaTypeOptions<T>;
@@ -113,26 +114,24 @@ export class Set extends SchemaType {
     /**
     * Get the embedded schema type for values in this set
     */
-    getEmbeddedSchemaType(): SchemaType | undefined {
+    getEmbeddedSchemaType(): SchemaType {
+        // Should never happen but this helps with type checking
+        assert.ok(this.$embeddedSchemaType);
         return this.$embeddedSchemaType;
     }
 
     /**
     * Cast a given value to a MongooseSet with proper change tracking
     */
-    cast(val: unknown, doc?: Document): MongooseSet | undefined {
-        if (val == null) {
-            return undefined;
-        }
-
+    cast(val: unknown, doc?: Document): MongooseSet {
         let mongooseSet: MongooseSet;
 
         if (val instanceof MongooseSet) {
             mongooseSet = val;
         } else if (val instanceof globalThis.Set) {
-            mongooseSet = new MongooseSet(Array.from(val));
+            mongooseSet = new MongooseSet(Array.from(val).map(v => this.getEmbeddedSchemaType().cast(v, doc)));
         } else if (Array.isArray(val)) {
-            mongooseSet = new MongooseSet(val);
+            mongooseSet = new MongooseSet(val.map(v => this.getEmbeddedSchemaType().cast(v, doc)));
         } else {
             throw new AstraMongooseError(`Cannot cast value to Set: ${val}`, { val });
         }
@@ -148,13 +147,17 @@ export class Set extends SchemaType {
         return mongooseSet;
     }
 
+    /*
+     * Mongoose calls this function to cast when the value is nullish
+     */
+    _castNullish(val: null | undefined) {
+        throw new AstraMongooseError(`Cannot cast value to Set: ${val}`, { val });
+    }
+
     /**
     * Required for Mongoose to properly handle this schema type
     */
     castForQuery($conditional: string, val: unknown) {
-        if (val == null) {
-            return val;
-        }
         return this.cast(val);
     }
 }
