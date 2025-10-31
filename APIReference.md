@@ -354,6 +354,11 @@ connection to Data API.</p>
     * [.createKeyspace(name)](#Connection+createKeyspace)
     * [.listCollections()](#Connection+listCollections)
     * [.listTables()](#Connection+listTables)
+    * [.listTypes()](#Connection+listTypes) ⇒
+    * [.createType(name, definition)](#Connection+createType) ⇒ <code>Promise.&lt;TypeDescriptor&gt;</code>
+    * [.dropType(name)](#Connection+dropType) ⇒
+    * [.alterType(name, update)](#Connection+alterType) ⇒
+    * [.syncTypes(types)](#Connection+syncTypes) ⇒
     * [.runCommand(command)](#Connection+runCommand)
     * [.listDatabases()](#Connection+listDatabases)
     * [.openUri(uri, options)](#Connection+openUri)
@@ -447,6 +452,69 @@ connection to Data API.</p>
 <p>List all tables in the database</p>
 
 **Kind**: instance method of [<code>Connection</code>](#Connection)  
+<a name="Connection+listTypes"></a>
+
+### connection.listTypes() ⇒
+<p>List all user-defined types (UDTs) in the database.</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+**Returns**: <p>An array of type descriptors.</p>  
+<a name="Connection+createType"></a>
+
+### connection.createType(name, definition) ⇒ <code>Promise.&lt;TypeDescriptor&gt;</code>
+<p>Create a new user-defined type (UDT) with the specified name and fields definition.</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+**Returns**: <code>Promise.&lt;TypeDescriptor&gt;</code> - <p>The created type descriptor.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to create.</p> |
+| definition | <p>The definition of the fields for the type.</p> |
+
+<a name="Connection+dropType"></a>
+
+### connection.dropType(name) ⇒
+<p>Drop (delete) a user-defined type (UDT) by name.</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+**Returns**: <p>The result of the dropType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to drop.</p> |
+
+<a name="Connection+alterType"></a>
+
+### connection.alterType(name, update) ⇒
+<p>Alter a user-defined type (UDT) by renaming or adding fields.</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+**Returns**: <p>The result of the alterType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to alter.</p> |
+| update | <p>The alterations to be made: renaming or adding fields.</p> |
+
+<a name="Connection+syncTypes"></a>
+
+### connection.syncTypes(types) ⇒
+<p>Synchronizes the set of user-defined types (UDTs) in the database. It makes existing types in the database
+match the list provided by <code>types</code>. New types that are missing are created, and types that exist in the database
+but are not in the input list are dropped. If a type is present in both, we add all the new type's fields to the existing type.</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+**Returns**: <p>An object describing which types were created, updated, or dropped.</p>  
+**Throws**:
+
+- [<code>AstraMongooseError</code>](#AstraMongooseError) <p>If an error occurs during type synchronization, with partial progress information in the error.</p>
+
+
+| Param | Description |
+| --- | --- |
+| types | <p>An array of objects each specifying the name and CreateTypeDefinition for a UDT to synchronize.</p> |
+
 <a name="Connection+runCommand"></a>
 
 ### connection.runCommand(command)

@@ -359,4 +359,8 @@ describe('TABLES: vectorize', function () {
             });
         }, /`provider` option for vectorize paths must be a string, got: undefined/);
     });
+
+    it('throws error on findAndRerank', async function () {
+        await assert.rejects(() => Vector.findAndRerank({}, {}), /Cannot use findAndRerank\(\) with tables/);
+    });
 });
