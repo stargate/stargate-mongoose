@@ -18,7 +18,6 @@ import {
     TEST_COLLECTION_NAME
 } from '../fixtures';
 import mongoose, { Schema, InferSchemaType, InsertManyResult, Model } from 'mongoose';
-import { once } from 'events';
 import * as AstraMongooseDriver from '../../src/driver';
 import {randomUUID} from 'crypto';
 import { OperationNotSupportedError } from '../../src/operationNotSupportedError';
