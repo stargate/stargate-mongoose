@@ -152,7 +152,6 @@ describe('TABLES: vector search', function() {
             .sort({ vector: { $meta: [1, 99] } })
             .cursor();
 
-        await once(cursor, 'cursor');
         const rawCursor = (cursor as unknown as { cursor: FindCursor<unknown> }).cursor;
         assert.deepStrictEqual(await rawCursor.getSortVector().then(vec => vec?.asArray()), [1, 99]);
     });

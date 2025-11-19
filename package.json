@@ -73,7 +73,7 @@
     "eslint": "^9.23.0",
     "jsdoc-babel": "^0.5.0",
     "jsdoc-to-markdown": "^9.1.1",
-    "mongoose": "^8.17.0",
+    "mongoose": "^9.0.0-0",
     "nyc": "^17.1.0",
     "sinon": "^16.1.1",
     "ts-mocha": "^11.1.0",
@@ -84,7 +84,7 @@
     "@datastax/astra-db-ts": "^2.1.0"
   },
   "peerDependencies": {
-    "mongoose": "^8.17.0"
+    "mongoose": "^8.17.0 || ^9.0.0-0"
   },
   "engines": {
     "node": ">=20.0.0"
