@@ -18,7 +18,6 @@ import {
     TEST_COLLECTION_NAME
 } from '../fixtures';
 import mongoose, { Schema, InferSchemaType, InsertManyResult, Model } from 'mongoose';
-import { once } from 'events';
 import * as AstraMongooseDriver from '../../src/driver';
 import {randomUUID} from 'crypto';
 import { OperationNotSupportedError } from '../../src/operationNotSupportedError';
@@ -903,7 +902,6 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 .sort({ $vector: { $meta: [1, 99] } })
                 .cursor();
 
-            await once(cursor, 'cursor');
             const rawCursor = (cursor as unknown as { cursor: FindCursor<unknown> }).cursor;
             assert.deepStrictEqual(await rawCursor.getSortVector().then(vec => vec?.asArray()), [1, 99]);
         });

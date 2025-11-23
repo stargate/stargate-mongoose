@@ -19,7 +19,6 @@ import assert from 'assert';
 import compareTableDefinitions from '../compareTableDefinitions';
 import { testClient } from '../fixtures';
 import { createMongooseCollections, mongooseInstanceTables as mongooseInstance, testDebug } from '../mongooseFixtures';
-import { once } from 'events';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
 
 describe('TABLES: vector search', function() {
@@ -152,7 +151,6 @@ describe('TABLES: vector search', function() {
             .sort({ vector: { $meta: [1, 99] } })
             .cursor();
 
-        await once(cursor, 'cursor');
         const rawCursor = (cursor as unknown as { cursor: FindCursor<unknown> }).cursor;
         assert.deepStrictEqual(await rawCursor.getSortVector().then(vec => vec?.asArray()), [1, 99]);
     });
@@ -358,5 +356,9 @@ describe('TABLES: vectorize', function () {
                 }
             });
         }, /`provider` option for vectorize paths must be a string, got: undefined/);
+    });
+
+    it('throws error on findAndRerank', async function () {
+        await assert.rejects(() => Vector.findAndRerank({}, {}), /Cannot use findAndRerank\(\) with tables/);
     });
 });
