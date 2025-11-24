@@ -271,7 +271,7 @@ describe('TABLES: basic operations and data types', function() {
 
         await assert.rejects(
             collection.syncTable(tableDefinition),
-            /syncTables cannot modify existing columns, found modified columns: email/
+            /syncTable cannot modify existing columns, found modified columns: email/
         );
     });
 
