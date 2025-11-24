@@ -298,12 +298,12 @@ describe('TABLES: basic operations and data types', function() {
                 tags: {
                     type: Set,
                     of: { type: String, required: true },
-                    __typehint: new Set<string>()
+                    __typehint: {} as (Set<string> | string[])
                 },
                 luckyNumbers: {
                     type: Set,
                     of: { type: Number, required: true },
-                    __typehint: new Set<number>()
+                    __typehint: {} as (Set<number> | number[])
                 },
             }, { versionKey: false });
             await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
@@ -323,8 +323,8 @@ describe('TABLES: basic operations and data types', function() {
 
             const doc = await User.create({
                 name: 'John Doe',
-                tags: ['tag1', 'tag2'],
-                luckyNumbers: [1, 2, 3]
+                tags: new Set(['tag1', 'tag2']),
+                luckyNumbers: new Set([1, 2, 3])
             });
 
             let user = await User.findOne({ tags: { $in: ['tag1'] } });
@@ -334,7 +334,7 @@ describe('TABLES: basic operations and data types', function() {
             user = await User.findOne({ tags: { $in: ['tag3'] } });
             assert.ok(!user);
 
-            // Test casting
+            // @ts-expect-error test casting
             user = await User.findOne({ luckyNumbers: { $in: ['1'] } });
             assert.ok(user);
             assert.equal(user.name, 'John Doe');
@@ -346,11 +346,13 @@ describe('TABLES: basic operations and data types', function() {
             user = await User.findOne({ luckyNumbers: { $all: [1, 4] } });
             assert.ok(!user);
 
-            user = await User.findOne({ luckyNumbers: { $all: doc.luckyNumbers } });
+            assert.ok(doc.luckyNumbers);
+            user = await User.findOne({ luckyNumbers: { $all: [...doc.luckyNumbers] } });
             assert.ok(user);
             assert.equal(user.name, 'John Doe');
 
             await assert.rejects(
+                // @ts-expect-error casting should fail
                 () => User.find({ luckyNumbers: 'taco' }),
                 { message: 'Cast to Number failed for value "taco" (type string) at path "luckyNumbers" for model "User"' }
             );
@@ -390,8 +392,8 @@ describe('TABLES: basic operations and data types', function() {
 
             const doc = await User.create({
                 name: 'John Doe',
-                tags: ['tag1', 'tag2'],
-                luckyNumbers: [1, 2, 3]
+                tags: new Set(['tag1', 'tag2']),
+                luckyNumbers: new Set([1, 2, 3])
             });
 
           doc.luckyNumbers!.delete(2);
@@ -449,11 +451,12 @@ describe('TABLES: basic operations and data types', function() {
 
             let doc = await User.create({
                 name: 'John Doe',
-                tags: ['tag1', 'tag2'],
-                luckyNumbers: [42, 7]
+                tags: new Set(['tag1', 'tag2']),
+                luckyNumbers: new Set([42, 7])
             });
             await User.updateOne({ _id: doc._id }, { $push: { tags: 'tag3' } }, {});
-            doc = await User.findOne({ _id: doc._id });
+            doc = await User.findOne({ _id: doc._id }).orFail();
+            assert.ok(doc.tags);
             assert.deepStrictEqual(Array.from(doc.tags), ['tag1', 'tag2', 'tag3']);
         });
 
