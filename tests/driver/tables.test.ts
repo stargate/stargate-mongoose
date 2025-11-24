@@ -298,12 +298,12 @@ describe('TABLES: basic operations and data types', function() {
                 tags: {
                     type: Set,
                     of: { type: String, required: true },
-                    __typehint: {} as (Set<string> | string[])
+                    __typehint: {} as (Set<string>)
                 },
                 luckyNumbers: {
                     type: Set,
                     of: { type: Number, required: true },
-                    __typehint: {} as (Set<number> | number[])
+                    __typehint: {} as (Set<number>)
                 },
             }, { versionKey: false });
             await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
@@ -327,15 +327,19 @@ describe('TABLES: basic operations and data types', function() {
                 luckyNumbers: new Set([1, 2, 3])
             });
 
-            let user = await User.findOne({ tags: { $in: ['tag1'] } });
+            let user = await User.findOne({ tags: { $in: ['tag1' as unknown as Set<string>] } });
             assert.ok(user);
             assert.equal(user.name, 'John Doe');
 
-            user = await User.findOne({ tags: { $in: ['tag3'] } });
+            user = await User.findOne({ tags: { $in: ['tag3' as unknown as Set<string>] } });
             assert.ok(!user);
 
             // @ts-expect-error test casting
             user = await User.findOne({ luckyNumbers: { $in: ['1'] } });
+            assert.ok(user);
+            assert.equal(user.name, 'John Doe');
+
+            user = await User.findOne({ luckyNumbers: { $in: [1 as unknown as Set<number>] } });
             assert.ok(user);
             assert.equal(user.name, 'John Doe');
 
