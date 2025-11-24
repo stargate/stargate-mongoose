@@ -352,7 +352,7 @@ describe('TABLES: basic operations and data types', function() {
 
             await assert.rejects(
                 () => User.find({ luckyNumbers: 'taco' }),
-                { message: 'Cannot cast value to Set: taco' }
+                { message: 'Cast to Number failed for value "taco" (type string) at path "luckyNumbers" for model "User"' }
             );
         });
 
@@ -413,6 +413,48 @@ describe('TABLES: basic operations and data types', function() {
               () => doc.save(),
               /Cast to Set failed for value "null" \(type null\) at path "luckyNumbers"/
           );
+        });
+
+        it('updates', async () => {
+            const modelName = 'User';
+            const userSchema = new Schema({
+                name: String,
+                // __typehint tells Mongoose what the type is for the given field without needing to specify
+                // the type of all the other fields.
+                tags: {
+                    type: Set,
+                    of: { type: 'String', required: true },
+                    __typehint: new Set<string>()
+                },
+                luckyNumbers: {
+                    type: Set,
+                    of: { type: 'Number', required: true },
+                    __typehint: new Set<number>()
+                },
+            }, { versionKey: false });
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const tableDefinition = tableDefinitionFromSchema(userSchema);
+            assert.deepStrictEqual(tableDefinition, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    name: { type: 'text' },
+                    tags: { type: 'set', valueType: 'text' },
+                    luckyNumbers: { type: 'set', valueType: 'double' }
+                }
+            });
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
+
+            let doc = await User.create({
+                name: 'John Doe',
+                tags: ['tag1', 'tag2'],
+                luckyNumbers: [42, 7]
+            });
+            await User.updateOne({ _id: doc._id }, { $push: { tags: 'tag3' } }, {});
+            doc = await User.findOne({ _id: doc._id });
+            assert.deepStrictEqual(Array.from(doc.tags), ['tag1', 'tag2', 'tag3']);
         });
 
         it('throws if unrecognized type', () => {

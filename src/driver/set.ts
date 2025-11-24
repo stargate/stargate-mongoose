@@ -28,19 +28,24 @@ export interface SetOptions<T = unknown> extends SchemaTypeOptions<T> {
  */
 export class MongooseSet<T = unknown> extends globalThis.Set<T> {
     private _parent?: Document;
-    private _path?: string;
+    private _path: string;
 
-    constructor(values?: readonly T[] | null) {
-        super(values);
+    constructor(values: T[] | null, path: string, parent?: Document) {
+        super();
+        if (values) {
+            for (const value of values) {
+                globalThis.Set.prototype.add.call(this, value);
+            }
+        }
+        this._path = path;
+        this._parent = parent;
     }
 
     /**
     * Internal method to mark the parent document as modified when the set changes
     */
     private _markModified(): void {
-        if (this._parent && this._path) {
-            this._parent.markModified(this._path);
-        }
+        this._parent?.markModified(this._path);
     }
 
     /**
@@ -129,19 +134,23 @@ export class Set extends SchemaType {
         if (val instanceof MongooseSet) {
             mongooseSet = val;
         } else if (val instanceof globalThis.Set) {
-            mongooseSet = new MongooseSet(Array.from(val).map(v => this.getEmbeddedSchemaType().cast(v, doc)));
+            mongooseSet = new MongooseSet(
+                Array.from(val).map(v => this.getEmbeddedSchemaType().cast(v, doc)),
+                this.path,
+                doc
+            );
         } else if (Array.isArray(val)) {
-            mongooseSet = new MongooseSet(val.map(v => this.getEmbeddedSchemaType().cast(v, doc)));
+            mongooseSet = new MongooseSet(
+                val.map(v => this.getEmbeddedSchemaType().cast(v, doc)),
+                this.path,
+                doc
+            );
         } else {
-            throw new AstraMongooseError(`Cannot cast value to Set: ${val}`, { val });
-        }
-
-        // Attach parent document for change tracking
-        if (doc && this.path) {
-            // @ts-expect-error updating a private property
-            mongooseSet._parent = doc;
-            // @ts-expect-error updating a private property
-            mongooseSet._path = this.path;
+            mongooseSet = new MongooseSet(
+                [this.getEmbeddedSchemaType().cast(val, doc)],
+                this.path,
+                doc
+            );
         }
 
         return mongooseSet;
@@ -158,6 +167,11 @@ export class Set extends SchemaType {
     * Required for Mongoose to properly handle this schema type
     */
     castForQuery($conditional: string, val: unknown) {
+        // Workaround for $push etc. because Data API expects them as a single
+        // element not an array.
+        if (!Array.isArray(val) && !$conditional) {
+            return Array.from(this.cast([val]))[0];
+        }
         return this.cast(val);
     }
 }
