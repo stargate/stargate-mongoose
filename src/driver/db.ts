@@ -34,7 +34,8 @@ import {
     Table as AstraTable,
     TableDescriptor,
     TableOptions,
-    TypeDescriptor
+    TypeDescriptor,
+    StrictCreateTableColumnDefinition
 } from '@datastax/astra-db-ts';
 import { AstraMongooseError } from '../astraMongooseError';
 import assert from 'assert';

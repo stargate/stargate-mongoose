@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { AstraMongooseError } from '../astraMongooseError';
 import { default as MongooseCollection } from 'mongoose/lib/collection';
 import type { Connection } from './connection';
 import {
@@ -33,10 +34,13 @@ import {
     CollectionUpdateFilter,
     CollectionUpdateManyOptions,
     CollectionUpdateOneOptions,
+    CreateTableDefinition,
+    CreateTableOptions,
     Filter,
     RunCommandOptions,
     SortDirection,
     Sort as SortOptionInternal,
+    StrictCreateTableColumnDefinition,
     Table as AstraTable,
     TableDeleteManyOptions,
     TableDeleteOneOptions,
@@ -404,6 +408,70 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             throw new OperationNotSupportedError('Cannot use estimatedDocumentCount() with tables');
         }
         return this.collection.estimatedDocumentCount(options);
+    }
+
+    /**
+     * Sync the underlying table schema with the specified definition: creates a new
+     * table if one doesn't exist, or alters the existing table to match the definition
+     * by adding or dropping columns as necessary.
+     *
+     * Note that modifying an existing column is NOT supported and will throw an error.
+     *
+     * @param definition new table definition (strict only)
+     * @param options passed to createTable if the table doesn't exist
+     * @returns void
+     */
+    async syncTable<DocType extends Record<string, unknown> = Record<string, unknown>>(
+        definition: Pick<CreateTableDefinition, 'primaryKey'> & { columns: Record<string, StrictCreateTableColumnDefinition> },
+        options?: CreateTableOptions
+    ) {
+        const name = this.name;
+        const existingTables = await this.connection.listTables({ nameOnly: false });
+        const existingTable = existingTables.find(table => table.name === name);
+        // Create new table with the specified definition if it doesn't exist
+        if (!existingTable) {
+            await this.connection.createTable<DocType>(name, definition, options);
+            return;
+        }
+
+        const existingColumnNames = Object.keys(existingTable.definition.columns);
+        const newColumnNames = Object.keys(definition.columns);
+        const columnsToAdd = Object.keys(definition.columns)
+            .filter(column => !existingColumnNames.includes(column));
+        const columnsToDrop = existingColumnNames
+            .filter(column => !newColumnNames.includes(column));
+
+        const overlappingColumnNames = existingColumnNames.filter(column => newColumnNames.includes(column));
+        const columnsToModify = overlappingColumnNames.filter(column => {
+            return JSON.stringify(existingTable.definition.columns[column]) !== JSON.stringify(definition.columns[column])
+        });
+        if (columnsToModify.length > 0) {
+            throw new AstraMongooseError('syncTables cannot modify existing columns, found modified columns: ' + columnsToModify.join(', '));
+        }
+
+        const add = Object.fromEntries(
+            columnsToAdd.map(name => [name, definition.columns[name]])
+        );
+
+        await this.alterTable({
+            add: { columns: add }
+        });
+        if (columnsToDrop.length > 0) {
+            await this.alterTable({
+                drop: { columns: columnsToDrop }
+            });
+        }
+    }
+
+    /**
+     * Alter the underlying table with the specified name and operation - can add or drop columns
+     * @param operation add/drop
+     */
+    async alterTable(
+        operation: { add: { columns: Record<string, StrictCreateTableColumnDefinition> } } |
+          { drop: { columns: string[] } }
+    ) {
+        return this.runCommand({ alterTable: { operation } });
     }
 
     /**
