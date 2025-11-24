@@ -453,9 +453,11 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             columnsToAdd.map(name => [name, definition.columns[name]])
         );
 
-        await this.alterTable({
-            add: { columns: add }
-        });
+        if (columnsToAdd.length > 0) {
+            await this.alterTable({
+                add: { columns: add }
+            });
+        }
         if (columnsToDrop.length > 0) {
             await this.alterTable({
                 drop: { columns: columnsToDrop }
