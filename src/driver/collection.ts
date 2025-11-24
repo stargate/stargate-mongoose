@@ -446,7 +446,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             return JSON.stringify(existingTable.definition.columns[column]) !== JSON.stringify(definition.columns[column]);
         });
         if (columnsToModify.length > 0) {
-            throw new AstraMongooseError('syncTables cannot modify existing columns, found modified columns: ' + columnsToModify.join(', '));
+            throw new AstraMongooseError('syncTable cannot modify existing columns, found modified columns: ' + columnsToModify.join(', '));
         }
 
         const add = Object.fromEntries(
