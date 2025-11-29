@@ -818,11 +818,19 @@ Any add or delete operation triggers a full overwrite of the set value.</p>
 **Kind**: global class  
 
 * [MongooseSet](#MongooseSet)
+    * [.clearAtomics()](#MongooseSet+clearAtomics)
     * [._markModified()](#MongooseSet+_markModified)
     * [.add()](#MongooseSet+add)
     * [.delete()](#MongooseSet+delete)
     * [.clear()](#MongooseSet+clear)
 
+<a name="MongooseSet+clearAtomics"></a>
+
+### mongooseSet.clearAtomics()
+<p>Clear atomics for Mongoose change tracking. Called by Mongoose after the
+document is successfully saved.</p>
+
+**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
 <a name="MongooseSet+_markModified"></a>
 
 ### mongooseSet.\_markModified()
@@ -1135,11 +1143,19 @@ A Set path translates to <code>type: 'set'</code> in the Data API.</p>
 **Kind**: global variable  
 
 * [MongooseSet](#MongooseSet)
+    * [.clearAtomics()](#MongooseSet+clearAtomics)
     * [._markModified()](#MongooseSet+_markModified)
     * [.add()](#MongooseSet+add)
     * [.delete()](#MongooseSet+delete)
     * [.clear()](#MongooseSet+clear)
 
+<a name="MongooseSet+clearAtomics"></a>
+
+### mongooseSet.clearAtomics()
+<p>Clear atomics for Mongoose change tracking. Called by Mongoose after the
+document is successfully saved.</p>
+
+**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
 <a name="MongooseSet+_markModified"></a>
 
 ### mongooseSet.\_markModified()

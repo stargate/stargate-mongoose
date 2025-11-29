@@ -344,7 +344,8 @@ describe('TABLES: basic operations and data types', function() {
             user = await User.findOne({ tags: { $in: ['tag3' as unknown as Set<string>] } });
             assert.ok(!user);
 
-            // @ts-expect-error test casting
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore ignore cast errors - cast error happens in Mongoose 9 but not 8
             user = await User.findOne({ luckyNumbers: { $in: ['1'] } });
             assert.ok(user);
             assert.equal(user.name, 'John Doe');
@@ -366,7 +367,8 @@ describe('TABLES: basic operations and data types', function() {
             assert.equal(user.name, 'John Doe');
 
             await assert.rejects(
-                // @ts-expect-error casting should fail
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore ignore cast errors - cast error happens in Mongoose 9 but not 8
                 () => User.find({ luckyNumbers: 'taco' }),
                 { message: 'Cast to Number failed for value "taco" (type string) at path "luckyNumbers" for model "User"' }
             );
