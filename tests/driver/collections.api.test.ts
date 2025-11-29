@@ -17,11 +17,18 @@ import {
     testClient,
     TEST_COLLECTION_NAME
 } from '../fixtures';
-import mongoose, { Schema, InferSchemaType, InsertManyResult, Model } from 'mongoose';
+import mongoose, {
+    Schema,
+    InferSchemaType,
+    InsertManyResult,
+    Model,
+    version as mongooseVersion
+} from 'mongoose';
 import * as AstraMongooseDriver from '../../src/driver';
 import {randomUUID} from 'crypto';
 import { OperationNotSupportedError } from '../../src/operationNotSupportedError';
 import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections, testDebug } from '../mongooseFixtures';
+import { once } from 'events';
 import { parseUri } from '../../src/driver/connection';
 import { FindCursor, DataAPIResponseError } from '@datastax/astra-db-ts';
 import { Long, UUID } from 'bson';
@@ -902,6 +909,10 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 .sort({ $vector: { $meta: [1, 99] } })
                 .cursor();
 
+            // Mongoose 8 requires waiting for the cursor to be opened here.
+            if (mongooseVersion.startsWith('8.')) {
+                await once(cursor, 'cursor');
+            }
             const rawCursor = (cursor as unknown as { cursor: FindCursor<unknown> }).cursor;
             assert.deepStrictEqual(await rawCursor.getSortVector().then(vec => vec?.asArray()), [1, 99]);
         });

@@ -271,7 +271,17 @@ describe('TABLES: basic operations and data types', function() {
         findOneResponse.tags!.add('typescript');
         findOneResponse.tags!.delete('nodejs');
         findOneResponse.luckyNumbers!.add(99);
+        assert.deepStrictEqual(findOneResponse.getChanges(), {
+            $set: { tags: ['cassandra', 'mongodb', 'typescript'] },
+            $push: { luckyNumbers: { $each: [99] } }
+        });
         await findOneResponse.save();
+
+        // Test that atomics were reset after save
+        findOneResponse.tags!.add('java');
+        assert.deepStrictEqual(findOneResponse.getChanges(), {
+            $push: { tags: { $each: ['java'] } }
+        });
 
         const updatedResponse = await User.findOne({name: 'User 1'}).orFail();
         assert.ok(updatedResponse.tags instanceof Set);

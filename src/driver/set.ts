@@ -15,6 +15,7 @@
 import { Schema, SchemaType, SchemaTypeOptions, Document } from 'mongoose';
 import { AstraMongooseError } from '../astraMongooseError';
 import assert from 'node:assert';
+import { inspect } from 'util';
 
 export interface SetOptions<T = unknown> extends SchemaTypeOptions<T> {
   of: SchemaTypeOptions<T>;
@@ -29,6 +30,7 @@ export interface SetOptions<T = unknown> extends SchemaTypeOptions<T> {
 export class MongooseSet<T = unknown> extends globalThis.Set<T> {
     private _parent?: Document;
     private _path: string;
+    private _atomic: ['$push', { $each: T[] }] | ['$set' | '$pullAll', T[]] | null = null;
 
     constructor(values: T[] | null, path: string, parent?: Document) {
         super();
@@ -39,6 +41,32 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
         }
         this._path = path;
         this._parent = parent;
+    }
+
+    /*
+     * Get atomics for Mongoose change tracking. Keep in mind Data API does not
+     * support multiple operations on the same set in the same operation, so we
+     * only support one atomic at a time.
+     */
+    getAtomics() {
+        return [this._atomic];
+    }
+
+    /**
+     * Clear atomics for Mongoose change tracking. Called by Mongoose after the
+     * document is successfully saved.
+     */
+    clearAtomics() {
+        this._atomic = null;
+    }
+
+    /**
+     * Custom inspect output so Node.js inspect() is not polluted by internal state.
+     *
+     * @returns Set
+     */
+    [inspect.custom]() {
+        return new globalThis.Set(Array.from(this));
     }
 
     /**
@@ -54,6 +82,13 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
     add(value: T): this {
         super.add(value);
         this._markModified();
+        if (this._atomic == null) {
+            this._atomic = ['$push', { $each: [value] }];
+        } else if (this._atomic[0] === '$push') {
+            this._atomic[1].$each.push(value);
+        } else {
+            this._atomic = ['$set', Array.from(this)];
+        }
         return this;
     }
 
@@ -64,6 +99,13 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
         const result = super.delete(value);
         if (result) {
             this._markModified();
+            if (this._atomic == null) {
+                this._atomic = ['$pullAll', [value]];
+            } else if (this._atomic[0] === '$pullAll') {
+                this._atomic[1].push(value);
+            } else {
+                this._atomic = ['$set', Array.from(this)];
+            }
         }
         return result;
     }
@@ -74,6 +116,7 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
     clear(): void {
         super.clear();
         this._markModified();
+        this._atomic = ['$set', Array.from(this)];
     }
 }
 
