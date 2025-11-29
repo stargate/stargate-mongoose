@@ -308,7 +308,7 @@ describe('TABLES: basic operations and data types', function() {
                 tags: {
                     type: Set,
                     of: { type: String, required: true },
-                    __typehint: {} as (Set<string>)
+                    __typehint: new Set<string>()
                 },
                 luckyNumbers: {
                     type: Set,
