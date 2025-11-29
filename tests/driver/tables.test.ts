@@ -313,7 +313,7 @@ describe('TABLES: basic operations and data types', function() {
                 luckyNumbers: {
                     type: Set,
                     of: { type: Number, required: true },
-                    __typehint: {} as (Set<number>)
+                    __typehint: new Set<number>()
                 },
             }, { versionKey: false });
             await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
