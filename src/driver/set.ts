@@ -75,14 +75,17 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
      * Adds a value to the set and marks the parent document as modified
      */
     add(value: T): this {
+        const hadValue = this.has(value);
         super.add(value);
-        this._markModified();
-        if (this._atomic == null) {
-            this._atomic = ['$push', { $each: [value] }];
-        } else if (this._atomic[0] === '$push') {
-            this._atomic[1].$each.push(value);
-        } else {
-            this._atomic = ['$set', Array.from(this)];
+        if (!hadValue) {
+            this._markModified();
+            if (this._atomic == null) {
+                this._atomic = ['$push', { $each: [value] }];
+            } else if (this._atomic[0] === '$push') {
+                this._atomic[1].$each.push(value);
+            } else {
+                this._atomic = ['$set', Array.from(this)];
+            }
         }
         return this;
     }
