@@ -25,7 +25,8 @@ export interface SetOptions<T = unknown> extends SchemaTypeOptions<T> {
  * MongooseSet is a Mongoose-specific wrapper around vanilla JavaScript sets
  * that represents a Cassandra set. It wraps a JavaScript Set and integrates with
  * Mongoose change tracking.
- * Any add or delete operation triggers a full overwrite of the set value.
+ * Add and delete operations use atomic updates (`$push`, `$pullAll`) when possible,
+ * and only fall back to a full overwrite (`$set`) when there is a mixed sequence of operations.
  */
 export class MongooseSet<T = unknown> extends globalThis.Set<T> {
     private _parent?: Document;
