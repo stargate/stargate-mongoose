@@ -477,8 +477,7 @@ describe('TABLES: basic operations and data types', function() {
         });
 
         it('throws if unrecognized type', () => {
-            assert.rejects(
-                // @ts-expect-error 'Taco' is not a supported primitive type
+            assert.throws(
                 () => new Schema({
                     test: {
                         type: Set,
@@ -490,8 +489,7 @@ describe('TABLES: basic operations and data types', function() {
         });
 
         it('throws if no `of` option', () => {
-            assert.rejects(
-                // @ts-expect-error `of` option is required for Set paths
+            assert.throws(
                 () => new Schema({
                     test: {
                         type: Set

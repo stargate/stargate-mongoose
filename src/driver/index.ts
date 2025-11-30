@@ -15,8 +15,8 @@
 export { Connection } from './connection';
 export { Collection } from './collection';
 export { Vectorize, VectorizeOptions } from './vectorize';
-export { SchemaSet } from './schemaSet';
-export { SetOptions, MongooseSet } from './set';
+export { SchemaSet, SetOptions } from './schemaSet';
+export { MongooseSet } from './set';
 
 import { Connection } from './connection';
 import { Mongoose, Schema } from 'mongoose';
