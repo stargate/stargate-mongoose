@@ -386,7 +386,7 @@ describe('TABLES: basic operations and data types', function() {
                     __typehint: new Set<string>()
                 },
                 luckyNumbers: {
-                    type: Set,
+                    type: 'Set',
                     of: { type: 'Number', required: true },
                     __typehint: new Set<number>()
                 },

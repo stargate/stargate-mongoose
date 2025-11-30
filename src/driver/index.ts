@@ -15,7 +15,8 @@
 export { Connection } from './connection';
 export { Collection } from './collection';
 export { Vectorize, VectorizeOptions } from './vectorize';
-export { Set, SetOptions, MongooseSet } from './set';
+export { SchemaSet } from './schemaSet';
+export { SetOptions, MongooseSet } from './set';
 
 import { Connection } from './connection';
 import { Mongoose, Schema } from 'mongoose';
@@ -26,7 +27,7 @@ Schema.Types.String.prototype.$conditionalHandlers.$match = v => v;
 export const plugins = [handleVectorFieldsProjection, addVectorDimensionValidator, findAndRerankStatic];
 
 import { Vectorize } from './vectorize';
-import { Set } from './set';
-export const SchemaTypes = { Vectorize, Set };
+import { SchemaSet } from './schemaSet';
+export const SchemaTypes = { Vectorize, Set: SchemaSet };
 
 export type AstraMongoose = Mongoose & { connection: Connection, connections: Connection[] };

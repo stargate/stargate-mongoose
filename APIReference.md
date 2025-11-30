@@ -18,13 +18,15 @@ for tables and CollectionsDb class for collections.</p></dd>
 <dd></dd>
 <dt><a href="#TablesDb">TablesDb</a></dt>
 <dd></dd>
+<dt><a href="#SchemaSet">SchemaSet</a></dt>
+<dd><p>SchemaSet is a custom Mongoose SchemaType that allows you to use Cassandra sets in tables mode.
+A Set path translates to <code>type: 'set'</code> in the Data API.</p></dd>
 <dt><a href="#MongooseSet">MongooseSet</a></dt>
 <dd><p>MongooseSet is a Mongoose-specific wrapper around vanilla JavaScript sets
 that represents a Cassandra set. It wraps a JavaScript Set and integrates with
 Mongoose change tracking.
-Any add or delete operation triggers a full overwrite of the set value.</p></dd>
-<dt><a href="#Set">Set</a></dt>
-<dd></dd>
+Add and delete operations use atomic updates (<code>$push</code>, <code>$pullAll</code>) when possible,
+and only fall back to a full overwrite (<code>$set</code>) when there is a mixed sequence of operations.</p></dd>
 <dt><a href="#Vectorize">Vectorize</a></dt>
 <dd><p>Vectorize is a custom Mongoose SchemaType that allows you set a vector value to a string
 for tables mode vectorize API. A Vectorize path is an array of numbers that can also be set to a string.</p></dd>
@@ -39,9 +41,6 @@ for tables mode vectorize API. A Vectorize path is an array of numbers that can 
 <dd><p>Db instance that creates and manages collections.</p></dd>
 <dt><a href="#CollectionsDb">CollectionsDb</a> ⇐ <code><a href="#BaseDb">BaseDb</a></code></dt>
 <dd><p>Db instance that creates and manages tables.</p></dd>
-<dt><a href="#MongooseSet">MongooseSet</a></dt>
-<dd><p>Set is a custom Mongoose SchemaType that allows you to use Cassandra sets in tables mode.
-A Set path translates to <code>type: 'set'</code> in the Data API.</p></dd>
 </dl>
 
 ## Functions
@@ -807,23 +806,83 @@ this method for getting a Mongoose Collection instance, which may map to a table
 <p>Throws an error, astra-mongoose does not support creating collections in tables mode.</p>
 
 **Kind**: instance method of [<code>TablesDb</code>](#TablesDb)  
+<a name="SchemaSet"></a>
+
+## SchemaSet
+<p>SchemaSet is a custom Mongoose SchemaType that allows you to use Cassandra sets in tables mode.
+A Set path translates to <code>type: 'set'</code> in the Data API.</p>
+
+**Kind**: global class  
+
+* [SchemaSet](#SchemaSet)
+    * [new SchemaSet(key, options)](#new_SchemaSet_new)
+    * [.getEmbeddedSchemaType()](#SchemaSet+getEmbeddedSchemaType)
+    * [.cast()](#SchemaSet+cast)
+    * [._castNullish()](#SchemaSet+_castNullish)
+    * [.castForQuery()](#SchemaSet+castForQuery)
+
+<a name="new_SchemaSet_new"></a>
+
+### new SchemaSet(key, options)
+<p>Create a new instance of the Set SchemaType.</p>
+
+
+| Param | Description |
+| --- | --- |
+| key | <p>the path to this set field in your schema</p> |
+| options | <p>set options that define the type of values in the set</p> |
+
+<a name="SchemaSet+getEmbeddedSchemaType"></a>
+
+### schemaSet.getEmbeddedSchemaType()
+<p>Get the embedded schema type for values in this set</p>
+
+**Kind**: instance method of [<code>SchemaSet</code>](#SchemaSet)  
+<a name="SchemaSet+cast"></a>
+
+### schemaSet.cast()
+<p>Cast a given value to a MongooseSet with proper change tracking</p>
+
+**Kind**: instance method of [<code>SchemaSet</code>](#SchemaSet)  
+<a name="SchemaSet+_castNullish"></a>
+
+### schemaSet.\_castNullish()
+<p>Mongoose calls this function to cast when the value is nullish</p>
+
+**Kind**: instance method of [<code>SchemaSet</code>](#SchemaSet)  
+<a name="SchemaSet+castForQuery"></a>
+
+### schemaSet.castForQuery()
+<p>Required for Mongoose to properly handle this schema type</p>
+
+**Kind**: instance method of [<code>SchemaSet</code>](#SchemaSet)  
 <a name="MongooseSet"></a>
 
 ## MongooseSet
 <p>MongooseSet is a Mongoose-specific wrapper around vanilla JavaScript sets
 that represents a Cassandra set. It wraps a JavaScript Set and integrates with
 Mongoose change tracking.
-Any add or delete operation triggers a full overwrite of the set value.</p>
+Add and delete operations use atomic updates (<code>$push</code>, <code>$pullAll</code>) when possible,
+and only fall back to a full overwrite (<code>$set</code>) when there is a mixed sequence of operations.</p>
 
 **Kind**: global class  
 
 * [MongooseSet](#MongooseSet)
+    * [.getAtomics()](#MongooseSet+getAtomics)
     * [.clearAtomics()](#MongooseSet+clearAtomics)
     * [._markModified()](#MongooseSet+_markModified)
     * [.add()](#MongooseSet+add)
     * [.delete()](#MongooseSet+delete)
     * [.clear()](#MongooseSet+clear)
 
+<a name="MongooseSet+getAtomics"></a>
+
+### mongooseSet.getAtomics()
+<p>Get atomics for Mongoose change tracking. Keep in mind Data API does not
+support multiple operations on the same set in the same operation, so we
+only support one atomic at a time.</p>
+
+**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
 <a name="MongooseSet+clearAtomics"></a>
 
 ### mongooseSet.clearAtomics()
@@ -855,46 +914,6 @@ document is successfully saved.</p>
 <p>Clears all values from the set and marks the parent document as modified</p>
 
 **Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
-<a name="Set"></a>
-
-## Set
-**Kind**: global class  
-
-* [Set](#Set)
-    * [new Set(key, options)](#new_Set_new)
-    * [.getEmbeddedSchemaType()](#Set+getEmbeddedSchemaType)
-    * [.cast()](#Set+cast)
-    * [.castForQuery()](#Set+castForQuery)
-
-<a name="new_Set_new"></a>
-
-### new Set(key, options)
-<p>Create a new instance of the Set SchemaType.</p>
-
-
-| Param | Description |
-| --- | --- |
-| key | <p>the path to this set field in your schema</p> |
-| options | <p>set options that define the type of values in the set</p> |
-
-<a name="Set+getEmbeddedSchemaType"></a>
-
-### set.getEmbeddedSchemaType()
-<p>Get the embedded schema type for values in this set</p>
-
-**Kind**: instance method of [<code>Set</code>](#Set)  
-<a name="Set+cast"></a>
-
-### set.cast()
-<p>Cast a given value to a MongooseSet with proper change tracking</p>
-
-**Kind**: instance method of [<code>Set</code>](#Set)  
-<a name="Set+castForQuery"></a>
-
-### set.castForQuery()
-<p>Required for Mongoose to properly handle this schema type</p>
-
-**Kind**: instance method of [<code>Set</code>](#Set)  
 <a name="Vectorize"></a>
 
 ## Vectorize
@@ -1134,52 +1153,6 @@ but are not in the input list are dropped. If a type is present in both, we add 
 <p>Send a CreateCollection command to Data API.</p>
 
 **Kind**: instance method of [<code>CollectionsDb</code>](#CollectionsDb)  
-<a name="MongooseSet"></a>
-
-## MongooseSet
-<p>Set is a custom Mongoose SchemaType that allows you to use Cassandra sets in tables mode.
-A Set path translates to <code>type: 'set'</code> in the Data API.</p>
-
-**Kind**: global variable  
-
-* [MongooseSet](#MongooseSet)
-    * [.clearAtomics()](#MongooseSet+clearAtomics)
-    * [._markModified()](#MongooseSet+_markModified)
-    * [.add()](#MongooseSet+add)
-    * [.delete()](#MongooseSet+delete)
-    * [.clear()](#MongooseSet+clear)
-
-<a name="MongooseSet+clearAtomics"></a>
-
-### mongooseSet.clearAtomics()
-<p>Clear atomics for Mongoose change tracking. Called by Mongoose after the
-document is successfully saved.</p>
-
-**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
-<a name="MongooseSet+_markModified"></a>
-
-### mongooseSet.\_markModified()
-<p>Internal method to mark the parent document as modified when the set changes</p>
-
-**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
-<a name="MongooseSet+add"></a>
-
-### mongooseSet.add()
-<p>Adds a value to the set and marks the parent document as modified</p>
-
-**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
-<a name="MongooseSet+delete"></a>
-
-### mongooseSet.delete()
-<p>Deletes a value from the set and marks the parent document as modified</p>
-
-**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
-<a name="MongooseSet+clear"></a>
-
-### mongooseSet.clear()
-<p>Clears all values from the set and marks the parent document as modified</p>
-
-**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
 <a name="handleVectorFieldsProjection"></a>
 
 ## handleVectorFieldsProjection()
