@@ -88,7 +88,8 @@ export abstract class BaseDb {
         definition: CreateTableDefinition,
         options?: Omit<CreateTableOptions, 'definition'>
     ) {
-        return this.astraDb.createTable<DocType>(name, { ...options, definition });
+        const result = await this.astraDb.createTable<DocType>(name, { ...options, definition });
+        return result;
     }
 
     /**
@@ -96,7 +97,8 @@ export abstract class BaseDb {
      * @param name The name of the collection to be dropped.
      */
     async dropCollection(name: string, options?: DropCollectionOptions) {
-        return this.astraDb.dropCollection(name, options);
+        const result = await this.astraDb.dropCollection(name, options);
+        return result;
     }
 
     /**
@@ -104,10 +106,11 @@ export abstract class BaseDb {
      * @param name
      */
     async dropTable(name: string, options?: DropTableOptions) {
-        return this.astraDb.dropTable(name, {
+        const result = await this.astraDb.dropTable(name, {
             ifExists: true,
             ...options
         });
+        return result;
     }
 
     /**
@@ -120,9 +123,11 @@ export abstract class BaseDb {
 
     async listCollections(options?: ListCollectionsOptions) {
         if (options?.nameOnly) {
-            return this.astraDb.listCollections({ ...options, nameOnly: true });
+            const result = await this.astraDb.listCollections({ ...options, nameOnly: true });
+            return result;
         }
-        return this.astraDb.listCollections({ ...options, nameOnly: false });
+        const result = await this.astraDb.listCollections({ ...options, nameOnly: false });
+        return result;
     }
 
     /**
@@ -133,9 +138,11 @@ export abstract class BaseDb {
 
     async listTables(options?: ListTablesOptions) {
         if (options?.nameOnly) {
-            return this.astraDb.listTables({ ...options, nameOnly: true });
+            const result = await this.astraDb.listTables({ ...options, nameOnly: true });
+            return result;
         }
-        return this.astraDb.listTables({ ...options, nameOnly: false });
+        const result = await this.astraDb.listTables({ ...options, nameOnly: false });
+        return result;
     }
 
     /**
@@ -146,9 +153,11 @@ export abstract class BaseDb {
     async listTypes(options?: { nameOnly?: false }): Promise<TypeDescriptor[]>;
     async listTypes(options?: ListTypesOptions) {
         if (options?.nameOnly) {
-            return this.astraDb.listTypes({ ...options, nameOnly: true });
+            const result = await this.astraDb.listTypes({ ...options, nameOnly: true });
+            return result;
         }
-        return this.astraDb.listTypes({ ...options, nameOnly: false });
+        const result = await this.astraDb.listTypes({ ...options, nameOnly: false });
+        return result;
     }
 
     /**
@@ -158,7 +167,8 @@ export abstract class BaseDb {
      * @returns The result of the createType command.
      */
     async createType(name: string, definition: CreateTypeDefinition) {
-        return this.astraDb.createType(name, { definition });
+        const result = await this.astraDb.createType(name, { definition });
+        return result;
     }
 
     /**
@@ -167,7 +177,8 @@ export abstract class BaseDb {
      * @returns The result of the dropType command.
      */
     async dropType(name: string, options?: DropTypeOptions) {
-        return this.astraDb.dropType(name, options);
+        const result = await this.astraDb.dropType(name, options);
+        return result;
     }
 
     /**
@@ -177,7 +188,8 @@ export abstract class BaseDb {
      * @returns The result of the alterType command.
      */
     async alterType<UDTSchema extends SomeRow = SomeRow>(name: string, update: AlterTypeOptions<UDTSchema>) {
-        return this.astraDb.alterType(name, update);
+        const result = await this.astraDb.alterType(name, update);
+        return result;
     }
 
     /**
@@ -260,7 +272,8 @@ export abstract class BaseDb {
      * @param command The command to be executed.
      */
     async command(command: Record<string, unknown>): Promise<RawDataAPIResponse> {
-        return this.astraDb.command(command);
+        const result = await this.astraDb.command(command);
+        return result;
     }
 }
 
@@ -289,8 +302,9 @@ export class CollectionsDb extends BaseDb {
     /**
      * Send a CreateCollection command to Data API.
      */
-    createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: CreateCollectionOptions<DocType>) {
-        return this.astraDb.createCollection<DocType>(name, options);
+    async createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: CreateCollectionOptions<DocType>) {
+        const result = await this.astraDb.createCollection<DocType>(name, options);
+        return result;
     }
 }
 
@@ -320,7 +334,7 @@ export class TablesDb extends BaseDb {
     /**
      * Throws an error, astra-mongoose does not support creating collections in tables mode.
      */
-    createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(
+    async createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(
         name: string,
         options?: CreateCollectionOptions<DocType>
     ): Promise<Collection<DocType>> {
