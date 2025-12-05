@@ -135,10 +135,10 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         this._collection = collection;
 
         // Bubble up collection-level events from astra-db-ts to the main connection
-        collection.on('commandStarted', ev => this.connection.emit('commandStarted', ev));
-        collection.on('commandFailed', ev => this.connection.emit('commandFailed', ev));
-        collection.on('commandSucceeded', ev => this.connection.emit('commandSucceeded', ev));
-        collection.on('commandWarnings', ev => this.connection.emit('commandWarnings', ev));
+        collection.on('commandStarted', (ev) => this.connection.emit('commandStarted', ev));
+        collection.on('commandFailed', (ev) => this.connection.emit('commandFailed', ev));
+        collection.on('commandSucceeded', (ev) => this.connection.emit('commandSucceeded', ev));
+        collection.on('commandWarnings', (ev) => this.connection.emit('commandWarnings', ev));
 
         return collection;
     }
@@ -161,8 +161,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             throw new OperationNotSupportedError('Cannot use countDocuments() with tables');
         }
         filter = serialize(filter);
-        const result = await this.collection.countDocuments(filter, 1000, options);
-        return result;
+        return await this.collection.countDocuments(filter, 1000, options);
     }
 
     /**
@@ -197,8 +196,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
         filter = serialize(filter, this.isTable);
 
-        const result = await this.collection.findOne(filter, requestOptions).then(doc => deserializeDoc<DocType>(doc));
-        return result;
+        return await this.collection.findOne(filter, requestOptions).then(doc => deserializeDoc<DocType>(doc));
     }
 
     /**
@@ -208,8 +206,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     async insertOne(doc: Record<string, unknown>, options?: CollectionInsertOneOptions | TableInsertOneOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'insertOne', arguments);
-        const result = await this.collection.insertOne(serialize(doc, this.isTable) as DocType, options);
-        return result;
+        return await this.collection.insertOne(serialize(doc, this.isTable) as DocType, options);
     }
 
     /**
@@ -221,8 +218,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'insertMany', arguments);
         documents = documents.map(doc => serialize(doc, this.isTable));
-        const result = await this.collection.insertMany(documents as DocType[], options);
-        return result;
+        return await this.collection.insertMany(documents as DocType[], options);
     }
 
     /**
@@ -245,13 +241,12 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         setDefaultIdForUpdate<DocType>(filter, update, requestOptions);
         update = serialize(update);
 
-        const result = await this.collection.findOneAndUpdate(filter, update, requestOptions).then((value: Record<string, unknown> | null) => {
+        return await this.collection.findOneAndUpdate(filter, update, requestOptions).then((value: Record<string, unknown> | null) => {
             if (options?.includeResultMetadata) {
                 return { value: deserializeDoc<DocType>(value) };
             }
             return deserializeDoc<DocType>(value);
         });
-        return result;
     }
 
     /**
@@ -270,13 +265,12 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             : { ...options, sort: undefined };
         filter = serialize(filter);
 
-        const result = await this.collection.findOneAndDelete(filter, requestOptions).then((value: Record<string, unknown> | null) => {
+        return await this.collection.findOneAndDelete(filter, requestOptions).then((value: Record<string, unknown> | null) => {
             if (options?.includeResultMetadata) {
                 return { value: deserializeDoc<DocType>(value) };
             }
             return deserializeDoc<DocType>(value);
         });
-        return result;
     }
 
     /**
@@ -298,13 +292,12 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         setDefaultIdForReplace(filter, newDoc, requestOptions);
         newDoc = serialize(newDoc);
 
-        const result = await this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((value: Record<string, unknown> | null) => {
+        return await this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((value: Record<string, unknown> | null) => {
             if (options?.includeResultMetadata) {
                 return { value: deserializeDoc<DocType>(value) };
             }
             return deserializeDoc<DocType>(value);
         });
-        return result;
     }
 
     /**
@@ -315,8 +308,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'deleteMany', arguments);
         filter = serialize(filter, this.isTable);
-        const result = await this.collection.deleteMany(filter, options);
-        return result;
+        return await this.collection.deleteMany(filter, options);
     }
 
     /**
@@ -332,8 +324,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             ? { ...options, sort: processSortOption(options.sort) }
             : { ...options, sort: undefined };
         filter = serialize(filter, this.isTable);
-        const result = await this.collection.deleteOne(filter as TableFilter<DocType>, requestOptions);
-        return result;
+        return await this.collection.deleteOne(filter as TableFilter<DocType>, requestOptions);
     }
 
     /**
@@ -355,8 +346,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         filter = serialize(filter);
         setDefaultIdForReplace(filter, replacement, requestOptions);
         replacement = serialize(replacement);
-        const result = await this.collection.replaceOne(filter, replacement, requestOptions);
-        return result;
+        return await this.collection.replaceOne(filter, replacement, requestOptions);
     }
 
     /**
@@ -379,12 +369,11 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             setDefaultIdForUpdate(filter, update as CollectionUpdateFilter<DocType>, requestOptions);
         }
         update = serialize(update, this.isTable);
-        const result = await this.collection.updateOne(filter as TableFilter<DocType>, update, requestOptions).then(res => {
+        return await this.collection.updateOne(filter as TableFilter<DocType>, update, requestOptions).then(res => {
             // Mongoose currently has a bug where null response from updateOne() throws an error that we can't
             // catch here for unknown reasons. See Automattic/mongoose#15126. Tables API returns null here.
             return res ?? {};
         });
-        return result;
     }
 
     /**
@@ -402,8 +391,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         filter = serialize(filter, this.isTable);
         setDefaultIdForUpdate(filter, update, options);
         update = serialize(update, this.isTable);
-        const result = await this.collection.updateMany(filter, update, options);
-        return result;
+        return await this.collection.updateMany(filter, update, options);
     }
 
     /**
@@ -415,8 +403,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use estimatedDocumentCount() with tables');
         }
-        const result = await this.collection.estimatedDocumentCount(options);
-        return result;
+        return await this.collection.estimatedDocumentCount(options);
     }
 
     /**
@@ -426,11 +413,10 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     async runCommand(command: Record<string, unknown>, options?: Omit<RunCommandOptions, 'table' | 'collection' | 'keyspace'>) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this.connection.debug, this.name, 'runCommand', arguments);
-        const result = await this.connection.db!.astraDb.command(
+        return await this.connection.db!.astraDb.command(
             command,
             this.isTable ? { table: this.name, ...options } : { collection: this.name, ...options }
         );
-        return result;
     }
 
     /**
