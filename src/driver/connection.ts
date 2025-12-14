@@ -161,7 +161,7 @@ export class Connection extends MongooseConnection {
         options?: CreateCollectionOptions<DocType>
     ) {
         const { db } = await this._waitForClient();
-        return db.createCollection<DocType>(name, options);
+        return await db.createCollection<DocType>(name, options);
     }
 
     /**
@@ -182,7 +182,7 @@ export class Connection extends MongooseConnection {
         options?: Omit<CreateTableOptions, 'definition'>
     ) {
         const { db } = await this._waitForClient();
-        return db.createTable<DocType>(name, definition, options);
+        return await db.createTable<DocType>(name, definition, options);
     }
 
     /**
@@ -191,7 +191,7 @@ export class Connection extends MongooseConnection {
       */
     async dropCollection(name: string, options?: DropCollectionOptions) {
         const { db } = await this._waitForClient();
-        return db.dropCollection(name, options);
+        return await db.dropCollection(name, options);
     }
 
     /**
@@ -200,7 +200,7 @@ export class Connection extends MongooseConnection {
       */
     async dropTable(name: string, options?: DropTableOptions) {
         const { db } = await this._waitForClient();
-        return db.dropTable(name, options);
+        return await db.dropTable(name, options);
     }
 
     /**
@@ -232,9 +232,9 @@ export class Connection extends MongooseConnection {
     async listCollections(options?: ListCollectionsOptions) {
         const { db } = await this._waitForClient();
         if (options?.nameOnly) {
-            return db.listCollections({ ...options, nameOnly: true });
+            return await db.listCollections({ ...options, nameOnly: true });
         }
-        return db.listCollections({ ...options, nameOnly: false });
+        return await db.listCollections({ ...options, nameOnly: false });
     }
 
     /**
@@ -247,9 +247,9 @@ export class Connection extends MongooseConnection {
     async listTables(options?: ListTablesOptions) {
         const { db } = await this._waitForClient();
         if (options?.nameOnly) {
-            return db.listTables({ ...options, nameOnly: true });
+            return await db.listTables({ ...options, nameOnly: true });
         }
-        return db.listTables({ ...options, nameOnly: false });
+        return await db.listTables({ ...options, nameOnly: false });
     }
 
     /**
@@ -261,9 +261,9 @@ export class Connection extends MongooseConnection {
     async listTypes(options?: ListTypesOptions) {
         const { db } = await this._waitForClient();
         if (options?.nameOnly) {
-            return db.listTypes({ ...options, nameOnly: true });
+            return await db.listTypes({ ...options, nameOnly: true });
         }
-        return db.listTypes({ ...options, nameOnly: false });
+        return await db.listTypes({ ...options, nameOnly: false });
     }
 
     /**
@@ -274,7 +274,7 @@ export class Connection extends MongooseConnection {
      */
     async createType(name: string, definition: CreateTypeDefinition) {
         const { db } = await this._waitForClient();
-        return db.createType(name, definition);
+        return await db.createType(name, definition);
     }
 
     /**
@@ -284,7 +284,7 @@ export class Connection extends MongooseConnection {
      */
     async dropType(name: string, options?: DropTypeOptions) {
         const { db } = await this._waitForClient();
-        return db.dropType(name, options);
+        return await db.dropType(name, options);
     }
 
     /**
@@ -295,7 +295,7 @@ export class Connection extends MongooseConnection {
      */
     async alterType<UDTSchema extends SomeRow = SomeRow>(name: string, update: AlterTypeOptions<UDTSchema>) {
         const { db } = await this._waitForClient();
-        return db.alterType(name, update);
+        return await db.alterType(name, update);
     }
 
     /**
@@ -309,7 +309,7 @@ export class Connection extends MongooseConnection {
      */
     async syncTypes(types: { name: string, definition: CreateTypeDefinition }[]) {
         const { db } = await this._waitForClient();
-        return db.syncTypes(types);
+        return await db.syncTypes(types);
     }
 
     /**
@@ -318,7 +318,7 @@ export class Connection extends MongooseConnection {
       */
     async runCommand(command: Record<string, unknown>): Promise<RawDataAPIResponse> {
         const { db } = await this._waitForClient();
-        return db.command(command);
+        return await db.command(command);
     }
 
     /**
