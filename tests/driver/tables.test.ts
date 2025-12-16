@@ -14,13 +14,14 @@
 
 import assert from 'assert';
 import { mongooseInstanceTables as mongooseInstance, createMongooseCollections, testDebug } from '../mongooseFixtures';
-import { Schema, Types } from 'mongoose';
+import mongoose, { Schema, Types } from 'mongoose';
 import { randomUUID } from 'crypto';
-import { UUID } from 'bson';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
 import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime, TableScalarColumnDefinition } from '@datastax/astra-db-ts';
 import convertSchemaToUDTColumns from '../../src/udt/convertSchemaToUDTColumns';
 import udtDefinitionsFromSchema from '../../src/udt/udtDefinitionsFromSchema';
+
+const { UUID } = mongoose.mongo.BSON;
 
 const TEST_TABLE_NAME = 'table1';
 

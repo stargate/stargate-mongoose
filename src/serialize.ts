@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Binary, Double, ObjectId } from 'bson';
 import mongoose from 'mongoose';
+
+const { Binary, Double, ObjectId } = mongoose.mongo.BSON;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function serialize(data: Record<string, any>, isTable?: boolean): Record<string, any> {
