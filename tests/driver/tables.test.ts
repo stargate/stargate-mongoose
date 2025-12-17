@@ -233,6 +233,49 @@ describe('TABLES: basic operations and data types', function() {
         assert.strictEqual(findOneResponse.get('timeOfDay'), '13:00:00.000000000');
     });
 
+    it('syncTable', async () => {
+        const userSchema = new Schema({
+            name: String,
+            age: Number
+        }, { versionKey: false });
+        await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+        let tableDefinition = tableDefinitionFromSchema(userSchema);
+
+        const collection = mongooseInstance.connection.collection(TEST_TABLE_NAME);
+        await collection.syncTable(tableDefinition);
+
+        let tables = await mongooseInstance.connection.listTables();
+        let table = tables.find(t => t.name === TEST_TABLE_NAME);
+        assert.ok(table);
+        assert.strictEqual(table.name, TEST_TABLE_NAME);
+        assert.deepStrictEqual(Object.keys(table.definition.columns).sort(), ['_id', 'age', 'name']);
+
+        const updatedUserSchema = new Schema({
+            name: String,
+            email: String
+        }, { versionKey: false });
+        tableDefinition = tableDefinitionFromSchema(updatedUserSchema);
+
+        await collection.syncTable(tableDefinition);
+
+        tables = await mongooseInstance.connection.listTables();
+        table = tables.find(t => t.name === TEST_TABLE_NAME);
+        assert.ok(table);
+        assert.strictEqual(table.name, TEST_TABLE_NAME);
+        assert.deepStrictEqual(Object.keys(table.definition.columns).sort(), ['_id', 'email', 'name']);
+
+        const updateExistingSchema = new Schema({
+            name: String,
+            email: Number
+        }, { versionKey: false });
+        tableDefinition = tableDefinitionFromSchema(updateExistingSchema);
+
+        await assert.rejects(
+            collection.syncTable(tableDefinition),
+            /syncTable cannot modify existing columns, found modified columns: email/
+        );
+    });
+
     describe('UDTs', () => {
         beforeEach(async () => {
             await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);

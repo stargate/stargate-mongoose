@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CreateTableDefinition } from '@datastax/astra-db-ts';
+import { CreateTableDefinition, StrictCreateTableColumnDefinition } from '@datastax/astra-db-ts';
 import { Schema } from 'mongoose';
 import convertSchemaToColumns from './convertSchemaToColumns';
 
 /**
  * Given a Mongoose schema, create an equivalent Data API table definition for use with `createTable()`
  */
-export default function tableDefinitionFromSchema(schema: Schema): CreateTableDefinition {
+export default function tableDefinitionFromSchema(
+    schema: Schema
+): CreateTableDefinition & { columns: Record<string, StrictCreateTableColumnDefinition> } {
     return {
         primaryKey: '_id',
         columns: convertSchemaToColumns(schema)
