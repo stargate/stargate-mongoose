@@ -413,25 +413,29 @@ describe('TABLES: basic operations and data types', function() {
                 luckyNumbers: new Set([1, 2, 3])
             });
 
-          doc.luckyNumbers!.delete(2);
-          await doc.save();
-          let user = await User.findById(doc._id).orFail();
-          assert.strictEqual(user.luckyNumbers!.size, 2);
-          assert.ok(user.luckyNumbers!.has(1));
-          assert.ok(user.luckyNumbers!.has(3));
-          assert.strictEqual(user.tags!.size, 2);
+            doc.luckyNumbers!.delete(2);
+            assert.deepEqual(
+                doc.getChanges(),
+                { $pullAll: { luckyNumbers: [2] } }
+            );
+            await doc.save();
+            let user = await User.findById(doc._id).orFail();
+            assert.strictEqual(user.luckyNumbers!.size, 2);
+            assert.ok(user.luckyNumbers!.has(1));
+            assert.ok(user.luckyNumbers!.has(3));
+            assert.strictEqual(user.tags!.size, 2);
 
-          doc.luckyNumbers!.clear();
-          await doc.save();
-          user = await User.findById(doc._id).orFail();
-          assert.strictEqual(user.luckyNumbers!.size, 0);
-          assert.strictEqual(user.tags!.size, 2);
+            doc.luckyNumbers!.clear();
+            await doc.save();
+            user = await User.findById(doc._id).orFail();
+            assert.strictEqual(user.luckyNumbers!.size, 0);
+            assert.strictEqual(user.tags!.size, 2);
 
-          doc.luckyNumbers = null;
-          await assert.rejects(
-              () => doc.save(),
-              /Cast to Set failed for value "null" \(type null\) at path "luckyNumbers"/
-          );
+            doc.luckyNumbers = null;
+            await assert.rejects(
+                () => doc.save(),
+                /Cast to Set failed for value "null" \(type null\) at path "luckyNumbers"/
+            );
         });
 
         it('updates', async () => {
