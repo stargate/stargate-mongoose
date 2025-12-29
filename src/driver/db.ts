@@ -229,12 +229,13 @@ export abstract class BaseDb {
                     const fieldsToAdd: CreateTypeDefinition = { fields: {} };
                     for (const [field, newField] of Object.entries(type.definition.fields)) {
                         if (existingFields?.[field] != null) {
-                            const existingFieldType = existingFields[field];
+                            const existingField = existingFields[field];
                             // Compare type as string since Astra DB types may be represented in string form
                             const newFieldType = typeof newField === 'string' ? newField : newField.type;
-                            if (existingFieldType.type !== newFieldType) {
+                            const existingFieldType = typeof existingField === 'string' ? existingField : existingField.type;
+                            if (existingFieldType !== newFieldType) {
                                 throw new AstraMongooseError(
-                                    `Field '${field}' in type '${type.name}' exists with different type. (current: ${existingFieldType.type}, new: ${newFieldType})`
+                                    `Field '${field}' in type '${type.name}' exists with different type. (current: ${existingFieldType}, new: ${newFieldType})`
                                 );
                             }
                         } else {
@@ -249,7 +250,7 @@ export abstract class BaseDb {
                 }
             }
         } catch (err) {
-            throw new AstraMongooseError(`Error in syncTypes: ${err instanceof Error ? err.message : err}`, { created, updated, dropped });
+            throw new AstraMongooseError(`Error in syncTypes: ${err}`, { created, updated, dropped });
         }
 
         return { created, updated, dropped };

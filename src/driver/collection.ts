@@ -443,7 +443,11 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
         const overlappingColumnNames = existingColumnNames.filter(column => newColumnNames.includes(column));
         const columnsToModify = overlappingColumnNames.filter(column => {
-            return JSON.stringify(existingTable.definition.columns[column]) !== JSON.stringify(definition.columns[column]);
+            const existingColumn = { ...existingTable.definition.columns[column] };
+            if (existingColumn.apiSupport != null) {
+                delete existingColumn.apiSupport;
+            }
+            return JSON.stringify(existingColumn) !== JSON.stringify(definition.columns[column]);
         });
         if (columnsToModify.length > 0) {
             throw new AstraMongooseError('syncTable cannot modify existing columns, found modified columns: ' + columnsToModify.join(', '));
