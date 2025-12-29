@@ -243,13 +243,13 @@ describe('TABLES: basic operations and data types', function() {
             }
         }, { versionKey: false });
 
-        await mongooseInstance.connection.createType('WebsiteType', {
-            fields: {
-                url: { type: 'text' }
-            }
-        });
-
         try {
+            await mongooseInstance.connection.createType('WebsiteType', {
+                fields: {
+                    url: { type: 'text' }
+                }
+            });
+
             await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
             let tableDefinition = tableDefinitionFromSchema(userSchema);
 
