@@ -93,6 +93,8 @@ an Astra perspective, this class can be a wrapper around a Collection <strong>or
     * [.updateOne(filter, update, options)](#Collection+updateOne)
     * [.updateMany(filter, update, options)](#Collection+updateMany)
     * [.estimatedDocumentCount()](#Collection+estimatedDocumentCount)
+    * [.syncTable(definition, options)](#Collection+syncTable) ⇒
+    * [.alterTable(operation)](#Collection+alterTable)
     * [.runCommand(command)](#Collection+runCommand)
     * [.bulkWrite(ops, options)](#Collection+bulkWrite)
     * [.aggregate(pipeline, options)](#Collection+aggregate)
@@ -268,6 +270,33 @@ Converted to a <code>findOneAndReplace()</code> under the hood.</p>
 <p>Get the estimated number of documents in a collection based on collection metadata</p>
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
+<a name="Collection+syncTable"></a>
+
+### collection.syncTable(definition, options) ⇒
+<p>Sync the underlying table schema with the specified definition: creates a new
+table if one doesn't exist, or alters the existing table to match the definition
+by adding or dropping columns as necessary.</p>
+<p>Note that modifying an existing column is NOT supported and will throw an error.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+**Returns**: <p>void</p>  
+
+| Param | Description |
+| --- | --- |
+| definition | <p>new table definition (strict only)</p> |
+| options | <p>passed to createTable if the table doesn't exist</p> |
+
+<a name="Collection+alterTable"></a>
+
+### collection.alterTable(operation)
+<p>Alter the underlying table with the specified name and operation - can add or drop columns</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param | Description |
+| --- | --- |
+| operation | <p>add/drop</p> |
+
 <a name="Collection+runCommand"></a>
 
 ### collection.runCommand(command)

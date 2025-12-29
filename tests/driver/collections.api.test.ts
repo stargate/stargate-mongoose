@@ -31,8 +31,9 @@ import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMo
 import { once } from 'events';
 import { parseUri } from '../../src/driver/connection';
 import { FindCursor, DataAPIResponseError } from '@datastax/astra-db-ts';
-import { Long, UUID } from 'bson';
 import type { AstraMongoose } from '../../src';
+
+const { Long, UUID } = mongoose.mongo.BSON;
 
 describe('COLLECTIONS: mongoose Model API level tests with collections', async () => {
     let Product: ProductModelType;

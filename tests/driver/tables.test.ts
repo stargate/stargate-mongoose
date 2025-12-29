@@ -14,13 +14,14 @@
 
 import assert from 'assert';
 import { mongooseInstanceTables as mongooseInstance, createMongooseCollections, testDebug } from '../mongooseFixtures';
-import { Schema, Types } from 'mongoose';
+import mongoose, { Schema, Types } from 'mongoose';
 import { randomUUID } from 'crypto';
-import { UUID } from 'bson';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
 import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime, TableScalarColumnDefinition } from '@datastax/astra-db-ts';
 import convertSchemaToUDTColumns from '../../src/udt/convertSchemaToUDTColumns';
 import udtDefinitionsFromSchema from '../../src/udt/udtDefinitionsFromSchema';
+
+const { UUID } = mongoose.mongo.BSON;
 
 const TEST_TABLE_NAME = 'table1';
 
@@ -498,6 +499,49 @@ describe('TABLES: basic operations and data types', function() {
                 /`of` option is required for Set paths/
             );
         });
+    });
+
+    it('syncTable', async () => {
+        const userSchema = new Schema({
+            name: String,
+            age: Number
+        }, { versionKey: false });
+        await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+        let tableDefinition = tableDefinitionFromSchema(userSchema);
+
+        const collection = mongooseInstance.connection.collection(TEST_TABLE_NAME);
+        await collection.syncTable(tableDefinition);
+
+        let tables = await mongooseInstance.connection.listTables();
+        let table = tables.find(t => t.name === TEST_TABLE_NAME);
+        assert.ok(table);
+        assert.strictEqual(table.name, TEST_TABLE_NAME);
+        assert.deepStrictEqual(Object.keys(table.definition.columns).sort(), ['_id', 'age', 'name']);
+
+        const updatedUserSchema = new Schema({
+            name: String,
+            email: String
+        }, { versionKey: false });
+        tableDefinition = tableDefinitionFromSchema(updatedUserSchema);
+
+        await collection.syncTable(tableDefinition);
+
+        tables = await mongooseInstance.connection.listTables();
+        table = tables.find(t => t.name === TEST_TABLE_NAME);
+        assert.ok(table);
+        assert.strictEqual(table.name, TEST_TABLE_NAME);
+        assert.deepStrictEqual(Object.keys(table.definition.columns).sort(), ['_id', 'email', 'name']);
+
+        const updateExistingSchema = new Schema({
+            name: String,
+            email: Number
+        }, { versionKey: false });
+        tableDefinition = tableDefinitionFromSchema(updateExistingSchema);
+
+        await assert.rejects(
+            collection.syncTable(tableDefinition),
+            /syncTable cannot modify existing columns, found modified columns: email/
+        );
     });
 
     describe('UDTs', () => {

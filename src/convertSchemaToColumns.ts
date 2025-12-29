@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CreateTableColumnDefinitions } from '@datastax/astra-db-ts';
+import { StrictCreateTableColumnDefinition } from '@datastax/astra-db-ts';
 import { Schema, SchemaType } from 'mongoose';
 import { AstraMongooseError } from './astraMongooseError';
 import getUDTNameFromSchemaType from './udt/getUDTNameFromSchemaType';
@@ -22,9 +22,12 @@ type AllowedDataAPITypes = 'text' | 'double' | 'timestamp' | 'boolean' | 'decima
 /**
  * Given a Mongoose schema, create an equivalent Data API table definition for use with `createTable()`
  */
-export default function convertSchemaToColumns(schema: Schema, udtName?: string): CreateTableColumnDefinitions {
+export default function convertSchemaToColumns(
+    schema: Schema,
+    udtName?: string
+): Record<string, StrictCreateTableColumnDefinition> {
     const versionKey = schema.options.versionKey;
-    const columns: CreateTableColumnDefinitions = {};
+    const columns: Record<string, StrictCreateTableColumnDefinition> = {};
     if (schema.options._id !== false) {
         columns._id = { type: 'text' };
     }
