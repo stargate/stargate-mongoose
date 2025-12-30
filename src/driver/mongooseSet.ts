@@ -14,6 +14,7 @@
 
 import { Document, SchemaType } from 'mongoose';
 import { inspect } from 'util';
+import { serialize } from '../serialize';
 
 /**
  * MongooseSet is a Mongoose-specific wrapper around vanilla JavaScript sets
@@ -94,10 +95,7 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
         }
         if (!hadValue) {
             this._markModified();
-            const atomicValue = value instanceof Document
-                // @ts-expect-error toBSON not part of typescript types
-                ? value.toBSON()
-                : value;
+            const atomicValue = toBSON(value);
             if (this._atomic == null) {
                 this._atomic = ['$push', { $each: [atomicValue] }];
             } else if (this._atomic[0] === '$push') {
@@ -135,10 +133,7 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
         }
         if (result) {
             this._markModified();
-            const atomicValue = value instanceof Document
-                // @ts-expect-error toBSON not part of typescript types
-                ? value.toBSON()
-                : value;
+            const atomicValue = toBSON(value);
             if (this._atomic == null) {
                 this._atomic = ['$pullAll', [atomicValue]];
             } else if (this._atomic[0] === '$pullAll') {
@@ -161,9 +156,9 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
 }
 
 function toBSON<T>(v: T): T {
-    if (v instanceof Document) {
-        // @ts-expect-error toBSON not part of typescript types
-        return v.toBSON();
+    if (v != null && typeof v === 'object') {
+        // @ts-expect-error coerce return type
+        return serialize(v);
     }
     return v;
 }
