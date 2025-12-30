@@ -580,7 +580,7 @@ describe('TABLES: basic operations and data types', function() {
 
             const doc2 = new User({ tags: doc.tags });
             await doc2.save();
-            assert.deepStrictEqual(Array.from(doc2.tags), Array.from(doc.tags));
+            assert.deepStrictEqual(Array.from(doc2.tags ?? []), Array.from(doc.tags));
         });
 
         it('inspect', async () => {
