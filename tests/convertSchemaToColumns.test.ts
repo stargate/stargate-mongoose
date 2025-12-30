@@ -509,6 +509,19 @@ describe('convertSchemaToColumns', () => {
         );
     });
 
+    it('throws if set value is not supported type', () => {
+        const testSchema = new Schema({
+            mySet: {
+                type: Set, of: { type: Set, of: { type: String, required: true }, required: true }
+            }
+        });
+
+        assert.throws(
+            () => convertSchemaToColumns(testSchema),
+            /Cannot convert schema to Data API table definition: unsupported type at path "mySet"/
+        );
+    });
+
     it('throws error if schema with udtName option has a set', () => {
         const testSchema = new Schema({
             tags: { type: Set, of: { type: String, required: true }, __typehint: new Set<string>() }

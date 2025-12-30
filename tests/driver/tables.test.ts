@@ -479,6 +479,127 @@ describe('TABLES: basic operations and data types', function() {
             doc = await User.findOne({ _id: doc._id }).orFail();
             assert.ok(doc.tags);
             assert.deepStrictEqual(Array.from(doc.tags), ['tag1', 'tag2', 'tag3']);
+
+            const doc2 = new User({ tags: doc.tags });
+            await doc2.save();
+            assert.deepStrictEqual(Array.from(doc2.tags), Array.from(doc.tags));
+        });
+
+        it('handles set of UDTs', async () => {
+            // Test that a set of UDTs (AddressType) can be created, inserted, and queried
+
+            // 1. Create AddressType UDT
+            await mongooseInstance.connection.syncTypes([{
+                name: 'AddressType',
+                definition: {
+                    fields: {
+                        city: { type: 'text' },
+                        state: { type: 'text' }
+                    }
+                }
+            }]);
+
+            // 2. Define schema that uses a set of AddressType as "addresses"
+            const addressSchema = new Schema(
+                {
+                    city: { type: String },
+                    state: { type: String }
+                },
+                { udtName: 'AddressType', versionKey: false, _id: false }
+            );
+
+            const userSchema = new Schema({
+                name: String,
+                addresses: {
+                    type: Set,
+                    of: { type: addressSchema, udtName: 'AddressType', required: true },
+                    __typehint: new Set<{city: string, state: string}>()
+                }
+            }, { versionKey: false });
+
+            // 3. Table definition, create table
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const tableDefinition = tableDefinitionFromSchema(userSchema);
+
+            assert.deepStrictEqual(tableDefinition, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    name: { type: 'text' },
+                    addresses: {
+                        type: 'set',
+                        valueType: { type: 'userDefined', udtName: 'AddressType' }
+                    }
+                }
+            });
+
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model('User', userSchema, TEST_TABLE_NAME);
+
+            // 4. Insert a document
+            const doc = await User.create({
+                name: 'Bob',
+                addresses: new Set([
+                    { city: 'Seattle', state: 'WA' },
+                    { city: 'Portland', state: 'OR' }
+                ])
+            });
+
+            assert.ok(doc);
+            assert.strictEqual(doc.name, 'Bob');
+            assert.ok(doc.addresses instanceof Set);
+            assert.strictEqual(doc.addresses.size, 2);
+
+            // Confirm presence of the expected address UDTs in the Set
+            // (convert set to array since order is not guaranteed)
+            const addressesArr = Array.from(doc.addresses);
+            const foundSeattle = addressesArr.find(a => a.city === 'Seattle' && a.state === 'WA');
+            const foundPortland = addressesArr.find(a => a.city === 'Portland' && a.state === 'OR');
+            assert.ok(foundSeattle);
+            assert.ok(foundPortland);
+
+            // 5. Query and verify
+            const foundUser = await User.findOne({ name: 'Bob' }).orFail();
+            assert.ok(foundUser);
+            assert.ok(foundUser.addresses instanceof Set);
+            assert.strictEqual(foundUser.addresses.size, 2);
+            const foundUserArr = Array.from(foundUser.addresses);
+            assert.ok(foundUserArr.some(addr => addr.city === 'Seattle' && addr.state === 'WA'));
+            assert.ok(foundUserArr.some(addr => addr.city === 'Portland' && addr.state === 'OR'));
+
+            // 6. Change tracking
+            foundUser.addresses.add({ city: 'San Francisco', state: 'CA' });
+            assert.deepStrictEqual(
+                foundUser.getChanges(),
+                {
+                    $push: {
+                        addresses: {
+                            $each: [{ city: 'San Francisco', state: 'CA' }]
+                        }
+                    }
+                }
+            )
+            await foundUser.save();
+            let updatedUser = await User.findOne({ name: 'Bob' }).orFail();
+            assert.strictEqual(updatedUser.addresses!.size, 3);
+            assert.ok([...updatedUser.addresses!.values()].some(addr => addr.city === 'San Francisco' && addr.state === 'CA'));
+
+            foundUser.addresses.add({ city: 'Portland', state: 'OR' });
+            assert.deepStrictEqual(foundUser.getChanges(), {});
+            await foundUser.save();
+            updatedUser = await User.findOne({ name: 'Bob' }).orFail();
+            assert.strictEqual(updatedUser.addresses!.size, 3);
+
+            foundUser.addresses.delete({ city: 'Portland', state: 'OR' });
+            assert.deepStrictEqual(
+                foundUser.getChanges(),
+                { $pullAll: { addresses: [{ city: 'Portland', state: 'OR' }] } }
+            );
+            await foundUser.save();
+            updatedUser = await User.findOne({ name: 'Bob' }).orFail();
+            assert.strictEqual(updatedUser.addresses!.size, 2);
+            assert.ok(![...updatedUser.addresses!.values()].some(addr => addr.city === 'Portland' && addr.state === 'OR'));
         });
 
         it('throws if unrecognized type', () => {
@@ -688,7 +809,7 @@ describe('TABLES: basic operations and data types', function() {
             assert.strictEqual(rawDoc.url, 'https://example.com');
         });
 
-        it('handles set of UDTs created from a schema definition', async () => {
+        it('handles array of UDTs created from a schema definition', async () => {
             const productSchema = new Schema(
                 {
                     name: { type: String },

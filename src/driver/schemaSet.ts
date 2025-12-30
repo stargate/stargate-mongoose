@@ -50,15 +50,19 @@ export class SchemaSet extends SchemaType {
         const typeValue = ofType.type;
         if (typeof typeValue === 'function' && 'name' in typeValue && typeof typeValue.name === 'string' && typeValue.name in SchemaTypes) {
             TypeConstructor = SchemaTypes[typeValue.name];
+            this.$embeddedSchemaType = new TypeConstructor(key, ofType);
         } else if (typeof typeValue === 'string' && typeValue in SchemaTypes) {
             TypeConstructor = SchemaTypes[typeValue];
+            this.$embeddedSchemaType = new TypeConstructor(key, ofType);
+        } else if (typeValue instanceof Schema && typeValue.options.udtName) {
+            TypeConstructor = SchemaTypes.Subdocument;
+            // @ts-expect-error Subdocument schematype constructor has different arguments
+            this.$embeddedSchemaType = new TypeConstructor(typeValue, key, ofType);
         }
 
         if (!TypeConstructor) {
-            throw new AstraMongooseError('`of` option for Set must be a supported primitive type', { options });
+            throw new AstraMongooseError('`of` option for Set must be a supported primitive type or UDT', { options });
         }
-
-        this.$embeddedSchemaType = new TypeConstructor(key, ofType);
     }
 
     /**

@@ -173,12 +173,6 @@ export default function convertSchemaToColumns(
                 });
             }
             const embeddedSchemaType = schemaType.getEmbeddedSchemaType() as SchemaType;
-            if (!embeddedSchemaType) {
-                throw new AstraMongooseError(
-                    `Cannot convert schema to Data API table definition: set path "${path}" must have an 'of' option`,
-                    { path, type }
-                );
-            }
             if (!isSchemaTypeRequired(embeddedSchemaType)) {
                 throw new AstraMongooseError(
                     `Cannot convert schema to Data API table definition: values for set path "${path}" must be required`,

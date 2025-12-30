@@ -75,8 +75,18 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
      * Adds a value to the set and marks the parent document as modified
      */
     add(value: T): this {
-        const hadValue = this.has(value);
-        super.add(value);
+        let hadValue: boolean = false;
+        if (value != null && typeof value === 'object') {
+            // If object, we should do a deep equality check
+            const values = Array.from(this);
+            hadValue = !!values.find(v => JSON.stringify(v) === JSON.stringify(value));
+            if (!hadValue) {
+                super.add(value);
+            }
+        } else {
+            hadValue = this.has(value);
+            super.add(value);
+        }
         if (!hadValue) {
             this._markModified();
             if (this._atomic == null) {
@@ -94,7 +104,17 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
      * Deletes a value from the set and marks the parent document as modified
      */
     delete(value: T): boolean {
-        const result = super.delete(value);
+        let result: boolean = false;
+        if (value != null && typeof value === 'object') {
+            // If object, we should do a deep equality check
+            const values = Array.from(this);
+            const matchingValue = values.find(v => JSON.stringify(v) === JSON.stringify(value));
+            if (matchingValue) {
+                result = super.delete(matchingValue);
+            }
+        } else {
+            result = super.delete(value);
+        }
         if (result) {
             this._markModified();
             if (this._atomic == null) {
