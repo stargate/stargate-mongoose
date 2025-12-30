@@ -16,7 +16,7 @@ import { Schema, SchemaType, SchemaTypeOptions, Document } from 'mongoose';
 import { AstraMongooseError } from '../astraMongooseError';
 import assert from 'node:assert';
 
-import { MongooseSet } from './set';
+import { MongooseSet } from './mongooseSet';
 
 export interface SetOptions<T = unknown> extends SchemaTypeOptions<T> {
   of: SchemaTypeOptions<T>;

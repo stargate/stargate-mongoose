@@ -160,7 +160,7 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
     }
 }
 
-function toBSON(v: unknown): unknown {
+function toBSON<T>(v: T): T {
     if (v instanceof Document) {
         // @ts-expect-error toBSON not part of typescript types
         return v.toBSON();

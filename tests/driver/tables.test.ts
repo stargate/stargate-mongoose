@@ -493,6 +493,49 @@ describe('TABLES: basic operations and data types', function() {
             );
         });
 
+        it('mixed add and remove', async () => {
+            const modelName = 'User';
+            const userSchema = new Schema({
+                name: String,
+                luckyNumbers: {
+                    type: Set,
+                    of: { type: 'Number', required: true },
+                    __typehint: new Set<number>()
+                },
+            }, { versionKey: false });
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const tableDefinition = tableDefinitionFromSchema(userSchema);
+            assert.deepStrictEqual(tableDefinition, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    name: { type: 'text' },
+                    luckyNumbers: { type: 'set', valueType: 'double' }
+                }
+            });
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
+
+            const doc = await User.create({
+                name: 'John Doe',
+                luckyNumbers: new Set([42, 7, 77])
+            });
+            doc.luckyNumbers!.delete(42);
+            doc.luckyNumbers!.add(99);
+            assert.deepStrictEqual(doc.getChanges(), {
+                $set: {
+                    luckyNumbers: [7, 77, 99]
+                }
+            });
+            doc.luckyNumbers!.delete(99);
+            assert.deepStrictEqual(doc.getChanges(), {
+                $set: {
+                    luckyNumbers: [7, 77]
+                }
+            });
+        });
+
         it('updates', async () => {
             const modelName = 'User';
             const userSchema = new Schema({
@@ -663,7 +706,7 @@ describe('TABLES: basic operations and data types', function() {
                         }
                     }
                 }
-            )
+            );
             await foundUser.save();
             let updatedUser = await User.findOne({ name: 'Bob' }).orFail();
             assert.strictEqual(updatedUser.addresses!.size, 3);
