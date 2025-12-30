@@ -86,19 +86,22 @@ export class SchemaSet extends SchemaType {
             mongooseSet = new MongooseSet(
                 Array.from(val).map(v => this.getEmbeddedSchemaType().cast(v, doc)),
                 this.path,
-                doc
+                doc,
+                this
             );
         } else if (Array.isArray(val)) {
             mongooseSet = new MongooseSet(
                 val.map(v => this.getEmbeddedSchemaType().cast(v, doc)),
                 this.path,
-                doc
+                doc,
+                this
             );
         } else {
             mongooseSet = new MongooseSet(
                 [this.getEmbeddedSchemaType().cast(val, doc)],
                 this.path,
-                doc
+                doc,
+                this
             );
         }
 

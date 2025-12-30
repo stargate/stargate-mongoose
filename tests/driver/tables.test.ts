@@ -20,6 +20,7 @@ import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
 import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime, TableScalarColumnDefinition } from '@datastax/astra-db-ts';
 import convertSchemaToUDTColumns from '../../src/udt/convertSchemaToUDTColumns';
 import udtDefinitionsFromSchema from '../../src/udt/udtDefinitionsFromSchema';
+import { inspect } from 'util';
 
 const { UUID } = mongoose.mongo.BSON;
 
@@ -375,6 +376,52 @@ describe('TABLES: basic operations and data types', function() {
             );
         });
 
+        it('add', async () => {
+            const modelName = 'User';
+            const userSchema = new Schema({
+                name: String,
+                // __typehint tells Mongoose what the type is for the given field without needing to specify
+                // the type of all the other fields.
+                tags: {
+                    type: Set,
+                    of: { type: 'String', required: true },
+                    __typehint: new Set<string>()
+                }
+            }, { versionKey: false });
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const tableDefinition = tableDefinitionFromSchema(userSchema);
+            assert.deepStrictEqual(tableDefinition, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    name: { type: 'text' },
+                    tags: { type: 'set', valueType: 'text' }
+                }
+            });
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
+
+            let doc = await User.create({
+                name: 'John Doe',
+                tags: new Set(['tag1', 'tag2'])
+            });
+            doc.tags!.add('tag3');
+            doc.tags!.add('tag3');
+            doc.tags!.add('tag4');
+            await doc.save();
+            doc = await User.findOne({ _id: doc._id }).orFail();
+            assert.ok(doc.tags);
+            assert.deepStrictEqual(Array.from(doc.tags), ['tag1', 'tag2', 'tag3', 'tag4']);
+
+            // @ts-expect-error Mongoose will cast 12 to a string
+            doc.tags.add(12);
+            await doc.save();
+            doc = await User.findOne({ _id: doc._id }).orFail();
+            assert.ok(doc.tags);
+            assert.deepStrictEqual(Array.from(doc.tags), ['12', 'tag1', 'tag2', 'tag3', 'tag4']);
+        });
+
         it('clear and delete', async () => {
             const modelName = 'User';
             const userSchema = new Schema({
@@ -418,10 +465,18 @@ describe('TABLES: basic operations and data types', function() {
                 doc.getChanges(),
                 { $pullAll: { luckyNumbers: [2] } }
             );
+            doc.luckyNumbers!.delete(1);
+            doc.luckyNumbers!.delete(1);
+            // @ts-expect-error Mongoose will cast '1' to a number
+            doc.luckyNumbers!.delete('1');
+            assert.deepEqual(
+                doc.getChanges(),
+                { $pullAll: { luckyNumbers: [2, 1] } }
+            );
             await doc.save();
             let user = await User.findById(doc._id).orFail();
-            assert.strictEqual(user.luckyNumbers!.size, 2);
-            assert.ok(user.luckyNumbers!.has(1));
+            assert.strictEqual(user.luckyNumbers!.size, 1);
+            assert.ok(!user.luckyNumbers!.has(1));
             assert.ok(user.luckyNumbers!.has(3));
             assert.strictEqual(user.tags!.size, 2);
 
@@ -483,6 +538,35 @@ describe('TABLES: basic operations and data types', function() {
             const doc2 = new User({ tags: doc.tags });
             await doc2.save();
             assert.deepStrictEqual(Array.from(doc2.tags), Array.from(doc.tags));
+        });
+
+        it('inspect', async () => {
+            const modelName = 'User';
+            const userSchema = new Schema({
+                name: String,
+                // __typehint tells Mongoose what the type is for the given field without needing to specify
+                // the type of all the other fields.
+                tags: {
+                    type: Set,
+                    of: { type: 'String', required: true },
+                    __typehint: new Set<string>()
+                },
+                luckyNumbers: {
+                    type: Set,
+                    of: { type: 'Number', required: true },
+                    __typehint: new Set<number>()
+                },
+            }, { versionKey: false });
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
+
+            const doc = new User({
+                name: 'John Doe',
+                tags: new Set(['tag1', 'tag2']),
+                luckyNumbers: new Set([42, 7])
+            });
+            assert.strictEqual(inspect(doc.tags, { colors: false }), 'Set(2) { \'tag1\', \'tag2\' }');
+            assert.strictEqual(inspect(doc.luckyNumbers, { colors: false }), 'Set(2) { 42, 7 }');
         });
 
         it('handles set of UDTs', async () => {

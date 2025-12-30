@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Document } from 'mongoose';
+import { Document, SchemaType } from 'mongoose';
 import { inspect } from 'util';
 
 /**
@@ -23,11 +23,13 @@ import { inspect } from 'util';
  * and only fall back to a full overwrite (`$set`) when there is a mixed sequence of operations.
  */
 export class MongooseSet<T = unknown> extends globalThis.Set<T> {
-    private _parent?: Document;
+    private _parent: Document | undefined;
     private _path: string;
+    // The SchemaType instance this set is associated with.
+    private _schemaType: SchemaType;
     private _atomic: ['$push', { $each: T[] }] | ['$set' | '$pullAll', T[]] | null = null;
 
-    constructor(values: T[] | null, path: string, parent?: Document) {
+    constructor(values: T[] | null, path: string, parent: Document | undefined, schemaType: SchemaType) {
         super();
         if (values) {
             for (const value of values) {
@@ -36,6 +38,7 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
         }
         this._path = path;
         this._parent = parent;
+        this._schemaType = schemaType;
     }
 
     /**
@@ -76,10 +79,12 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
      */
     add(value: T): this {
         let hadValue: boolean = false;
+        value = this._schemaType.getEmbeddedSchemaType()!.cast(value);
         if (value != null && typeof value === 'object') {
             // If object, we should do a deep equality check
-            const values = Array.from(this);
-            hadValue = !!values.find(v => JSON.stringify(v) === JSON.stringify(value));
+            const rawValues = Array.from(this);
+            const bsonValue = toBSON(value);
+            hadValue = !!rawValues.find(v => JSON.stringify(toBSON(v)) === JSON.stringify(bsonValue));
             if (!hadValue) {
                 super.add(value);
             }
@@ -89,15 +94,26 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
         }
         if (!hadValue) {
             this._markModified();
+            const atomicValue = value instanceof Document
+                // @ts-expect-error toBSON not part of typescript types
+                ? value.toBSON()
+                : value;
             if (this._atomic == null) {
-                this._atomic = ['$push', { $each: [value] }];
+                this._atomic = ['$push', { $each: [atomicValue] }];
             } else if (this._atomic[0] === '$push') {
-                this._atomic[1].$each.push(value);
+                this._atomic[1].$each.push(atomicValue);
             } else {
-                this._atomic = ['$set', Array.from(this)];
+                this._atomic = ['$set', this.toBSON()];
             }
         }
         return this;
+    }
+
+    /**
+     * Converts the set into what will be sent on the wire
+     */
+    toBSON() {
+        return Array.from(this).map(v => toBSON(v));
     }
 
     /**
@@ -105,10 +121,12 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
      */
     delete(value: T): boolean {
         let result: boolean = false;
+        value = this._schemaType.getEmbeddedSchemaType()!.cast(value);
         if (value != null && typeof value === 'object') {
             // If object, we should do a deep equality check
-            const values = Array.from(this);
-            const matchingValue = values.find(v => JSON.stringify(v) === JSON.stringify(value));
+            const rawValues = Array.from(this);
+            const bsonValue = toBSON(value);
+            const matchingValue = rawValues.find(v => JSON.stringify(toBSON(v)) === JSON.stringify(bsonValue));
             if (matchingValue) {
                 result = super.delete(matchingValue);
             }
@@ -117,12 +135,16 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
         }
         if (result) {
             this._markModified();
+            const atomicValue = value instanceof Document
+                // @ts-expect-error toBSON not part of typescript types
+                ? value.toBSON()
+                : value;
             if (this._atomic == null) {
-                this._atomic = ['$pullAll', [value]];
+                this._atomic = ['$pullAll', [atomicValue]];
             } else if (this._atomic[0] === '$pullAll') {
-                this._atomic[1].push(value);
+                this._atomic[1].push(atomicValue);
             } else {
-                this._atomic = ['$set', Array.from(this)];
+                this._atomic = ['$set', this.toBSON()];
             }
         }
         return result;
@@ -134,6 +156,14 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
     clear(): void {
         super.clear();
         this._markModified();
-        this._atomic = ['$set', Array.from(this)];
+        this._atomic = ['$set', this.toBSON()];
     }
+}
+
+function toBSON(v: unknown): unknown {
+    if (v instanceof Document) {
+        // @ts-expect-error toBSON not part of typescript types
+        return v.toBSON();
+    }
+    return v;
 }
