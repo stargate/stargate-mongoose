@@ -712,20 +712,42 @@ describe('TABLES: basic operations and data types', function() {
             assert.strictEqual(updatedUser.addresses!.size, 3);
             assert.ok([...updatedUser.addresses!.values()].some(addr => addr.city === 'San Francisco' && addr.state === 'CA'));
 
-            foundUser.addresses.add({ city: 'Portland', state: 'OR' });
-            assert.deepStrictEqual(foundUser.getChanges(), {});
-            await foundUser.save();
+            await User.collection.updateOne({ _id: foundUser._id }, {
+                // @ts-expect-error collection has unknown type currently
+                $push: {
+                    addresses: {
+                        // Test incorrect order - Data API will switch the order under the hood
+                        $each: [{ state: 'CA', city: 'Los Angeles' }]
+                    }
+                }
+            }, {});
             updatedUser = await User.findOne({ name: 'Bob' }).orFail();
-            assert.strictEqual(updatedUser.addresses!.size, 3);
+            assert.strictEqual(updatedUser.addresses!.size, 4);
+            assert.deepStrictEqual(updatedUser.getChanges(), {});
+            // Assert that the Los Angeles entry's key order is city, state
+            const lastAddress = [...updatedUser.addresses!].find(
+                addr => addr.city === 'Los Angeles' && addr.state === 'CA'
+            );
+            assert.ok(lastAddress);
+            // Use Object.keys() to get key order
+            assert.deepStrictEqual(Object.keys(lastAddress), ['city', 'state']);
 
-            foundUser.addresses.delete({ city: 'Portland', state: 'OR' });
+            updatedUser.addresses!.add({ state: 'CA', city: 'Los Angeles' });
+            assert.deepStrictEqual(updatedUser.getChanges(), {});
+            updatedUser.addresses!.add({ city: 'Portland', state: 'OR' });
+            assert.deepStrictEqual(updatedUser.getChanges(), {});
+            await updatedUser.save();
+            updatedUser = await User.findOne({ name: 'Bob' }).orFail();
+            assert.strictEqual(updatedUser.addresses!.size, 4);
+
+            updatedUser.addresses!.delete({ city: 'Portland', state: 'OR' });
             assert.deepStrictEqual(
-                foundUser.getChanges(),
+                updatedUser.getChanges(),
                 { $pullAll: { addresses: [{ city: 'Portland', state: 'OR' }] } }
             );
-            await foundUser.save();
+            await updatedUser.save();
             updatedUser = await User.findOne({ name: 'Bob' }).orFail();
-            assert.strictEqual(updatedUser.addresses!.size, 2);
+            assert.strictEqual(updatedUser.addresses!.size, 3);
             assert.ok(![...updatedUser.addresses!.values()].some(addr => addr.city === 'Portland' && addr.state === 'OR'));
         });
 

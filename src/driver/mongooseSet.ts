@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import { Document, SchemaType } from 'mongoose';
-import { inspect } from 'util';
 import { serialize } from '../serialize';
+import util from 'util';
 
 /**
  * MongooseSet is a Mongoose-specific wrapper around vanilla JavaScript sets
@@ -64,7 +64,7 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
      *
      * @returns Set
      */
-    [inspect.custom]() {
+    [util.inspect.custom]() {
         return new globalThis.Set(Array.from(this));
     }
 
@@ -85,7 +85,7 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
             // If object, we should do a deep equality check
             const rawValues = Array.from(this);
             const bsonValue = toBSON(value);
-            hadValue = !!rawValues.find(v => JSON.stringify(toBSON(v)) === JSON.stringify(bsonValue));
+            hadValue = !!rawValues.find(v => util.isDeepStrictEqual(toBSON(v), bsonValue));
             if (!hadValue) {
                 super.add(value);
             }
@@ -124,7 +124,7 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
             // If object, we should do a deep equality check
             const rawValues = Array.from(this);
             const bsonValue = toBSON(value);
-            const matchingValue = rawValues.find(v => JSON.stringify(toBSON(v)) === JSON.stringify(bsonValue));
+            const matchingValue = rawValues.find(v => util.isDeepStrictEqual(toBSON(v), bsonValue));
             if (matchingValue) {
                 result = super.delete(matchingValue);
             }
