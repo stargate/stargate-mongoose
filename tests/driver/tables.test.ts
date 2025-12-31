@@ -730,7 +730,7 @@ describe('TABLES: basic operations and data types', function() {
             );
             assert.ok(lastAddress);
             // Use Object.keys() to get key order
-            assert.deepStrictEqual(Object.keys(lastAddress), ['city', 'state']);
+            assert.deepStrictEqual(Object.keys(lastAddress.toObject()), ['city', 'state']);
 
             updatedUser.addresses!.add({ state: 'CA', city: 'Los Angeles' });
             assert.deepStrictEqual(updatedUser.getChanges(), {});
