@@ -21,6 +21,7 @@ import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime, TableScalarColu
 import convertSchemaToUDTColumns from '../../src/udt/convertSchemaToUDTColumns';
 import udtDefinitionsFromSchema from '../../src/udt/udtDefinitionsFromSchema';
 import { inspect } from 'util';
+import { MongooseSet } from '../../src/driver';
 
 const { UUID } = mongoose.mongo.BSON;
 
@@ -635,12 +636,17 @@ describe('TABLES: basic operations and data types', function() {
                 { udtName: 'AddressType', versionKey: false, _id: false }
             );
 
-            const userSchema = new Schema({
+            type RawAddressType = mongoose.InferRawDocTypeFromSchema<typeof addressSchema>;
+            const userSchema = Schema.create({
                 name: String,
                 addresses: {
                     type: Set,
                     of: { type: addressSchema, udtName: 'AddressType', required: true },
-                    __typehint: new Set<{city: string, state: string}>()
+                    __rawDocTypeHint: new Set<RawAddressType>(),
+                    __hydratedDocTypeHint: {} as MongooseSet<
+                        RawAddressType,
+                        mongoose.HydratedSingleSubdocument<RawAddressType>
+                    >
                 }
             }, { versionKey: false });
 

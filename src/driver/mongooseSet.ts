@@ -23,14 +23,14 @@ import util from 'util';
  * Add and delete operations use atomic updates (`$push`, `$pullAll`) when possible,
  * and only fall back to a full overwrite (`$set`) when there is a mixed sequence of operations.
  */
-export class MongooseSet<T = unknown> extends globalThis.Set<T> {
+export class MongooseSet<RawDocType = unknown, HydratedDocType = unknown> extends globalThis.Set<HydratedDocType> {
     private _parent: Document | undefined;
     private _path: string;
     // The SchemaType instance this set is associated with.
     private _schemaType: SchemaType;
-    private _atomic: ['$push', { $each: T[] }] | ['$set' | '$pullAll', T[]] | null = null;
+    private _atomic: ['$push', { $each: RawDocType[] }] | ['$set' | '$pullAll', RawDocType[]] | null = null;
 
-    constructor(values: T[] | null, path: string, parent: Document | undefined, schemaType: SchemaType) {
+    constructor(values: (Partial<RawDocType> | HydratedDocType)[] | null, path: string, parent: Document | undefined, schemaType: SchemaType) {
         super();
         if (values) {
             for (const value of values) {
@@ -78,9 +78,9 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
     /**
      * Adds a value to the set and marks the parent document as modified
      */
-    add(value: T): this {
+    add(value: (Partial<RawDocType> | HydratedDocType)): this {
         let hadValue: boolean = false;
-        value = this._schemaType.getEmbeddedSchemaType()!.cast(value);
+        value = this._schemaType.getEmbeddedSchemaType()!.cast(value) as HydratedDocType;
         if (value != null && typeof value === 'object') {
             // If object, we should do a deep equality check
             const rawValues = Array.from(this);
@@ -95,7 +95,7 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
         }
         if (!hadValue) {
             this._markModified();
-            const atomicValue = toBSON(value);
+            const atomicValue = toBSON(value) as unknown as RawDocType;
             if (this._atomic == null) {
                 this._atomic = ['$push', { $each: [atomicValue] }];
             } else if (this._atomic[0] === '$push') {
@@ -111,15 +111,15 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
      * Converts the set into what will be sent on the wire
      */
     toBSON() {
-        return Array.from(this).map(v => toBSON(v));
+        return Array.from(this).map(v => toBSON(v) as unknown as RawDocType);
     }
 
     /**
      * Deletes a value from the set and marks the parent document as modified
      */
-    delete(value: T): boolean {
+    delete(value: (Partial<RawDocType> | HydratedDocType)): boolean {
         let result: boolean = false;
-        value = this._schemaType.getEmbeddedSchemaType()!.cast(value);
+        value = this._schemaType.getEmbeddedSchemaType()!.cast(value) as HydratedDocType;
         if (value != null && typeof value === 'object') {
             // If object, we should do a deep equality check
             const rawValues = Array.from(this);
@@ -133,7 +133,7 @@ export class MongooseSet<T = unknown> extends globalThis.Set<T> {
         }
         if (result) {
             this._markModified();
-            const atomicValue = toBSON(value);
+            const atomicValue = toBSON(value) as unknown as RawDocType;
             if (this._atomic == null) {
                 this._atomic = ['$pullAll', [atomicValue]];
             } else if (this._atomic[0] === '$pullAll') {
