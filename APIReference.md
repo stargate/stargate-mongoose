@@ -22,6 +22,10 @@ for tables and CollectionsDb class for collections.</p></dd>
 <dd><p>MongooseSet is a Mongoose-specific wrapper around vanilla JavaScript sets
 that represents a Cassandra set. It wraps a JavaScript Set and integrates with
 Mongoose change tracking.
+Takes 2 generic types: RawType and HydratedType. The RawType is the type of the value
+stored in the database, while the HydratedType is the type of the value when it is
+retrieved from the database - these are the same type for primitive types, but
+are different for Mongoose subdocuments.
 Add and delete operations use atomic updates (<code>$push</code>, <code>$pullAll</code>) when possible,
 and only fall back to a full overwrite (<code>$set</code>) when there is a mixed sequence of operations.</p></dd>
 <dt><a href="#SchemaSet">SchemaSet</a></dt>
@@ -841,6 +845,10 @@ this method for getting a Mongoose Collection instance, which may map to a table
 <p>MongooseSet is a Mongoose-specific wrapper around vanilla JavaScript sets
 that represents a Cassandra set. It wraps a JavaScript Set and integrates with
 Mongoose change tracking.
+Takes 2 generic types: RawType and HydratedType. The RawType is the type of the value
+stored in the database, while the HydratedType is the type of the value when it is
+retrieved from the database - these are the same type for primitive types, but
+are different for Mongoose subdocuments.
 Add and delete operations use atomic updates (<code>$push</code>, <code>$pullAll</code>) when possible,
 and only fall back to a full overwrite (<code>$set</code>) when there is a mixed sequence of operations.</p>
 
