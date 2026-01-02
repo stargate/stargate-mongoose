@@ -20,17 +20,23 @@ import util from 'util';
  * MongooseSet is a Mongoose-specific wrapper around vanilla JavaScript sets
  * that represents a Cassandra set. It wraps a JavaScript Set and integrates with
  * Mongoose change tracking.
+ * Takes 2 generic types: RawType and HydratedType. The RawType is the type of the value
+ * stored in the database, while the HydratedType is the type of the value when it is
+ * retrieved from the database - these are the same type for primitive types, but
+ * are different for Mongoose subdocuments.
  * Add and delete operations use atomic updates (`$push`, `$pullAll`) when possible,
  * and only fall back to a full overwrite (`$set`) when there is a mixed sequence of operations.
  */
-export class MongooseSet<RawDocType = unknown, HydratedDocType = unknown> extends globalThis.Set<HydratedDocType> {
+export class MongooseSet<RawType = unknown, HydratedType = RawType> extends globalThis.Set<HydratedType> {
     private _parent: Document | undefined;
     private _path: string;
     // The SchemaType instance this set is associated with.
     private _schemaType: SchemaType;
-    private _atomic: ['$push', { $each: RawDocType[] }] | ['$set' | '$pullAll', RawDocType[]] | null = null;
+    // Atomics store the update that will be applied to the database. Stores the raw (serialized)
+    // values that will be saved.
+    private _atomic: ['$push', { $each: RawType[] }] | ['$set' | '$pullAll', RawType[]] | null = null;
 
-    constructor(values: (Partial<RawDocType> | HydratedDocType)[] | null, path: string, parent: Document | undefined, schemaType: SchemaType) {
+    constructor(values: (Partial<RawType> | HydratedType)[] | null, path: string, parent: Document | undefined, schemaType: SchemaType) {
         super();
         if (values) {
             for (const value of values) {
@@ -78,14 +84,14 @@ export class MongooseSet<RawDocType = unknown, HydratedDocType = unknown> extend
     /**
      * Adds a value to the set and marks the parent document as modified
      */
-    add(value: (Partial<RawDocType> | HydratedDocType)): this {
+    add(value: (Partial<RawType> | HydratedType)): this {
         let hadValue: boolean = false;
-        value = this._schemaType.getEmbeddedSchemaType()!.cast(value) as HydratedDocType;
+        value = this._schemaType.getEmbeddedSchemaType()!.cast(value) as HydratedType;
         if (value != null && typeof value === 'object') {
             // If object, we should do a deep equality check
             const rawValues = Array.from(this);
-            const bsonValue = toBSON(value);
-            hadValue = !!rawValues.find(v => util.isDeepStrictEqual(toBSON(v), bsonValue));
+            const bsonValue = this._valueToBSON(value);
+            hadValue = !!rawValues.find(v => util.isDeepStrictEqual(this._valueToBSON(v), bsonValue));
             if (!hadValue) {
                 super.add(value);
             }
@@ -95,7 +101,7 @@ export class MongooseSet<RawDocType = unknown, HydratedDocType = unknown> extend
         }
         if (!hadValue) {
             this._markModified();
-            const atomicValue = toBSON(value) as unknown as RawDocType;
+            const atomicValue = this._valueToBSON(value);
             if (this._atomic == null) {
                 this._atomic = ['$push', { $each: [atomicValue] }];
             } else if (this._atomic[0] === '$push') {
@@ -111,20 +117,20 @@ export class MongooseSet<RawDocType = unknown, HydratedDocType = unknown> extend
      * Converts the set into what will be sent on the wire
      */
     toBSON() {
-        return Array.from(this).map(v => toBSON(v) as unknown as RawDocType);
+        return Array.from(this).map(v => this._valueToBSON(v));
     }
 
     /**
      * Deletes a value from the set and marks the parent document as modified
      */
-    delete(value: (Partial<RawDocType> | HydratedDocType)): boolean {
+    delete(value: (Partial<RawType> | HydratedType)): boolean {
         let result: boolean = false;
-        value = this._schemaType.getEmbeddedSchemaType()!.cast(value) as HydratedDocType;
+        value = this._schemaType.getEmbeddedSchemaType()!.cast(value) as HydratedType;
         if (value != null && typeof value === 'object') {
             // If object, we should do a deep equality check
             const rawValues = Array.from(this);
-            const bsonValue = toBSON(value);
-            const matchingValue = rawValues.find(v => util.isDeepStrictEqual(toBSON(v), bsonValue));
+            const bsonValue = this._valueToBSON(value);
+            const matchingValue = rawValues.find(v => util.isDeepStrictEqual(this._valueToBSON(v), bsonValue));
             if (matchingValue) {
                 result = super.delete(matchingValue);
             }
@@ -133,7 +139,7 @@ export class MongooseSet<RawDocType = unknown, HydratedDocType = unknown> extend
         }
         if (result) {
             this._markModified();
-            const atomicValue = toBSON(value) as unknown as RawDocType;
+            const atomicValue = this._valueToBSON(value);
             if (this._atomic == null) {
                 this._atomic = ['$pullAll', [atomicValue]];
             } else if (this._atomic[0] === '$pullAll') {
@@ -153,12 +159,16 @@ export class MongooseSet<RawDocType = unknown, HydratedDocType = unknown> extend
         this._markModified();
         this._atomic = ['$set', this.toBSON()];
     }
-}
 
-function toBSON<T>(v: T): T {
-    if (v != null && typeof v === 'object') {
+    /*!
+     * Converts a value to the raw type
+     */
+    private _valueToBSON(v: HydratedType): RawType {
+        if (v != null && typeof v === 'object') {
+            // @ts-expect-error coerce return type
+            return serialize(v);
+        }
         // @ts-expect-error coerce return type
-        return serialize(v);
+        return v;
     }
-    return v;
 }
