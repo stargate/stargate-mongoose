@@ -432,7 +432,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         const existingTable = existingTables.find(table => table.name === name);
         // Create new table with the specified definition if it doesn't exist
         if (!existingTable) {
-            await this.connection.createTable<DocType>(name, definition, createTableOptions);
+            if (!dryRun) {
+                await this.connection.createTable<DocType>(name, definition, createTableOptions);
+            }
             return { columnsToAdd: Object.keys(definition.columns), columnsToDrop: [], createdNewTable: true };
         }
 
