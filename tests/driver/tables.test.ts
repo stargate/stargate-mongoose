@@ -20,6 +20,7 @@ import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
 import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime, TableScalarColumnDefinition } from '@datastax/astra-db-ts';
 import convertSchemaToUDTColumns from '../../src/udt/convertSchemaToUDTColumns';
 import udtDefinitionsFromSchema from '../../src/udt/udtDefinitionsFromSchema';
+import sinon from 'sinon';
 
 const { UUID } = mongoose.mongo.BSON;
 
@@ -236,44 +237,115 @@ describe('TABLES: basic operations and data types', function() {
     it('syncTable', async () => {
         const userSchema = new Schema({
             name: String,
-            age: Number
+            age: Number,
+            website: {
+                type: new Schema({ url: String }),
+                udtName: 'WebsiteType'
+            }
         }, { versionKey: false });
-        await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
-        let tableDefinition = tableDefinitionFromSchema(userSchema);
 
-        const collection = mongooseInstance.connection.collection(TEST_TABLE_NAME);
-        await collection.syncTable(tableDefinition);
+        try {
+            await mongooseInstance.connection.createType('WebsiteType', {
+                fields: {
+                    url: { type: 'text' }
+                }
+            });
 
-        let tables = await mongooseInstance.connection.listTables();
-        let table = tables.find(t => t.name === TEST_TABLE_NAME);
-        assert.ok(table);
-        assert.strictEqual(table.name, TEST_TABLE_NAME);
-        assert.deepStrictEqual(Object.keys(table.definition.columns).sort(), ['_id', 'age', 'name']);
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            let tableDefinition = tableDefinitionFromSchema(userSchema);
 
-        const updatedUserSchema = new Schema({
-            name: String,
-            email: String
-        }, { versionKey: false });
-        tableDefinition = tableDefinitionFromSchema(updatedUserSchema);
+            const collection = mongooseInstance.connection.collection(TEST_TABLE_NAME);
+            await collection.syncTable(tableDefinition);
 
-        await collection.syncTable(tableDefinition);
+            let tables = await mongooseInstance.connection.listTables();
+            let table = tables.find(t => t.name === TEST_TABLE_NAME);
+            assert.ok(table);
+            assert.strictEqual(table.name, TEST_TABLE_NAME);
+            assert.deepStrictEqual(
+                Object.keys(table.definition.columns).sort(),
+                ['_id', 'age', 'name', 'website']
+            );
 
-        tables = await mongooseInstance.connection.listTables();
-        table = tables.find(t => t.name === TEST_TABLE_NAME);
-        assert.ok(table);
-        assert.strictEqual(table.name, TEST_TABLE_NAME);
-        assert.deepStrictEqual(Object.keys(table.definition.columns).sort(), ['_id', 'email', 'name']);
+            const updatedUserSchema = new Schema({
+                name: String,
+                email: String,
+                website: {
+                    type: new Schema({ url: String }),
+                    udtName: 'WebsiteType'
+                }
+            }, { versionKey: false });
+            tableDefinition = tableDefinitionFromSchema(updatedUserSchema);
 
-        const updateExistingSchema = new Schema({
-            name: String,
-            email: Number
-        }, { versionKey: false });
-        tableDefinition = tableDefinitionFromSchema(updateExistingSchema);
+            await collection.syncTable(tableDefinition);
 
-        await assert.rejects(
-            collection.syncTable(tableDefinition),
-            /syncTable cannot modify existing columns, found modified columns: email/
-        );
+            tables = await mongooseInstance.connection.listTables();
+            table = tables.find(t => t.name === TEST_TABLE_NAME);
+            assert.ok(table);
+            assert.strictEqual(table.name, TEST_TABLE_NAME);
+            assert.deepStrictEqual(
+                Object.keys(table.definition.columns).sort(),
+                ['_id', 'email', 'name', 'website']
+            );
+
+            const updateExistingSchema = new Schema({
+                name: String,
+                email: Number,
+                website: {
+                    type: new Schema({ url: String }),
+                    udtName: 'WebsiteType'
+                }
+            }, { versionKey: false });
+            tableDefinition = tableDefinitionFromSchema(updateExistingSchema);
+
+            await assert.rejects(
+                collection.syncTable(tableDefinition),
+                /syncTable cannot modify existing columns, found modified columns: email/
+            );
+        } finally {
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            await mongooseInstance.connection.dropType('WebsiteType');
+        }
+    });
+
+    it('syncTable with apiSupport in server response', async () => {
+        const userSchema = new Schema({ name: String }, { versionKey: false });
+
+        const tableDefinition = tableDefinitionFromSchema(userSchema);
+        try {
+            sinon.stub(mongooseInstance.connection, 'listTables').callsFake(() => Promise.resolve([
+                {
+                    name: TEST_TABLE_NAME,
+                    definition: {
+                        primaryKey: { partitionBy: ['_id'], partitionSort: {} },
+                        columns: {
+                            _id: { type: 'text' },
+                            name: {
+                                type: 'text',
+                                apiSupport: {
+                                    createTable: true,
+                                    insert: true,
+                                    read: true,
+                                    filter: true,
+                                    cqlDefinition: 'some string'
+                                }
+                            }
+                        }
+                    }
+                }
+            ]));
+
+            const collection = mongooseInstance.connection.collection(TEST_TABLE_NAME);
+            const { columnsToAdd, columnsToDrop, createdNewTable } = await collection.syncTable(
+                tableDefinition,
+                undefined,
+                true
+            );
+            assert.deepStrictEqual(columnsToAdd, []);
+            assert.deepStrictEqual(columnsToDrop, []);
+            assert.strictEqual(createdNewTable, false);
+        } finally {
+            sinon.restore();
+        }
     });
 
     describe('UDTs', () => {
@@ -566,11 +638,19 @@ describe('TABLES: basic operations and data types', function() {
                 }
             });
 
+            await mongooseInstance.connection.createType('UnusedType', {
+                // Added to test loose create type field definition (string not object with `type`)
+                fields: {
+                    test: 'text'
+                }
+            });
+
             currTypes = await mongooseInstance.connection.listTypes({ nameOnly: true });
-            assert.deepStrictEqual(currTypes, ['Page', 'Taco']);
+            assert.deepStrictEqual(currTypes, ['Page', 'Taco', 'UnusedType']);
 
             // Step 3: Use syncTypes to create the Brand and Product UDTs
             const typesToSync = Object.entries(productUdtDefinitions).map(([name, def]) => ({ name, definition: def }));
+            typesToSync.push({ name: 'UnusedType', definition: { fields: { test: 'text' } } });
             const syncResult1 = await mongooseInstance.connection.syncTypes(typesToSync);
             assert.deepStrictEqual(syncResult1.created.sort(), ['Product']);
             assert.deepStrictEqual(syncResult1.updated.sort(), ['Page']);
@@ -578,7 +658,7 @@ describe('TABLES: basic operations and data types', function() {
 
             // Check that types now exist
             const currTypes2 = await mongooseInstance.connection.listTypes({ nameOnly: true });
-            assert.deepStrictEqual(currTypes2.sort(), ['Page', 'Product'].sort());
+            assert.deepStrictEqual(currTypes2.sort(), ['Page', 'Product', 'UnusedType'].sort());
 
             // Verify Brand has new field
             const typeDefs = await mongooseInstance.connection.listTypes({ nameOnly: false });
@@ -594,7 +674,7 @@ describe('TABLES: basic operations and data types', function() {
             (typesToSync[0].definition.fields['title'] as TableScalarColumnDefinition).type = 'float';
             await assert.rejects(
                 () => mongooseInstance.connection.syncTypes(typesToSync),
-                /Error in syncTypes: Field 'title' in type 'Page' exists with different type. \(current: text, new: float\)/
+                /Error in syncTypes: AstraMongooseError: Field 'title' in type 'Page' exists with different type. \(current: text, new: float\)/
             );
         });
     });

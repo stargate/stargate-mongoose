@@ -418,20 +418,24 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * Note that modifying an existing column is NOT supported and will throw an error.
      *
      * @param definition new table definition (strict only)
-     * @param options passed to createTable if the table doesn't exist
-     * @returns void
+     * @param createTableOptions passed to createTable if the table doesn't exist
+     * @param dryRun if true, don't actually perform the operation, just return info on what would happen
+     * @returns An object with details of the planned or applied changes, including columnsToAdd, columnsToDrop, and createdNewTable.
      */
     async syncTable<DocType extends Record<string, unknown> = Record<string, unknown>>(
         definition: Pick<CreateTableDefinition, 'primaryKey'> & { columns: Record<string, StrictCreateTableColumnDefinition> },
-        options?: CreateTableOptions
+        createTableOptions?: CreateTableOptions,
+        dryRun?: boolean
     ) {
         const name = this.name;
         const existingTables = await this.connection.listTables({ nameOnly: false });
         const existingTable = existingTables.find(table => table.name === name);
         // Create new table with the specified definition if it doesn't exist
         if (!existingTable) {
-            await this.connection.createTable<DocType>(name, definition, options);
-            return;
+            if (!dryRun) {
+                await this.connection.createTable<DocType>(name, definition, createTableOptions);
+            }
+            return { columnsToAdd: Object.keys(definition.columns), columnsToDrop: [], createdNewTable: true };
         }
 
         const existingColumnNames = Object.keys(existingTable.definition.columns);
@@ -443,7 +447,11 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
         const overlappingColumnNames = existingColumnNames.filter(column => newColumnNames.includes(column));
         const columnsToModify = overlappingColumnNames.filter(column => {
-            return JSON.stringify(existingTable.definition.columns[column]) !== JSON.stringify(definition.columns[column]);
+            const existingColumn = { ...existingTable.definition.columns[column] };
+            if (existingColumn.apiSupport != null) {
+                delete existingColumn.apiSupport;
+            }
+            return JSON.stringify(existingColumn) !== JSON.stringify(definition.columns[column]);
         });
         if (columnsToModify.length > 0) {
             throw new AstraMongooseError('syncTable cannot modify existing columns, found modified columns: ' + columnsToModify.join(', '));
@@ -453,16 +461,20 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             columnsToAdd.map(name => [name, definition.columns[name]])
         );
 
-        if (columnsToAdd.length > 0) {
-            await this.alterTable({
-                add: { columns: add }
-            });
+        if (!dryRun) {
+            if (columnsToAdd.length > 0) {
+                await this.alterTable({
+                    add: { columns: add }
+                });
+            }
+            if (columnsToDrop.length > 0) {
+                await this.alterTable({
+                    drop: { columns: columnsToDrop }
+                });
+            }
         }
-        if (columnsToDrop.length > 0) {
-            await this.alterTable({
-                drop: { columns: columnsToDrop }
-            });
-        }
+
+        return { columnsToAdd, columnsToDrop, createdNewTable: false };
     }
 
     /**
