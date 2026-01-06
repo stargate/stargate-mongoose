@@ -97,7 +97,7 @@ an Astra perspective, this class can be a wrapper around a Collection <strong>or
     * [.updateOne(filter, update, options)](#Collection+updateOne)
     * [.updateMany(filter, update, options)](#Collection+updateMany)
     * [.estimatedDocumentCount()](#Collection+estimatedDocumentCount)
-    * [.syncTable(definition, options)](#Collection+syncTable) ⇒
+    * [.syncTable(definition, createTableOptions, dryRun)](#Collection+syncTable) ⇒
     * [.alterTable(operation)](#Collection+alterTable)
     * [.runCommand(command)](#Collection+runCommand)
     * [.bulkWrite(ops, options)](#Collection+bulkWrite)
@@ -276,19 +276,20 @@ Converted to a <code>findOneAndReplace()</code> under the hood.</p>
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
 <a name="Collection+syncTable"></a>
 
-### collection.syncTable(definition, options) ⇒
+### collection.syncTable(definition, createTableOptions, dryRun) ⇒
 <p>Sync the underlying table schema with the specified definition: creates a new
 table if one doesn't exist, or alters the existing table to match the definition
 by adding or dropping columns as necessary.</p>
 <p>Note that modifying an existing column is NOT supported and will throw an error.</p>
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
-**Returns**: <p>void</p>  
+**Returns**: <p>An object with details of the planned or applied changes, including columnsToAdd, columnsToDrop, and createdNewTable.</p>  
 
 | Param | Description |
 | --- | --- |
 | definition | <p>new table definition (strict only)</p> |
-| options | <p>passed to createTable if the table doesn't exist</p> |
+| createTableOptions | <p>passed to createTable if the table doesn't exist</p> |
+| dryRun | <p>if true, don't actually perform the operation, just return info on what would happen</p> |
 
 <a name="Collection+alterTable"></a>
 
