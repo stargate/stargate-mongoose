@@ -270,7 +270,7 @@ by adding or dropping columns as necessary.</p>
 <p>Note that modifying an existing column is NOT supported and will throw an error.</p>
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
-**Returns**: <p>void</p>  
+**Returns**: <p>An object with details of the planned or applied changes, including columnsToAdd, columnsToDrop, and createdNewTable.</p>  
 
 | Param | Description |
 | --- | --- |
