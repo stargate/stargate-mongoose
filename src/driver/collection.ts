@@ -420,7 +420,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param definition new table definition (strict only)
      * @param createTableOptions passed to createTable if the table doesn't exist
      * @param dryRun if true, don't actually perform the operation, just return info on what would happen
-     * @returns void
+     * @returns An object with details of the planned or applied changes, including columnsToAdd, columnsToDrop, and createdNewTable.
      */
     async syncTable<DocType extends Record<string, unknown> = Record<string, unknown>>(
         definition: Pick<CreateTableDefinition, 'primaryKey'> & { columns: Record<string, StrictCreateTableColumnDefinition> },
