@@ -20,6 +20,7 @@ import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
 import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime, TableScalarColumnDefinition } from '@datastax/astra-db-ts';
 import convertSchemaToUDTColumns from '../../src/udt/convertSchemaToUDTColumns';
 import udtDefinitionsFromSchema from '../../src/udt/udtDefinitionsFromSchema';
+import sinon from 'sinon';
 
 const { UUID } = mongoose.mongo.BSON;
 
@@ -303,6 +304,47 @@ describe('TABLES: basic operations and data types', function() {
         } finally {
             await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
             await mongooseInstance.connection.dropType('WebsiteType');
+        }
+    });
+
+    it('syncTable with apiSupport in server response', async () => {
+        const userSchema = new Schema({ name: String }, { versionKey: false });
+
+        const tableDefinition = tableDefinitionFromSchema(userSchema);
+        try {
+            sinon.stub(mongooseInstance.connection, 'listTables').callsFake(() => Promise.resolve([
+                {
+                    name: TEST_TABLE_NAME,
+                    definition: {
+                        primaryKey: { partitionBy: ['_id'], partitionSort: {} },
+                        columns: {
+                            _id: { type: 'text' },
+                            name: {
+                                type: 'text',
+                                apiSupport: {
+                                    createTable: true,
+                                    insert: true,
+                                    read: true,
+                                    filter: true,
+                                    cqlDefinition: 'some string'
+                                }
+                            }
+                        }
+                    }
+                }
+            ]));
+
+            const collection = mongooseInstance.connection.collection(TEST_TABLE_NAME);
+            const { columnsToAdd, columnsToDrop, createdNewTable } = await collection.syncTable(
+                tableDefinition,
+                undefined,
+                true
+            );
+            assert.deepStrictEqual(columnsToAdd, []);
+            assert.deepStrictEqual(columnsToDrop, []);
+            assert.strictEqual(createdNewTable, false);
+        } finally {
+            sinon.restore();
         }
     });
 
