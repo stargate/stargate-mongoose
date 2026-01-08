@@ -14,7 +14,6 @@
 
 import { Schema, SchemaType, SchemaTypeOptions, Document } from 'mongoose';
 import { AstraMongooseError } from '../astraMongooseError';
-import assert from 'node:assert';
 
 import { MongooseSet } from './mongooseSet';
 
@@ -27,7 +26,7 @@ export interface SetOptions<T = unknown> extends SchemaTypeOptions<T> {
  * A Set path translates to `type: 'set'` in the Data API.
  */
 export class SchemaSet extends SchemaType {
-    $embeddedSchemaType?: SchemaType;
+    $embeddedSchemaType: SchemaType;
 
     /**
      * Create a new instance of the Set SchemaType.
@@ -47,30 +46,30 @@ export class SchemaSet extends SchemaType {
 
         // Only support primitive types for sets for now: don't support schemas here
         let TypeConstructor: typeof SchemaType | null = null;
+        let embeddedSchemaType: SchemaType | null = null;
         const typeValue = ofType.type;
         if (typeof typeValue === 'function' && 'name' in typeValue && typeof typeValue.name === 'string' && typeValue.name in SchemaTypes) {
             TypeConstructor = SchemaTypes[typeValue.name];
-            this.$embeddedSchemaType = new TypeConstructor(key, ofType);
+            embeddedSchemaType = new TypeConstructor(key, ofType);
         } else if (typeof typeValue === 'string' && typeValue in SchemaTypes) {
             TypeConstructor = SchemaTypes[typeValue];
-            this.$embeddedSchemaType = new TypeConstructor(key, ofType);
+            embeddedSchemaType = new TypeConstructor(key, ofType);
         } else if (typeValue instanceof Schema && typeValue.options.udtName) {
             TypeConstructor = SchemaTypes.Subdocument;
             // @ts-expect-error Subdocument schematype constructor has different arguments
-            this.$embeddedSchemaType = new TypeConstructor(typeValue, key, ofType);
+            embeddedSchemaType = new TypeConstructor(typeValue, key, ofType);
         }
 
-        if (!TypeConstructor) {
+        if (!embeddedSchemaType) {
             throw new AstraMongooseError('`of` option for Set must be a supported primitive type or UDT', { options });
         }
+        this.$embeddedSchemaType = embeddedSchemaType;
     }
 
     /**
      * Get the embedded schema type for values in this set
      */
     getEmbeddedSchemaType(): SchemaType {
-        // Should never happen but this helps with type checking
-        assert.ok(this.$embeddedSchemaType);
         return this.$embeddedSchemaType;
     }
 

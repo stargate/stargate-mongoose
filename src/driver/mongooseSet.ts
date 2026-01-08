@@ -88,10 +88,8 @@ export class MongooseSet<RawType = unknown, HydratedType = RawType> extends glob
         let hadValue: boolean = false;
         value = this._schemaType.getEmbeddedSchemaType()!.cast(value) as HydratedType;
         if (value != null && typeof value === 'object') {
-            // If object, we should do a deep equality check
-            const rawValues = Array.from(this);
-            const bsonValue = this._valueToBSON(value);
-            hadValue = !!rawValues.find(v => util.isDeepStrictEqual(this._valueToBSON(v), bsonValue));
+            // If object, we should do a deep equality check to find it
+            hadValue = !!this._findValue(value);
             if (!hadValue) {
                 super.add(value);
             }
@@ -127,10 +125,8 @@ export class MongooseSet<RawType = unknown, HydratedType = RawType> extends glob
         let result: boolean = false;
         value = this._schemaType.getEmbeddedSchemaType()!.cast(value) as HydratedType;
         if (value != null && typeof value === 'object') {
-            // If object, we should do a deep equality check
-            const rawValues = Array.from(this);
-            const bsonValue = this._valueToBSON(value);
-            const matchingValue = rawValues.find(v => util.isDeepStrictEqual(this._valueToBSON(v), bsonValue));
+            // If object, we should do a deep equality check to find it
+            const matchingValue = this._findValue(value);
             if (matchingValue) {
                 result = super.delete(matchingValue);
             }
@@ -170,5 +166,17 @@ export class MongooseSet<RawType = unknown, HydratedType = RawType> extends glob
         }
         // @ts-expect-error coerce return type
         return v;
+    }
+
+    /*!
+     * Finds whether `val` is in the set, using deep equality check on raw values.
+     */
+    private _findValue(value: HydratedType): HydratedType | undefined {
+        const rawValues = Array.from(this);
+        const bsonValue = this._valueToBSON(value);
+        const matchingValue = rawValues.find(
+            v => util.isDeepStrictEqual(this._valueToBSON(v), bsonValue)
+        );
+        return matchingValue;
     }
 }
