@@ -18,6 +18,19 @@ for tables and CollectionsDb class for collections.</p></dd>
 <dd></dd>
 <dt><a href="#TablesDb">TablesDb</a></dt>
 <dd></dd>
+<dt><a href="#MongooseSet">MongooseSet</a></dt>
+<dd><p>MongooseSet is a Mongoose-specific wrapper around vanilla JavaScript sets
+that represents a Cassandra set. It wraps a JavaScript Set and integrates with
+Mongoose change tracking.
+Takes 2 generic types: RawType and HydratedType. The RawType is the type of the value
+stored in the database, while the HydratedType is the type of the value when it is
+retrieved from the database - these are the same type for primitive types, but
+are different for Mongoose subdocuments.
+Add and delete operations use atomic updates (<code>$push</code>, <code>$pullAll</code>) when possible,
+and only fall back to a full overwrite (<code>$set</code>) when there is a mixed sequence of operations.</p></dd>
+<dt><a href="#SchemaSet">SchemaSet</a></dt>
+<dd><p>SchemaSet is a custom Mongoose SchemaType that allows you to use Cassandra sets in tables mode.
+A Set path translates to <code>type: 'set'</code> in the Data API.</p></dd>
 <dt><a href="#Vectorize">Vectorize</a></dt>
 <dd><p>Vectorize is a custom Mongoose SchemaType that allows you set a vector value to a string
 for tables mode vectorize API. A Vectorize path is an array of numbers that can also be set to a string.</p></dd>
@@ -46,6 +59,13 @@ by default from their schema.</p>
 <dd><p>Mongoose plugin to validate arrays of numbers that have a <code>dimension</code> property. Ensure that the array
 is either nullish or has a length equal to the dimension.</p>
 <p>You do not need to call this function directly. Mongoose applies this plugin automatically when you call <code>setDriver()</code>.</p></dd>
+<dt><a href="#convertSchemaToUDTColumns">convertSchemaToUDTColumns()</a></dt>
+<dd><p>Given a Mongoose schema, create an equivalent Data API table definition for use with <code>createTable()</code></p></dd>
+<dt><a href="#udtDefinitionsFromSchema">udtDefinitionsFromSchema()</a></dt>
+<dd><p>Given a Mongoose schema, get the definitions of all the UDTs used by this schema.
+Used to create all UDTs required by the schema before creating the table.</p></dd>
+<dt><a href="#convertSchemaToColumns">convertSchemaToColumns()</a></dt>
+<dd><p>Given a Mongoose schema, create an equivalent Data API table definition for use with <code>createTable()</code></p></dd>
 <dt><a href="#createAstraUri">createAstraUri()</a></dt>
 <dd><p>Create an Astra connection URI while connecting to Astra Data API.</p></dd>
 <dt><a href="#tableDefinitionFromSchema">tableDefinitionFromSchema()</a></dt>
@@ -77,6 +97,8 @@ an Astra perspective, this class can be a wrapper around a Collection <strong>or
     * [.updateOne(filter, update, options)](#Collection+updateOne)
     * [.updateMany(filter, update, options)](#Collection+updateMany)
     * [.estimatedDocumentCount()](#Collection+estimatedDocumentCount)
+    * [.syncTable(definition, createTableOptions, dryRun)](#Collection+syncTable) ⇒
+    * [.alterTable(operation)](#Collection+alterTable)
     * [.runCommand(command)](#Collection+runCommand)
     * [.bulkWrite(ops, options)](#Collection+bulkWrite)
     * [.aggregate(pipeline, options)](#Collection+aggregate)
@@ -252,6 +274,34 @@ Converted to a <code>findOneAndReplace()</code> under the hood.</p>
 <p>Get the estimated number of documents in a collection based on collection metadata</p>
 
 **Kind**: instance method of [<code>Collection</code>](#Collection)  
+<a name="Collection+syncTable"></a>
+
+### collection.syncTable(definition, createTableOptions, dryRun) ⇒
+<p>Sync the underlying table schema with the specified definition: creates a new
+table if one doesn't exist, or alters the existing table to match the definition
+by adding or dropping columns as necessary.</p>
+<p>Note that modifying an existing column is NOT supported and will throw an error.</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+**Returns**: <p>An object with details of the planned or applied changes, including columnsToAdd, columnsToDrop, and createdNewTable.</p>  
+
+| Param | Description |
+| --- | --- |
+| definition | <p>new table definition (strict only)</p> |
+| createTableOptions | <p>passed to createTable if the table doesn't exist</p> |
+| dryRun | <p>if true, don't actually perform the operation, just return info on what would happen</p> |
+
+<a name="Collection+alterTable"></a>
+
+### collection.alterTable(operation)
+<p>Alter the underlying table with the specified name and operation - can add or drop columns</p>
+
+**Kind**: instance method of [<code>Collection</code>](#Collection)  
+
+| Param | Description |
+| --- | --- |
+| operation | <p>add/drop</p> |
+
 <a name="Collection+runCommand"></a>
 
 ### collection.runCommand(command)
@@ -347,6 +397,11 @@ connection to Data API.</p>
     * [.createKeyspace(name)](#Connection+createKeyspace)
     * [.listCollections()](#Connection+listCollections)
     * [.listTables()](#Connection+listTables)
+    * [.listTypes()](#Connection+listTypes) ⇒
+    * [.createType(name, definition)](#Connection+createType) ⇒ <code>Promise.&lt;TypeDescriptor&gt;</code>
+    * [.dropType(name)](#Connection+dropType) ⇒
+    * [.alterType(name, update)](#Connection+alterType) ⇒
+    * [.syncTypes(types)](#Connection+syncTypes) ⇒
     * [.runCommand(command)](#Connection+runCommand)
     * [.listDatabases()](#Connection+listDatabases)
     * [.openUri(uri, options)](#Connection+openUri)
@@ -440,6 +495,69 @@ connection to Data API.</p>
 <p>List all tables in the database</p>
 
 **Kind**: instance method of [<code>Connection</code>](#Connection)  
+<a name="Connection+listTypes"></a>
+
+### connection.listTypes() ⇒
+<p>List all user-defined types (UDTs) in the database.</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+**Returns**: <p>An array of type descriptors.</p>  
+<a name="Connection+createType"></a>
+
+### connection.createType(name, definition) ⇒ <code>Promise.&lt;TypeDescriptor&gt;</code>
+<p>Create a new user-defined type (UDT) with the specified name and fields definition.</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+**Returns**: <code>Promise.&lt;TypeDescriptor&gt;</code> - <p>The created type descriptor.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to create.</p> |
+| definition | <p>The definition of the fields for the type.</p> |
+
+<a name="Connection+dropType"></a>
+
+### connection.dropType(name) ⇒
+<p>Drop (delete) a user-defined type (UDT) by name.</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+**Returns**: <p>The result of the dropType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to drop.</p> |
+
+<a name="Connection+alterType"></a>
+
+### connection.alterType(name, update) ⇒
+<p>Alter a user-defined type (UDT) by renaming or adding fields.</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+**Returns**: <p>The result of the alterType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to alter.</p> |
+| update | <p>The alterations to be made: renaming or adding fields.</p> |
+
+<a name="Connection+syncTypes"></a>
+
+### connection.syncTypes(types) ⇒
+<p>Synchronizes the set of user-defined types (UDTs) in the database. It makes existing types in the database
+match the list provided by <code>types</code>. New types that are missing are created, and types that exist in the database
+but are not in the input list are dropped. If a type is present in both, we add all the new type's fields to the existing type.</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+**Returns**: <p>An object describing which types were created, updated, or dropped.</p>  
+**Throws**:
+
+- [<code>AstraMongooseError</code>](#AstraMongooseError) <p>If an error occurs during type synchronization, with partial progress information in the error.</p>
+
+
+| Param | Description |
+| --- | --- |
+| types | <p>An array of objects each specifying the name and CreateTypeDefinition for a UDT to synchronize.</p> |
+
 <a name="Connection+runCommand"></a>
 
 ### connection.runCommand(command)
@@ -506,6 +624,11 @@ for tables and CollectionsDb class for collections.</p>
     * [.dropTable(name)](#BaseDb+dropTable)
     * [.listCollections(options)](#BaseDb+listCollections)
     * [.listTables()](#BaseDb+listTables)
+    * [.listTypes()](#BaseDb+listTypes) ⇒
+    * [.createType(name, definition)](#BaseDb+createType) ⇒
+    * [.dropType(name)](#BaseDb+dropType) ⇒
+    * [.alterType(name, update)](#BaseDb+alterType) ⇒
+    * [.syncTypes(types)](#BaseDb+syncTypes) ⇒
     * [.command(command)](#BaseDb+command)
 
 <a name="new_BaseDb_new"></a>
@@ -566,6 +689,69 @@ error for Mongoose <code>syncIndexes()</code> compatibility reasons.</p>
 <p>List all tables in the database.</p>
 
 **Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+<a name="BaseDb+listTypes"></a>
+
+### baseDb.listTypes() ⇒
+<p>List all user-defined types (UDTs) in the database.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>An array of type descriptors.</p>  
+<a name="BaseDb+createType"></a>
+
+### baseDb.createType(name, definition) ⇒
+<p>Create a new user-defined type (UDT) with the specified name and fields definition.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the createType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to create.</p> |
+| definition | <p>The definition of the fields for the type.</p> |
+
+<a name="BaseDb+dropType"></a>
+
+### baseDb.dropType(name) ⇒
+<p>Drop (delete) a user-defined type (UDT) by name.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the dropType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to drop.</p> |
+
+<a name="BaseDb+alterType"></a>
+
+### baseDb.alterType(name, update) ⇒
+<p>Alter a user-defined type (UDT) by renaming or adding fields.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the alterType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to alter.</p> |
+| update | <p>The alterations to be made: renaming or adding fields.</p> |
+
+<a name="BaseDb+syncTypes"></a>
+
+### baseDb.syncTypes(types) ⇒
+<p>Synchronizes the set of user-defined types (UDTs) in the database. It makes existing types in the database
+match the list provided by <code>types</code>. New types that are missing are created, and types that exist in the database
+but are not in the input list are dropped. If a type is present in both, we add all the new type's fields to the existing type.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>An object describing which types were created, updated, or dropped.</p>  
+**Throws**:
+
+- [<code>AstraMongooseError</code>](#AstraMongooseError) <p>If an error occurs during type synchronization, with partial progress information in the error.</p>
+
+
+| Param | Description |
+| --- | --- |
+| types | <p>An array of objects each specifying the name and CreateTypeDefinition for a UDT to synchronize.</p> |
+
 <a name="BaseDb+command"></a>
 
 ### baseDb.command(command)
@@ -654,6 +840,125 @@ this method for getting a Mongoose Collection instance, which may map to a table
 <p>Throws an error, astra-mongoose does not support creating collections in tables mode.</p>
 
 **Kind**: instance method of [<code>TablesDb</code>](#TablesDb)  
+<a name="MongooseSet"></a>
+
+## MongooseSet
+<p>MongooseSet is a Mongoose-specific wrapper around vanilla JavaScript sets
+that represents a Cassandra set. It wraps a JavaScript Set and integrates with
+Mongoose change tracking.
+Takes 2 generic types: RawType and HydratedType. The RawType is the type of the value
+stored in the database, while the HydratedType is the type of the value when it is
+retrieved from the database - these are the same type for primitive types, but
+are different for Mongoose subdocuments.
+Add and delete operations use atomic updates (<code>$push</code>, <code>$pullAll</code>) when possible,
+and only fall back to a full overwrite (<code>$set</code>) when there is a mixed sequence of operations.</p>
+
+**Kind**: global class  
+
+* [MongooseSet](#MongooseSet)
+    * [.getAtomics()](#MongooseSet+getAtomics)
+    * [.clearAtomics()](#MongooseSet+clearAtomics)
+    * [._markModified()](#MongooseSet+_markModified)
+    * [.add()](#MongooseSet+add)
+    * [.toBSON()](#MongooseSet+toBSON)
+    * [.delete()](#MongooseSet+delete)
+    * [.clear()](#MongooseSet+clear)
+
+<a name="MongooseSet+getAtomics"></a>
+
+### mongooseSet.getAtomics()
+<p>Get atomics for Mongoose change tracking. Keep in mind Data API does not
+support multiple operations on the same set in the same operation, so we
+only support one atomic at a time.</p>
+
+**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
+<a name="MongooseSet+clearAtomics"></a>
+
+### mongooseSet.clearAtomics()
+<p>Clear atomics for Mongoose change tracking. Called by Mongoose after the
+document is successfully saved.</p>
+
+**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
+<a name="MongooseSet+_markModified"></a>
+
+### mongooseSet.\_markModified()
+<p>Internal method to mark the parent document as modified when the set changes</p>
+
+**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
+<a name="MongooseSet+add"></a>
+
+### mongooseSet.add()
+<p>Adds a value to the set and marks the parent document as modified</p>
+
+**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
+<a name="MongooseSet+toBSON"></a>
+
+### mongooseSet.toBSON()
+<p>Converts the set into what will be sent on the wire</p>
+
+**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
+<a name="MongooseSet+delete"></a>
+
+### mongooseSet.delete()
+<p>Deletes a value from the set and marks the parent document as modified</p>
+
+**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
+<a name="MongooseSet+clear"></a>
+
+### mongooseSet.clear()
+<p>Clears all values from the set and marks the parent document as modified</p>
+
+**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
+<a name="SchemaSet"></a>
+
+## SchemaSet
+<p>SchemaSet is a custom Mongoose SchemaType that allows you to use Cassandra sets in tables mode.
+A Set path translates to <code>type: 'set'</code> in the Data API.</p>
+
+**Kind**: global class  
+
+* [SchemaSet](#SchemaSet)
+    * [new SchemaSet(key, options)](#new_SchemaSet_new)
+    * [.getEmbeddedSchemaType()](#SchemaSet+getEmbeddedSchemaType)
+    * [.cast()](#SchemaSet+cast)
+    * [._castNullish()](#SchemaSet+_castNullish)
+    * [.castForQuery()](#SchemaSet+castForQuery)
+
+<a name="new_SchemaSet_new"></a>
+
+### new SchemaSet(key, options)
+<p>Create a new instance of the Set SchemaType.</p>
+
+
+| Param | Description |
+| --- | --- |
+| key | <p>the path to this set field in your schema</p> |
+| options | <p>set options that define the type of values in the set</p> |
+
+<a name="SchemaSet+getEmbeddedSchemaType"></a>
+
+### schemaSet.getEmbeddedSchemaType()
+<p>Get the embedded schema type for values in this set</p>
+
+**Kind**: instance method of [<code>SchemaSet</code>](#SchemaSet)  
+<a name="SchemaSet+cast"></a>
+
+### schemaSet.cast()
+<p>Cast a given value to a MongooseSet with proper change tracking</p>
+
+**Kind**: instance method of [<code>SchemaSet</code>](#SchemaSet)  
+<a name="SchemaSet+_castNullish"></a>
+
+### schemaSet.\_castNullish()
+<p>Mongoose calls this function to cast when the value is nullish</p>
+
+**Kind**: instance method of [<code>SchemaSet</code>](#SchemaSet)  
+<a name="SchemaSet+castForQuery"></a>
+
+### schemaSet.castForQuery()
+<p>Required for Mongoose to properly handle this schema type</p>
+
+**Kind**: instance method of [<code>SchemaSet</code>](#SchemaSet)  
 <a name="Vectorize"></a>
 
 ## Vectorize
@@ -713,6 +1018,11 @@ the one exception being strings.</p>
     * [.dropTable(name)](#BaseDb+dropTable)
     * [.listCollections(options)](#BaseDb+listCollections)
     * [.listTables()](#BaseDb+listTables)
+    * [.listTypes()](#BaseDb+listTypes) ⇒
+    * [.createType(name, definition)](#BaseDb+createType) ⇒
+    * [.dropType(name)](#BaseDb+dropType) ⇒
+    * [.alterType(name, update)](#BaseDb+alterType) ⇒
+    * [.syncTypes(types)](#BaseDb+syncTypes) ⇒
     * [.command(command)](#BaseDb+command)
 
 <a name="new_BaseDb_new"></a>
@@ -773,6 +1083,69 @@ error for Mongoose <code>syncIndexes()</code> compatibility reasons.</p>
 <p>List all tables in the database.</p>
 
 **Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+<a name="BaseDb+listTypes"></a>
+
+### baseDb.listTypes() ⇒
+<p>List all user-defined types (UDTs) in the database.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>An array of type descriptors.</p>  
+<a name="BaseDb+createType"></a>
+
+### baseDb.createType(name, definition) ⇒
+<p>Create a new user-defined type (UDT) with the specified name and fields definition.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the createType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to create.</p> |
+| definition | <p>The definition of the fields for the type.</p> |
+
+<a name="BaseDb+dropType"></a>
+
+### baseDb.dropType(name) ⇒
+<p>Drop (delete) a user-defined type (UDT) by name.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the dropType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to drop.</p> |
+
+<a name="BaseDb+alterType"></a>
+
+### baseDb.alterType(name, update) ⇒
+<p>Alter a user-defined type (UDT) by renaming or adding fields.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>The result of the alterType command.</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the type to alter.</p> |
+| update | <p>The alterations to be made: renaming or adding fields.</p> |
+
+<a name="BaseDb+syncTypes"></a>
+
+### baseDb.syncTypes(types) ⇒
+<p>Synchronizes the set of user-defined types (UDTs) in the database. It makes existing types in the database
+match the list provided by <code>types</code>. New types that are missing are created, and types that exist in the database
+but are not in the input list are dropped. If a type is present in both, we add all the new type's fields to the existing type.</p>
+
+**Kind**: instance method of [<code>BaseDb</code>](#BaseDb)  
+**Returns**: <p>An object describing which types were created, updated, or dropped.</p>  
+**Throws**:
+
+- [<code>AstraMongooseError</code>](#AstraMongooseError) <p>If an error occurs during type synchronization, with partial progress information in the error.</p>
+
+
+| Param | Description |
+| --- | --- |
+| types | <p>An array of objects each specifying the name and CreateTypeDefinition for a UDT to synchronize.</p> |
+
 <a name="BaseDb+command"></a>
 
 ### baseDb.command(command)
@@ -840,6 +1213,25 @@ by default from their schema.</p>
 <p>Mongoose plugin to validate arrays of numbers that have a <code>dimension</code> property. Ensure that the array
 is either nullish or has a length equal to the dimension.</p>
 <p>You do not need to call this function directly. Mongoose applies this plugin automatically when you call <code>setDriver()</code>.</p>
+
+**Kind**: global function  
+<a name="convertSchemaToUDTColumns"></a>
+
+## convertSchemaToUDTColumns()
+<p>Given a Mongoose schema, create an equivalent Data API table definition for use with <code>createTable()</code></p>
+
+**Kind**: global function  
+<a name="udtDefinitionsFromSchema"></a>
+
+## udtDefinitionsFromSchema()
+<p>Given a Mongoose schema, get the definitions of all the UDTs used by this schema.
+Used to create all UDTs required by the schema before creating the table.</p>
+
+**Kind**: global function  
+<a name="convertSchemaToColumns"></a>
+
+## convertSchemaToColumns()
+<p>Given a Mongoose schema, create an equivalent Data API table definition for use with <code>createTable()</code></p>
 
 **Kind**: global function  
 <a name="createAstraUri"></a>

@@ -12,18 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CreateTableDefinition, StrictCreateTableColumnDefinition } from '@datastax/astra-db-ts';
-import { Schema } from 'mongoose';
-import convertSchemaToColumns from './convertSchemaToColumns';
+import assert from 'assert';
+import { serialize } from '../src/serialize';
+import { Types } from 'mongoose';
 
-/**
- * Given a Mongoose schema, create an equivalent Data API table definition for use with `createTable()`
- */
-export default function tableDefinitionFromSchema(
-    schema: Schema
-): CreateTableDefinition & { columns: Record<string, StrictCreateTableColumnDefinition> } {
-    return {
-        primaryKey: '_id',
-        columns: convertSchemaToColumns(schema)
-    };
-}
+describe('serialize', () => {
+    it('serializes sets', () => {
+        const result = serialize({ set: new Set([new Types.ObjectId('0'.repeat(24))]) });
+        assert.deepStrictEqual(result, { set: new Set(['0'.repeat(24)]) });
+    });
+});

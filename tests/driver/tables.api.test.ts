@@ -376,6 +376,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 1'});
             await Product.insertMany([product1, product2, product3]);
             const cart1 = new Cart({name: 'Cart 1', products: [product1._id, product2._id]});
+            await Cart.deleteMany({});
             await Cart.insertMany([cart1]);
 
             type CartModel = ReturnType<(typeof Cart)['hydrate']>;
@@ -732,7 +733,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(lexicalSchema));
         });
 
-        it('creates a text index', async function () {
+        it('creates and uses a text index', async function () {
             await LexicalModel.createIndexes();
             const indexes = await mongooseInstance.connection.collection(TEST_TABLE_NAME).listIndexes().toArray();
             assert.strictEqual(indexes.length, 1);
@@ -748,6 +749,19 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             assert.strictEqual(options.analyzer.filters[1].name, 'stop');
             assert.strictEqual(options.analyzer.filters[2].name, 'porterstem');
             assert.strictEqual(options.analyzer.filters[3].name, 'asciifolding');
+
+            await LexicalModel.create([
+                { name: 'test 1', content: 'the quick brown fox jumped over the lazy dog' },
+                { name: 'test 2', content: 'the lazy red hen sat beside the sleepy dog' }
+            ]);
+
+            let docs = await LexicalModel.find({ content: { $match: 'jump' } });
+            assert.strictEqual(docs.length, 1);
+            assert.strictEqual(docs[0].name, 'test 1');
+
+            docs = await LexicalModel.find({ content: { $match: 'SAT' } });
+            assert.strictEqual(docs.length, 1);
+            assert.strictEqual(docs[0].name, 'test 2');
         });
     });
 });

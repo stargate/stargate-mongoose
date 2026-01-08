@@ -13,9 +13,17 @@
 // limitations under the License.
 
 import { FindCursor } from '@datastax/astra-db-ts';
-import { IndexOptions, InferSchemaType, Model, Schema, Types } from 'mongoose';
+import {
+    IndexOptions,
+    InferSchemaType,
+    Model,
+    Schema,
+    Types,
+    version as mongooseVersion
+} from 'mongoose';
 import { Vectorize } from '../../src/driver/vectorize';
 import assert from 'assert';
+import compareTableDefinitions from '../compareTableDefinitions';
 import { testClient } from '../fixtures';
 import { createMongooseCollections, mongooseInstanceTables as mongooseInstance, testDebug } from '../mongooseFixtures';
 import { once } from 'events';
@@ -30,6 +38,12 @@ describe('TABLES: vector search', function() {
                 default: () => void 0,
                 dimension: 2,
                 index: { name: 'vector', vector: true }
+            },
+            otherVector: {
+                type: [Number],
+                default: () => void 0,
+                dimension: 3,
+                index: { name: 'otherVector', vector: true }
             },
             name: 'String'
         },
@@ -52,8 +66,8 @@ describe('TABLES: vector search', function() {
     before(async function() {
         const existingTables = await mongooseInstance.connection.listTables();
         const vectorTable = existingTables.find(t => t.name === 'vector_table');
-        const hasValidVectorDefinition = vectorTable?.definition.columns.vector?.type === 'vector' &&
-            vectorTable.definition.columns.vector?.dimension === 2;
+        const hasValidVectorDefinition = vectorTable != null &&
+            compareTableDefinitions(vectorTable.definition.columns, tableDefinitionFromSchema(vectorSchema).columns);
 
         if (!hasValidVectorDefinition) {
             if (vectorTable) {
@@ -76,11 +90,13 @@ describe('TABLES: vector search', function() {
         const vectors = await Vector.create([
             {
                 name: 'Test vector 1',
-                vector: [1, 100]
+                vector: [1, 100],
+                otherVector: [1, 100, 100],
             },
             {
                 name: 'Test vector 2',
-                vector: [100, 1]
+                vector: [100, 1],
+                otherVector: [100, 1, 100],
             }
         ]);
         vectorIds = vectors.map(v => v._id);
@@ -89,11 +105,24 @@ describe('TABLES: vector search', function() {
     it('drops and creates vector index', async function() {
         await mongooseInstance.connection.collection('vector_table').dropIndex('vector');
         let indexes = await mongooseInstance.connection.collection('vector_table').listIndexes().toArray();
-        assert.deepStrictEqual(indexes, []);
+        assert.deepStrictEqual(indexes, [
+            {
+                name: 'otherVector',
+                definition: { column: 'otherVector', options: { metric: 'cosine', sourceModel: 'other' }  },
+                indexType: 'vector',
+                key: { otherVector: 1 }
+            }
+        ]);
 
         await mongooseInstance.connection.collection('vector_table').createIndex({ vector: true }, { name: 'vector', vector: true });
         indexes = await mongooseInstance.connection.collection('vector_table').listIndexes().toArray();
         assert.deepStrictEqual(indexes, [
+            {
+                name: 'otherVector',
+                definition: { column: 'otherVector', options: { metric: 'cosine', sourceModel: 'other' }  },
+                indexType: 'vector',
+                key: { otherVector: 1 }
+            },
             {
                 name: 'vector',
                 definition: { column: 'vector', options: { metric: 'cosine', sourceModel: 'other' }  },
@@ -115,9 +144,13 @@ describe('TABLES: vector search', function() {
     });
 
     it('supports sort() and similarity score with $meta with find()', async function() {
-        const res = await Vector.find({}, null, { includeSimilarity: true }).sort({ vector: { $meta: [1, 99] } });
+        let res = await Vector.find({}, null, { includeSimilarity: true }).sort({ vector: { $meta: [1, 99] } });
         assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 1', 'Test vector 2']);
         assert.deepStrictEqual(res.map(doc => doc.get('$similarity')), [1, 0.51004946]);
+
+        res = await Vector.find({}, null, { includeSimilarity: true }).sort({ otherVector: { $meta: [100, 1, 99] } });
+        assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 2', 'Test vector 1']);
+        assert.deepStrictEqual(res.map(doc => doc.get('$similarity')), [0.9999937, 0.7537529]);
     });
 
     it('supports sort() with includeSortVector in find()', async function() {
@@ -126,7 +159,10 @@ describe('TABLES: vector search', function() {
             .sort({ vector: { $meta: [1, 99] } })
             .cursor();
 
-        await once(cursor, 'cursor');
+        // Mongoose 8 requires waiting for the cursor to be opened here.
+        if (mongooseVersion.startsWith('8.')) {
+            await once(cursor, 'cursor');
+        }
         const rawCursor = (cursor as unknown as { cursor: FindCursor<unknown> }).cursor;
         assert.deepStrictEqual(await rawCursor.getSortVector().then(vec => vec?.asArray()), [1, 99]);
     });
@@ -135,6 +171,11 @@ describe('TABLES: vector search', function() {
         let res = await Vector.
             find({}).
             sort({ vector: { $meta: [1, 99] } });
+        assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 1', 'Test vector 2']);
+
+        res = await Vector.
+            find({}).
+            sort({ otherVector: { $meta: [1, 99, 100] } });
         assert.deepStrictEqual(res.map(doc => doc.name), ['Test vector 1', 'Test vector 2']);
 
         res = await Vector.
@@ -180,6 +221,8 @@ describe('TABLES: vector search', function() {
             vector: [1, 2, 3]
         });
         await assert.rejects(() => doc.save(), /Array must be of length 2/);
+
+        await assert.rejects(Vector.find().sort({ otherVector: { $meta: [1, 2] } }));
     });
 
     it('can save doc with null vector', async function () {
@@ -325,5 +368,9 @@ describe('TABLES: vectorize', function () {
                 }
             });
         }, /`provider` option for vectorize paths must be a string, got: undefined/);
+    });
+
+    it('throws error on findAndRerank', async function () {
+        await assert.rejects(() => Vector.findAndRerank({}, {}), /Cannot use findAndRerank\(\) with tables/);
     });
 });

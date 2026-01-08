@@ -14,11 +14,17 @@
 
 import assert from 'assert';
 import { mongooseInstanceTables as mongooseInstance, createMongooseCollections, testDebug } from '../mongooseFixtures';
-import { Schema, Types } from 'mongoose';
+import mongoose, { Schema, Types } from 'mongoose';
 import { randomUUID } from 'crypto';
-import { UUID } from 'bson';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
-import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime } from '@datastax/astra-db-ts';
+import { DataAPIDuration, DataAPIInet, DataAPIDate, DataAPITime, TableScalarColumnDefinition } from '@datastax/astra-db-ts';
+import convertSchemaToUDTColumns from '../../src/udt/convertSchemaToUDTColumns';
+import udtDefinitionsFromSchema from '../../src/udt/udtDefinitionsFromSchema';
+import { inspect } from 'util';
+import { MongooseSet } from '../../src/driver';
+import sinon from 'sinon';
+
+const { UUID } = mongoose.mongo.BSON;
 
 const TEST_TABLE_NAME = 'table1';
 
@@ -84,7 +90,19 @@ describe('TABLES: basic operations and data types', function() {
             employee: Schema.Types.ObjectId,
             friends: [String],
             salary: Schema.Types.Decimal128,
-            favorites: { type: Map, of: String },
+            favorites: { type: Map, of: { type: String, required: true } },
+            // __typehint tells Mongoose what the type is for the given field without needing to specify
+            // the type of all the other fields.
+            tags: {
+                type: Set,
+                of: { type: String, required: true },
+                __typehint: new Set<string>()
+            },
+            luckyNumbers: {
+                type: Set,
+                of: { type: Number, required: true },
+                __typehint: new Set<number>()
+            },
             uniqueId: Schema.Types.UUID,
             category: BigInt,
             buf: Buffer,
@@ -106,6 +124,8 @@ describe('TABLES: basic operations and data types', function() {
                 friends: { type: 'list', valueType: 'text' },
                 salary: { type: 'decimal' },
                 favorites: { type: 'map', keyType: 'text', valueType: 'text' },
+                tags: { type: 'set', valueType: 'text' },
+                luckyNumbers: { type: 'set', valueType: 'double' },
                 uniqueId: { type: 'uuid' },
                 category: { type: 'varint' },
                 buf: { type: 'blob' },
@@ -149,6 +169,8 @@ describe('TABLES: basic operations and data types', function() {
             friends: ['friend 1', 'friend 2'],
             salary: Types.Decimal128.fromString('100.25'),
             favorites: new Map([['food', 'pizza'], ['drink', 'cola']]),
+            tags: new Set(['mongodb', 'nodejs', 'cassandra']),
+            luckyNumbers: new Set([7, 13, 42]),
             nestedSchema: {
                 address: {
                     street: 'street 1',
@@ -173,6 +195,16 @@ describe('TABLES: basic operations and data types', function() {
         assert.strictEqual(saveResponse.salary!.toString(), '100.25');
         assert.strictEqual(saveResponse.favorites!.get('food'), 'pizza');
         assert.strictEqual(saveResponse.favorites!.get('drink'), 'cola');
+        assert.ok(saveResponse.tags instanceof Set);
+        assert.strictEqual(saveResponse.tags!.size, 3);
+        assert.ok(saveResponse.tags!.has('mongodb'));
+        assert.ok(saveResponse.tags!.has('nodejs'));
+        assert.ok(saveResponse.tags!.has('cassandra'));
+        assert.ok(saveResponse.luckyNumbers instanceof Set);
+        assert.strictEqual(saveResponse.luckyNumbers!.size, 3);
+        assert.ok(saveResponse.luckyNumbers!.has(7));
+        assert.ok(saveResponse.luckyNumbers!.has(13));
+        assert.ok(saveResponse.luckyNumbers!.has(42));
         assert.strictEqual(saveResponse.uniqueId!.toString(), uniqueIdVal.toString());
         assert.strictEqual(saveResponse.category, 42n);
         assert.strictEqual(saveResponse.buf!.toString('utf8'), 'hello');
@@ -205,6 +237,16 @@ describe('TABLES: basic operations and data types', function() {
         assert.strictEqual(findOneResponse.salary!.toString(), '100.25');
         assert.strictEqual(findOneResponse.favorites!.get('food'), 'pizza');
         assert.strictEqual(findOneResponse.favorites!.get('drink'), 'cola');
+        assert.ok(findOneResponse.tags instanceof Set);
+        assert.strictEqual(findOneResponse.tags!.size, 3);
+        assert.ok(findOneResponse.tags!.has('mongodb'));
+        assert.ok(findOneResponse.tags!.has('nodejs'));
+        assert.ok(findOneResponse.tags!.has('cassandra'));
+        assert.ok(findOneResponse.luckyNumbers instanceof Set);
+        assert.strictEqual(findOneResponse.luckyNumbers!.size, 3);
+        assert.ok(findOneResponse.luckyNumbers!.has(7));
+        assert.ok(findOneResponse.luckyNumbers!.has(13));
+        assert.ok(findOneResponse.luckyNumbers!.has(42));
         assert.strictEqual(findOneResponse.uniqueId!.toString(), uniqueIdVal.toString());
         assert.strictEqual(findOneResponse.category, 42n);
         assert.strictEqual(findOneResponse.buf!.toString('utf8'), 'hello');
@@ -228,5 +270,962 @@ describe('TABLES: basic operations and data types', function() {
         assert.strictEqual(findOneResponse.get('timeSinceStart'), '15d');
         assert.strictEqual(findOneResponse.get('startDate'), '2022-01-02');
         assert.strictEqual(findOneResponse.get('timeOfDay'), '13:00:00.000000000');
+
+        // Test Set modification and change tracking
+        findOneResponse.tags!.add('typescript');
+        findOneResponse.tags!.delete('nodejs');
+        findOneResponse.luckyNumbers!.add(99);
+        assert.deepStrictEqual(findOneResponse.getChanges(), {
+            $set: { tags: ['cassandra', 'mongodb', 'typescript'] },
+            $push: { luckyNumbers: { $each: [99] } }
+        });
+        await findOneResponse.save();
+
+        // Test that atomics were reset after save
+        findOneResponse.tags!.add('java');
+        assert.deepStrictEqual(findOneResponse.getChanges(), {
+            $push: { tags: { $each: ['java'] } }
+        });
+
+        const updatedResponse = await User.findOne({name: 'User 1'}).orFail();
+        assert.ok(updatedResponse.tags instanceof Set);
+        assert.strictEqual(updatedResponse.tags!.size, 3);
+        assert.ok(updatedResponse.tags!.has('mongodb'));
+        assert.ok(updatedResponse.tags!.has('cassandra'));
+        assert.ok(updatedResponse.tags!.has('typescript'));
+        assert.ok(!updatedResponse.tags!.has('nodejs'));
+        assert.ok(updatedResponse.luckyNumbers instanceof Set);
+        assert.strictEqual(updatedResponse.luckyNumbers!.size, 4);
+        assert.ok(updatedResponse.luckyNumbers!.has(7));
+        assert.ok(updatedResponse.luckyNumbers!.has(13));
+        assert.ok(updatedResponse.luckyNumbers!.has(42));
+        assert.ok(updatedResponse.luckyNumbers!.has(99));
+    });
+
+    describe('Sets', () => {
+        it('querying', async () => {
+            const modelName = 'User';
+            const userSchema = new Schema({
+                name: String,
+                // __typehint tells Mongoose what the type is for the given field without needing to specify
+                // the type of all the other fields.
+                tags: {
+                    type: Set,
+                    of: { type: String, required: true },
+                    __typehint: new Set<string>()
+                },
+                luckyNumbers: {
+                    type: Set,
+                    of: { type: Number, required: true },
+                    __typehint: new Set<number>()
+                },
+            }, { versionKey: false });
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const tableDefinition = tableDefinitionFromSchema(userSchema);
+            assert.deepStrictEqual(tableDefinition, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    name: { type: 'text' },
+                    tags: { type: 'set', valueType: 'text' },
+                    luckyNumbers: { type: 'set', valueType: 'double' }
+                }
+            });
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
+
+            const doc = await User.create({
+                name: 'John Doe',
+                tags: new Set(['tag1', 'tag2']),
+                luckyNumbers: new Set([1, 2, 3])
+            });
+
+            let user = await User.findOne({ tags: { $in: ['tag1' as unknown as Set<string>] } });
+            assert.ok(user);
+            assert.equal(user.name, 'John Doe');
+
+            user = await User.findOne({ tags: { $in: ['tag3' as unknown as Set<string>] } });
+            assert.ok(!user);
+
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore ignore cast errors - cast error happens in Mongoose 9 but not 8
+            user = await User.findOne({ luckyNumbers: { $in: ['1'] } });
+            assert.ok(user);
+            assert.equal(user.name, 'John Doe');
+
+            user = await User.findOne({ luckyNumbers: { $in: [1 as unknown as Set<number>] } });
+            assert.ok(user);
+            assert.equal(user.name, 'John Doe');
+
+            user = await User.findOne({ luckyNumbers: { $all: [1, 2] } });
+            assert.ok(user);
+            assert.equal(user.name, 'John Doe');
+
+            user = await User.findOne({ luckyNumbers: { $all: [1, 4] } });
+            assert.ok(!user);
+
+            assert.ok(doc.luckyNumbers);
+            user = await User.findOne({ luckyNumbers: { $all: [...doc.luckyNumbers] } });
+            assert.ok(user);
+            assert.equal(user.name, 'John Doe');
+
+            await assert.rejects(
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore ignore cast errors - cast error happens in Mongoose 9 but not 8
+                () => User.find({ luckyNumbers: 'taco' }),
+                { message: 'Cast to Number failed for value "taco" (type string) at path "luckyNumbers" for model "User"' }
+            );
+        });
+
+        it('add', async () => {
+            const modelName = 'User';
+            const userSchema = new Schema({
+                name: String,
+                // __typehint tells Mongoose what the type is for the given field without needing to specify
+                // the type of all the other fields.
+                tags: {
+                    type: Set,
+                    of: { type: 'String', required: true },
+                    __typehint: new Set<string>()
+                }
+            }, { versionKey: false });
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const tableDefinition = tableDefinitionFromSchema(userSchema);
+            assert.deepStrictEqual(tableDefinition, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    name: { type: 'text' },
+                    tags: { type: 'set', valueType: 'text' }
+                }
+            });
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
+
+            let doc = await User.create({
+                name: 'John Doe',
+                tags: new Set(['tag1', 'tag2'])
+            });
+            doc.tags!.add('tag3');
+            doc.tags!.add('tag3');
+            doc.tags!.add('tag4');
+            await doc.save();
+            doc = await User.findOne({ _id: doc._id }).orFail();
+            assert.ok(doc.tags);
+            assert.deepStrictEqual(Array.from(doc.tags), ['tag1', 'tag2', 'tag3', 'tag4']);
+
+            // @ts-expect-error Mongoose will cast 12 to a string
+            doc.tags.add(12);
+            await doc.save();
+            doc = await User.findOne({ _id: doc._id }).orFail();
+            assert.ok(doc.tags);
+            assert.deepStrictEqual(Array.from(doc.tags), ['12', 'tag1', 'tag2', 'tag3', 'tag4']);
+        });
+
+        it('clear and delete', async () => {
+            const modelName = 'User';
+            const userSchema = new Schema({
+                name: String,
+                // __typehint tells Mongoose what the type is for the given field without needing to specify
+                // the type of all the other fields.
+                tags: {
+                    type: Set,
+                    of: { type: 'String', required: true },
+                    __typehint: new Set<string>()
+                },
+                luckyNumbers: {
+                    type: 'Set',
+                    of: { type: 'Number', required: true },
+                    __typehint: new Set<number>()
+                },
+            }, { versionKey: false });
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const tableDefinition = tableDefinitionFromSchema(userSchema);
+            assert.deepStrictEqual(tableDefinition, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    name: { type: 'text' },
+                    tags: { type: 'set', valueType: 'text' },
+                    luckyNumbers: { type: 'set', valueType: 'double' }
+                }
+            });
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
+
+            const doc = await User.create({
+                name: 'John Doe',
+                tags: new Set(['tag1', 'tag2']),
+                luckyNumbers: new Set([1, 2, 3])
+            });
+
+            doc.luckyNumbers!.delete(2);
+            assert.deepEqual(
+                doc.getChanges(),
+                { $pullAll: { luckyNumbers: [2] } }
+            );
+            doc.luckyNumbers!.delete(1);
+            doc.luckyNumbers!.delete(1);
+            // @ts-expect-error Mongoose will cast '1' to a number
+            doc.luckyNumbers!.delete('1');
+            assert.deepEqual(
+                doc.getChanges(),
+                { $pullAll: { luckyNumbers: [2, 1] } }
+            );
+            await doc.save();
+            let user = await User.findById(doc._id).orFail();
+            assert.strictEqual(user.luckyNumbers!.size, 1);
+            assert.ok(!user.luckyNumbers!.has(1));
+            assert.ok(user.luckyNumbers!.has(3));
+            assert.strictEqual(user.tags!.size, 2);
+
+            doc.luckyNumbers!.clear();
+            await doc.save();
+            user = await User.findById(doc._id).orFail();
+            assert.strictEqual(user.luckyNumbers!.size, 0);
+            assert.strictEqual(user.tags!.size, 2);
+
+            doc.luckyNumbers = null;
+            await assert.rejects(
+                () => doc.save(),
+                /Cast to Set failed for value "null" \(type null\) at path "luckyNumbers"/
+            );
+        });
+
+        it('mixed add and remove', async () => {
+            const modelName = 'User';
+            const userSchema = new Schema({
+                name: String,
+                luckyNumbers: {
+                    type: Set,
+                    of: { type: 'Number', required: true },
+                    __typehint: new Set<number>()
+                },
+            }, { versionKey: false });
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const tableDefinition = tableDefinitionFromSchema(userSchema);
+            assert.deepStrictEqual(tableDefinition, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    name: { type: 'text' },
+                    luckyNumbers: { type: 'set', valueType: 'double' }
+                }
+            });
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
+
+            const doc = await User.create({
+                name: 'John Doe',
+                luckyNumbers: new Set([42, 7, 77])
+            });
+            doc.luckyNumbers!.delete(42);
+            doc.luckyNumbers!.add(99);
+            assert.deepStrictEqual(doc.getChanges(), {
+                $set: {
+                    luckyNumbers: [7, 77, 99]
+                }
+            });
+            doc.luckyNumbers!.delete(99);
+            assert.deepStrictEqual(doc.getChanges(), {
+                $set: {
+                    luckyNumbers: [7, 77]
+                }
+            });
+        });
+
+        it('updates', async () => {
+            const modelName = 'User';
+            const userSchema = new Schema({
+                name: String,
+                // __typehint tells Mongoose what the type is for the given field without needing to specify
+                // the type of all the other fields.
+                tags: {
+                    type: Set,
+                    of: { type: 'String', required: true },
+                    __typehint: new Set<string>()
+                },
+                luckyNumbers: {
+                    type: Set,
+                    of: { type: 'Number', required: true },
+                    __typehint: new Set<number>()
+                },
+            }, { versionKey: false });
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const tableDefinition = tableDefinitionFromSchema(userSchema);
+            assert.deepStrictEqual(tableDefinition, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    name: { type: 'text' },
+                    tags: { type: 'set', valueType: 'text' },
+                    luckyNumbers: { type: 'set', valueType: 'double' }
+                }
+            });
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
+
+            let doc = await User.create({
+                name: 'John Doe',
+                tags: new Set(['tag1', 'tag2']),
+                luckyNumbers: new Set([42, 7])
+            });
+            await User.updateOne({ _id: doc._id }, { $push: { tags: 'tag3' } }, {});
+            doc = await User.findOne({ _id: doc._id }).orFail();
+            assert.ok(doc.tags);
+            assert.deepStrictEqual(Array.from(doc.tags), ['tag1', 'tag2', 'tag3']);
+
+            const doc2 = new User({ tags: doc.tags });
+            await doc2.save();
+            assert.deepStrictEqual(Array.from(doc2.tags ?? []), Array.from(doc.tags));
+        });
+
+        it('inspect', async () => {
+            const modelName = 'User';
+            const userSchema = new Schema({
+                name: String,
+                // __typehint tells Mongoose what the type is for the given field without needing to specify
+                // the type of all the other fields.
+                tags: {
+                    type: Set,
+                    of: { type: 'String', required: true },
+                    __typehint: new Set<string>()
+                },
+                luckyNumbers: {
+                    type: Set,
+                    of: { type: 'Number', required: true },
+                    __typehint: new Set<number>()
+                },
+            }, { versionKey: false });
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
+
+            const doc = new User({
+                name: 'John Doe',
+                tags: new Set(['tag1', 'tag2']),
+                luckyNumbers: new Set([42, 7])
+            });
+            assert.strictEqual(inspect(doc.tags, { colors: false }), 'Set(2) { \'tag1\', \'tag2\' }');
+            assert.strictEqual(inspect(doc.luckyNumbers, { colors: false }), 'Set(2) { 42, 7 }');
+        });
+
+        it('handles set of UDTs', async () => {
+            // Test that a set of UDTs (AddressType) can be created, inserted, and queried
+
+            // 1. Create AddressType UDT
+            await mongooseInstance.connection.syncTypes([{
+                name: 'AddressType',
+                definition: {
+                    fields: {
+                        city: { type: 'text' },
+                        state: { type: 'text' }
+                    }
+                }
+            }]);
+
+            // 2. Define schema that uses a set of AddressType as "addresses"
+            const addressSchema = new Schema(
+                {
+                    city: { type: String },
+                    state: { type: String }
+                },
+                { udtName: 'AddressType', versionKey: false, _id: false }
+            );
+
+            type RawAddressType = mongoose.InferRawDocTypeFromSchema<typeof addressSchema>;
+            const userSchema = Schema.create({
+                name: String,
+                addresses: {
+                    type: Set,
+                    of: { type: addressSchema, udtName: 'AddressType', required: true },
+                    __rawDocTypeHint: new Set<RawAddressType>(),
+                    __hydratedDocTypeHint: {} as MongooseSet<
+                        RawAddressType,
+                        mongoose.HydratedSingleSubdocument<RawAddressType>
+                    >
+                }
+            }, { versionKey: false });
+
+            // 3. Table definition, create table
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const tableDefinition = tableDefinitionFromSchema(userSchema);
+
+            assert.deepStrictEqual(tableDefinition, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    name: { type: 'text' },
+                    addresses: {
+                        type: 'set',
+                        valueType: { type: 'userDefined', udtName: 'AddressType' }
+                    }
+                }
+            });
+
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinition);
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model('User', userSchema, TEST_TABLE_NAME);
+
+            // 4. Insert a document
+            const doc = await User.create({
+                name: 'Bob',
+                addresses: new Set([
+                    { city: 'Seattle', state: 'WA' },
+                    { city: 'Portland', state: 'OR' }
+                ])
+            });
+
+            assert.ok(doc);
+            assert.strictEqual(doc.name, 'Bob');
+            assert.ok(doc.addresses instanceof Set);
+            assert.strictEqual(doc.addresses.size, 2);
+
+            // Confirm presence of the expected address UDTs in the Set
+            // (convert set to array since order is not guaranteed)
+            const addressesArr = Array.from(doc.addresses);
+            const foundSeattle = addressesArr.find(a => a.city === 'Seattle' && a.state === 'WA');
+            const foundPortland = addressesArr.find(a => a.city === 'Portland' && a.state === 'OR');
+            assert.ok(foundSeattle);
+            assert.ok(foundPortland);
+
+            // 5. Query and verify
+            const foundUser = await User.findOne({ name: 'Bob' }).orFail();
+            assert.ok(foundUser);
+            assert.ok(foundUser.addresses instanceof Set);
+            assert.strictEqual(foundUser.addresses.size, 2);
+            const foundUserArr = Array.from(foundUser.addresses);
+            assert.ok(foundUserArr.some(addr => addr.city === 'Seattle' && addr.state === 'WA'));
+            assert.ok(foundUserArr.some(addr => addr.city === 'Portland' && addr.state === 'OR'));
+
+            // 6. Change tracking
+            foundUser.addresses.add({ city: 'San Francisco', state: 'CA' });
+            assert.deepStrictEqual(
+                foundUser.getChanges(),
+                {
+                    $push: {
+                        addresses: {
+                            $each: [{ city: 'San Francisco', state: 'CA' }]
+                        }
+                    }
+                }
+            );
+            await foundUser.save();
+            let updatedUser = await User.findOne({ name: 'Bob' }).orFail();
+            assert.strictEqual(updatedUser.addresses!.size, 3);
+            assert.ok([...updatedUser.addresses!.values()].some(addr => addr.city === 'San Francisco' && addr.state === 'CA'));
+
+            await User.collection.updateOne({ _id: foundUser._id }, {
+                // @ts-expect-error collection has unknown type currently
+                $push: {
+                    addresses: {
+                        // Test incorrect order - Data API will switch the order under the hood
+                        $each: [{ state: 'CA', city: 'Los Angeles' }]
+                    }
+                }
+            }, {});
+            updatedUser = await User.findOne({ name: 'Bob' }).orFail();
+            assert.strictEqual(updatedUser.addresses!.size, 4);
+            assert.deepStrictEqual(updatedUser.getChanges(), {});
+            // Assert that the Los Angeles entry's key order is city, state
+            const lastAddress = [...updatedUser.addresses!].find(
+                addr => addr.city === 'Los Angeles' && addr.state === 'CA'
+            );
+            assert.ok(lastAddress);
+            // Use Object.keys() to get key order
+            assert.deepStrictEqual(Object.keys(lastAddress.toObject()), ['city', 'state']);
+
+            // Different key order should still be equal
+            updatedUser.addresses!.add({ state: 'CA', city: 'Los Angeles' });
+            assert.deepStrictEqual(updatedUser.getChanges(), {});
+
+            updatedUser.addresses!.add({ city: 'Portland', state: 'OR' });
+            assert.deepStrictEqual(updatedUser.getChanges(), {});
+            await updatedUser.save();
+            updatedUser = await User.findOne({ name: 'Bob' }).orFail();
+            assert.strictEqual(updatedUser.addresses!.size, 4);
+
+            updatedUser.addresses!.delete({ city: 'Portland', state: 'OR' });
+            assert.deepStrictEqual(
+                updatedUser.getChanges(),
+                { $pullAll: { addresses: [{ city: 'Portland', state: 'OR' }] } }
+            );
+            await updatedUser.save();
+            updatedUser = await User.findOne({ name: 'Bob' }).orFail();
+            assert.strictEqual(updatedUser.addresses!.size, 3);
+            assert.ok(![...updatedUser.addresses!.values()].some(addr => addr.city === 'Portland' && addr.state === 'OR'));
+        });
+
+        it('throws if unrecognized type', () => {
+            assert.throws(
+                () => new Schema({
+                    test: {
+                        type: Set,
+                        of: 'Taco'
+                    }
+                }),
+                /`of` option for Set must be a supported primitive type/
+            );
+        });
+
+        it('throws if no `of` option', () => {
+            assert.throws(
+                () => new Schema({
+                    test: {
+                        type: Set
+                    }
+                }),
+                /`of` option is required for Set paths/
+            );
+        });
+    });
+
+    it('syncTable', async () => {
+        const userSchema = new Schema({
+            name: String,
+            age: Number,
+            website: {
+                type: new Schema({ url: String }),
+                udtName: 'WebsiteType'
+            }
+        }, { versionKey: false });
+
+        try {
+            await mongooseInstance.connection.createType('WebsiteType', {
+                fields: {
+                    url: { type: 'text' }
+                }
+            });
+
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            let tableDefinition = tableDefinitionFromSchema(userSchema);
+
+            const collection = mongooseInstance.connection.collection(TEST_TABLE_NAME);
+            await collection.syncTable(tableDefinition);
+
+            let tables = await mongooseInstance.connection.listTables();
+            let table = tables.find(t => t.name === TEST_TABLE_NAME);
+            assert.ok(table);
+            assert.strictEqual(table.name, TEST_TABLE_NAME);
+            assert.deepStrictEqual(
+                Object.keys(table.definition.columns).sort(),
+                ['_id', 'age', 'name', 'website']
+            );
+
+            const updatedUserSchema = new Schema({
+                name: String,
+                email: String,
+                website: {
+                    type: new Schema({ url: String }),
+                    udtName: 'WebsiteType'
+                }
+            }, { versionKey: false });
+            tableDefinition = tableDefinitionFromSchema(updatedUserSchema);
+
+            await collection.syncTable(tableDefinition);
+
+            tables = await mongooseInstance.connection.listTables();
+            table = tables.find(t => t.name === TEST_TABLE_NAME);
+            assert.ok(table);
+            assert.strictEqual(table.name, TEST_TABLE_NAME);
+            assert.deepStrictEqual(
+                Object.keys(table.definition.columns).sort(),
+                ['_id', 'email', 'name', 'website']
+            );
+
+            const updateExistingSchema = new Schema({
+                name: String,
+                email: Number,
+                website: {
+                    type: new Schema({ url: String }),
+                    udtName: 'WebsiteType'
+                }
+            }, { versionKey: false });
+            tableDefinition = tableDefinitionFromSchema(updateExistingSchema);
+
+            await assert.rejects(
+                collection.syncTable(tableDefinition),
+                /syncTable cannot modify existing columns, found modified columns: email/
+            );
+        } finally {
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            await mongooseInstance.connection.dropType('WebsiteType');
+        }
+    });
+
+    it('syncTable with apiSupport in server response', async () => {
+        const userSchema = new Schema({ name: String }, { versionKey: false });
+
+        const tableDefinition = tableDefinitionFromSchema(userSchema);
+        try {
+            sinon.stub(mongooseInstance.connection, 'listTables').callsFake(() => Promise.resolve([
+                {
+                    name: TEST_TABLE_NAME,
+                    definition: {
+                        primaryKey: { partitionBy: ['_id'], partitionSort: {} },
+                        columns: {
+                            _id: { type: 'text' },
+                            name: {
+                                type: 'text',
+                                apiSupport: {
+                                    createTable: true,
+                                    insert: true,
+                                    read: true,
+                                    filter: true,
+                                    cqlDefinition: 'some string'
+                                }
+                            }
+                        }
+                    }
+                }
+            ]));
+
+            const collection = mongooseInstance.connection.collection(TEST_TABLE_NAME);
+            const { columnsToAdd, columnsToDrop, createdNewTable } = await collection.syncTable(
+                tableDefinition,
+                undefined,
+                true
+            );
+            assert.deepStrictEqual(columnsToAdd, []);
+            assert.deepStrictEqual(columnsToDrop, []);
+            assert.strictEqual(createdNewTable, false);
+        } finally {
+            sinon.restore();
+        }
+    });
+
+    describe('UDTs', () => {
+        beforeEach(async () => {
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const types = await mongooseInstance.connection.listTypes({ nameOnly: true });
+            for (const type of types) {
+                await mongooseInstance.connection.dropType(type);
+            }
+
+            mongooseInstance.deleteModel(/Test/);
+        });
+
+        afterEach(async () => {
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const types = await mongooseInstance.connection.listTypes({ nameOnly: true });
+            for (const type of types) {
+                await mongooseInstance.connection.dropType(type);
+            }
+        });
+
+        it('supports creating and altering UDTs', async () => {
+            await mongooseInstance.connection.createType('ProductType', {
+                fields: {
+                    name: { type: 'text' },
+                    price: { type: 'int' }
+                }
+            });
+
+            const typeNames = await mongooseInstance.connection.listTypes({ nameOnly: true });
+            assert.deepStrictEqual(typeNames, ['ProductType']);
+
+            const typeDefs = await mongooseInstance.connection.listTypes({ nameOnly: false });
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition!.fields), [{
+                name: { type: 'text' },
+                price: { type: 'int' }
+            }]);
+
+            // Test altering the type to add a new "category" field
+            await mongooseInstance.connection.alterType('ProductType', {
+                operation: {
+                    add: { fields: { category: { type: 'text' } } }
+                }
+            });
+
+            // Verify the field is present after alteration
+            const typeDefsAfterAlter = await mongooseInstance.connection.listTypes({ nameOnly: false });
+            assert.deepStrictEqual(typeDefsAfterAlter.map((def) => def.definition!.fields), [{
+                name: { type: 'text' },
+                price: { type: 'int' },
+                category: { type: 'text' }
+            }]);
+        });
+
+        it('handles UDTs created from a schema definition', async () => {
+            const productSchema = new Schema(
+                {
+                    name: { type: String },
+                    price: { type: Number },
+                    category: { type: String }
+                },
+                { udtName: 'Product', versionKey: false, _id: false }
+            );
+
+            await mongooseInstance.connection.createType('Product', { fields: convertSchemaToUDTColumns(productSchema) });
+            const typeDefs = await mongooseInstance.connection.listTypes({ nameOnly: false });
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition!.fields), [{
+                name: { type: 'text' },
+                price: { type: 'double' },
+                category: { type: 'text' }
+            }]);
+
+            const clickedEventSchema = new Schema({
+                product: productSchema,
+                url: String
+            });
+
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(clickedEventSchema));
+
+            const TestModel = mongooseInstance.model('Test', clickedEventSchema, TEST_TABLE_NAME);
+            const doc = await TestModel.create({
+                url: 'https://example.com',
+                product: { name: 'Test Product', price: 100, category: 'Test Category' }
+            });
+            assert.ok(doc);
+            assert.strictEqual(doc.product!.name, 'Test Product');
+            assert.strictEqual(doc.product!.price, 100);
+            assert.strictEqual(doc.product!.category, 'Test Category');
+            assert.strictEqual(doc.url, 'https://example.com');
+
+            const rawDoc = await TestModel.collection.findOne({ _id: doc._id });
+            assert.ok(rawDoc);
+            assert.strictEqual(rawDoc.product!.name, 'Test Product');
+            assert.strictEqual(rawDoc.product!.price, 100);
+            assert.strictEqual(rawDoc.product!.category, 'Test Category');
+            assert.strictEqual(rawDoc.url, 'https://example.com');
+        });
+
+        it('handles UDTs created from a schema definition with udtName', async () => {
+            const productSchema = new Schema(
+                {
+                    name: { type: String },
+                    price: { type: Number },
+                    category: { type: String }
+                },
+                { versionKey: false, _id: false }
+            );
+
+            await mongooseInstance.connection.createType('Product', { fields: convertSchemaToUDTColumns(productSchema) });
+            const typeDefs = await mongooseInstance.connection.listTypes({ nameOnly: false });
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition!.fields), [{
+                name: { type: 'text' },
+                price: { type: 'double' },
+                category: { type: 'text' }
+            }]);
+
+            const clickedEventSchema = new Schema({
+                product: { type: productSchema, udtName: 'Product' },
+                url: String
+            });
+
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(clickedEventSchema));
+
+            const TestModel = mongooseInstance.model('Test', clickedEventSchema, TEST_TABLE_NAME);
+            const doc = await TestModel.create({
+                url: 'https://example.com',
+                product: { name: 'Test Product', price: 100, category: 'Test Category' }
+            });
+            assert.ok(doc);
+            assert.strictEqual(doc.product!.name, 'Test Product');
+            assert.strictEqual(doc.product!.price, 100);
+            assert.strictEqual(doc.product!.category, 'Test Category');
+            assert.strictEqual(doc.url, 'https://example.com');
+
+            const rawDoc = await TestModel.collection.findOne({ _id: doc._id });
+            assert.ok(rawDoc);
+            assert.strictEqual(rawDoc.product!.name, 'Test Product');
+            assert.strictEqual(rawDoc.product!.price, 100);
+            assert.strictEqual(rawDoc.product!.category, 'Test Category');
+            assert.strictEqual(rawDoc.url, 'https://example.com');
+        });
+
+        it('handles array of UDTs created from a schema definition', async () => {
+            const productSchema = new Schema(
+                {
+                    name: { type: String },
+                    price: { type: Number },
+                    category: { type: String }
+                },
+                { udtName: 'Product', versionKey: false, _id: false }
+            );
+
+            await mongooseInstance.connection.createType('Product', { fields: convertSchemaToUDTColumns(productSchema) });
+            const typeDefs = await mongooseInstance.connection.listTypes();
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition!.fields), [{
+                name: { type: 'text' },
+                price: { type: 'double' },
+                category: { type: 'text' }
+            }]);
+
+            const cartSchema = new Schema({
+                products: [productSchema]
+            });
+
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(cartSchema));
+
+            const TestModel = mongooseInstance.model('Test', cartSchema, TEST_TABLE_NAME);
+            const doc = await TestModel.create({
+                products: [
+                    { name: 'Test Product', price: 100, category: 'Test Category' },
+                    { name: 'Test Product 2', price: 200, category: 'Test Category 2' }
+                ]
+            });
+            assert.ok(doc);
+            assert.strictEqual(doc.products[0].name, 'Test Product');
+            assert.strictEqual(doc.products[0].price, 100);
+            assert.strictEqual(doc.products[0].category, 'Test Category');
+            assert.strictEqual(doc.products[1].name, 'Test Product 2');
+            assert.strictEqual(doc.products[1].price, 200);
+            assert.strictEqual(doc.products[1].category, 'Test Category 2');
+
+            const rawDoc = await TestModel.collection.findOne({ _id: doc._id });
+            assert.ok(rawDoc);
+            assert.strictEqual(rawDoc.products[0].name, 'Test Product');
+            assert.strictEqual(rawDoc.products[0].price, 100);
+            assert.strictEqual(rawDoc.products[0].category, 'Test Category');
+            assert.strictEqual(rawDoc.products[1].name, 'Test Product 2');
+            assert.strictEqual(rawDoc.products[1].price, 200);
+            assert.strictEqual(rawDoc.products[1].category, 'Test Category 2');
+        });
+
+        it('handles map of UDTs created from a schema definition', async () => {
+            const productSchema = new Schema(
+                {
+                    name: { type: String },
+                    price: { type: Number },
+                    category: { type: String }
+                },
+                { udtName: 'Product', versionKey: false, _id: false }
+            );
+
+            await mongooseInstance.connection.createType('Product', { fields: convertSchemaToUDTColumns(productSchema) });
+            const typeDefs = await mongooseInstance.connection.listTypes();
+            assert.deepStrictEqual(typeDefs.map((def) => def.definition!.fields), [{
+                name: { type: 'text' },
+                price: { type: 'double' },
+                category: { type: 'text' }
+            }]);
+
+            const cartSchema = new Schema({
+                productsByCategory: { type: Map, of: { type: productSchema, required: true } }
+            });
+
+            await mongooseInstance.connection.createTable(TEST_TABLE_NAME, tableDefinitionFromSchema(cartSchema));
+
+            const TestModel = mongooseInstance.model('Test', cartSchema, TEST_TABLE_NAME);
+            const doc = await TestModel.create({
+                productsByCategory: {
+                    'Test Category': { name: 'Test Product', price: 100, category: 'Test Category' },
+                    'Test Category 2': { name: 'Test Product 2', price: 200, category: 'Test Category 2' }
+                }
+            });
+            assert.ok(doc);
+            assert.strictEqual(doc.productsByCategory!.get('Test Category')!.name, 'Test Product');
+            assert.strictEqual(doc.productsByCategory!.get('Test Category')!.price, 100);
+            assert.strictEqual(doc.productsByCategory!.get('Test Category')!.category, 'Test Category');
+            assert.strictEqual(doc.productsByCategory!.get('Test Category 2')!.name, 'Test Product 2');
+            assert.strictEqual(doc.productsByCategory!.get('Test Category 2')!.price, 200);
+            assert.strictEqual(doc.productsByCategory!.get('Test Category 2')!.category, 'Test Category 2');
+
+            const rawDoc = await TestModel.collection.findOne({ _id: doc._id });
+            assert.ok(rawDoc);
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category']!.name, 'Test Product');
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category']!.price, 100);
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category']!.category, 'Test Category');
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category 2']!.name, 'Test Product 2');
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category 2']!.price, 200);
+            assert.strictEqual(rawDoc.productsByCategory!['Test Category 2']!.category, 'Test Category 2');
+        });
+
+        it('syncTypes handles creating, dropping, and updating UDTs based on udtDefinitionsFromSchema', async () => {
+            // Test syncTypes and udtDefinitionsFromSchema
+            // Step 1: Define two UDT schemas
+            const pageSchema = new Schema(
+                {
+                    domain: String,
+                    title: String,
+                    url: String
+                },
+                { udtName: 'Page', versionKey: false, _id: false }
+            );
+            const productSchema = new Schema(
+                {
+                    name: { type: String },
+                    price: { type: Number }
+                },
+                { udtName: 'Product', versionKey: false, _id: false }
+            );
+            const clickedEventSchema = new Schema({
+                page: pageSchema,
+                product: productSchema,
+                timestamp: Date
+            });
+
+            // Step 2: Generate UDT definitions using udtDefinitionsFromSchema
+            const productUdtDefinitions = udtDefinitionsFromSchema(clickedEventSchema);
+            assert.ok(productUdtDefinitions['Page']);
+            assert.ok(productUdtDefinitions['Product']);
+
+            // First, ensure a clean slate
+            const typesAtStart = await mongooseInstance.connection.listTypes({ nameOnly: true });
+            for (const type of typesAtStart) {
+                await mongooseInstance.connection.dropType(type);
+            }
+            let currTypes = await mongooseInstance.connection.listTypes({ nameOnly: true });
+            assert.deepStrictEqual(currTypes, []);
+
+            // Step 3: create a UDT that will be dropped and a Page UDT with slightly different fields
+            await mongooseInstance.connection.createType('Page', {
+                fields: {
+                    title: { type: 'text' },
+                    content: { type: 'text' }
+                }
+            });
+
+            await mongooseInstance.connection.createType('Taco', {
+                fields: {
+                    name: { type: 'text' },
+                    price: { type: 'decimal' }
+                }
+            });
+
+            await mongooseInstance.connection.createType('UnusedType', {
+                // Added to test loose create type field definition (string not object with `type`)
+                fields: {
+                    test: 'text'
+                }
+            });
+
+            currTypes = await mongooseInstance.connection.listTypes({ nameOnly: true });
+            assert.deepStrictEqual(currTypes, ['Page', 'Taco', 'UnusedType']);
+
+            // Step 3: Use syncTypes to create the Brand and Product UDTs
+            const typesToSync = Object.entries(productUdtDefinitions).map(([name, def]) => ({ name, definition: def }));
+            typesToSync.push({ name: 'UnusedType', definition: { fields: { test: 'text' } } });
+            const syncResult1 = await mongooseInstance.connection.syncTypes(typesToSync);
+            assert.deepStrictEqual(syncResult1.created.sort(), ['Product']);
+            assert.deepStrictEqual(syncResult1.updated.sort(), ['Page']);
+            assert.deepStrictEqual(syncResult1.dropped.sort(), ['Taco']);
+
+            // Check that types now exist
+            const currTypes2 = await mongooseInstance.connection.listTypes({ nameOnly: true });
+            assert.deepStrictEqual(currTypes2.sort(), ['Page', 'Product', 'UnusedType'].sort());
+
+            // Verify Brand has new field
+            const typeDefs = await mongooseInstance.connection.listTypes({ nameOnly: false });
+            const brandDef = typeDefs.find(def => def.name === 'Page');
+            assert.deepStrictEqual(brandDef?.definition?.fields, {
+                title: { type: 'text' },
+                content: { type: 'text' },
+                domain: { type: 'text' },
+                url: { type: 'text' }
+            });
+
+            // Step 4: test syncTypes updating an existing field with an incompatible type
+            (typesToSync[0].definition.fields['title'] as TableScalarColumnDefinition).type = 'float';
+            await assert.rejects(
+                () => mongooseInstance.connection.syncTypes(typesToSync),
+                /Error in syncTypes: AstraMongooseError: Field 'title' in type 'Page' exists with different type. \(current: text, new: float\)/
+            );
+        });
     });
 });

@@ -35,18 +35,21 @@ import {
     CollectionUpdateFilter,
     CollectionUpdateManyOptions,
     CollectionUpdateOneOptions,
+    CreateTableDefinition,
+    CreateTableOptions,
     Filter,
     RunCommandOptions,
     SortDirection,
     Sort as SortOptionInternal,
+    StrictCreateTableColumnDefinition,
     Table as AstraTable,
-    TableCreateIndexColumn,
     TableDeleteManyOptions,
     TableDeleteOneOptions,
     TableDropIndexOptions,
     TableFilter,
     TableFindOneOptions,
     TableFindOptions,
+    TableIndexColumn,
     TableInsertManyOptions,
     TableInsertOneOptions,
     TableOptions,
@@ -155,10 +158,10 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         this._collection = collection;
 
         // Bubble up collection-level events from astra-db-ts to the main connection
-        collection.on('commandStarted', ev => this.connection.emit('commandStarted', ev));
-        collection.on('commandFailed', ev => this.connection.emit('commandFailed', ev));
-        collection.on('commandSucceeded', ev => this.connection.emit('commandSucceeded', ev));
-        collection.on('commandWarnings', ev => this.connection.emit('commandWarnings', ev));
+        collection.on('commandStarted', (ev) => this.connection.emit('commandStarted', ev));
+        collection.on('commandFailed', (ev) => this.connection.emit('commandFailed', ev));
+        collection.on('commandSucceeded', (ev) => this.connection.emit('commandSucceeded', ev));
+        collection.on('commandWarnings', (ev) => this.connection.emit('commandWarnings', ev));
 
         return collection;
     }
@@ -182,7 +185,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         }
         const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
         filter = serialize(filter);
-        return this.collection.countDocuments(filter, 1000, remainingOptions);
+        return await this.collection.countDocuments(filter, 1000, remainingOptions);
     }
 
     /**
@@ -222,7 +225,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
         filter = serialize(filter ?? {}, this.isTable);
 
-        return this.collection.findOne(filter, requestOptions).then(doc => deserializeDoc<WithId<DocType>>(doc));
+        return await this.collection.findOne(filter, requestOptions).then(doc => deserializeDoc<WithId<DocType>>(doc));
     }
 
     /**
@@ -233,7 +236,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'insertOne', arguments);
         const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
-        return this.collection.insertOne(serialize(doc, this.isTable) as DocType, remainingOptions).then(res => ({
+        return await this.collection.insertOne(serialize(doc, this.isTable) as DocType, remainingOptions).then(res => ({
             ...res,
             // make insertedIds match the MongoDB driver collection's return type
             insertedId: res.insertedId as unknown as WithId<DocType>['_id'],
@@ -250,7 +253,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'insertMany', arguments);
         documents = documents.map(doc => serialize(doc, this.isTable));
-        return this.collection.insertMany(documents as DocType[], options).then(res => ({
+        return await this.collection.insertMany(documents as DocType[], options).then(res => ({
             ...res,
             // make insertedIds match the MongoDB driver collection's return type
             insertedIds: res.insertedIds as unknown as WithId<DocType>['_id'][],
@@ -288,7 +291,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         setDefaultIdForUpdate<DocType>(filter, update, requestOptions);
         update = serialize(update);
 
-        return this.collection.findOneAndUpdate(filter, update, requestOptions).then((value: Record<string, unknown> | null) => {
+        return await this.collection.findOneAndUpdate(filter, update, requestOptions).then((value: Record<string, unknown> | null) => {
             if (options?.includeResultMetadata) {
                 return { value: deserializeDoc<DocType>(value) };
             }
@@ -329,7 +332,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             : { ...remainingOptions, sort: undefined };
         filter = serialize(filter);
 
-        return this.collection.findOneAndDelete(filter, requestOptions).then((value: Record<string, unknown> | null) => {
+        return await this.collection.findOneAndDelete(filter, requestOptions).then((value: Record<string, unknown> | null) => {
             if (options?.includeResultMetadata) {
                 return { value: deserializeDoc<WithId<DocType>>(value), ok: 1 };
             }
@@ -380,7 +383,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         setDefaultIdForReplace(filter, newDoc, requestOptions);
         newDoc = serialize(newDoc);
 
-        return this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((value: Record<string, unknown> | null) => {
+        return await this.collection.findOneAndReplace(filter, newDoc, requestOptions).then((value: Record<string, unknown> | null) => {
             if (options?.includeResultMetadata) {
                 return { value: deserializeDoc<WithId<DocType>>(value), ok: 1 };
             }
@@ -450,8 +453,8 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         filter = serialize(filter);
         setDefaultIdForReplace(filter, replacement, requestOptions);
         replacement = serialize(replacement);
-        return this.collection.replaceOne(filter, replacement, requestOptions)
-            .then(res => ({ ...res, acknowledged: true, upsertedId: null }));
+        return await this.collection.replaceOne(filter, replacement, requestOptions)
+          .then(res => ({ ...res, acknowledged: true, upsertedId: null }));
     }
 
     /**
@@ -484,7 +487,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             setDefaultIdForUpdate(filter, update as CollectionUpdateFilter<DocType>, requestOptions);
         }
         update = serialize(update, this.isTable);
-        return this.collection.updateOne(filter as TableFilter<DocType>, update, requestOptions).then(res => {
+        return await this.collection.updateOne(filter as TableFilter<DocType>, update, requestOptions).then(res => {
             // Mongoose currently has a bug where null response from updateOne() throws an error that we can't
             // catch here for unknown reasons. See Automattic/mongoose#15126. Tables API returns null here.
             return res ?
@@ -514,7 +517,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         filter = serialize(filter, this.isTable);
         setDefaultIdForUpdate(filter, update, options);
         update = serialize(update, this.isTable);
-        return this.collection.updateMany(filter, update, options).then(res => ({ ...res, acknowledged: true }));
+        return await this.collection.updateMany(filter, update, options).then(res => ({ ...res, acknowledged: true }));
     }
 
     /**
@@ -526,7 +529,85 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use estimatedDocumentCount() with tables');
         }
-        return this.collection.estimatedDocumentCount(options);
+        return await this.collection.estimatedDocumentCount(options);
+    }
+
+    /**
+     * Sync the underlying table schema with the specified definition: creates a new
+     * table if one doesn't exist, or alters the existing table to match the definition
+     * by adding or dropping columns as necessary.
+     *
+     * Note that modifying an existing column is NOT supported and will throw an error.
+     *
+     * @param definition new table definition (strict only)
+     * @param createTableOptions passed to createTable if the table doesn't exist
+     * @param dryRun if true, don't actually perform the operation, just return info on what would happen
+     * @returns An object with details of the planned or applied changes, including columnsToAdd, columnsToDrop, and createdNewTable.
+     */
+    async syncTable<DocType extends Record<string, unknown> = Record<string, unknown>>(
+        definition: Pick<CreateTableDefinition, 'primaryKey'> & { columns: Record<string, StrictCreateTableColumnDefinition> },
+        createTableOptions?: CreateTableOptions,
+        dryRun?: boolean
+    ) {
+        const name = this.name;
+        const existingTables = await this.connection.listTables({ nameOnly: false });
+        const existingTable = existingTables.find(table => table.name === name);
+        // Create new table with the specified definition if it doesn't exist
+        if (!existingTable) {
+            if (!dryRun) {
+                await this.connection.createTable<DocType>(name, definition, createTableOptions);
+            }
+            return { columnsToAdd: Object.keys(definition.columns), columnsToDrop: [], createdNewTable: true };
+        }
+
+        const existingColumnNames = Object.keys(existingTable.definition.columns);
+        const newColumnNames = Object.keys(definition.columns);
+        const columnsToAdd = Object.keys(definition.columns)
+            .filter(column => !existingColumnNames.includes(column));
+        const columnsToDrop = existingColumnNames
+            .filter(column => !newColumnNames.includes(column));
+
+        const overlappingColumnNames = existingColumnNames.filter(column => newColumnNames.includes(column));
+        const columnsToModify = overlappingColumnNames.filter(column => {
+            const existingColumn = { ...existingTable.definition.columns[column] };
+            if (existingColumn.apiSupport != null) {
+                delete existingColumn.apiSupport;
+            }
+            return JSON.stringify(existingColumn) !== JSON.stringify(definition.columns[column]);
+        });
+        if (columnsToModify.length > 0) {
+            throw new AstraMongooseError('syncTable cannot modify existing columns, found modified columns: ' + columnsToModify.join(', '));
+        }
+
+        const add = Object.fromEntries(
+            columnsToAdd.map(name => [name, definition.columns[name]])
+        );
+
+        if (!dryRun) {
+            if (columnsToAdd.length > 0) {
+                await this.alterTable({
+                    add: { columns: add }
+                });
+            }
+            if (columnsToDrop.length > 0) {
+                await this.alterTable({
+                    drop: { columns: columnsToDrop }
+                });
+            }
+        }
+
+        return { columnsToAdd, columnsToDrop, createdNewTable: false };
+    }
+
+    /**
+     * Alter the underlying table with the specified name and operation - can add or drop columns
+     * @param operation add/drop
+     */
+    async alterTable(
+        operation: { add: { columns: Record<string, StrictCreateTableColumnDefinition> } } |
+          { drop: { columns: string[] } }
+    ) {
+        return this.runCommand({ alterTable: { operation } });
     }
 
     /**
@@ -535,8 +616,8 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async runCommand(command: Record<string, unknown>, options?: Omit<RunCommandOptions, 'table' | 'collection' | 'keyspace'>) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this, this.connection.debug, this.name, 'runCommand', arguments);
-        return this.connection.db!.astraDb.command(
+        _logFunctionCall(this.connection.debug, this.name, 'runCommand', arguments);
+        return await this.connection.db!.astraDb.command(
             command,
             this.isTable ? { table: this.name, ...options } : { collection: this.name, ...options }
         );
@@ -633,7 +714,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             await this.collection.createIndex(
                 indexName,
                 indexModifier === '$keys' || indexModifier === '$values'
-                    ? { [column]: indexModifier } as TableCreateIndexColumn<unknown>
+                    ? { [column]: indexModifier } as TableIndexColumn<unknown>
                     : column,
                 { ifNotExists: true, options: options as TableIndexOptions }
             );

@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Binary, Double, ObjectId } from 'bson';
 import mongoose from 'mongoose';
+
+const { Binary, Double, ObjectId } = mongoose.mongo.BSON;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function serialize(data: Record<string, any>, isTable?: boolean): Record<string, any> {
@@ -57,6 +58,10 @@ function serializeValue(data: any, isTable?: boolean): any {
         return Object.fromEntries(
             [...data.entries()].map(([key, value]) => [key, serializeValue(value, isTable)])
         );
+    } else if (data instanceof Map) {
+        return new Map(
+            [...data.entries()].map(([key, value]) => [key, serializeValue(value, isTable)])
+        );
     } else if (data instanceof Binary) {
         if (data.sub_type === 3 || data.sub_type === 4) {
             // UUIDs, no need for explicit `instanceof UUID` check because bson UUID extends Binary
@@ -70,6 +75,8 @@ function serializeValue(data: any, isTable?: boolean): any {
         return { type: 'Buffer', data: [...data.buffer] };
     } else if (Array.isArray(data)) {
         return data.map(el => serializeValue(el, isTable));
+    } else if (data instanceof Set) {
+        return new Set([...data].map(el => serializeValue(el, isTable)));
     } else {
         for (const key of Object.keys(data)) {
             data[key] = serializeValue(data[key], isTable);

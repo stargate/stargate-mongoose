@@ -13,24 +13,31 @@
 // limitations under the License.
 
 import {
+    AlterTypeOptions,
     Collection,
     Collection as AstraCollection,
     CollectionDescriptor,
     CollectionOptions,
+    CreateCollectionOptions,
     CreateTableDefinition,
+    CreateTableOptions,
+    CreateTypeDefinition,
     Db as AstraDb,
     DropCollectionOptions,
+    DropTableOptions,
+    DropTypeOptions,
     ListCollectionsOptions,
     ListTablesOptions,
+    ListTypesOptions,
     RawDataAPIResponse,
+    SomeRow,
     Table as AstraTable,
     TableDescriptor,
     TableOptions,
-    CreateTableOptions,
-    DropTableOptions,
-    CreateCollectionOptions,
+    TypeDescriptor
 } from '@datastax/astra-db-ts';
 import { AstraMongooseError } from '../astraMongooseError';
+import assert from 'assert';
 
 /**
  * Defines the base database class for interacting with Astra DB. Responsible for creating collections and tables.
@@ -81,7 +88,7 @@ export abstract class BaseDb {
         definition: CreateTableDefinition,
         options?: Omit<CreateTableOptions, 'definition'>
     ) {
-        return this.astraDb.createTable<DocType>(name, { ...options, definition });
+        return await this.astraDb.createTable<DocType>(name, { ...options, definition });
     }
 
     /**
@@ -89,7 +96,7 @@ export abstract class BaseDb {
      * @param name The name of the collection to be dropped.
      */
     async dropCollection(name: string, options?: DropCollectionOptions) {
-        return this.astraDb.dropCollection(name, options);
+        return await this.astraDb.dropCollection(name, options);
     }
 
     /**
@@ -97,7 +104,7 @@ export abstract class BaseDb {
      * @param name
      */
     async dropTable(name: string, options?: DropTableOptions) {
-        return this.astraDb.dropTable(name, {
+        return await this.astraDb.dropTable(name, {
             ifExists: true,
             ...options
         });
@@ -113,9 +120,9 @@ export abstract class BaseDb {
 
     async listCollections(options?: ListCollectionsOptions) {
         if (options?.nameOnly) {
-            return this.astraDb.listCollections({ ...options, nameOnly: true });
+            return await this.astraDb.listCollections({ ...options, nameOnly: true });
         }
-        return this.astraDb.listCollections({ ...options, nameOnly: false });
+        return await this.astraDb.listCollections({ ...options, nameOnly: false });
     }
 
     /**
@@ -126,9 +133,127 @@ export abstract class BaseDb {
 
     async listTables(options?: ListTablesOptions) {
         if (options?.nameOnly) {
-            return this.astraDb.listTables({ ...options, nameOnly: true });
+            return await this.astraDb.listTables({ ...options, nameOnly: true });
         }
-        return this.astraDb.listTables({ ...options, nameOnly: false });
+        return await this.astraDb.listTables({ ...options, nameOnly: false });
+    }
+
+    /**
+     * List all user-defined types (UDTs) in the database.
+     * @returns An array of type descriptors.
+     */
+    async listTypes(options: { nameOnly: true }): Promise<string[]>;
+    async listTypes(options?: { nameOnly?: false }): Promise<TypeDescriptor[]>;
+    async listTypes(options?: ListTypesOptions) {
+        if (options?.nameOnly) {
+            return await this.astraDb.listTypes({ ...options, nameOnly: true });
+        }
+        return await this.astraDb.listTypes({ ...options, nameOnly: false });
+    }
+
+    /**
+     * Create a new user-defined type (UDT) with the specified name and fields definition.
+     * @param name The name of the type to create.
+     * @param definition The definition of the fields for the type.
+     * @returns The result of the createType command.
+     */
+    async createType(name: string, definition: CreateTypeDefinition) {
+        return await this.astraDb.createType(name, { definition });
+    }
+
+    /**
+     * Drop (delete) a user-defined type (UDT) by name.
+     * @param name The name of the type to drop.
+     * @returns The result of the dropType command.
+     */
+    async dropType(name: string, options?: DropTypeOptions) {
+        return await this.astraDb.dropType(name, options);
+    }
+
+    /**
+     * Alter a user-defined type (UDT) by renaming or adding fields.
+     * @param name The name of the type to alter.
+     * @param update The alterations to be made: renaming or adding fields.
+     * @returns The result of the alterType command.
+     */
+    async alterType<UDTSchema extends SomeRow = SomeRow>(name: string, update: AlterTypeOptions<UDTSchema>) {
+        return await this.astraDb.alterType(name, update);
+    }
+
+    /**
+     * Synchronizes the set of user-defined types (UDTs) in the database. It makes existing types in the database
+     * match the list provided by `types`. New types that are missing are created, and types that exist in the database
+     * but are not in the input list are dropped. If a type is present in both, we add all the new type's fields to the existing type.
+     *
+     * @param types An array of objects each specifying the name and CreateTypeDefinition for a UDT to synchronize.
+     * @returns An object describing which types were created, updated, or dropped.
+     * @throws {AstraMongooseError} If an error occurs during type synchronization, with partial progress information in the error.
+     */
+    async syncTypes(types: { name: string, definition: CreateTypeDefinition }[]) {
+        const existingTypes = await this.listTypes({ nameOnly: false });
+        const existingTypeNames = existingTypes.map(type => type.name);
+        const inputTypeNames = types.map(type => type.name);
+
+        const toCreate = types
+            .filter(type => !existingTypeNames.includes(type.name))
+            .map(type => type.name);
+
+        const toUpdate = types
+            .filter(type => existingTypeNames.includes(type.name))
+            .map(type => type.name);
+
+        const toDrop = existingTypeNames.filter(typeName => !inputTypeNames.includes(typeName));
+
+        // We'll perform these in series and track progress
+        const created: string[] = [];
+        const updated: string[] = [];
+        const dropped: string[] = [];
+
+        try {
+            for (const type of types) {
+                if (toCreate.includes(type.name)) {
+                    await this.createType(type.name, type.definition);
+                    created.push(type.name);
+                }
+            }
+            for (const typeName of toDrop) {
+                await this.dropType(typeName);
+                dropped.push(typeName);
+            }
+            for (const type of types) {
+                if (toUpdate.includes(type.name)) {
+                    const existingType = existingTypes.find(t => t.name === type.name);
+                    // This cannot happen, but add a guard for TypeScript
+                    assert.ok(existingType);
+                    const existingFields = existingType.definition!.fields;
+                    const fieldsToAdd: CreateTypeDefinition = { fields: {} };
+                    for (const [field, newField] of Object.entries(type.definition.fields)) {
+                        if (existingFields?.[field] != null) {
+                            const existingField = existingFields[field];
+                            // Compare type as string since Astra DB types may be represented in string form
+                            const newFieldType = typeof newField === 'string' ? newField : newField.type;
+                            const existingFieldType = typeof existingField === 'string' ? existingField : existingField.type;
+                            if (existingFieldType !== newFieldType) {
+                                throw new AstraMongooseError(
+                                    `Field '${field}' in type '${type.name}' exists with different type. (current: ${existingFieldType}, new: ${newFieldType})`
+                                );
+                            }
+                        } else {
+                            fieldsToAdd.fields[field] = newField;
+                        }
+                    }
+
+                    if (Object.keys(fieldsToAdd.fields).length > 0) {
+                        await this.alterType(type.name, { operation: { add: fieldsToAdd } });
+                        updated.push(type.name);
+                    }
+                }
+            }
+        } catch (err) {
+            throw new AstraMongooseError(`Error in syncTypes: ${err}`, { created, updated, dropped });
+        }
+
+        return { created, updated, dropped };
     }
 
     /**
@@ -136,7 +261,7 @@ export abstract class BaseDb {
      * @param command The command to be executed.
      */
     async command(command: Record<string, unknown>): Promise<RawDataAPIResponse> {
-        return this.astraDb.command(command);
+        return await this.astraDb.command(command);
     }
 }
 
@@ -165,8 +290,8 @@ export class CollectionsDb extends BaseDb {
     /**
      * Send a CreateCollection command to Data API.
      */
-    createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: CreateCollectionOptions<DocType>) {
-        return this.astraDb.createCollection<DocType>(name, options);
+    async createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: CreateCollectionOptions<DocType>) {
+        return await this.astraDb.createCollection<DocType>(name, options);
     }
 }
 
@@ -196,7 +321,7 @@ export class TablesDb extends BaseDb {
     /**
      * Throws an error, astra-mongoose does not support creating collections in tables mode.
      */
-    createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(
+    async createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(
         name: string,
         options?: CreateCollectionOptions<DocType>
     ): Promise<Collection<DocType>> {
