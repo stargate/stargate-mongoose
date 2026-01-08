@@ -13,12 +13,20 @@
 // limitations under the License.
 
 import { FindCursor } from '@datastax/astra-db-ts';
-import { IndexOptions, InferSchemaType, Model, Schema, Types } from 'mongoose';
+import {
+    IndexOptions,
+    InferSchemaType,
+    Model,
+    Schema,
+    Types,
+    version as mongooseVersion
+} from 'mongoose';
 import { Vectorize } from '../../src/driver/vectorize';
 import assert from 'assert';
 import compareTableDefinitions from '../compareTableDefinitions';
 import { testClient } from '../fixtures';
 import { createMongooseCollections, mongooseInstanceTables as mongooseInstance, testDebug } from '../mongooseFixtures';
+import { once } from 'events';
 import tableDefinitionFromSchema from '../../src/tableDefinitionFromSchema';
 
 describe('TABLES: vector search', function() {
@@ -151,6 +159,10 @@ describe('TABLES: vector search', function() {
             .sort({ vector: { $meta: [1, 99] } })
             .cursor();
 
+        // Mongoose 8 requires waiting for the cursor to be opened here.
+        if (mongooseVersion.startsWith('8.')) {
+            await once(cursor, 'cursor');
+        }
         const rawCursor = (cursor as unknown as { cursor: FindCursor<unknown> }).cursor;
         assert.deepStrictEqual(await rawCursor.getSortVector().then(vec => vec?.asArray()), [1, 99]);
     });

@@ -75,6 +75,8 @@ function serializeValue(data: any, isTable?: boolean): any {
         return { type: 'Buffer', data: [...data.buffer] };
     } else if (Array.isArray(data)) {
         return data.map(el => serializeValue(el, isTable));
+    } else if (data instanceof Set) {
+        return new Set([...data].map(el => serializeValue(el, isTable)));
     } else {
         for (const key of Object.keys(data)) {
             data[key] = serializeValue(data[key], isTable);

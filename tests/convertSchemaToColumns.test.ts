@@ -469,4 +469,67 @@ describe('convertSchemaToColumns', () => {
             { message: 'Cannot convert schema to Data API table definition: cannot store a subdocument in a UDT' }
         );
     });
+
+    it('handles Set of primitives', () => {
+        const testSchema = new Schema({
+            tags: { type: Set, of: { type: String, required: true }, __typehint: new Set<string>() }
+        });
+
+        const result = convertSchemaToColumns(testSchema);
+
+        assert.deepStrictEqual(result, {
+            '_id': { type: 'text' },
+            '__v': { type: 'int' },
+            'tags': { type: 'set', valueType: 'text' }
+        });
+    });
+
+    it('handles Set of numbers', () => {
+        const testSchema = new Schema({
+            scores: { type: Set, of: { type: Number, required: true }, __typehint: new Set<number>() }
+        });
+
+        const result = convertSchemaToColumns(testSchema);
+
+        assert.deepStrictEqual(result, {
+            '_id': { type: 'text' },
+            '__v': { type: 'int' },
+            'scores': { type: 'set', valueType: 'double' }
+        });
+    });
+
+    it('throws if set value is not required', () => {
+        const testSchema = new Schema({
+            mySet: { type: Set, of: { type: String, required: false }, __typehint: new Set<string>() }
+        });
+
+        assert.throws(
+            () => convertSchemaToColumns(testSchema),
+            /Cannot convert schema to Data API table definition: values for set path "mySet" must be required/
+        );
+    });
+
+    it('throws if set value is not supported type', () => {
+        const testSchema = new Schema({
+            mySet: {
+                type: Set, of: { type: Set, of: { type: String, required: true }, required: true }
+            }
+        });
+
+        assert.throws(
+            () => convertSchemaToColumns(testSchema),
+            /Cannot convert schema to Data API table definition: unsupported type at path "mySet"/
+        );
+    });
+
+    it('throws error if schema with udtName option has a set', () => {
+        const testSchema = new Schema({
+            tags: { type: Set, of: { type: String, required: true }, __typehint: new Set<string>() }
+        }, { udtName: 'user' });
+
+        assert.throws(
+            () => convertSchemaToColumns(testSchema),
+            { message: 'Cannot convert schema to Data API table definition: cannot store a set in a UDT' }
+        );
+    });
 });
