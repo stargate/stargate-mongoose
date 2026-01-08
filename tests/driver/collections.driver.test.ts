@@ -19,6 +19,7 @@ import * as AstraMongooseDriver from '../../src/driver';
 import { testClient, TEST_COLLECTION_NAME } from '../fixtures';
 import { CartModelType, ProductModelType, createMongooseCollections, testDebug } from '../mongooseFixtures';
 import type { AstraMongoose } from '../../src';
+import { Writable } from 'stream';
 
 describe('COLLECTIONS: driver based tests', async () => {
     let Product: ProductModelType;
@@ -253,6 +254,20 @@ describe('COLLECTIONS: driver based tests', async () => {
             mongooseInstance.set('debug', (collectionName: string, fnName: string) => calls.push(`${collectionName}.${fnName}`));
             await Person.findOne({});
             assert.deepStrictEqual(calls, ['collection1.findOne']);
+        });
+
+        it('handles logging to writable stream', async () => {
+            const calls: string[] = [];
+            const stream = new Writable({
+                write(chunk, encoding, callback) {
+                    calls.push(chunk.toString());
+                    callback();
+                }
+            });
+            mongooseInstance.set('debug', stream);
+            await Person.findOne({});
+            assert.equal(calls.length, 1);
+            assert.strictEqual(calls[0], 'collection1.findOne({}, {})');
         });
     });
     describe('namespace management tests', () => {

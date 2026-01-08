@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { AstraMongooseError } from '../astraMongooseError';
 import { Collection, MongooseCollectionOptions } from './collection';
 import {
     AstraDbAdmin,
@@ -27,6 +28,7 @@ import {
     CreateTableDefinition,
     CreateTableOptions,
     CreateTypeDefinition,
+    DataAPIClient,
     DataAPIClientOptions,
     DataAPIDbAdmin,
     DropCollectionOptions,
@@ -40,21 +42,17 @@ import {
     SomeRow,
     TableDescriptor,
     TypeDescriptor,
+    UsernamePasswordTokenProvider,
     WithTimeout,
 } from '@datastax/astra-db-ts';
 import { CollectionsDb, TablesDb } from './db';
+import { BaseConnection as MongooseConnection } from 'mongoose';
 import { OperationNotSupportedError } from '../operationNotSupportedError';
-import { default as MongooseConnection } from 'mongoose/lib/connection';
 import { STATES } from 'mongoose';
 import type { ConnectOptions, Mongoose, Model } from 'mongoose';
 import { URL } from 'url';
+import { Writable } from 'stream';
 import assert from 'assert';
-
-import {
-    DataAPIClient,
-    UsernamePasswordTokenProvider
-} from '@datastax/astra-db-ts';
-import { AstraMongooseError } from '../astraMongooseError';
 
 interface ConnectOptionsInternal extends ConnectOptions {
     isTable?: boolean;
@@ -66,7 +64,7 @@ interface ConnectOptionsInternal extends ConnectOptions {
     autoCreate?: boolean;
     sanitizeFilter?: boolean;
     bufferCommands?: boolean;
-    debug?: boolean | ((name: string, fn: string, ...args: unknown[]) => void) | null;
+    debug?: boolean | { color?: boolean, shell?: boolean } | Writable | ((name: string, fn: string, ...args: unknown[]) => void) | null | undefined;
     logging?: LoggingEvent
 }
 
@@ -75,6 +73,12 @@ interface ConnectionEvents {
   commandFailed: CommandFailedEvent;
   commandSucceeded: CommandSucceededEvent;
   commandWarnings: CommandWarningsEvent;
+  // These Mongoose events don't emit any event details
+  disconnected: undefined;
+  connected: undefined;
+  connecting: undefined;
+  disconnecting: undefined;
+  close: undefined;
 }
 
 /**
@@ -84,16 +88,21 @@ interface ConnectionEvents {
 
 export class Connection extends MongooseConnection {
     debugType = 'AstraMongooseConnection';
-    initialConnection: Promise<Connection> | null = null;
+    initialConnection: Promise<this> | null = null;
     client: DataAPIClient | null = null;
     admin: AstraDbAdmin | DataAPIDbAdmin | null = null;
+    // @ts-expect-error astra-mongoose Db classes don't fully extend from Mongoose Db in a TypeScript-compatible way.
     db: CollectionsDb | TablesDb | null = null;
     keyspaceName: string | null = null;
     config?: ConnectOptionsInternal;
     baseUrl: string | null = null;
     baseApiPath: string | null = null;
     models: Record<string, Model<unknown>> = {};
-    _debug?: boolean | ((name: string, fn: string, ...args: unknown[]) => void) | null;
+    // @ts-expect-error astra-mongoose collection currently doesn't fully extend from Mongoose collection in a TypeScript-compatible way.
+    collections: Record<string, Collection> = {};
+    _debug?: boolean | { color?: boolean, shell?: boolean } | Writable | ((name: string, fn: string, ...args: unknown[]) => void) | null | undefined;
+    _connectionString: string | null = null;
+    _closeCalled: boolean = false;
 
     // Store references to event listener functions for cleanup
     private _dbEventListeners?: {
@@ -104,6 +113,7 @@ export class Connection extends MongooseConnection {
      };
 
     constructor(base: Mongoose) {
+        // @ts-expect-error Mongoose connection constructor is not public in TypeScript
         super(base);
     }
 
@@ -122,8 +132,11 @@ export class Connection extends MongooseConnection {
       * @ignore
       */
     async _waitForClient() {
-        const shouldWaitForClient = (this.readyState === STATES.connecting || this.readyState === STATES.disconnected) && this._shouldBufferCommands();
+        const shouldWaitForClient = (this.readyState === STATES.connecting || this.readyState === STATES.disconnected) &&
+          // @ts-expect-error _shouldBufferCommands not part of public API
+          this._shouldBufferCommands();
         if (shouldWaitForClient) {
+            // @ts-expect-error _waitForConnect not part of public API
             await this._waitForConnect();
             // Cannot happen, but this helps TypeScript infer the correct return type
             assert.ok(this.db);
@@ -140,22 +153,27 @@ export class Connection extends MongooseConnection {
     }
 
     /**
-      * Get a collection by name. Cached in `this.collections`.
-      * @param name
-      * @param options
-      */
+     * Get a collection by name. Cached in `this.collections`.
+     * @param name
+     * @param options
+     */
+
+    // @ts-expect-error astra-mongoose collection currently doesn't fully extend from Mongoose collection in a TypeScript-compatible way.
     collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: MongooseCollectionOptions): Collection<DocType> {
         if (!(name in this.collections)) {
+            // @ts-expect-error astra-mongoose collection currently doesn't fully extend from Mongoose collection in a TypeScript-compatible way.
             this.collections[name] = new Collection<DocType>(name, this, options);
         }
-        return super.collection(name, options);
+        return super.collection(name, options) as unknown as Collection<DocType>;
     }
 
     /**
-      * Create a new collection in the database
-      * @param name The name of the collection to create
-      * @param options
-      */
+     * Create a new collection in the database
+     * @param name The name of the collection to create
+     * @param options
+     */
+
+    // @ts-expect-error astra-mongoose collection currently doesn't fully extend from Mongoose collection in a TypeScript-compatible way.
     async createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(
         name: string,
         options?: CreateCollectionOptions<DocType>
@@ -168,6 +186,7 @@ export class Connection extends MongooseConnection {
       * Get current debug setting, accounting for potential changes to global debug config (`mongoose.set('debug', true | false)`)
       */
     get debug(): boolean | ((name: string, fn: string, ...args: unknown[]) => void) | null | undefined {
+        // @ts-expect-error Mongoose global currently doesn't export options
         return this._debug ?? this.base?.options?.debug;
     }
 
@@ -325,18 +344,24 @@ export class Connection extends MongooseConnection {
       * List all keyspaces. Called "listDatabases" for Mongoose compatibility
       */
 
-    async listDatabases(options?: WithTimeout<'keyspaceAdminTimeoutMs'>): Promise<{ databases: { name: string }[] }> {
+    async listDatabases(options?: WithTimeout<'keyspaceAdminTimeoutMs'>): Promise<{ databases: { name: string }[], ok: 1 }> {
         const { admin } = await this._waitForClient();
-        return { databases: await admin.listKeyspaces(options).then(keyspaces => keyspaces.map(name => ({ name }))) };
+        // `ok: 1` to be compatible with Mongoose's TypeScript types.
+        return {
+          databases: await admin!.listKeyspaces(options).then(keyspaces => keyspaces.map(name => ({ name }))),
+          ok: 1
+        };
     }
 
     /**
-      * Logic for creating a connection to Data API. Mongoose calls `openUri()` internally when the
-      * user calls `mongoose.create()` or `mongoose.createConnection(uri)`
-      *
-      * @param uri the connection string
-      * @param options
-      */
+     * Logic for creating a connection to Data API. Mongoose calls `openUri()` internally when the
+     * user calls `mongoose.create()` or `mongoose.createConnection(uri)`
+     *
+     * @param uri the connection string
+     * @param options
+     */
+
+    // @ts-expect-error astra-mongoose connection currently doesn't fully extend from Mongoose connection in a TypeScript-compatible way because of collections
     async openUri(uri: string, options?: ConnectOptionsInternal) {
         let _fireAndForget: boolean | undefined = false;
         if (options && '_fireAndForget' in options) {
@@ -361,6 +386,7 @@ export class Connection extends MongooseConnection {
         this.initialConnection = this.createClient(uri, options)
             .then(() => this)
             .catch(err => {
+                // @ts-expect-error readyState is read-only in Mongoose types
                 this.readyState = STATES.disconnected;
                 throw err;
             });
@@ -382,6 +408,7 @@ export class Connection extends MongooseConnection {
     async createClient(uri: string, options?: ConnectOptionsInternal) {
         this._connectionString = uri;
         this._closeCalled = false;
+        // @ts-expect-error readyState is read-only in Mongoose types
         this.readyState = STATES.connecting;
 
         const { baseUrl, keyspaceName, applicationToken, baseApiPath } = parseUri(uri);
@@ -413,7 +440,7 @@ export class Connection extends MongooseConnection {
             ? db.astraDb.admin({ adminToken })
             : db.astraDb.admin({ adminToken, environment: 'dse' });
 
-        const collections: Collection[] = Object.values(this.collections);
+        const collections = Object.values(this.collections);
         for (const collection of collections) {
             collection._collection = undefined;
         }
@@ -424,9 +451,6 @@ export class Connection extends MongooseConnection {
         this.baseUrl = baseUrl;
         this.keyspaceName = keyspaceName;
         this.baseApiPath = baseApiPath;
-
-        this.readyState = STATES.connected;
-        this.onOpen();
 
         // Bubble up db-level events from astra-db-ts to the main connection
         // Store listener references for later removal
@@ -440,6 +464,13 @@ export class Connection extends MongooseConnection {
         db.astraDb.on('commandFailed', this._dbEventListeners.commandFailed);
         db.astraDb.on('commandSucceeded', this._dbEventListeners.commandSucceeded);
         db.astraDb.on('commandWarnings', this._dbEventListeners.commandWarnings);
+
+        setImmediate(() => {
+            // @ts-expect-error readyState is read-only in Mongoose types
+            this.readyState = STATES.connected;
+            // @ts-expect-error onOpen is private in Mongoose types
+            this.onOpen();
+        });
 
         return this;
 
@@ -458,7 +489,7 @@ export class Connection extends MongooseConnection {
       * @ignore
       */
 
-    setClient() {
+    setClient(): never {
         throw new AstraMongooseError('SetClient not supported');
     }
 
@@ -468,6 +499,9 @@ export class Connection extends MongooseConnection {
       * `await createConnection(uri).asPromise()`
       */
     asPromise() {
+        if (!this.initialConnection) {
+            throw new AstraMongooseError('Connection not initialized');
+        }
         return this.initialConnection;
     }
 
@@ -477,7 +511,7 @@ export class Connection extends MongooseConnection {
       * @ignore
       */
 
-    startSession() {
+    startSession(): never {
         throw new AstraMongooseError('startSession() Not Implemented');
     }
 
@@ -506,7 +540,6 @@ export class Connection extends MongooseConnection {
         return this;
     }
 
-    // @ts-expect-error Mongoose connection is typed as any here
     override on<K extends keyof ConnectionEvents>(
         event: K,
         listener: (event: ConnectionEvents[K]) => void
@@ -514,7 +547,6 @@ export class Connection extends MongooseConnection {
         return super.on(event, listener);
     }
 
-    // @ts-expect-error Mongoose connection is typed as any here
     override once<K extends keyof ConnectionEvents>(
         event: K,
         listener: (event: ConnectionEvents[K]) => void
@@ -522,7 +554,6 @@ export class Connection extends MongooseConnection {
         return super.once(event, listener);
     }
 
-    // @ts-expect-error Mongoose connection is typed as any here
     override emit<K extends keyof ConnectionEvents>(
         event: K,
         eventData: ConnectionEvents[K]
