@@ -541,7 +541,11 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
 
             // assert that using with update pipeline rejects
             await assert.rejects(
-                Product.findOneAndUpdate({category: 'cat 1'}, [{$set: {name: 'Product 43'}}]),
+                Product.findOneAndUpdate(
+                    {category: 'cat 1'},
+                    [{$set: {name: 'Product 43'}}],
+                    {updatePipeline: true}
+                ),
                 /Astra-mongoose does not support update pipelines/
             );
         });
@@ -657,7 +661,11 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             productNames.delete('Product 2');
 
             await assert.rejects(
-                Product.updateMany({name: 'Product 1'}, [{$set: {name: 'Product 43'}}]),
+                Product.updateMany(
+                    {name: 'Product 1'},
+                    [{$set: {name: 'Product 43'}}],
+                    {updatePipeline: true}
+                ),
                 /Astra-mongoose does not support update pipelines/
             );
         });
@@ -678,7 +686,11 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.strictEqual(findUpdatedDoc?.name, 'Product 3 Updated');
 
             await assert.rejects(
-                Product.updateOne({name: 'Product 1'}, [{$set: {name: 'Product 43'}}]),
+                Product.updateOne(
+                    {name: 'Product 1'},
+                    [{$set: {name: 'Product 43'}}],
+                    {updatePipeline: true}
+                ),
                 /Astra-mongoose does not support update pipelines/
             );
         });

@@ -616,7 +616,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
     async runCommand(command: Record<string, unknown>, options?: Omit<RunCommandOptions, 'table' | 'collection' | 'keyspace'>) {
         // eslint-disable-next-line prefer-rest-params
-        _logFunctionCall(this.connection.debug, this.name, 'runCommand', arguments);
+        _logFunctionCall(this, this.connection.debug, this.name, 'runCommand', arguments);
         return await this.connection.db!.astraDb.command(
             command,
             this.isTable ? { table: this.name, ...options } : { collection: this.name, ...options }

@@ -54,12 +54,6 @@ import { URL } from 'url';
 import { Writable } from 'stream';
 import assert from 'assert';
 
-import {
-    DataAPIClient,
-    UsernamePasswordTokenProvider
-} from '@datastax/astra-db-ts';
-import { AstraMongooseError } from '../astraMongooseError';
-
 interface ConnectOptionsInternal extends ConnectOptions {
     isTable?: boolean;
     isAstra?: boolean;
