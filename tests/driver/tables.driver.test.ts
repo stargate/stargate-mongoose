@@ -148,7 +148,6 @@ describe('TABLES: driver based tests', async () => {
         });
 
         it('handles populate()', async () => {
-            // Skip for now because populate is blocked by stargate/data-api#1532
             const Product = mongooseInstance!.model('Product');
             await Promise.all([Cart!.deleteMany({}), Product.deleteMany({})]);
             const [{ _id: productId }] = await Product.create([
@@ -229,7 +228,7 @@ describe('TABLES: driver based tests', async () => {
             mongooseInstance.set('autoIndex', false);
             const options = isAstra
                 ? {}
-                : { isAstra: false, username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
+                : { isAstra: false, username: process.env.DATA_API_USERNAME, password: process.env.DATA_API_PASSWORD };
 
             await mongooseInstance.connect(dbUri, options);
 

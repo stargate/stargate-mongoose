@@ -9,9 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATA_API_URI: http://localhost:8181/v1/testks1
-      STARGATE_AUTH_URL: http://localhost:8081/v1/auth
-      STARGATE_USERNAME: cassandra
-      STARGATE_PASSWORD: cassandra
+      DATA_API_USERNAME: cassandra
+      DATA_API_PASSWORD: cassandra
     steps:
       - uses: actions/checkout@v3
       - name: Set up Data API
