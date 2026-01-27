@@ -1,5 +1,4 @@
 import astraMongoose from '../dist/index.js';
-import fs from 'node:fs/promises';
 import mongoose from 'mongoose';
 
 const { driver, tableDefinitionFromSchema } = astraMongoose;
