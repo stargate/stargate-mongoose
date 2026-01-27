@@ -47,9 +47,14 @@ if (isTable) {
     tableDefinitionFromSchema(contentSchema)
   );
 } else {
-  if (tables.find(table => table.name === 'content')) {
-    await mongoose.connection.dropTable('content')
-  } else if (!collections.find(collection => collection.name === 'content')) {
+  const hasTable = tables.find(table => table.name === 'content');
+  const hasCollection = collections.find(collection => collection.name === 'content');
+
+  if (hasTable) {
+    await mongoose.connection.dropTable('content');
+  }
+
+  if (!hasCollection) {
     await ContentModel.createCollection();
   }
 }
