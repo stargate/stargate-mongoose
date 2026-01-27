@@ -59,8 +59,18 @@ if (isTable) {
   await ContentModel.syncIndexes();
 }
 
-const moviesRaw = await fs.readFile('./movies.json', 'utf8');
-const movies = JSON.parse(moviesRaw);
+const moviesPath = process.env.MOVIES_JSON_PATH || './movies.json';
+
+let movies;
+try {
+  const moviesRaw = await fs.readFile(moviesPath, 'utf8');
+  movies = JSON.parse(moviesRaw);
+} catch (err) {
+  console.error(`Failed to load movies dataset from "${moviesPath}".`);
+  console.error('Set the MOVIES_JSON_PATH environment variable to point to a valid movies.json file.');
+  console.error('Original error:', err?.message || err);
+  process.exit(1);
+}
 const batchSize = 20;
 const start = process.hrtime.bigint();
 
