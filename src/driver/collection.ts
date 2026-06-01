@@ -454,7 +454,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         setDefaultIdForReplace(filter, replacement, requestOptions);
         replacement = serialize(replacement);
         return await this.collection.replaceOne(filter, replacement, requestOptions)
-          .then(res => ({ ...res, acknowledged: true, upsertedId: null }));
+            .then(res => ({ ...res, acknowledged: true, upsertedId: null }));
     }
 
     /**

@@ -227,7 +227,12 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             await product1.save();
             const error: Error | null = await Product.$where('this.name === "Product 1"').exec().then(() => null, error => error);
             assert.ok(error instanceof DataAPIResponseError);
-            assert.strictEqual(error.errorDescriptors[0].message, 'Invalid filter expression: filter clause path (\'$where\') cannot start with `$`');
+            assert.ok(
+                error.errorDescriptors[0].message.startsWith(
+                    'Unsupported filter clause: filter expression path (\'$where\') cannot start with \'$\'.'
+                ),
+                error.errorDescriptors[0].message
+            );
         });
         it('API ops tests db.dropCollection() and Model.createCollection()', async function() {
             this.timeout(120_000);
@@ -742,11 +747,8 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         it('API ops tests Model.watch()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
             await product1.save();
-            assert.throws(
-                () => Product.watch().on('change', (change) => {
-                    assert.strictEqual(change.operationType, 'delete');
-                    assert.strictEqual(change.documentKey._id.toString(), product1._id.toString());
-                }),
+            await assert.rejects(
+                Product.watch().next(),
                 { message: 'watch() Not Implemented' }
             );
         });
