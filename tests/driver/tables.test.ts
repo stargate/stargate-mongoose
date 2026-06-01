@@ -629,10 +629,10 @@ describe('TABLES: basic operations and data types', function() {
             }]);
 
             // 2. Define schema that uses a set of AddressType as "addresses"
-            const addressSchema = new Schema(
+            const addressSchema = Schema.create(
                 {
-                    city: { type: String },
-                    state: { type: String }
+                    city: { type: String, required: true },
+                    state: { type: String, required: true }
                 },
                 { udtName: 'AddressType', versionKey: false, _id: false }
             );

@@ -561,7 +561,6 @@ describe('TABLES: Mongoose Model API level tests', async () => {
                 () => Product.watch().next(),
                 { message: 'watch() Not Implemented' }
             );
-            );
         });
         it('API ops tests Model.where()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
