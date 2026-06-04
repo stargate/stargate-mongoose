@@ -43,6 +43,10 @@ export { OperationNotSupportedError } from './operationNotSupportedError';
 export type AstraMongoose = Omit<Mongoose, 'connection'> & { connection: AstraMongooseDriver.Connection };
 
 declare module 'mongodb' {
+    interface FilterOperators<TValue> {
+        $match?: TValue extends string ? string : never;
+    }
+
     interface CreateCollectionOptions {
         vector?: CollectionVectorOptions;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

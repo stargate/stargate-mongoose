@@ -348,8 +348,8 @@ export class Connection extends MongooseConnection {
         const { admin } = await this._waitForClient();
         // `ok: 1` to be compatible with Mongoose's TypeScript types.
         return {
-          databases: await admin!.listKeyspaces(options).then(keyspaces => keyspaces.map(name => ({ name }))),
-          ok: 1
+            databases: await admin!.listKeyspaces(options).then(keyspaces => keyspaces.map(name => ({ name }))),
+            ok: 1
         };
     }
 

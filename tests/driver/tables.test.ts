@@ -275,7 +275,7 @@ describe('TABLES: basic operations and data types', function() {
         findOneResponse.tags!.add('typescript');
         findOneResponse.tags!.delete('nodejs');
         findOneResponse.luckyNumbers!.add(99);
-        assert.deepStrictEqual(findOneResponse.getChanges(), {
+        assert.deepStrictEqual(findOneResponse.$getChanges(), {
             $set: { tags: ['cassandra', 'mongodb', 'typescript'] },
             $push: { luckyNumbers: { $each: [99] } }
         });
@@ -283,7 +283,7 @@ describe('TABLES: basic operations and data types', function() {
 
         // Test that atomics were reset after save
         findOneResponse.tags!.add('java');
-        assert.deepStrictEqual(findOneResponse.getChanges(), {
+        assert.deepStrictEqual(findOneResponse.$getChanges(), {
             $push: { tags: { $each: ['java'] } }
         });
 
@@ -464,7 +464,7 @@ describe('TABLES: basic operations and data types', function() {
 
             doc.luckyNumbers!.delete(2);
             assert.deepEqual(
-                doc.getChanges(),
+                doc.$getChanges(),
                 { $pullAll: { luckyNumbers: [2] } }
             );
             doc.luckyNumbers!.delete(1);
@@ -472,7 +472,7 @@ describe('TABLES: basic operations and data types', function() {
             // @ts-expect-error Mongoose will cast '1' to a number
             doc.luckyNumbers!.delete('1');
             assert.deepEqual(
-                doc.getChanges(),
+                doc.$getChanges(),
                 { $pullAll: { luckyNumbers: [2, 1] } }
             );
             await doc.save();
@@ -525,13 +525,13 @@ describe('TABLES: basic operations and data types', function() {
             });
             doc.luckyNumbers!.delete(42);
             doc.luckyNumbers!.add(99);
-            assert.deepStrictEqual(doc.getChanges(), {
+            assert.deepStrictEqual(doc.$getChanges(), {
                 $set: {
                     luckyNumbers: [7, 77, 99]
                 }
             });
             doc.luckyNumbers!.delete(99);
-            assert.deepStrictEqual(doc.getChanges(), {
+            assert.deepStrictEqual(doc.$getChanges(), {
                 $set: {
                     luckyNumbers: [7, 77]
                 }
@@ -629,10 +629,10 @@ describe('TABLES: basic operations and data types', function() {
             }]);
 
             // 2. Define schema that uses a set of AddressType as "addresses"
-            const addressSchema = new Schema(
+            const addressSchema = Schema.create(
                 {
-                    city: { type: String },
-                    state: { type: String }
+                    city: { type: String, required: true },
+                    state: { type: String, required: true }
                 },
                 { udtName: 'AddressType', versionKey: false, _id: false }
             );
@@ -705,7 +705,7 @@ describe('TABLES: basic operations and data types', function() {
             // 6. Change tracking
             foundUser.addresses.add({ city: 'San Francisco', state: 'CA' });
             assert.deepStrictEqual(
-                foundUser.getChanges(),
+                foundUser.$getChanges(),
                 {
                     $push: {
                         addresses: {
@@ -730,7 +730,7 @@ describe('TABLES: basic operations and data types', function() {
             }, {});
             updatedUser = await User.findOne({ name: 'Bob' }).orFail();
             assert.strictEqual(updatedUser.addresses!.size, 4);
-            assert.deepStrictEqual(updatedUser.getChanges(), {});
+            assert.deepStrictEqual(updatedUser.$getChanges(), {});
             // Assert that the Los Angeles entry's key order is city, state
             const lastAddress = [...updatedUser.addresses!].find(
                 addr => addr.city === 'Los Angeles' && addr.state === 'CA'
@@ -741,17 +741,17 @@ describe('TABLES: basic operations and data types', function() {
 
             // Different key order should still be equal
             updatedUser.addresses!.add({ state: 'CA', city: 'Los Angeles' });
-            assert.deepStrictEqual(updatedUser.getChanges(), {});
+            assert.deepStrictEqual(updatedUser.$getChanges(), {});
 
             updatedUser.addresses!.add({ city: 'Portland', state: 'OR' });
-            assert.deepStrictEqual(updatedUser.getChanges(), {});
+            assert.deepStrictEqual(updatedUser.$getChanges(), {});
             await updatedUser.save();
             updatedUser = await User.findOne({ name: 'Bob' }).orFail();
             assert.strictEqual(updatedUser.addresses!.size, 4);
 
             updatedUser.addresses!.delete({ city: 'Portland', state: 'OR' });
             assert.deepStrictEqual(
-                updatedUser.getChanges(),
+                updatedUser.$getChanges(),
                 { $pullAll: { addresses: [{ city: 'Portland', state: 'OR' }] } }
             );
             await updatedUser.save();

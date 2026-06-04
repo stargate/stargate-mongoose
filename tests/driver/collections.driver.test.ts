@@ -201,8 +201,8 @@ describe('COLLECTIONS: driver based tests', async () => {
             const Person = mongooseInstance!.model('Person');
             await Person.init();
             await Person.deleteMany({});
-            assert.throws(
-                () => Person.watch([{$match: {name: 'John'}}]),
+            await assert.rejects(
+                Person.watch([{ $match: { name: 'John' } }]).next(),
                 /watch\(\) Not Implemented/
             );
         });
