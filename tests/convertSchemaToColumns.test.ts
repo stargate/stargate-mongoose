@@ -12,11 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Schema } from 'mongoose';
+import { Mongoose, Schema as MongooseSchema } from 'mongoose';
 import assert from 'assert';
 import convertSchemaToColumns from '../src/convertSchemaToColumns';
+import * as AstraMongooseDriver from '../src/driver';
 
 describe('convertSchemaToColumns', () => {
+    let Schema: typeof MongooseSchema;
+
+    beforeEach(() => {
+        const mongooseInstance = new Mongoose();
+        Object.assign(mongooseInstance.Schema.Types, AstraMongooseDriver.SchemaTypes);
+        Schema = mongooseInstance.Schema;
+    });
+
     it('generates table definition from schema with all primitive data types', () => {
         const testSchema = new Schema({
             name: String,
@@ -512,7 +521,7 @@ describe('convertSchemaToColumns', () => {
     it('throws if set value is not supported type', () => {
         const testSchema = new Schema({
             mySet: {
-                type: Set, of: { type: Set, of: { type: String, required: true }, required: true }
+                type: Set, of: { type: 'Mixed', required: true }
             }
         });
 
