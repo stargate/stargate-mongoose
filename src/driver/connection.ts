@@ -94,7 +94,7 @@ export class Connection extends MongooseConnection {
     // @ts-expect-error astra-mongoose Db classes don't fully extend from Mongoose Db in a TypeScript-compatible way.
     db: CollectionsDb | TablesDb | null = null;
     keyspaceName: string | null = null;
-    config?: ConnectOptionsInternal;
+    config?: Partial<ConnectOptionsInternal>;
     baseUrl: string | null = null;
     baseApiPath: string | null = null;
     models: Record<string, Model<unknown>> = {};
@@ -139,17 +139,21 @@ export class Connection extends MongooseConnection {
             // @ts-expect-error _waitForConnect not part of public API
             await this._waitForConnect();
             // Cannot happen, but this helps TypeScript infer the correct return type
-            assert.ok(this.db);
-            assert.ok(this.admin);
-            return { db: this.db, admin: this.admin };
+            const db = this.db;
+            const admin = this.admin;
+            assert.ok(db);
+            assert.ok(admin);
+            return { db, admin };
         } else if (this.readyState !== STATES.connected) {
             throw new AstraMongooseError('Connection is not connected', { readyState: this.readyState });
         }
 
         // Cannot happen, but this helps TypeScript infer the correct return type
-        assert.ok(this.db);
-        assert.ok(this.admin);
-        return { db: this.db, admin: this.admin };
+        const db = this.db;
+        const admin = this.admin;
+        assert.ok(db);
+        assert.ok(admin);
+        return { db, admin };
     }
 
     /**
