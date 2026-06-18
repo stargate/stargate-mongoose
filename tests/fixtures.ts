@@ -38,8 +38,8 @@ export const testClient = process.env.TEST_DOC_DB === 'astra' ?
             uri: process.env.DATA_API_URI,
             options: {
                 isAstra: false,
-                username: process.env.STARGATE_USERNAME,
-                password: process.env.STARGATE_PASSWORD
+                username: process.env.DATA_API_USERNAME,
+                password: process.env.DATA_API_PASSWORD
             }
         } : null
     ) : null);

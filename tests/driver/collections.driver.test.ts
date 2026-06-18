@@ -278,7 +278,7 @@ describe('COLLECTIONS: driver based tests', async () => {
             mongooseInstance.set('autoIndex', false);
             const options = isAstra
                 ? {}
-                : { isAstra: false, username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
+                : { isAstra: false, username: process.env.DATA_API_USERNAME, password: process.env.DATA_API_PASSWORD };
 
             await mongooseInstance.connect(dbUri, options);
 
@@ -304,7 +304,7 @@ describe('COLLECTIONS: driver based tests', async () => {
         } as const;
         const options = isAstra
             ? { httpOptions }
-            : { httpOptions, isAstra: false, username: process.env.STARGATE_USERNAME, password: process.env.STARGATE_PASSWORD };
+            : { httpOptions, isAstra: false, username: process.env.DATA_API_USERNAME, password: process.env.DATA_API_PASSWORD };
 
         await mongooseInstance.connect(dbUri, options);
         const res = await mongooseInstance.connection.listCollections({ nameOnly: true });

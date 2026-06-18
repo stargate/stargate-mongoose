@@ -27,9 +27,8 @@ bin/start_data_api.sh
 
 ```env
 DATA_API_URI=http://localhost:8181/v1/testks1
-STARGATE_AUTH_URL=http://localhost:8081/v1/auth
-STARGATE_USERNAME=cassandra
-STARGATE_PASSWORD=cassandra
+DATA_API_USERNAME=cassandra
+DATA_API_PASSWORD=cassandra
 ```
 - Run the tests
 ```shell
