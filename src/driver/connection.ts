@@ -212,7 +212,23 @@ export class Connection extends MongooseConnection {
         newConn._hasOpened = this._hasOpened;
 
         const wireup = () => {
-            newConn._setClientFromParent(this, name);
+            const client = this.client;
+            const parentDb = this.db;
+            const admin = this.admin;
+            const baseUrl = this.baseUrl;
+            assert.ok(client);
+            assert.ok(parentDb);
+            assert.ok(admin);
+            assert.ok(baseUrl);
+
+            const dbOptions = { dataApiPath: this.baseApiPath ?? '' };
+            const db = parentDb.isTable
+                ? new TablesDb(client.db(baseUrl, dbOptions), name)
+                : new CollectionsDb(client.db(baseUrl, dbOptions), name);
+
+            newConn.client = client;
+            newConn.keyspaceName = name;
+            newConn._setDb(db, admin);
             // @ts-expect-error onOpen is private in Mongoose types
             newConn.onOpen();
         };
@@ -567,32 +583,6 @@ export class Connection extends MongooseConnection {
 
     startSession(): never {
         throw new AstraMongooseError('startSession() Not Implemented');
-    }
-
-    _setClientFromParent(parent: Connection, keyspaceName: string) {
-        const client = parent.client;
-        const parentDb = parent.db;
-        const admin = parent.admin;
-        const baseUrl = parent.baseUrl;
-        assert.ok(client);
-        assert.ok(parentDb);
-        assert.ok(admin);
-        assert.ok(baseUrl);
-
-        const dbOptions = { dataApiPath: parent.baseApiPath ?? '' };
-        const db = parentDb.isTable
-            ? new TablesDb(client.db(baseUrl, dbOptions), keyspaceName)
-            : new CollectionsDb(client.db(baseUrl, dbOptions), keyspaceName);
-
-        this.client = client;
-        this.admin = admin;
-        this.baseUrl = parent.baseUrl;
-        this.keyspaceName = keyspaceName;
-        this.baseApiPath = parent.baseApiPath;
-        this.config = { ...parent.config, ...this.config };
-        this._debug = parent._debug;
-        this._connectionString = parent._connectionString;
-        this._setDb(db, admin);
     }
 
     _setDb(db: CollectionsDb | TablesDb, admin: AstraDbAdmin | DataAPIDbAdmin) {
