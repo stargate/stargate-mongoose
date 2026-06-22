@@ -642,7 +642,7 @@ describe('TABLES: basic operations and data types', function() {
                 name: String,
                 addresses: {
                     type: Set,
-                    of: { type: addressSchema, udtName: 'AddressType', required: true },
+                    of: { type: addressSchema, required: true },
                     __rawDocTypeHint: new Set<RawAddressType>(),
                     __hydratedDocTypeHint: {} as MongooseSet<
                         RawAddressType,
@@ -758,6 +758,62 @@ describe('TABLES: basic operations and data types', function() {
             updatedUser = await User.findOne({ name: 'Bob' }).orFail();
             assert.strictEqual(updatedUser.addresses!.size, 3);
             assert.ok(![...updatedUser.addresses!.values()].some(addr => addr.city === 'Portland' && addr.state === 'OR'));
+        });
+
+        it('handles set of UDTs with UDT name in schema type options', async () => {
+            // Test that a set of UDTs (AddressType) can be created, inserted, and queried
+
+            // 1. Create AddressType UDT
+            await mongooseInstance.connection.syncTypes([{
+                name: 'AddressType',
+                definition: {
+                    fields: {
+                        city: { type: 'text' },
+                        state: { type: 'text' }
+                    }
+                }
+            }]);
+
+            // 2. Define schema that uses a set of AddressType as "addresses"
+            // In this test, udtName is defined on the top-level schema's schema type options,
+            // **not** the subdocument schema's options.
+            const addressSchema = Schema.create(
+                {
+                    city: { type: String, required: true },
+                    state: { type: String, required: true }
+                },
+                { versionKey: false, _id: false }
+            );
+
+            type RawAddressType = mongoose.InferRawDocTypeFromSchema<typeof addressSchema>;
+            const userSchema = Schema.create({
+                name: String,
+                addresses: {
+                    type: Set,
+                    of: { type: addressSchema, udtName: 'AddressType', required: true },
+                    __rawDocTypeHint: new Set<RawAddressType>(),
+                    __hydratedDocTypeHint: {} as MongooseSet<
+                        RawAddressType,
+                        mongoose.HydratedSingleSubdocument<RawAddressType>
+                    >
+                }
+            }, { versionKey: false });
+
+            // 3. Table definition, create table
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const tableDefinition = tableDefinitionFromSchema(userSchema);
+
+            assert.deepStrictEqual(tableDefinition, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    name: { type: 'text' },
+                    addresses: {
+                        type: 'set',
+                        valueType: { type: 'userDefined', udtName: 'AddressType' }
+                    }
+                }
+            });
         });
 
         it('throws if unrecognized type', () => {
