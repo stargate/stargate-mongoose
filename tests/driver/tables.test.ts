@@ -614,6 +614,28 @@ describe('TABLES: basic operations and data types', function() {
             assert.strictEqual(inspect(doc.luckyNumbers, { colors: false }), 'Set(2) { 42, 7 }');
         });
 
+        it('serializes to JSON as an array', async () => {
+            const modelName = 'User';
+            const userSchema = new Schema({
+                name: String,
+                tags: {
+                    type: Set,
+                    of: { type: 'String', required: true },
+                    __typehint: new Set<string>()
+                }
+            }, { versionKey: false });
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
+
+            const doc = new User({
+                name: 'John Doe',
+                tags: new Set(['tag1', 'tag2'])
+            });
+            assert.deepStrictEqual(doc.tags!.toJSON(), ['tag1', 'tag2']);
+            assert.strictEqual(JSON.stringify(doc.tags), '["tag1","tag2"]');
+            assert.strictEqual(JSON.stringify({ tags: doc.tags }), '{"tags":["tag1","tag2"]}');
+        });
+
         it('handles set of UDTs', async () => {
             // Test that a set of UDTs (AddressType) can be created, inserted, and queried
 

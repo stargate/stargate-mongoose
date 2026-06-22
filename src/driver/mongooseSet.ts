@@ -119,6 +119,13 @@ export class MongooseSet<RawType = unknown, HydratedType = RawType> extends glob
     }
 
     /**
+     * Converts the set into what will be sent in JSON output.
+     */
+    toJSON() {
+        return Array.from(this);
+    }
+
+    /**
      * Deletes a value from the set and marks the parent document as modified
      */
     delete(value: (Partial<RawType> | HydratedType)): boolean {
