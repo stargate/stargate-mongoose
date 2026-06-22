@@ -532,6 +532,8 @@ export class Connection extends MongooseConnection {
         this.admin = admin;
         this.baseUrl = baseUrl;
         this.keyspaceName = keyspaceName;
+        // @ts-expect-error name is read-only in Mongoose types.
+        this.name = keyspaceName;
         this.baseApiPath = baseApiPath;
         this._setDb(db, admin);
 

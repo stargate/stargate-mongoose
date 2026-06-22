@@ -1165,6 +1165,78 @@ describe('TABLES: basic operations and data types', function() {
             assert.strictEqual(rawDoc.products[1].category, 'Test Category 2');
         });
 
+        it('handles atomics for a dirty array of UDTs', () => {
+            const productSchema = new Schema(
+                {
+                    name: { type: String },
+                    price: { type: Number },
+                    category: { type: String }
+                },
+                { udtName: 'Product', versionKey: false, _id: false }
+            );
+            const cartSchema = new Schema(
+                {
+                    products: [productSchema]
+                },
+                { versionKey: false }
+            );
+
+            const TestModel = mongooseInstance.model('Test', cartSchema, TEST_TABLE_NAME);
+            const doc = new TestModel({
+                products: [
+                    { name: 'Test Product', price: 100, category: 'Test Category' }
+                ]
+            });
+
+            (doc as unknown as { $__reset(): void }).$__reset();
+            doc.markModified('products');
+
+            assert.deepStrictEqual(doc.$getChanges(), {
+                $set: {
+                    products: [
+                        { name: 'Test Product', price: 100, category: 'Test Category' }
+                    ]
+                }
+            });
+        });
+
+        it('handles atomics for a dirty set of UDTs without pending set atomics', () => {
+            const addressSchema = new Schema(
+                {
+                    city: { type: String },
+                    state: { type: String }
+                },
+                { udtName: 'AddressType', versionKey: false, _id: false }
+            );
+            const userSchema = new Schema(
+                {
+                    addresses: {
+                        type: Set,
+                        of: { type: addressSchema, required: true }
+                    }
+                },
+                { versionKey: false }
+            );
+
+            const TestModel = mongooseInstance.model('Test', userSchema, TEST_TABLE_NAME);
+            const doc = new TestModel({
+                addresses: new Set([
+                    { city: 'Seattle', state: 'WA' }
+                ])
+            });
+
+            (doc as unknown as { $__reset(): void }).$__reset();
+            doc.markModified('addresses');
+
+            assert.deepStrictEqual(doc.$getChanges(), {
+                $set: {
+                    addresses: [
+                        { city: 'Seattle', state: 'WA' }
+                    ]
+                }
+            });
+        });
+
         it('handles map of UDTs created from a schema definition', async () => {
             const productSchema = new Schema(
                 {

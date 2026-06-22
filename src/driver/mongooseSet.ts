@@ -54,7 +54,7 @@ export class MongooseSet<RawType = unknown, HydratedType = RawType> extends glob
      * only support one atomic at a time.
      */
     getAtomics() {
-        return [this._atomic];
+        return [this._atomic ?? ['$set', this.toBSON()]];
     }
 
     /**

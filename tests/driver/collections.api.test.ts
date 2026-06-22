@@ -858,6 +858,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             const connection = mongooseInstance.createConnection(testClient!.uri, testClient!.options) as unknown as AstraMongooseDriver.Connection;
             await connection.asPromise();
             const { keyspaceName } = parseUri(testClient!.uri);
+            assert.strictEqual(connection.name, keyspaceName);
             const childConnection = connection.useDb(keyspaceName, { useCache: true });
             assert.strictEqual(connection.useDb(keyspaceName, { useCache: true }), childConnection);
 
