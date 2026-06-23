@@ -3,8 +3,9 @@
 1. [Build & Run tests locally](#build--test)
 2. [Update Stargate and Data API versions](#update-stargate-and-data-api-versions)
 3. [Build API Reference Documentation](#build-api-reference-documentation)
-4. [Contributing](CONTRIBUTING.md)
+4. [Debug Mode](#debug-mode)
 5. [Creating a release](#publishing-to-npm-registry)
+6. [Contributing](CONTRIBUTING.md)
 
 ## Build & Test
 
