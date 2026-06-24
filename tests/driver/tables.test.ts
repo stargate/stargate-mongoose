@@ -614,6 +614,28 @@ describe('TABLES: basic operations and data types', function() {
             assert.strictEqual(inspect(doc.luckyNumbers, { colors: false }), 'Set(2) { 42, 7 }');
         });
 
+        it('serializes to JSON as an array', async () => {
+            const modelName = 'User';
+            const userSchema = new Schema({
+                name: String,
+                tags: {
+                    type: Set,
+                    of: { type: 'String', required: true },
+                    __typehint: new Set<string>()
+                }
+            }, { versionKey: false });
+            mongooseInstance.deleteModel(/User/);
+            const User = mongooseInstance.model(modelName, userSchema, TEST_TABLE_NAME);
+
+            const doc = new User({
+                name: 'John Doe',
+                tags: new Set(['tag1', 'tag2'])
+            });
+            assert.deepStrictEqual(doc.tags!.toJSON(), ['tag1', 'tag2']);
+            assert.strictEqual(JSON.stringify(doc.tags), '["tag1","tag2"]');
+            assert.strictEqual(JSON.stringify({ tags: doc.tags }), '{"tags":["tag1","tag2"]}');
+        });
+
         it('handles set of UDTs', async () => {
             // Test that a set of UDTs (AddressType) can be created, inserted, and queried
 
@@ -642,7 +664,7 @@ describe('TABLES: basic operations and data types', function() {
                 name: String,
                 addresses: {
                     type: Set,
-                    of: { type: addressSchema, udtName: 'AddressType', required: true },
+                    of: { type: addressSchema, required: true },
                     __rawDocTypeHint: new Set<RawAddressType>(),
                     __hydratedDocTypeHint: {} as MongooseSet<
                         RawAddressType,
@@ -758,6 +780,62 @@ describe('TABLES: basic operations and data types', function() {
             updatedUser = await User.findOne({ name: 'Bob' }).orFail();
             assert.strictEqual(updatedUser.addresses!.size, 3);
             assert.ok(![...updatedUser.addresses!.values()].some(addr => addr.city === 'Portland' && addr.state === 'OR'));
+        });
+
+        it('handles set of UDTs with UDT name in schema type options', async () => {
+            // Test that a set of UDTs (AddressType) can be created, inserted, and queried
+
+            // 1. Create AddressType UDT
+            await mongooseInstance.connection.syncTypes([{
+                name: 'AddressType',
+                definition: {
+                    fields: {
+                        city: { type: 'text' },
+                        state: { type: 'text' }
+                    }
+                }
+            }]);
+
+            // 2. Define schema that uses a set of AddressType as "addresses"
+            // In this test, udtName is defined on the top-level schema's schema type options,
+            // **not** the subdocument schema's options.
+            const addressSchema = Schema.create(
+                {
+                    city: { type: String, required: true },
+                    state: { type: String, required: true }
+                },
+                { versionKey: false, _id: false }
+            );
+
+            type RawAddressType = mongoose.InferRawDocTypeFromSchema<typeof addressSchema>;
+            const userSchema = Schema.create({
+                name: String,
+                addresses: {
+                    type: Set,
+                    of: { type: addressSchema, udtName: 'AddressType', required: true },
+                    __rawDocTypeHint: new Set<RawAddressType>(),
+                    __hydratedDocTypeHint: {} as MongooseSet<
+                        RawAddressType,
+                        mongoose.HydratedSingleSubdocument<RawAddressType>
+                    >
+                }
+            }, { versionKey: false });
+
+            // 3. Table definition, create table
+            await mongooseInstance.connection.dropTable(TEST_TABLE_NAME);
+            const tableDefinition = tableDefinitionFromSchema(userSchema);
+
+            assert.deepStrictEqual(tableDefinition, {
+                primaryKey: '_id',
+                columns: {
+                    _id: { type: 'text' },
+                    name: { type: 'text' },
+                    addresses: {
+                        type: 'set',
+                        valueType: { type: 'userDefined', udtName: 'AddressType' }
+                    }
+                }
+            });
         });
 
         it('throws if unrecognized type', () => {
@@ -1085,6 +1163,78 @@ describe('TABLES: basic operations and data types', function() {
             assert.strictEqual(rawDoc.products[1].name, 'Test Product 2');
             assert.strictEqual(rawDoc.products[1].price, 200);
             assert.strictEqual(rawDoc.products[1].category, 'Test Category 2');
+        });
+
+        it('handles atomics for a dirty array of UDTs', () => {
+            const productSchema = new Schema(
+                {
+                    name: { type: String },
+                    price: { type: Number },
+                    category: { type: String }
+                },
+                { udtName: 'Product', versionKey: false, _id: false }
+            );
+            const cartSchema = new Schema(
+                {
+                    products: [productSchema]
+                },
+                { versionKey: false }
+            );
+
+            const TestModel = mongooseInstance.model('Test', cartSchema, TEST_TABLE_NAME);
+            const doc = new TestModel({
+                products: [
+                    { name: 'Test Product', price: 100, category: 'Test Category' }
+                ]
+            });
+
+            (doc as unknown as { $__reset(): void }).$__reset();
+            doc.markModified('products');
+
+            assert.deepStrictEqual(doc.$getChanges(), {
+                $set: {
+                    products: [
+                        { name: 'Test Product', price: 100, category: 'Test Category' }
+                    ]
+                }
+            });
+        });
+
+        it('handles atomics for a dirty set of UDTs without pending set atomics', () => {
+            const addressSchema = new Schema(
+                {
+                    city: { type: String },
+                    state: { type: String }
+                },
+                { udtName: 'AddressType', versionKey: false, _id: false }
+            );
+            const userSchema = new Schema(
+                {
+                    addresses: {
+                        type: Set,
+                        of: { type: addressSchema, required: true }
+                    }
+                },
+                { versionKey: false }
+            );
+
+            const TestModel = mongooseInstance.model('Test', userSchema, TEST_TABLE_NAME);
+            const doc = new TestModel({
+                addresses: new Set([
+                    { city: 'Seattle', state: 'WA' }
+                ])
+            });
+
+            (doc as unknown as { $__reset(): void }).$__reset();
+            doc.markModified('addresses');
+
+            assert.deepStrictEqual(doc.$getChanges(), {
+                $set: {
+                    addresses: [
+                        { city: 'Seattle', state: 'WA' }
+                    ]
+                }
+            });
         });
 
         it('handles map of UDTs created from a schema definition', async () => {
