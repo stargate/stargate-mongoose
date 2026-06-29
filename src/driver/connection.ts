@@ -70,6 +70,7 @@ interface ConnectOptionsInternal extends ConnectOptions {
 
 interface UseDbOptions {
     useCache?: boolean;
+    isTable?: boolean;
 }
 
 interface ConnectionEvents {
@@ -211,6 +212,10 @@ export class Connection extends MongooseConnection {
         // @ts-expect-error _hasOpened is an internal Mongoose property.
         newConn._hasOpened = this._hasOpened;
 
+        const isTable = options?.isTable;
+        let resolveInitialConnection: ((conn: Connection) => void) | null = null;
+        let rejectInitialConnection: ((err: Error) => void) | null = null;
+
         const wireup = () => {
             const client = this.client;
             const parentDb = this.db;
@@ -222,7 +227,7 @@ export class Connection extends MongooseConnection {
             assert.ok(baseUrl);
 
             const dbOptions = { dataApiPath: this.baseApiPath ?? '' };
-            const db = parentDb.isTable
+            const db = (isTable != null ? isTable : parentDb.isTable)
                 ? new TablesDb(client.db(baseUrl, dbOptions), name)
                 : new CollectionsDb(client.db(baseUrl, dbOptions), name);
 
@@ -231,13 +236,16 @@ export class Connection extends MongooseConnection {
             newConn._setDb(db, admin);
             // @ts-expect-error onOpen is private in Mongoose types
             newConn.onOpen();
+            resolveInitialConnection?.(newConn);
         };
 
-        newConn.initialConnection = this.initialConnection
-            ? this.initialConnection.then(() => newConn)
-            : (this.readyState === STATES.connected ? Promise.resolve(newConn) : null);
+        newConn.initialConnection = new Promise<Connection>((resolve, reject) => {
+            resolveInitialConnection = resolve;
+            rejectInitialConnection = reject;
+        });
+        this.initialConnection?.catch(err => rejectInitialConnection?.(err));
 
-        if (this.db && this.readyState === STATES.connected) {
+        if (this.db) {
             wireup();
         } else {
             // @ts-expect-error _queue is an internal Mongoose property.

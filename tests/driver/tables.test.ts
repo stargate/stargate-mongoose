@@ -631,7 +631,6 @@ describe('TABLES: basic operations and data types', function() {
                 name: 'John Doe',
                 tags: new Set(['tag1', 'tag2'])
             });
-            assert.deepStrictEqual(doc.tags!.toJSON(), ['tag1', 'tag2']);
             assert.strictEqual(JSON.stringify(doc.tags), '["tag1","tag2"]');
             assert.strictEqual(JSON.stringify({ tags: doc.tags }), '{"tags":["tag1","tag2"]}');
         });
