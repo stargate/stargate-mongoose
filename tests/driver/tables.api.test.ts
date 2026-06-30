@@ -658,6 +658,62 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             await eventPromiseOnce;
             await eventPromiseOn;
         });
+        it('API ops tests useDb()', async function() {
+            const connection = mongooseInstance.createConnection(testClient!.uri, testClient!.options) as unknown as AstraMongooseDriver.Connection;
+            await connection.asPromise();
+            const { keyspaceName } = parseUri(testClient!.uri);
+            assert.strictEqual(connection.name, keyspaceName);
+            const childConnection = connection.useDb(keyspaceName, { useCache: true });
+            assert.strictEqual(connection.useDb(keyspaceName, { useCache: true }), childConnection);
+
+            const promise = childConnection.listTables({ nameOnly: false });
+
+            assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
+
+            await connection.close();
+        });
+        it('API ops tests useDb() with isTable option', async function() {
+            const connection = mongooseInstance.createConnection(testClient!.uri, { ...testClient!.options, isTable: true }) as unknown as AstraMongooseDriver.Connection;
+            await connection.asPromise();
+            const { keyspaceName } = parseUri(testClient!.uri);
+            const childConnection = connection.useDb(keyspaceName, { isTable: false });
+
+            assert.strictEqual(connection.db!.isTable, true);
+            assert.strictEqual(childConnection.db!.isTable, false);
+
+            await connection.close();
+        });
+        it('API ops tests useDb() before openUri()', async function() {
+            const connection = mongooseInstance.createConnection() as unknown as AstraMongooseDriver.Connection;
+            const { keyspaceName } = parseUri(testClient!.uri);
+            const childConnection = connection.useDb(keyspaceName, { useCache: true });
+            assert.strictEqual(connection.useDb(keyspaceName, { useCache: true }), childConnection);
+
+            const promise = childConnection.listTables({ nameOnly: false });
+
+            await connection.openUri(testClient!.uri, { ...testClient!.options, isTable: true });
+            await childConnection.asPromise();
+
+            assert.strictEqual(childConnection.client, connection.client);
+            assert.notStrictEqual(childConnection.db, connection.db);
+            assert.strictEqual(childConnection.keyspaceName, keyspaceName);
+            assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
+
+            await connection.close();
+        });
+        it('API ops tests useDb() with isTable option before openUri()', async function() {
+            const connection = mongooseInstance.createConnection() as unknown as AstraMongooseDriver.Connection;
+            const { keyspaceName } = parseUri(testClient!.uri);
+            const childConnection = connection.useDb(keyspaceName, { isTable: false });
+
+            await connection.openUri(testClient!.uri, { ...testClient!.options, isTable: true });
+            await childConnection.asPromise();
+
+            assert.strictEqual(connection.db!.isTable, true);
+            assert.strictEqual(childConnection.db!.isTable, false);
+
+            await connection.close();
+        });
         it('API ops tests createConnection() with no buffering', async function() {
             const connection = mongooseInstance.createConnection(testClient!.uri, { ...testClient!.options, bufferCommands: false }) as unknown as AstraMongooseDriver.Connection;
             await connection.asPromise();

@@ -390,6 +390,7 @@ connection to Data API.</p>
 * [Connection](#Connection)
     * [.debug](#Connection+debug)
     * [.collection(name, options)](#Connection+collection)
+    * [.useDb(name, options)](#Connection+useDb)
     * [.createCollection(name, options)](#Connection+createCollection)
     * [.createTable(name, definition)](#Connection+createTable)
     * [.dropCollection(name)](#Connection+dropCollection)
@@ -425,6 +426,19 @@ connection to Data API.</p>
 | --- |
 | name | 
 | options | 
+
+<a name="Connection+useDb"></a>
+
+### connection.useDb(name, options)
+<p>Create a new connection instance that shares this connection's Data API client, but uses a
+different keyspace under the hood.</p>
+
+**Kind**: instance method of [<code>Connection</code>](#Connection)  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The keyspace name</p> |
+| options |  |
 
 <a name="Connection+createCollection"></a>
 
@@ -861,6 +875,7 @@ and only fall back to a full overwrite (<code>$set</code>) when there is a mixed
     * [._markModified()](#MongooseSet+_markModified)
     * [.add()](#MongooseSet+add)
     * [.toBSON()](#MongooseSet+toBSON)
+    * [.toJSON()](#MongooseSet+toJSON)
     * [.delete()](#MongooseSet+delete)
     * [.clear()](#MongooseSet+clear)
 
@@ -895,6 +910,12 @@ document is successfully saved.</p>
 
 ### mongooseSet.toBSON()
 <p>Converts the set into what will be sent on the wire</p>
+
+**Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
+<a name="MongooseSet+toJSON"></a>
+
+### mongooseSet.toJSON()
+<p>Converts the set into what will be sent in JSON output.</p>
 
 **Kind**: instance method of [<code>MongooseSet</code>](#MongooseSet)  
 <a name="MongooseSet+delete"></a>

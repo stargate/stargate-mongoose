@@ -68,6 +68,11 @@ interface ConnectOptionsInternal extends ConnectOptions {
     logging?: LoggingEvent
 }
 
+interface UseDbOptions {
+    useCache?: boolean;
+    isTable?: boolean;
+}
+
 interface ConnectionEvents {
   commandStarted: CommandStartedEvent;
   commandFailed: CommandFailedEvent;
@@ -103,6 +108,9 @@ export class Connection extends MongooseConnection {
     _debug?: boolean | { color?: boolean, shell?: boolean } | Writable | ((name: string, fn: string, ...args: unknown[]) => void) | null | undefined;
     _connectionString: string | null = null;
     _closeCalled: boolean = false;
+    _parent: Connection | null = null;
+    otherDbs: Connection[] = [];
+    relatedDbs: Record<string, Connection> = {};
 
     // Store references to event listener functions for cleanup
     private _dbEventListeners?: {
@@ -169,6 +177,90 @@ export class Connection extends MongooseConnection {
             this.collections[name] = new Collection<DocType>(name, this, options);
         }
         return super.collection(name, options) as unknown as Collection<DocType>;
+    }
+
+    /**
+      * Create a new connection instance that shares this connection's Data API client, but uses a
+      * different keyspace under the hood.
+     *
+      * @param name The keyspace name
+      * @param options
+      */
+    // @ts-expect-error astra-mongoose connection currently doesn't fully extend from Mongoose connection in a TypeScript-compatible way because of collections
+    useDb(name: string, options?: UseDbOptions): Connection {
+        options = options ?? {};
+        if (options.useCache && this.relatedDbs[name]) {
+            return this.relatedDbs[name];
+        }
+
+        const newConn = new Connection(this.base);
+        // @ts-expect-error name is read-only in Mongoose types. `name` is typed as string not string | null in Mongoose so we can't add `name` as a property without setting it to a default value.
+        newConn.name = name;
+        newConn.base = this.base;
+        newConn.collections = {};
+        newConn.models = {};
+        newConn.config = { ...this.config, ...newConn.config };
+        // @ts-expect-error options is an internal Mongoose property.
+        newConn.options = this.options;
+        newConn._closeCalled = this._closeCalled;
+        newConn._parent = this;
+        newConn.client = this.client;
+        newConn._debug = this._debug;
+        newConn._connectionString = this._connectionString;
+        // @ts-expect-error _readyState is an internal Mongoose property.
+        newConn._readyState = this.readyState;
+        // @ts-expect-error _hasOpened is an internal Mongoose property.
+        newConn._hasOpened = this._hasOpened;
+
+        const isTable = options?.isTable;
+        let resolveInitialConnection: ((conn: Connection) => void) | null = null;
+        let rejectInitialConnection: ((err: Error) => void) | null = null;
+
+        const wireup = () => {
+            const client = this.client;
+            const parentDb = this.db;
+            const admin = this.admin;
+            const baseUrl = this.baseUrl;
+            assert.ok(client);
+            assert.ok(parentDb);
+            assert.ok(admin);
+            assert.ok(baseUrl);
+
+            const dbOptions = { dataApiPath: this.baseApiPath ?? '' };
+            const db = (isTable != null ? isTable : parentDb.isTable)
+                ? new TablesDb(client.db(baseUrl, dbOptions), name)
+                : new CollectionsDb(client.db(baseUrl, dbOptions), name);
+
+            newConn.client = client;
+            newConn.keyspaceName = name;
+            newConn._setDb(db, admin);
+            // @ts-expect-error onOpen is private in Mongoose types
+            newConn.onOpen();
+            resolveInitialConnection?.(newConn);
+        };
+
+        newConn.initialConnection = new Promise<Connection>((resolve, reject) => {
+            resolveInitialConnection = resolve;
+            rejectInitialConnection = reject;
+        });
+        this.initialConnection?.catch(err => rejectInitialConnection?.(err));
+
+        if (this.db) {
+            wireup();
+        } else {
+            // @ts-expect-error _queue is an internal Mongoose property.
+            this._queue.push({ fn: wireup });
+        }
+
+        this.otherDbs.push(newConn);
+        newConn.otherDbs.push(this);
+
+        if (options.useCache) {
+            this.relatedDbs[newConn.name] = newConn;
+            newConn.relatedDbs = this.relatedDbs;
+        }
+
+        return newConn;
     }
 
     /**
@@ -444,30 +536,14 @@ export class Connection extends MongooseConnection {
             ? db.astraDb.admin({ adminToken })
             : db.astraDb.admin({ adminToken, environment: 'dse' });
 
-        const collections = Object.values(this.collections);
-        for (const collection of collections) {
-            collection._collection = undefined;
-        }
-
         this.client = client;
-        this.db = db;
         this.admin = admin;
         this.baseUrl = baseUrl;
         this.keyspaceName = keyspaceName;
+        // @ts-expect-error name is read-only in Mongoose types.
+        this.name = keyspaceName;
         this.baseApiPath = baseApiPath;
-
-        // Bubble up db-level events from astra-db-ts to the main connection
-        // Store listener references for later removal
-        this._dbEventListeners = {
-            commandStarted: (ev: CommandStartedEvent) => this.emit('commandStarted', ev),
-            commandFailed: (ev: CommandFailedEvent) => this.emit('commandFailed', ev),
-            commandSucceeded: (ev: CommandSucceededEvent) => this.emit('commandSucceeded', ev),
-            commandWarnings: (ev: CommandWarningsEvent) => this.emit('commandWarnings', ev),
-        };
-        db.astraDb.on('commandStarted', this._dbEventListeners.commandStarted);
-        db.astraDb.on('commandFailed', this._dbEventListeners.commandFailed);
-        db.astraDb.on('commandSucceeded', this._dbEventListeners.commandSucceeded);
-        db.astraDb.on('commandWarnings', this._dbEventListeners.commandWarnings);
+        this._setDb(db, admin);
 
         setImmediate(() => {
             // @ts-expect-error readyState is read-only in Mongoose types
@@ -517,6 +593,41 @@ export class Connection extends MongooseConnection {
 
     startSession(): never {
         throw new AstraMongooseError('startSession() Not Implemented');
+    }
+
+    _setDb(db: CollectionsDb | TablesDb, admin: AstraDbAdmin | DataAPIDbAdmin) {
+        this._clearDbEventListeners();
+
+        const collections = Object.values(this.collections);
+        for (const collection of collections) {
+            collection._collection = undefined;
+        }
+
+        this.db = db;
+        this.admin = admin;
+
+        // Bubble up db-level events from astra-db-ts to the main connection.
+        this._dbEventListeners = {
+            commandStarted: (ev: CommandStartedEvent) => this.emit('commandStarted', ev),
+            commandFailed: (ev: CommandFailedEvent) => this.emit('commandFailed', ev),
+            commandSucceeded: (ev: CommandSucceededEvent) => this.emit('commandSucceeded', ev),
+            commandWarnings: (ev: CommandWarningsEvent) => this.emit('commandWarnings', ev),
+        };
+        db.astraDb.on('commandStarted', this._dbEventListeners.commandStarted);
+        db.astraDb.on('commandFailed', this._dbEventListeners.commandFailed);
+        db.astraDb.on('commandSucceeded', this._dbEventListeners.commandSucceeded);
+        db.astraDb.on('commandWarnings', this._dbEventListeners.commandWarnings);
+    }
+
+    _clearDbEventListeners() {
+        if (this.db && this._dbEventListeners) {
+            const dbEmitter = this.db.astraDb;
+            dbEmitter.off('commandStarted', this._dbEventListeners.commandStarted);
+            dbEmitter.off('commandFailed', this._dbEventListeners.commandFailed);
+            dbEmitter.off('commandSucceeded', this._dbEventListeners.commandSucceeded);
+            dbEmitter.off('commandWarnings', this._dbEventListeners.commandWarnings);
+            this._dbEventListeners = undefined;
+        }
     }
 
     /**

@@ -854,6 +854,68 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             await connection.openUri(testClient!.uri, testClient!.options);
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
         });
+        it('API ops tests useDb()', async function() {
+            const connection = mongooseInstance.createConnection(testClient!.uri, testClient!.options) as unknown as AstraMongooseDriver.Connection;
+            await connection.asPromise();
+            const { keyspaceName } = parseUri(testClient!.uri);
+            assert.strictEqual(connection.name, keyspaceName);
+            const childConnection = connection.useDb(keyspaceName, { useCache: true });
+            assert.strictEqual(connection.useDb(keyspaceName, { useCache: true }), childConnection);
+
+            const promise = childConnection.listCollections({ nameOnly: false });
+
+            assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
+
+            await connection.close();
+        });
+        it('API ops tests useDb() with isTable option', async function() {
+            const connection = mongooseInstance.createConnection(testClient!.uri, testClient!.options) as unknown as AstraMongooseDriver.Connection;
+            await connection.asPromise();
+            const { keyspaceName } = parseUri(testClient!.uri);
+            const childConnection = connection.useDb(keyspaceName, { isTable: true });
+
+            assert.strictEqual(childConnection.db!.isTable, true);
+            await assert.rejects(
+                childConnection.createCollection('use_db_is_table_child'),
+                /Cannot createCollection in tables mode/
+            );
+
+            await connection.close();
+        });
+        it('API ops tests useDb() before openUri()', async function() {
+            const connection = mongooseInstance.createConnection() as unknown as AstraMongooseDriver.Connection;
+            const { keyspaceName } = parseUri(testClient!.uri);
+            const childConnection = connection.useDb(keyspaceName, { useCache: true });
+            assert.strictEqual(connection.useDb(keyspaceName, { useCache: true }), childConnection);
+
+            const promise = childConnection.listCollections({ nameOnly: false });
+
+            await connection.openUri(testClient!.uri, testClient!.options);
+            await childConnection.asPromise();
+
+            assert.strictEqual(childConnection.client, connection.client);
+            assert.notStrictEqual(childConnection.db, connection.db);
+            assert.strictEqual(childConnection.keyspaceName, keyspaceName);
+            assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
+
+            await connection.close();
+        });
+        it('API ops tests useDb() with isTable option before openUri()', async function() {
+            const connection = mongooseInstance.createConnection() as unknown as AstraMongooseDriver.Connection;
+            const { keyspaceName } = parseUri(testClient!.uri);
+            const childConnection = connection.useDb(keyspaceName, { isTable: true });
+
+            await connection.openUri(testClient!.uri, testClient!.options);
+            await childConnection.asPromise();
+
+            assert.strictEqual(childConnection.db!.isTable, true);
+            await assert.rejects(
+                childConnection.createCollection('use_db_is_table_child'),
+                /Cannot createCollection in tables mode/
+            );
+
+            await connection.close();
+        });
         it('API ops tests createConnection() with no buffering', async function() {
             const connection = mongooseInstance.createConnection(testClient!.uri, { ...testClient!.options, bufferCommands: false }) as unknown as AstraMongooseDriver.Connection;
             await connection.asPromise();
