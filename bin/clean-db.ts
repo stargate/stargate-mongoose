@@ -30,8 +30,8 @@ async function main() {
     mongoose.setDriver(driver);
     await mongoose.connect(uri, {
         isAstra: false,
-        username: process.env.STARGATE_USERNAME,
-        password: process.env.STARGATE_PASSWORD
+        username: process.env.DATA_API_USERNAME,
+        password: process.env.DATA_API_PASSWORD
     });
 
     try {
