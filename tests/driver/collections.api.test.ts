@@ -882,6 +882,21 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
 
             await connection.close();
         });
+        it('API ops tests useDb() with useCache and mismatched isTable option', async function() {
+            const connection = mongooseInstance.createConnection(testClient!.uri, testClient!.options) as unknown as AstraMongooseDriver.Connection;
+            await connection.asPromise();
+            const { keyspaceName } = parseUri(testClient!.uri);
+            const childConnection = connection.useDb(keyspaceName, { useCache: true, isTable: true });
+
+            assert.strictEqual(childConnection.db!.isTable, true);
+            assert.strictEqual(connection.useDb(keyspaceName, { useCache: true, isTable: true }), childConnection);
+            assert.throws(
+                () => connection.useDb(keyspaceName, { useCache: true, isTable: false }),
+                /Cannot use cached connection .* with isTable=false \(cached connection is isTable=true\)/
+            );
+
+            await connection.close();
+        });
         it('API ops tests useDb() before openUri()', async function() {
             const connection = mongooseInstance.createConnection() as unknown as AstraMongooseDriver.Connection;
             const { keyspaceName } = parseUri(testClient!.uri);

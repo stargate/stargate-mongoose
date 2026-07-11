@@ -190,6 +190,10 @@ export class Connection extends MongooseConnection {
     useDb(name: string, options?: UseDbOptions): Connection {
         options = options ?? {};
         if (options.useCache && this.relatedDbs[name]) {
+            const cachedDb = this.relatedDbs[name].db;
+            if (options?.isTable != null && cachedDb != null && options.isTable !== cachedDb.isTable) {
+                throw new AstraMongooseError(`Cannot use cached connection for ${name} with isTable=${options.isTable} (cached connection is isTable=${cachedDb.isTable})`);
+            }
             return this.relatedDbs[name];
         }
 
