@@ -40,7 +40,7 @@ jobs:
             cqlsh -u cassandra -p cassandra -e "DESCRIBE KEYSPACE testks1;"
       - name: Warm up Cassandra collections
         run: |
-          node --env-file=.env ./bin/warm-up-tests.js
+          npm run warm-up-tests
       - name: run tests
         run: |
           npm run test-dataapi
