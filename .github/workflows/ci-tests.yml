@@ -38,6 +38,9 @@ jobs:
         run: |
           docker compose -f bin/docker-compose.yml exec -T dse-1 \
             cqlsh -u cassandra -p cassandra -e "DESCRIBE KEYSPACE testks1;"
+      - name: Warm up Cassandra collections
+        run: |
+          npm run warm-up-tests
       - name: run tests
         run: |
           npm run test-dataapi

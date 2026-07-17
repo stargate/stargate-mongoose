@@ -54,7 +54,7 @@ export class SchemaSet extends SchemaType {
         } else if (typeof typeValue === 'string' && typeValue in SchemaTypes) {
             TypeConstructor = SchemaTypes[typeValue];
             embeddedSchemaType = new TypeConstructor(key, ofType);
-        } else if (typeValue instanceof Schema && typeValue.options.udtName) {
+        } else if (typeValue instanceof Schema && (typeValue.options.udtName || ofType.udtName)) {
             TypeConstructor = SchemaTypes.Subdocument;
             // @ts-expect-error Subdocument schematype constructor has different arguments
             embeddedSchemaType = new TypeConstructor(typeValue, key, ofType);
