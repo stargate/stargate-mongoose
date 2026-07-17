@@ -231,7 +231,7 @@ export class Connection extends MongooseConnection {
             assert.ok(baseUrl);
 
             const dbOptions = { dataApiPath: this.baseApiPath ?? '' };
-            const db = (isTable != null ? isTable : parentDb.isTable)
+            const db = (isTable ?? parentDb.isTable)
                 ? new TablesDb(client.db(baseUrl, dbOptions), name)
                 : new CollectionsDb(client.db(baseUrl, dbOptions), name);
 
