@@ -74,6 +74,7 @@
     "@types/sinon": "^17.0.4",
     "jsdoc-babel": "^0.5.0",
     "jsdoc-to-markdown": "^9.1.1",
+    "mocha": "11.8.0",
     "mongoose": "^9.1.0",
     "nyc": "^17.1.0",
     "sinon": "^16.1.1",
