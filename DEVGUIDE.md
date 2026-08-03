@@ -36,6 +36,11 @@ DATA_API_PASSWORD=cassandra
 npm run test
 ```
 
+To run a subset of tests, pass a name pattern:
+```shell
+npm test -- -g "pattern"
+```
+
 ### Lint
 Run `npm run lint` to run oxlint.
 oxlint will point out code quality issues it finds.

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import assert from 'assert';
+import { afterEach, before, describe, it } from 'node:test';
 import {
     testClient
 } from '../fixtures';
@@ -778,8 +779,6 @@ describe('TABLES: Mongoose Model API level tests', async () => {
         let LexicalModel: mongoose.Model<InferSchemaType<typeof lexicalSchema>>;
 
         before(async function () {
-            this.timeout(120_000);
-
             await mongooseInstance.connection.dropCollection(TEST_TABLE_NAME);
             LexicalModel = mongooseInstance.model('Lexical', lexicalSchema, TEST_TABLE_NAME);
 

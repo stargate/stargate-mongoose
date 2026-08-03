@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import assert from 'assert';
+import { afterEach, before, beforeEach, describe, it } from 'node:test';
 import {
     testClient,
     TEST_COLLECTION_NAME
@@ -41,7 +42,6 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
     let mongooseInstance: AstraMongoose;
 
     before(async function() {
-        this.timeout(120_000);
         ({ Product, Cart, mongooseInstance } = await createMongooseCollections(false));
     });
 
@@ -235,7 +235,6 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             );
         });
         it('API ops tests db.dropCollection() and Model.createCollection()', async function() {
-            this.timeout(120_000);
 
             let collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
             assert.ok(collections.includes(Product.collection.collectionName));
@@ -787,9 +786,9 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             const res = await mongooseInstance.connection.collection<ProductRawDoc>('products').findOne({});
             assert.equal(res!.name, 'Product 1');
         });
-        it('API ops tests connection.listDatabases()', async function() {
+        it('API ops tests connection.listDatabases()', async function(t) {
             if (testClient!.isAstra) {
-                return this.skip();
+                return t.skip();
             }
             const { databases } = await mongooseInstance!.connection.listDatabases();
             assert.ok(Array.isArray(databases));
@@ -1221,7 +1220,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         });
     });
 
-    describe('vectorize', function () {
+    describe('vectorize', { skip: !testClient!.isAstra }, function () {
         const vectorSchema = new Schema(
             {
                 $vector: { type: [Number], default: () => void 0, dimension: 1024 },
@@ -1256,10 +1255,6 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         let Vector: Model<InferSchemaType<typeof vectorSchema>>;
 
         before(async function() {
-            if (!testClient!.isAstra) {
-                return this.skip();
-            }
-
             mongooseInstance.deleteModel(/Vector/);
             Vector = mongooseInstance.model(
                 'Vector',
@@ -1324,7 +1319,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         });
     });
 
-    describe('vectorize with select: true', function () {
+    describe('vectorize with select: true', { skip: !testClient!.isAstra }, function () {
         const vectorSchema = new Schema(
             {
                 $vector: { type: [Number], default: () => void 0, dimension: 1024 },
@@ -1346,10 +1341,6 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         let Vector: Model<InferSchemaType<typeof vectorSchema>>;
 
         before(async function() {
-            if (!testClient!.isAstra) {
-                return this.skip();
-            }
-
             mongooseInstance.deleteModel(/Vector/);
             Vector = mongooseInstance.model(
                 'Vector',
@@ -1417,7 +1408,6 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         let LexicalModel: Model<InferSchemaType<typeof lexicalSchema>>;
 
         before(async function () {
-            this.timeout(120_000);
 
             await mongooseInstance.connection.dropCollection(TEST_COLLECTION_NAME);
             LexicalModel = mongooseInstance.model('Lexical', lexicalSchema, TEST_COLLECTION_NAME);

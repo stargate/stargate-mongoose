@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import assert from 'assert';
+import { describe, it } from 'node:test';
 import { serialize } from '../src/serialize';
 import { Types } from 'mongoose';
 

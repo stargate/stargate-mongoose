@@ -28,9 +28,6 @@
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "mocha": {
-    "timeout": 30000
-  },
   "directories": {
     "lib": "src",
     "test": "tests",
@@ -50,9 +47,9 @@
   "scripts": {
     "lint": "oxlint",
     "pretest": "touch .env",
-    "test": "env TEST_DOC_DB=dataapi tsx --env-file=.env ./node_modules/mocha/bin/mocha.js --forbid-only tests/**/*.test.ts tests/*.test.ts",
-    "test-astra": "env TEST_DOC_DB=astra tsx --env-file=.env ./node_modules/mocha/bin/mocha.js --forbid-only tests/**/*.test.ts tests/*.test.ts",
-    "test-dataapi": "env TEST_DOC_DB=dataapi tsx --env-file=.env ./node_modules/mocha/bin/mocha.js --forbid-only tests/**/*.test.ts tests/*.test.ts",
+    "test": "env TEST_DOC_DB=dataapi tsx --env-file=.env bin/run-tests.ts tests/**/*.test.ts tests/*.test.ts",
+    "test-astra": "env TEST_DOC_DB=astra tsx --env-file=.env bin/run-tests.ts tests/**/*.test.ts tests/*.test.ts",
+    "test-dataapi": "env TEST_DOC_DB=dataapi tsx --env-file=.env bin/run-tests.ts tests/**/*.test.ts tests/*.test.ts",
     "clean-db": "tsx --env-file=.env bin/clean-db.ts",
     "warm-up-tests": "tsx --env-file=.env bin/warm-up-tests.ts",
     "preinstall": "npm run update-version-file",
@@ -69,12 +66,10 @@
     "@babel/core": "^7.18.2",
     "@babel/preset-env": "^7.18.2",
     "@babel/preset-typescript": "^7.17.12",
-    "@types/mocha": "^10.0.10",
     "@types/node": "^20.18.1",
     "@types/sinon": "^17.0.4",
     "jsdoc-babel": "^0.5.0",
     "jsdoc-to-markdown": "^9.1.1",
-    "mocha": "11.8.0",
     "mongoose": "^9.1.0",
     "nyc": "^17.1.0",
     "sinon": "^16.1.1",

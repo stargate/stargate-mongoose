@@ -23,6 +23,7 @@ import {
 } from 'mongoose';
 import { Vectorize } from '../../src/driver/vectorize';
 import assert from 'assert';
+import { before, beforeEach, describe, it } from 'node:test';
 import compareTableDefinitions from '../compareTableDefinitions';
 import { testClient } from '../fixtures';
 import { createMongooseCollections, mongooseInstanceTables as mongooseInstance, testDebug } from '../mongooseFixtures';
@@ -237,7 +238,7 @@ describe('TABLES: vector search', function() {
     });
 });
 
-describe('TABLES: vectorize', function () {
+describe('TABLES: vectorize', { skip: !testClient!.isAstra }, function () {
     interface IVector {
         vector: string | number[] | null;
         name?: string | null;
@@ -259,10 +260,6 @@ describe('TABLES: vectorize', function () {
     });
 
     before(async function() {
-        if (!testClient!.isAstra) {
-            return this.skip();
-        }
-
         mongooseInstance.deleteModel(/Vector/);
         Vector = mongooseInstance.model(
             'Vector',

@@ -16,6 +16,7 @@ import { testClient } from './fixtures';
 import { Schema, Mongoose, InferSchemaType, SubdocsToPOJOs } from 'mongoose';
 import * as AstraMongooseDriver from '../src/driver';
 import assert from 'assert';
+import { after } from 'node:test';
 import compareTableDefinitions from './compareTableDefinitions';
 import { plugins } from '../src/driver';
 import tableDefinitionFromSchema from '../src/tableDefinitionFromSchema';
