@@ -14,11 +14,11 @@
 
 import assert from 'assert';
 import mongoose from 'mongoose';
+import { afterEach, before, beforeEach, describe, it } from 'node:test';
 import { Product, ProductHydratedDoc, createMongooseCollections } from '../../tests/mongooseFixtures';
 
 describe('Options tests', async () => {
     before(async function() {
-        this.timeout(120_000);
         await createMongooseCollections(false);
     });
 

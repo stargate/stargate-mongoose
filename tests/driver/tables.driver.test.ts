@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import assert from 'assert';
+import { after, before, describe, it } from 'node:test';
 import mongoose from 'mongoose';
 import * as AstraMongooseDriver from '../../src/driver';
 import { testClient, TEST_TABLE_NAME } from '../fixtures';

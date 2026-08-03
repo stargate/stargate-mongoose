@@ -14,6 +14,7 @@
 
 import { Schema } from 'mongoose';
 import assert from 'assert';
+import { describe, it } from 'node:test';
 import udtDefinitionsFromSchema from '../../src/udt/udtDefinitionsFromSchema';
 
 describe('udtDefinitionsFromSchema', () => {

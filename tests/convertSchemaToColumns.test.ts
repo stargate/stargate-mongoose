@@ -14,6 +14,7 @@
 
 import { Mongoose, Schema as MongooseSchema } from 'mongoose';
 import assert from 'assert';
+import { beforeEach, describe, it } from 'node:test';
 import convertSchemaToColumns from '../src/convertSchemaToColumns';
 import * as AstraMongooseDriver from '../src/driver';
 

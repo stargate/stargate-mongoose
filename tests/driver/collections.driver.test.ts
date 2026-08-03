@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import assert from 'assert';
+import { after, before, describe, it } from 'node:test';
 import mongoose from 'mongoose';
 import sinon from 'sinon';
 import * as AstraMongooseDriver from '../../src/driver';
@@ -27,7 +28,6 @@ describe('COLLECTIONS: driver based tests', async () => {
     let mongooseInstance: AstraMongoose;
 
     before(async function() {
-        this.timeout(120_000);
         ({ Product, Cart, mongooseInstance } = await createMongooseCollections(false));
     });
 
