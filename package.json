@@ -51,8 +51,8 @@
     "lint": "oxlint",
     "pretest": "touch .env",
     "test": "env TEST_DOC_DB=dataapi tsx --env-file=.env ./node_modules/mocha/bin/mocha.js --forbid-only tests/**/*.test.ts tests/*.test.ts",
-    "test-astra": "env TEST_DOC_DB=astra tsx --env-file=.env ./node_modules/mocha/bin/mocha.js --forbid-only tests/**/*.test.ts tests/*.test.ts",
-    "test-dataapi": "env TEST_DOC_DB=dataapi tsx --env-file=.env ./node_modules/mocha/bin/mocha.js --forbid-only tests/**/*.test.ts tests/*.test.ts",
+    "test-astra": "env TEST_DOC_DB=astra ./node_modules/.bin/c8 --experimental-monocart --check-coverage --lines 90 --reporter=text --reporter=lcov tsx --env-file=.env ./node_modules/mocha/bin/mocha.js --forbid-only tests/**/*.test.ts tests/*.test.ts",
+    "test-dataapi": "env TEST_DOC_DB=dataapi ./node_modules/.bin/c8 --experimental-monocart --check-coverage --lines 90 --reporter=text --reporter=lcov tsx --env-file=.env ./node_modules/mocha/bin/mocha.js --forbid-only tests/**/*.test.ts tests/*.test.ts",
     "clean-db": "tsx --env-file=.env bin/clean-db.ts",
     "warm-up-tests": "tsx --env-file=.env bin/warm-up-tests.ts",
     "preinstall": "npm run update-version-file",
@@ -72,15 +72,16 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.18.1",
     "@types/sinon": "^17.0.4",
+    "c8": "^12.0.0",
     "jsdoc-babel": "^0.5.0",
     "jsdoc-to-markdown": "^9.1.1",
     "mocha": "11.8.0",
     "mongoose": "^9.1.0",
-    "nyc": "^17.1.0",
+    "monocart-coverage-reports": "^2.12.12",
+    "oxlint": "^1.76.0",
     "sinon": "^16.1.1",
     "tsx": "^4.19.2",
-    "typescript": "~7.0",
-    "oxlint": "^1.76.0"
+    "typescript": "~7.0"
   },
   "dependencies": {
     "@datastax/astra-db-ts": "^2.1.0"
