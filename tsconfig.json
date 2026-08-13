@@ -13,5 +13,6 @@
     "types": ["node", "mocha"],
     "skipLibCheck": true
   },
-  "include": ["tests/**/*", "src/**/*"]
+  "include": ["tests/**/*", "src/**/*"],
+  "exclude": ["tests/e2e"]
 }
