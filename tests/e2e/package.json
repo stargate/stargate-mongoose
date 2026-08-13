@@ -1,7 +1,4 @@
 {
-  "scripts": {
-    "build:test": "tsc"
-  },
   "dependencies": {
     "@datastax/astra-mongoose": "file:../../datastax-astra-mongoose.tgz"
   },
