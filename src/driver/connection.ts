@@ -103,7 +103,6 @@ export class Connection extends MongooseConnection {
     baseUrl: string | null = null;
     baseApiPath: string | null = null;
     models: Record<string, Model<unknown>> = {};
-    // @ts-expect-error astra-mongoose collection currently doesn't fully extend from Mongoose collection in a TypeScript-compatible way.
     collections: Record<string, Collection> = {};
     _debug?: boolean | { color?: boolean, shell?: boolean } | Writable | ((name: string, fn: string, ...args: unknown[]) => void) | null | undefined;
     _connectionString: string | null = null;
@@ -170,7 +169,6 @@ export class Connection extends MongooseConnection {
      * @param options
      */
 
-    // @ts-expect-error astra-mongoose collection currently doesn't fully extend from Mongoose collection in a TypeScript-compatible way.
     collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: MongooseCollectionOptions): Collection<DocType> {
         if (!(name in this.collections)) {
             // @ts-expect-error astra-mongoose collection currently doesn't fully extend from Mongoose collection in a TypeScript-compatible way.
