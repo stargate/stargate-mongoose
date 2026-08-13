@@ -9,6 +9,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        typescript-version: ["5", "7"]
+    name: build (typescript@${{ matrix.typescript-version }})
     steps:
       - uses: actions/checkout@v3
       - name: Setting up the node version
@@ -17,6 +21,8 @@ jobs:
           node-version: 20.19.0
       - name: setup project
         run: npm i
+      - name: install typescript ${{ matrix.typescript-version }}
+        run: npm install --no-save typescript@${{ matrix.typescript-version }}
       - name: run build
         run: |
           npm run build:test

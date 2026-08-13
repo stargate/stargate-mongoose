@@ -1,5 +1,9 @@
 {
   "dependencies": {
     "@datastax/astra-mongoose": "file:../../datastax-astra-mongoose.tgz"
+  },
+  "devDependencies": {
+    "@types/node": "^20.18.1",
+    "typescript": "~7.0"
   }
 }

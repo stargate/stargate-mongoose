@@ -175,5 +175,8 @@ export async function createMongooseCollections(isTable: boolean) {
 }
 
 after(async function disconnectMongooseFixtures() {
-    await mongooseInstance.disconnect();
+    await Promise.all([
+        mongooseInstance.disconnect(),
+        mongooseInstanceTables.disconnect()
+    ]);
 });

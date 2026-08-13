@@ -1,0 +1,23 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "ignorePatterns": [
+        "dist/**",
+        "coverage/**"
+    ],
+    "categories": {
+        "correctness": "error",
+        "suspicious": "error"
+    },
+    "rules": {
+        "eslint/no-new": "off",
+        "eslint/no-shadow": "off",
+        "eslint/no-underscore-dangle": "off",
+        "eslint/no-useless-constructor": "off",
+        "unicorn/no-array-sort": "off",
+        "unicorn/no-useless-spread": "off",
+        "typescript/consistent-type-definitions": [
+            "error",
+            "interface"
+        ]
+    }
+}
