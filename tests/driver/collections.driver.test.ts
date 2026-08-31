@@ -226,7 +226,7 @@ describe('COLLECTIONS: driver based tests', async () => {
             }
 
             const _id = new mongoose.Types.ObjectId();
-            const collection = mongooseInstance.connection.astraDb!.collection(
+            const collection = mongooseInstance.connection.db!.collection(
                 Product.collection.collectionName,
                 { serdes: { enableBigNumbers: () => 'number_or_string' } }
             );

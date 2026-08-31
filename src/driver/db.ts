@@ -14,7 +14,6 @@
 
 import {
     AlterTypeOptions,
-    Collection,
     Collection as AstraCollection,
     CollectionDescriptor,
     CollectionOptions,
@@ -38,13 +37,15 @@ import {
 } from '@datastax/astra-db-ts';
 import { AstraMongooseError } from '../astraMongooseError';
 import assert from 'assert';
+import { Db as MongoDb, MongoClient } from 'mongodb';
+import { OperationNotSupportedError } from '../operationNotSupportedError';
 
 /**
  * Defines the base database class for interacting with Astra DB. Responsible for creating collections and tables.
  * This class abstracts the operations for both collections mode and tables mode. There is a separate TablesDb class
  * for tables and CollectionsDb class for collections.
  */
-export abstract class BaseDb {
+export abstract class BaseDb extends MongoDb {
     astraDb: AstraDb;
     /**
      * Whether we're using "tables mode" or "collections mode". If tables mode, then `collection()` returns
@@ -55,6 +56,13 @@ export abstract class BaseDb {
     name: string;
 
     constructor(astraDb: AstraDb, keyspaceName: string, isTable?: boolean) {
+        super({} as MongoClient, keyspaceName);
+        Object.defineProperty(this, 'client', {
+            configurable: true,
+            get: () => {
+                throw new OperationNotSupportedError('MongoDB client access is not supported by Astra DB');
+            }
+        });
         this.astraDb = astraDb;
         astraDb.useKeyspace(keyspaceName);
         this.isTable = !!isTable;
@@ -65,7 +73,9 @@ export abstract class BaseDb {
      * Get a collection by name.
      * @param name The name of the collection.
      */
-    abstract collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options: Record<string, unknown>): AstraCollection<DocType> | AstraTable<DocType>;
+    abstract collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: Record<string, unknown>): AstraCollection<DocType> | AstraTable<DocType>;
+    // Loose overload for compatibility with MongoDB's `Db.collection()` signature
+    abstract collection(name: string, options?: unknown): any;
 
     /**
      * Create a new collection with the specified name and options.
@@ -75,7 +85,9 @@ export abstract class BaseDb {
     abstract createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(
         name: string,
         options?: CreateCollectionOptions<DocType>
-    ): Promise<Collection<DocType>>;
+    ): Promise<AstraCollection<DocType>>;
+    // Loose overload for compatibility with MongoDB's `Db.createCollection()` signature
+    abstract createCollection(name: string, options?: unknown): Promise<any>;
 
     /**
      * Create a new table with the specified name and definition
@@ -95,6 +107,10 @@ export abstract class BaseDb {
      * Drop a collection by name.
      * @param name The name of the collection to be dropped.
      */
+    async dropCollection(name: string, options?: DropCollectionOptions): Promise<void>;
+    // Loose overload for compatibility with MongoDB's `Db.dropCollection()` signature
+    async dropCollection(name: string, options?: unknown): Promise<any>;
+
     async dropCollection(name: string, options?: DropCollectionOptions) {
         return await this.astraDb.dropCollection(name, options);
     }
@@ -117,6 +133,8 @@ export abstract class BaseDb {
 
     async listCollections(options: ListCollectionsOptions & { nameOnly: true }): Promise<string[]>;
     async listCollections(options?: ListCollectionsOptions & { nameOnly?: false }): Promise<CollectionDescriptor[]>;
+    // Loose overload for compatibility with MongoDB's `Db.listCollections()` signature, which returns a cursor
+    listCollections(options?: unknown): any;
 
     async listCollections(options?: ListCollectionsOptions) {
         if (options?.nameOnly) {
@@ -263,6 +281,24 @@ export abstract class BaseDb {
     async command(command: Record<string, unknown>): Promise<RawDataAPIResponse> {
         return await this.astraDb.command(command);
     }
+
+    get secondaryOk(): boolean {
+        throw new OperationNotSupportedError('MongoDB secondary reads are not supported by Astra DB');
+    }
+
+    aggregate(..._args: any[]): never { throw new OperationNotSupportedError('MongoDB aggregation is not supported by Astra DB'); }
+    admin(..._args: any[]): never { throw new OperationNotSupportedError('MongoDB admin access is not supported by Astra DB'); }
+    stats(..._args: any[]): never { throw new OperationNotSupportedError('MongoDB database statistics are not supported by Astra DB'); }
+    renameCollection(..._args: any[]): never { throw new OperationNotSupportedError('MongoDB collection renaming is not supported by Astra DB'); }
+    dropDatabase(..._args: any[]): never { throw new OperationNotSupportedError('MongoDB database dropping is not supported by Astra DB'); }
+    collections(..._args: any[]): never { throw new OperationNotSupportedError('MongoDB collection enumeration is not supported by Astra DB'); }
+    createIndex(..._args: any[]): never { throw new OperationNotSupportedError('MongoDB database indexes are not supported by Astra DB'); }
+    removeUser(..._args: any[]): never { throw new OperationNotSupportedError('MongoDB users are not supported by Astra DB'); }
+    setProfilingLevel(..._args: any[]): never { throw new OperationNotSupportedError('MongoDB profiling is not supported by Astra DB'); }
+    profilingLevel(..._args: any[]): never { throw new OperationNotSupportedError('MongoDB profiling is not supported by Astra DB'); }
+    indexInformation(..._args: any[]): never { throw new OperationNotSupportedError('MongoDB index information is not supported by Astra DB'); }
+    watch(..._args: any[]): never { throw new OperationNotSupportedError('MongoDB change streams are not supported by Astra DB'); }
+    runCursorCommand(..._args: any[]): never { throw new OperationNotSupportedError('MongoDB cursor commands are not supported by Astra DB'); }
 }
 
 /**
@@ -283,13 +319,21 @@ export class CollectionsDb extends BaseDb {
      * Get a collection by name.
      * @param name The name of the collection.
      */
-    collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options: CollectionOptions) {
-        return this.astraDb.collection<DocType>(name, options);
+    collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: CollectionOptions): AstraCollection<DocType>;
+    // Loose overload for compatibility with MongoDB's `Db.collection()` signature
+    collection(name: string, options?: unknown): any;
+
+    collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: CollectionOptions): AstraCollection<DocType> {
+        return this.astraDb.collection<DocType>(name, options ?? {});
     }
 
     /**
      * Send a CreateCollection command to Data API.
      */
+    createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: CreateCollectionOptions<DocType>): Promise<AstraCollection<DocType>>;
+    // Loose overload for compatibility with MongoDB's `Db.createCollection()` signature
+    createCollection(name: string, options?: unknown): Promise<any>;
+
     async createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: CreateCollectionOptions<DocType>) {
         return await this.astraDb.createCollection<DocType>(name, options);
     }
@@ -314,17 +358,22 @@ export class TablesDb extends BaseDb {
      * this method for getting a Mongoose Collection instance, which may map to a table in Astra DB when using tables mode.
      * @param name The name of the table.
      */
-    collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options: TableOptions) {
-        return this.astraDb.table<DocType>(name, options);
+    collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: TableOptions): AstraTable<DocType>;
+    // Loose overload for compatibility with MongoDB's `Db.collection()` signature
+    collection(name: string, options?: unknown): any;
+
+    collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: TableOptions): AstraTable<DocType> {
+        return this.astraDb.table<DocType>(name, options ?? {});
     }
 
     /**
      * Throws an error, astra-mongoose does not support creating collections in tables mode.
      */
-    async createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(
-        name: string,
-        options?: CreateCollectionOptions<DocType>
-    ): Promise<Collection<DocType>> {
+    createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: CreateCollectionOptions<DocType>): Promise<AstraCollection<DocType>>;
+    // Loose overload for compatibility with MongoDB's `Db.createCollection()` signature
+    createCollection(name: string, options?: unknown): Promise<any>;
+
+    async createCollection(name: string, options?: unknown): Promise<never> {
         throw new AstraMongooseError('Cannot createCollection in tables mode; use createTable instead', { name, options });
     }
 }

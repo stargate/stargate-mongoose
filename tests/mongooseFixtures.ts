@@ -165,7 +165,7 @@ export async function createMongooseCollections(isTable: boolean) {
         }
 
         if (testDebug) {
-            mongooseInstance.connection.astraDb!.astraDb.on('commandStarted', ev => {
+            mongooseInstance.connection.db!.astraDb.on('commandStarted', ev => {
                 console.log(ev.target.url, JSON.stringify(ev.command, null, '    '));
             });
         }

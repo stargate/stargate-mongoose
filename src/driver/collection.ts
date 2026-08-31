@@ -16,6 +16,7 @@ import { AstraMongooseError } from '../astraMongooseError';
 import { BaseCollection as MongooseCollection } from 'mongoose';
 import type { BaseConnection as MongooseConnection } from 'mongoose';
 import type { Connection } from './connection';
+import type { BaseDb } from './db';
 import {
     Collection as AstraCollection,
     CollectionCountDocumentsOptions,
@@ -144,7 +145,10 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             ? { serdes: this._options.schemaUserProvidedOptions.serdes } as unknown as Record<string, never>
             : {};
         // Cache because @datastax/astra-db-ts doesn't
-        const collection = this.connection.astraDb!.collection<DocType>(this.name, collectionOptions);
+        // Widen to `BaseDb` because calling a generic overloaded method on the `CollectionsDb | TablesDb`
+        // union loses the type parameter.
+        const db: BaseDb = this.connection.db!;
+        const collection = db.collection<DocType>(this.name, collectionOptions);
         this._collection = collection;
 
         // Bubble up collection-level events from astra-db-ts to the main connection
@@ -156,11 +160,11 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         return collection;
     }
 
-    // Get whether the underlying Astra store is a table or a collection. `connection.astraDb` may be undefined if
+    // Get whether the underlying Astra store is a table or a collection. `connection.db` may be `undefined` if
     // the connection has never been opened (`mongoose.connect()` or `openUri()` never called), so in that
     // case we default to `isTable: false`.
     get isTable() {
-        return this.connection.astraDb?.isTable;
+        return this.connection.db?.isTable;
     }
 
     /**
@@ -614,7 +618,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     async runCommand(command: Record<string, unknown>, options?: Omit<RunCommandOptions, 'table' | 'collection' | 'keyspace'>) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'runCommand', arguments);
-        return await this.connection.astraDb!.astraDb.command(
+        return await this.connection.db!.astraDb.command(
             command,
             this.isTable ? { table: this.name, ...options } : { collection: this.name, ...options }
         );
@@ -730,7 +734,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use dropIndex() with collections');
         }
-        await this.connection.astraDb!.astraDb.dropTableIndex(name, options);
+        await this.connection.db!.astraDb.dropTableIndex(name, options);
         return {};
     }
 
