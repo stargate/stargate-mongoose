@@ -206,7 +206,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
         it('API ops tests Model.db', async () => {
             const conn = Product.db as unknown as AstraMongooseDriver.Connection;
             assert.strictEqual(conn.keyspaceName, parseUri(testClient!.uri).keyspaceName);
-            assert.strictEqual(conn.db!.name, parseUri(testClient!.uri).keyspaceName);
+            assert.strictEqual(conn.astraDb!.name, parseUri(testClient!.uri).keyspaceName);
         });
         it('API ops tests Model.deleteOne()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
@@ -678,8 +678,8 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             const { keyspaceName } = parseUri(testClient!.uri);
             const childConnection = connection.useDb(keyspaceName, { isTable: false });
 
-            assert.strictEqual(connection.db!.isTable, true);
-            assert.strictEqual(childConnection.db!.isTable, false);
+            assert.strictEqual(connection.astraDb!.isTable, true);
+            assert.strictEqual(childConnection.astraDb!.isTable, false);
 
             await connection.close();
         });
@@ -695,7 +695,7 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             await childConnection.asPromise();
 
             assert.strictEqual(childConnection.client, connection.client);
-            assert.notStrictEqual(childConnection.db, connection.db);
+            assert.notStrictEqual(childConnection.astraDb, connection.astraDb);
             assert.strictEqual(childConnection.keyspaceName, keyspaceName);
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
 
@@ -709,8 +709,8 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             await connection.openUri(testClient!.uri, { ...testClient!.options, isTable: true });
             await childConnection.asPromise();
 
-            assert.strictEqual(connection.db!.isTable, true);
-            assert.strictEqual(childConnection.db!.isTable, false);
+            assert.strictEqual(connection.astraDb!.isTable, true);
+            assert.strictEqual(childConnection.astraDb!.isTable, false);
 
             await connection.close();
         });
