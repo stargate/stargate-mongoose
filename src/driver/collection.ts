@@ -63,7 +63,7 @@ import { OperationNotSupportedError } from '../operationNotSupportedError';
 import { SchemaOptions } from 'mongoose';
 import { Writable } from 'stream';
 import deserializeDoc from '../deserializeDoc';
-import { IndexSpecification, Sort as MongoDBSort, WithId, InferIdType } from 'mongodb';
+import { FindCursor, IndexSpecification, ListIndexesCursor, Sort as MongoDBSort, WithId, InferIdType } from 'mongodb';
 import { inspect } from 'util';
 import { serialize } from '../serialize';
 import { setDefaultIdForUpdate, setDefaultIdForReplace } from '../setDefaultIdForUpsert';
@@ -77,7 +77,7 @@ type FindOptions = (Omit<CollectionFindOptions, 'sort'> | Omit<TableFindOptions,
   & { sort?: MongooseSortOption, maxTimeMS?: number, timeout?: boolean };
 type FindOneOptions = (Omit<CollectionFindOneOptions, 'sort'> | Omit<TableFindOneOptions, 'sort' | 'timeout' | 'maxTimeMS'>)
   & { sort?: MongooseSortOption, maxTimeMS?: number, timeout?: boolean };
-type FindOneAndUpdateOptions = Omit<CollectionFindOneAndUpdateOptions, 'sort'>
+type FindOneAndUpdateOptions = Omit<CollectionFindOneAndUpdateOptions, 'sort' | 'maxTimeMS'>
     & { sort?: MongooseSortOption, includeResultMetadata?: boolean };
 type FindOneAndDeleteOptions = Omit<CollectionFindOneAndDeleteOptions, 'sort' | 'maxTimeMS'>
     & { sort?: MongooseSortOption, includeResultMetadata?: boolean, maxTimeMS?: number };
@@ -89,15 +89,6 @@ type InsertOneOptions = (Omit<CollectionInsertOneOptions, 'maxTimeMS'> | Omit<Ta
 type ReplaceOneOptions = Omit<CollectionReplaceOneOptions, 'sort' | 'maxTimeMS'> & { sort?: MongooseSortOption, maxTimeMS?: number };
 type UpdateOneOptions = (Omit<CollectionUpdateOneOptions, 'sort' | 'maxTimeMS'> | Omit<TableUpdateOneOptions, 'sort' | 'maxTimeMS'>)
     & { sort?: MongooseSortOption, maxTimeMS?: number };
-
-interface AstraMongooseIndexDescription {
-    name: string,
-    definition: {
-      column: string | ({ [key: string]: '$keys' | '$values' }),
-      options?: TableIndexOptions | TableVectorIndexOptions | TableTextIndexOptions;
-    },
-    key: Record<string, 1 | -1 | '$keys' | '$values'>
-}
 
 interface AstraIndexDescription {
   name: string;
@@ -128,8 +119,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     _collection?: AstraCollection<DocType> | AstraTable<DocType>;
     _closed: boolean;
     connection: Connection;
-    // @ts-expect-error options is technically a function on Mongoose collections
-    options?: (TableOptions | CollectionOptions) & MongooseCollectionOptions;
+    _options?: (TableOptions | CollectionOptions) & MongooseCollectionOptions;
     name: string;
 
     constructor(name: string, conn: Connection, options?: (TableOptions | CollectionOptions) & MongooseCollectionOptions) {
@@ -138,7 +128,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         super(name, conn as unknown as MongooseConnection, options);
         this.connection = conn;
         this._closed = false;
-        this.options = options;
+        this._options = options;
         this.name = name;
     }
 
@@ -148,13 +138,13 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             return this._collection;
         }
 
-        const collectionOptions = this.options?.schemaUserProvidedOptions?.serdes
+        const collectionOptions = this._options?.schemaUserProvidedOptions?.serdes
             // Type coercion because `collection<>` method below doesn't know whether we're creating a
             // Astra Table or Astra Collection until runtime
-            ? { serdes: this.options.schemaUserProvidedOptions.serdes } as unknown as Record<string, never>
+            ? { serdes: this._options.schemaUserProvidedOptions.serdes } as unknown as Record<string, never>
             : {};
         // Cache because @datastax/astra-db-ts doesn't
-        const collection = this.connection.db!.collection<DocType>(this.name, collectionOptions);
+        const collection = this.connection.astraDb!.collection<DocType>(this.name, collectionOptions);
         this._collection = collection;
 
         // Bubble up collection-level events from astra-db-ts to the main connection
@@ -166,11 +156,11 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         return collection;
     }
 
-    // Get whether the underlying Astra store is a table or a collection. `connection.db` may be `null` if
+    // Get whether the underlying Astra store is a table or a collection. `connection.astraDb` may be undefined if
     // the connection has never been opened (`mongoose.connect()` or `openUri()` never called), so in that
     // case we default to `isTable: false`.
     get isTable() {
-        return this.connection.db?.isTable;
+        return this.connection.astraDb?.isTable;
     }
 
     /**
@@ -195,7 +185,6 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param callback
      */
 
-    // @ts-expect-error Astra cursor is not fully compatible with MongoDB cursor
     find(filter?: Filter, options?: FindOptions) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'find', arguments);
@@ -206,7 +195,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
             : { ...remainingOptions, sort: undefined };
         filter = serialize(filter ?? {}, this.isTable);
 
-        return this.collection.find(filter, requestOptions).map(doc => deserializeDoc<DocType>(doc) as DocType);
+        return this.collection
+            .find(filter, requestOptions)
+            .map(doc => deserializeDoc<DocType>(doc) as DocType) as unknown as FindCursor<WithId<DocType>>;
     }
 
     /**
@@ -268,12 +259,12 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param options
      */
 
-    // @ts-expect-error CollectionUpdateFilter not compatible with MongoDB UpdateFilter due to $inc inconsistencies and other issues
     async findOneAndUpdate(
         filter: Filter,
-        update: CollectionUpdateFilter<DocType> | Record<string, unknown>[],
-        options: FindOneAndUpdateOptions
-    ) {
+        update: CollectionUpdateFilter<DocType> | TableUpdateFilter<DocType> | Record<string, unknown>[],
+        options?: FindOneAndUpdateOptions
+    ): Promise<any> {
+        options = options ?? {};
         if (Array.isArray(update)) {
             throw new AstraMongooseError('Astra-mongoose does not support update pipelines', { update });
         }
@@ -289,10 +280,10 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
         filter = serialize(filter);
         setDefaultIdForUpdate<DocType>(filter, update, requestOptions);
-        update = serialize(update);
+        update = serialize(update as Record<string, unknown>);
 
         return await this.collection.findOneAndUpdate(filter, update, requestOptions).then((value: Record<string, unknown> | null) => {
-            if (options?.includeResultMetadata) {
+            if (options.includeResultMetadata) {
                 return { value: deserializeDoc<DocType>(value) };
             }
             return deserializeDoc<DocType>(value);
@@ -486,7 +477,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (!this.isTable) {
             setDefaultIdForUpdate(filter, update as CollectionUpdateFilter<DocType>, requestOptions);
         }
-        update = serialize(update, this.isTable);
+        update = serialize(update as Record<string, unknown>, this.isTable);
         return await this.collection.updateOne(filter as TableFilter<DocType>, update, requestOptions).then(res => {
             // Mongoose currently has a bug where null response from updateOne() throws an error that we can't
             // catch here for unknown reasons. See Automattic/mongoose#15126. Tables API returns null here.
@@ -503,8 +494,11 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * @param options
      */
 
-    // @ts-expect-error CollectionUpdateFilter not compatible with MongoDB UpdateFilter due to $inc inconsistencies and other issues
-    async updateMany(filter: Filter, update: CollectionUpdateFilter<DocType> | Record<string, unknown>[], options: CollectionUpdateManyOptions) {
+    async updateMany(
+        filter: Filter,
+        update: CollectionUpdateFilter<DocType> | TableUpdateFilter<DocType> | Record<string, unknown>[],
+        options?: Omit<CollectionUpdateManyOptions, 'maxTimeMS'>
+    ): Promise<any> {
         if (Array.isArray(update)) {
             throw new AstraMongooseError('Astra-mongoose does not support update pipelines', { update });
         }
@@ -514,10 +508,13 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use updateMany() with tables');
         }
+        options = options ?? {};
         filter = serialize(filter, this.isTable);
         setDefaultIdForUpdate(filter, update, options);
-        update = serialize(update, this.isTable);
-        return await this.collection.updateMany(filter, update, options).then(res => ({ ...res, acknowledged: true }));
+        update = serialize(update as Record<string, unknown>, this.isTable);
+        return await this.collection
+            .updateMany(filter, update, options)
+            .then(res => ({ ...res, acknowledged: true }));
     }
 
     /**
@@ -617,7 +614,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
     async runCommand(command: Record<string, unknown>, options?: Omit<RunCommandOptions, 'table' | 'collection' | 'keyspace'>) {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'runCommand', arguments);
-        return await this.connection.db!.astraDb.command(
+        return await this.connection.astraDb!.astraDb.command(
             command,
             this.isTable ? { table: this.name, ...options } : { collection: this.name, ...options }
         );
@@ -650,8 +647,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      * Only works in tables mode, throws an error in collections mode.
      */
 
-    // @ts-expect-error Returns a pseudo-cursor, which isn't fully compatible with MongoDB cursors.
-    listIndexes(): { toArray: () => Promise<AstraMongooseIndexDescription[]> } {
+    listIndexes(): ListIndexesCursor {
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'listIndexes', arguments);
         if (this.collection instanceof AstraCollection) {
@@ -669,7 +665,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
                     // Mongoose uses the `key` property of an index for index diffing in `cleanIndexes()` and `syncIndexes()`.
                     return indexes.map((index) => ({ ...index, key: typeof index.definition.column === 'string' ? { [index.definition.column]: 1 } : index.definition.column }));
                 })
-        };
+        } as unknown as ListIndexesCursor;
     }
 
     /**
@@ -734,7 +730,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraCollection) {
             throw new OperationNotSupportedError('Cannot use dropIndex() with collections');
         }
-        await this.connection.db!.astraDb.dropTableIndex(name, options);
+        await this.connection.astraDb!.astraDb.dropTableIndex(name, options);
         return {};
     }
 

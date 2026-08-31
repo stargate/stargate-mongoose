@@ -632,7 +632,7 @@ for tables and CollectionsDb class for collections.</p>
 **Kind**: global class  
 
 * [BaseDb](#BaseDb)
-    * [new BaseDb()](#new_BaseDb_new)
+    * [.isTable](#BaseDb+isTable)
     * [.createTable(name, definition)](#BaseDb+createTable)
     * [.dropCollection(name)](#BaseDb+dropCollection)
     * [.dropTable(name)](#BaseDb+dropTable)
@@ -645,13 +645,14 @@ for tables and CollectionsDb class for collections.</p>
     * [.syncTypes(types)](#BaseDb+syncTypes) ⇒
     * [.command(command)](#BaseDb+command)
 
-<a name="new_BaseDb_new"></a>
+<a name="BaseDb+isTable"></a>
 
-### new BaseDb()
+### baseDb.isTable
 <p>Whether we're using &quot;tables mode&quot; or &quot;collections mode&quot;. If tables mode, then <code>collection()</code> returns
 a Table instance, <strong>not</strong> a Collection instance. Also, if tables mode, <code>createCollection()</code> throws an
 error for Mongoose <code>syncIndexes()</code> compatibility reasons.</p>
 
+**Kind**: instance property of [<code>BaseDb</code>](#BaseDb)  
 <a name="BaseDb+createTable"></a>
 
 ### baseDb.createTable(name, definition)
@@ -1033,7 +1034,7 @@ the one exception being strings.</p>
 **Extends**: [<code>BaseDb</code>](#BaseDb)  
 
 * [BaseDb](#BaseDb) ⇐ [<code>BaseDb</code>](#BaseDb)
-    * [new BaseDb()](#new_BaseDb_new)
+    * [.isTable](#BaseDb+isTable)
     * [.createTable(name, definition)](#BaseDb+createTable)
     * [.dropCollection(name)](#BaseDb+dropCollection)
     * [.dropTable(name)](#BaseDb+dropTable)
@@ -1046,13 +1047,14 @@ the one exception being strings.</p>
     * [.syncTypes(types)](#BaseDb+syncTypes) ⇒
     * [.command(command)](#BaseDb+command)
 
-<a name="new_BaseDb_new"></a>
+<a name="BaseDb+isTable"></a>
 
-### new BaseDb()
+### baseDb.isTable
 <p>Whether we're using &quot;tables mode&quot; or &quot;collections mode&quot;. If tables mode, then <code>collection()</code> returns
 a Table instance, <strong>not</strong> a Collection instance. Also, if tables mode, <code>createCollection()</code> throws an
 error for Mongoose <code>syncIndexes()</code> compatibility reasons.</p>
 
+**Kind**: instance property of [<code>BaseDb</code>](#BaseDb)  
 <a name="BaseDb+createTable"></a>
 
 ### baseDb.createTable(name, definition)

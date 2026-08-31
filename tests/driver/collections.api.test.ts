@@ -240,7 +240,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             let collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
             assert.ok(collections.includes(Product.collection.collectionName));
 
-            await Product.db.db!.dropCollection(Product.collection.collectionName);
+            await (Product.db as unknown as AstraMongooseDriver.Connection).astraDb!.dropCollection(Product.collection.collectionName);
             collections = await Product.db.listCollections().then(collections => collections.map(coll => coll.name));
             assert.ok(!collections.includes(Product.collection.collectionName));
 
@@ -315,7 +315,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         it('API ops tests Model.db', async () => {
             const conn = Product.db as unknown as AstraMongooseDriver.Connection;
             assert.strictEqual(conn.keyspaceName, parseUri(testClient!.uri).keyspaceName);
-            assert.strictEqual(conn.db!.name, parseUri(testClient!.uri).keyspaceName);
+            assert.strictEqual(conn.astraDb!.name, parseUri(testClient!.uri).keyspaceName);
         });
         it('API ops tests Model.deleteMany()', async function() {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
@@ -874,7 +874,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             const { keyspaceName } = parseUri(testClient!.uri);
             const childConnection = connection.useDb(keyspaceName, { isTable: true });
 
-            assert.strictEqual(childConnection.db!.isTable, true);
+            assert.strictEqual(childConnection.astraDb!.isTable, true);
             await assert.rejects(
                 childConnection.createCollection('use_db_is_table_child'),
                 /Cannot createCollection in tables mode/
@@ -888,7 +888,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             const { keyspaceName } = parseUri(testClient!.uri);
             const childConnection = connection.useDb(keyspaceName, { useCache: true, isTable: true });
 
-            assert.strictEqual(childConnection.db!.isTable, true);
+            assert.strictEqual(childConnection.astraDb!.isTable, true);
             assert.strictEqual(connection.useDb(keyspaceName, { useCache: true, isTable: true }), childConnection);
             assert.throws(
                 () => connection.useDb(keyspaceName, { useCache: true, isTable: false }),
@@ -909,7 +909,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             await childConnection.asPromise();
 
             assert.strictEqual(childConnection.client, connection.client);
-            assert.notStrictEqual(childConnection.db, connection.db);
+            assert.notStrictEqual(childConnection.astraDb, connection.astraDb);
             assert.strictEqual(childConnection.keyspaceName, keyspaceName);
             assert.ok((await promise.then(res => res.map(obj => obj.name))).includes(Product.collection.collectionName));
 
@@ -923,7 +923,7 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             await connection.openUri(testClient!.uri, testClient!.options);
             await childConnection.asPromise();
 
-            assert.strictEqual(childConnection.db!.isTable, true);
+            assert.strictEqual(childConnection.astraDb!.isTable, true);
             await assert.rejects(
                 childConnection.createCollection('use_db_is_table_child'),
                 /Cannot createCollection in tables mode/

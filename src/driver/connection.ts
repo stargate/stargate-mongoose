@@ -47,6 +47,7 @@ import {
 } from '@datastax/astra-db-ts';
 import { CollectionsDb, TablesDb } from './db';
 import { BaseConnection as MongooseConnection } from 'mongoose';
+import type { CreateCollectionOptions as MongoCreateCollectionOptions, Collection as MongoDBCollection } from 'mongodb';
 import { OperationNotSupportedError } from '../operationNotSupportedError';
 import { STATES } from 'mongoose';
 import type { ConnectOptions, Mongoose, Model } from 'mongoose';
@@ -96,14 +97,13 @@ export class Connection extends MongooseConnection {
     initialConnection: Promise<this> | null = null;
     client: DataAPIClient | null = null;
     admin: AstraDbAdmin | DataAPIDbAdmin | null = null;
-    // @ts-expect-error astra-mongoose Db classes don't fully extend from Mongoose Db in a TypeScript-compatible way.
-    db: CollectionsDb | TablesDb | null = null;
+    declare db: undefined;
+    astraDb: CollectionsDb | TablesDb | undefined;
     keyspaceName: string | null = null;
-    config?: Partial<ConnectOptionsInternal>;
+    config: Partial<ConnectOptionsInternal> = {};
     baseUrl: string | null = null;
     baseApiPath: string | null = null;
     models: Record<string, Model<unknown>> = {};
-    // @ts-expect-error astra-mongoose collection currently doesn't fully extend from Mongoose collection in a TypeScript-compatible way.
     collections: Record<string, Collection> = {};
     _debug?: boolean | { color?: boolean, shell?: boolean } | Writable | ((name: string, fn: string, ...args: unknown[]) => void) | null | undefined;
     _connectionString: string | null = null;
@@ -147,7 +147,7 @@ export class Connection extends MongooseConnection {
             // @ts-expect-error _waitForConnect not part of public API
             await this._waitForConnect();
             // Cannot happen, but this helps TypeScript infer the correct return type
-            const db = this.db;
+            const db = this.astraDb;
             const admin = this.admin;
             assert.ok(db);
             assert.ok(admin);
@@ -157,7 +157,7 @@ export class Connection extends MongooseConnection {
         }
 
         // Cannot happen, but this helps TypeScript infer the correct return type
-        const db = this.db;
+        const db = this.astraDb;
         const admin = this.admin;
         assert.ok(db);
         assert.ok(admin);
@@ -170,7 +170,6 @@ export class Connection extends MongooseConnection {
      * @param options
      */
 
-    // @ts-expect-error astra-mongoose collection currently doesn't fully extend from Mongoose collection in a TypeScript-compatible way.
     collection<DocType extends Record<string, unknown> = Record<string, unknown>>(name: string, options?: MongooseCollectionOptions): Collection<DocType> {
         if (!(name in this.collections)) {
             // @ts-expect-error astra-mongoose collection currently doesn't fully extend from Mongoose collection in a TypeScript-compatible way.
@@ -186,11 +185,10 @@ export class Connection extends MongooseConnection {
       * @param name The keyspace name
       * @param options
       */
-    // @ts-expect-error astra-mongoose connection currently doesn't fully extend from Mongoose connection in a TypeScript-compatible way because of collections
     useDb(name: string, options?: UseDbOptions): Connection {
         options = options ?? {};
         if (options.useCache && this.relatedDbs[name]) {
-            const cachedDb = this.relatedDbs[name].db;
+            const cachedDb = this.relatedDbs[name].astraDb;
             if (options?.isTable != null && cachedDb != null && options.isTable !== cachedDb.isTable) {
                 throw new AstraMongooseError(`Cannot use cached connection for ${name} with isTable=${options.isTable} (cached connection is isTable=${cachedDb.isTable})`);
             }
@@ -222,7 +220,7 @@ export class Connection extends MongooseConnection {
 
         const wireup = () => {
             const client = this.client;
-            const parentDb = this.db;
+            const parentDb = this.astraDb;
             const admin = this.admin;
             const baseUrl = this.baseUrl;
             assert.ok(client);
@@ -249,7 +247,7 @@ export class Connection extends MongooseConnection {
         });
         this.initialConnection?.catch(err => rejectInitialConnection?.(err));
 
-        if (this.db) {
+        if (this.astraDb) {
             wireup();
         } else {
             // @ts-expect-error _queue is an internal Mongoose property.
@@ -273,13 +271,12 @@ export class Connection extends MongooseConnection {
      * @param options
      */
 
-    // @ts-expect-error astra-mongoose collection currently doesn't fully extend from Mongoose collection in a TypeScript-compatible way.
     async createCollection<DocType extends Record<string, unknown> = Record<string, unknown>>(
         name: string,
-        options?: CreateCollectionOptions<DocType>
-    ) {
+        options?: MongoCreateCollectionOptions
+    ): Promise<MongoDBCollection<DocType>> {
         const { db } = await this._waitForClient();
-        return await db.createCollection<DocType>(name, options);
+        return await db.createCollection<DocType>(name, options as unknown as CreateCollectionOptions<DocType>) as unknown as MongoDBCollection<DocType>;
     }
 
     /**
@@ -461,7 +458,6 @@ export class Connection extends MongooseConnection {
      * @param options
      */
 
-    // @ts-expect-error astra-mongoose connection currently doesn't fully extend from Mongoose connection in a TypeScript-compatible way because of collections
     async openUri(uri: string, options?: ConnectOptionsInternal) {
         let _fireAndForget: boolean | undefined = false;
         if (options && '_fireAndForget' in options) {
@@ -607,7 +603,7 @@ export class Connection extends MongooseConnection {
             collection._collection = undefined;
         }
 
-        this.db = db;
+        this.astraDb = db;
         this.admin = admin;
 
         // Bubble up db-level events from astra-db-ts to the main connection.
@@ -624,8 +620,8 @@ export class Connection extends MongooseConnection {
     }
 
     _clearDbEventListeners() {
-        if (this.db && this._dbEventListeners) {
-            const dbEmitter = this.db.astraDb;
+        if (this.astraDb && this._dbEventListeners) {
+            const dbEmitter = this.astraDb.astraDb;
             dbEmitter.off('commandStarted', this._dbEventListeners.commandStarted);
             dbEmitter.off('commandFailed', this._dbEventListeners.commandFailed);
             dbEmitter.off('commandSucceeded', this._dbEventListeners.commandSucceeded);
@@ -645,8 +641,8 @@ export class Connection extends MongooseConnection {
       */
     async doClose() {
         // Remove db-level event listeners if present
-        if (this.db && this._dbEventListeners) {
-            const dbEmitter = this.db.astraDb;
+        if (this.astraDb && this._dbEventListeners) {
+            const dbEmitter = this.astraDb.astraDb;
             dbEmitter.off('commandStarted', this._dbEventListeners.commandStarted);
             dbEmitter.off('commandFailed', this._dbEventListeners.commandFailed);
             dbEmitter.off('commandSucceeded', this._dbEventListeners.commandSucceeded);
