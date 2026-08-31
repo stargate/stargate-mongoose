@@ -264,28 +264,10 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
      */
 
     async findOneAndUpdate(
-      filter: Filter,
-      update: CollectionUpdateFilter<DocType> | TableUpdateFilter<DocType> | Record<string, unknown>[],
-      options: (FindOneAndUpdateOptions & { includeResultMetadata: true })
-    ): Promise<{ value: WithId<DocType> | null, ok: 1 }>;
-
-    async findOneAndUpdate(
-      filter: Filter,
-      update: CollectionUpdateFilter<DocType> | TableUpdateFilter<DocType> | Record<string, unknown>[],
-      options: (FindOneAndUpdateOptions & { includeResultMetadata: false })
-    ): Promise<WithId<DocType> | null>;
-
-    async findOneAndUpdate(
-      filter: Filter,
-      update: CollectionUpdateFilter<DocType> | TableUpdateFilter<DocType> | Record<string, unknown>[],
-      options?: FindOneAndUpdateOptions
-    ): Promise<WithId<DocType> | null>;
-
-    async findOneAndUpdate(
         filter: Filter,
         update: CollectionUpdateFilter<DocType> | TableUpdateFilter<DocType> | Record<string, unknown>[],
         options?: FindOneAndUpdateOptions
-    ) {
+    ): Promise<any> {
         options = options ?? {};
         if (Array.isArray(update)) {
             throw new AstraMongooseError('Astra-mongoose does not support update pipelines', { update });
@@ -306,9 +288,9 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
 
         return await this.collection.findOneAndUpdate(filter, update, requestOptions).then((value: Record<string, unknown> | null) => {
             if (options.includeResultMetadata) {
-                return { value: deserializeDoc<WithId<DocType>>(value), ok: 1 };
+                return { value: deserializeDoc<DocType>(value) };
             }
-            return deserializeDoc<WithId<DocType>>(value);
+            return deserializeDoc<DocType>(value);
         });
     }
 
