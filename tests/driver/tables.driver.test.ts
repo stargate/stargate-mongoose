@@ -216,7 +216,7 @@ describe('TABLES: driver based tests', async () => {
 
             await assert.rejects(
                 collection.createIndex({ propertyThatDoesNotExist: true }, {}),
-                /The command attempted to index the unknown columns: "propertyThatDoesNotExist"/
+                /The command attempted to create an index on a column that is not in the table schema/
             );
         });
     });
