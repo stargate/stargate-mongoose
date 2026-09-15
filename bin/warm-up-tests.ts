@@ -57,7 +57,7 @@ async function main() {
             }
         }
 
-        const collection = connection.db!.collection(collectionName, {});
+        const collection = connection.astraDb!.collection(collectionName, {});
         await retryNotEnoughReplicas(async () => {
             await collection.insertOne({ ping: true, ts: new Date() });
             await collection.deleteMany({});
