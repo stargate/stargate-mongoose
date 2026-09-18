@@ -33,7 +33,15 @@ export { default as udtDefinitionsFromSchema } from './udt/udtDefinitionsFromSch
 export { default as convertSchemaToUDTColumns } from './udt/convertSchemaToUDTColumns';
 
 import * as AstraMongooseDriver from './driver';
-import type { Mongoose } from 'mongoose';
+import type {
+    AnyObject,
+    GetLeanResultType,
+    ModifyResult,
+    Mongoose,
+    QueryOptions,
+    QueryWithHelpers,
+    UpdateQuery
+} from 'mongoose';
 
 export { Vectorize, VectorizeOptions } from './driver';
 
@@ -41,6 +49,13 @@ export { AstraMongooseError } from './astraMongooseError';
 export { OperationNotSupportedError } from './operationNotSupportedError';
 
 export type AstraMongoose = Omit<Mongoose, 'connection'> & { connection: AstraMongooseDriver.Connection };
+
+interface WildcardProjection { '*': 1 }
+type WildcardProjectionOptions<TRawDocType> = QueryOptions<TRawDocType> & { projection: WildcardProjection };
+type WildcardModifyResult<TOptions, THydratedDocumentType, TLeanResultType> =
+    TOptions extends { includeResultMetadata: true }
+        ? ModifyResult<TOptions extends { lean: true } ? TLeanResultType : THydratedDocumentType>
+        : (TOptions extends { lean: true } ? TLeanResultType : THydratedDocumentType) | null;
 
 declare module 'mongodb' {
     interface FilterOperators<TValue> {
@@ -76,9 +91,9 @@ declare module 'mongoose' {
 
     function setDriver(driver: typeof AstraMongooseDriver): AstraMongoose;
 
-    // Module augmentation for Mongoose's `Model` interface to add `findAndRerank`. Not strictly 100%
-    // type-safe since you may import astra-mongoose without actually calling `setDriver()` but sufficient
-    // for practical purposes. The generic parameters must match Mongoose's `Model` generics **exactly**.
+    // Module augmentation for Astra-specific Mongoose `Model` behavior. Not strictly 100% type-safe
+    // since you may import astra-mongoose without actually calling `setDriver()` but sufficient for
+    // practical purposes. The generic parameters must match Mongoose's `Model` generics **exactly**.
     interface Model<
       TRawDocType,
       // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -92,6 +107,120 @@ declare module 'mongoose' {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
       TSchema = any
     > {
+
+      /**
+       * Astra's `*` projection selects every field. Mongoose treats `*` as an
+       * unknown schema path and otherwise infers a document containing only `_id`.
+       */
+      find<TOptions extends QueryOptions<TRawDocType> | undefined = undefined>(
+        filter: object,
+        projection: WildcardProjection,
+        options?: TOptions
+      ): QueryWithHelpers<
+        TOptions extends { lean: true }
+          ? GetLeanResultType<TRawDocType, TRawDocType[], 'find'>
+          : THydratedDocumentType[],
+        THydratedDocumentType,
+        TQueryHelpers,
+        GetLeanResultType<TRawDocType, TRawDocType, 'find'>,
+        'find',
+        TInstanceMethods & TVirtuals
+      >;
+
+      find<TOptions extends WildcardProjectionOptions<TRawDocType>>(
+        filter: object,
+        projection: null | undefined,
+        options: TOptions
+      ): QueryWithHelpers<
+        TOptions extends { lean: true }
+          ? GetLeanResultType<TRawDocType, TRawDocType[], 'find'>
+          : THydratedDocumentType[],
+        THydratedDocumentType,
+        TQueryHelpers,
+        GetLeanResultType<TRawDocType, TRawDocType, 'find'>,
+        'find',
+        TInstanceMethods & TVirtuals
+      >;
+
+      findOne<TOptions extends QueryOptions<TRawDocType> | undefined = undefined>(
+        filter: object,
+        projection: WildcardProjection,
+        options?: TOptions
+      ): QueryWithHelpers<
+        (TOptions extends { lean: true }
+          ? GetLeanResultType<TRawDocType, TRawDocType, 'findOne'>
+          : THydratedDocumentType) | null,
+        THydratedDocumentType,
+        TQueryHelpers,
+        GetLeanResultType<TRawDocType, TRawDocType, 'findOne'>,
+        'findOne',
+        TInstanceMethods & TVirtuals
+      >;
+
+      findOne<TOptions extends WildcardProjectionOptions<TRawDocType>>(
+        filter: object,
+        projection: null | undefined,
+        options: TOptions
+      ): QueryWithHelpers<
+        (TOptions extends { lean: true }
+          ? GetLeanResultType<TRawDocType, TRawDocType, 'findOne'>
+          : THydratedDocumentType) | null,
+        THydratedDocumentType,
+        TQueryHelpers,
+        GetLeanResultType<TRawDocType, TRawDocType, 'findOne'>,
+        'findOne',
+        TInstanceMethods & TVirtuals
+      >;
+
+      findOneAndUpdate<TOptions extends WildcardProjectionOptions<TRawDocType>>(
+        filter: object,
+        update: UpdateQuery<TRawDocType>,
+        options: TOptions
+      ): QueryWithHelpers<
+        WildcardModifyResult<
+          TOptions,
+          THydratedDocumentType,
+          GetLeanResultType<TRawDocType, TRawDocType, 'findOneAndUpdate'>
+        >,
+        THydratedDocumentType,
+        TQueryHelpers,
+        GetLeanResultType<TRawDocType, TRawDocType, 'findOneAndUpdate'>,
+        'findOneAndUpdate',
+        TInstanceMethods & TVirtuals
+      >;
+
+      findOneAndReplace<TOptions extends WildcardProjectionOptions<TRawDocType>>(
+        filter: object,
+        replacement: TRawDocType | AnyObject,
+        options: TOptions
+      ): QueryWithHelpers<
+        WildcardModifyResult<
+          TOptions,
+          THydratedDocumentType,
+          GetLeanResultType<TRawDocType, TRawDocType, 'findOneAndReplace'>
+        >,
+        THydratedDocumentType,
+        TQueryHelpers,
+        GetLeanResultType<TRawDocType, TRawDocType, 'findOneAndReplace'>,
+        'findOneAndReplace',
+        TInstanceMethods & TVirtuals
+      >;
+
+      findOneAndDelete<TOptions extends WildcardProjectionOptions<TRawDocType>>(
+        filter: object | null,
+        options: TOptions
+      ): QueryWithHelpers<
+        WildcardModifyResult<
+          TOptions,
+          THydratedDocumentType,
+          GetLeanResultType<TRawDocType, TRawDocType, 'findOneAndDelete'>
+        >,
+        THydratedDocumentType,
+        TQueryHelpers,
+        GetLeanResultType<TRawDocType, TRawDocType, 'findOneAndDelete'>,
+        'findOneAndDelete',
+        TInstanceMethods & TVirtuals
+      >;
 
       findAndRerank(filter: Record<string, unknown>, options?: CollectionFindAndRerankOptions): Promise<RerankedResult<TRawDocType>[]>;
     }
