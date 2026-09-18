@@ -14,7 +14,7 @@
 
 ## Quickstart
 Prerequisites:
-Node.js (>=20.0.0), npm/yarn
+Node.js (>=20.19.0), npm/yarn
 
 - Create a sample project called 'sample-app'
 ```shell
@@ -157,7 +157,7 @@ The current implementation of the Data API uses DataStax Enterprise (DSE) as the
 ## Version compatibility
 | Component/Library Name | Version            |
 |------------------------|--------------------|
-| Mongoose               | ^8.14.0            |
+| Mongoose               | ^9.1.0             |
 | data-api               | 1.x                |
 | DataStax Enterprise    | 6.8.x              |
 | Astra                  | Current            |

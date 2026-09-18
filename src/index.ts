@@ -51,7 +51,7 @@ export { OperationNotSupportedError } from './operationNotSupportedError';
 
 export type AstraMongoose = Omit<Mongoose, 'connection'> & { connection: AstraMongooseDriver.Connection };
 
-interface WildcardProjection { '*': 1 }
+interface WildcardProjection { '*': 1 | true }
 type WildcardProjectionOptions<TRawDocType> = QueryOptions<TRawDocType> & { projection: WildcardProjection };
 type WildcardModifyResult<TOptions, THydratedDocumentType, TLeanResultType> =
     TOptions extends { includeResultMetadata: true }
@@ -106,7 +106,9 @@ declare module 'mongoose' {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       THydratedDocumentType = HydratedDocument<TRawDocType, TVirtuals & TInstanceMethods, TQueryHelpers, TVirtuals>,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-      TSchema = any
+      TSchema = any,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      TLeanResultType = TRawDocType
     > {
 
       /**
@@ -123,7 +125,7 @@ declare module 'mongoose' {
           : THydratedDocumentType[],
         THydratedDocumentType,
         TQueryHelpers,
-        GetLeanResultType<TRawDocType, TRawDocType, 'find'>,
+        TLeanResultType,
         'find',
         TInstanceMethods & TVirtuals
       >;
@@ -138,7 +140,7 @@ declare module 'mongoose' {
           : THydratedDocumentType[],
         THydratedDocumentType,
         TQueryHelpers,
-        GetLeanResultType<TRawDocType, TRawDocType, 'find'>,
+        TLeanResultType,
         'find',
         TInstanceMethods & TVirtuals
       >;
@@ -153,7 +155,7 @@ declare module 'mongoose' {
           : THydratedDocumentType) | null,
         THydratedDocumentType,
         TQueryHelpers,
-        GetLeanResultType<TRawDocType, TRawDocType, 'findOne'>,
+        TLeanResultType,
         'findOne',
         TInstanceMethods & TVirtuals
       >;
@@ -168,7 +170,7 @@ declare module 'mongoose' {
           : THydratedDocumentType) | null,
         THydratedDocumentType,
         TQueryHelpers,
-        GetLeanResultType<TRawDocType, TRawDocType, 'findOne'>,
+        TLeanResultType,
         'findOne',
         TInstanceMethods & TVirtuals
       >;
@@ -185,7 +187,7 @@ declare module 'mongoose' {
         >,
         THydratedDocumentType,
         TQueryHelpers,
-        GetLeanResultType<TRawDocType, TRawDocType, 'findOneAndUpdate'>,
+        TLeanResultType,
         'findOneAndUpdate',
         TInstanceMethods & TVirtuals
       >;
@@ -202,7 +204,7 @@ declare module 'mongoose' {
         >,
         THydratedDocumentType,
         TQueryHelpers,
-        GetLeanResultType<TRawDocType, TRawDocType, 'findOneAndReplace'>,
+        TLeanResultType,
         'findOneAndReplace',
         TInstanceMethods & TVirtuals
       >;
@@ -218,10 +220,32 @@ declare module 'mongoose' {
         >,
         THydratedDocumentType,
         TQueryHelpers,
-        GetLeanResultType<TRawDocType, TRawDocType, 'findOneAndDelete'>,
+        TLeanResultType,
         'findOneAndDelete',
         TInstanceMethods & TVirtuals
       >;
+
+      findAndCount<TOptions extends QueryOptions<TRawDocType> & { sort: any; limit: number }>(
+        filter: QueryFilter<TRawDocType>,
+        projection: WildcardProjection,
+        options: TOptions
+      ): Promise<[
+        TOptions extends { lean: true }
+          ? GetLeanResultType<TRawDocType, TRawDocType[], 'find'>
+          : THydratedDocumentType[],
+        number
+      ]>;
+
+      findAndCount<TOptions extends WildcardProjectionOptions<TRawDocType> & { sort: any; limit: number }>(
+        filter: QueryFilter<TRawDocType>,
+        projection: null | undefined,
+        options: TOptions
+      ): Promise<[
+        TOptions extends { lean: true }
+          ? GetLeanResultType<TRawDocType, TRawDocType[], 'find'>
+          : THydratedDocumentType[],
+        number
+      ]>;
 
       findAndRerank(filter: Record<string, unknown>, options?: CollectionFindAndRerankOptions): Promise<RerankedResult<TRawDocType>[]>;
     }
