@@ -50,6 +50,13 @@ for tables mode vectorize API. A Vectorize path is an array of numbers that can 
 ## Functions
 
 <dl>
+<dt><a href="#processProjectionOption">processProjectionOption()</a></dt>
+<dd><p>Data API allows the wildcard projection <code>*</code> only as the only root-level path. But Mongoose adds
+schema-level <code>select: true</code> paths to inclusive projections, including the discriminator key on
+models that have discriminators. Those additions are redundant because <code>*</code> already selects every
+field, so strip them out rather than letting Data API reject the whole projection.</p>
+<p>Exclusions are left in place: removing them would silently return fields the user asked to omit,
+so Data API should reject those instead.</p></dd>
 <dt><a href="#handleVectorFieldsProjection">handleVectorFieldsProjection()</a></dt>
 <dd><p>Mongoose plugin to handle adding <code>$vector</code> to the projection by default if <code>$vector</code> has <code>select: true</code>.
 Because <code>$vector</code> is deselected by default, this plugin makes it possible for the user to include <code>$vector</code>
@@ -1219,6 +1226,17 @@ but are not in the input list are dropped. If a type is present in both, we add 
 <p>Send a CreateCollection command to Data API.</p>
 
 **Kind**: instance method of [<code>CollectionsDb</code>](#CollectionsDb)  
+<a name="processProjectionOption"></a>
+
+## processProjectionOption()
+<p>Data API allows the wildcard projection <code>*</code> only as the only root-level path. But Mongoose adds
+schema-level <code>select: true</code> paths to inclusive projections, including the discriminator key on
+models that have discriminators. Those additions are redundant because <code>*</code> already selects every
+field, so strip them out rather than letting Data API reject the whole projection.</p>
+<p>Exclusions are left in place: removing them would silently return fields the user asked to omit,
+so Data API should reject those instead.</p>
+
+**Kind**: global function  
 <a name="handleVectorFieldsProjection"></a>
 
 ## handleVectorFieldsProjection()
