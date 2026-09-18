@@ -38,6 +38,7 @@ import type {
     GetLeanResultType,
     ModifyResult,
     Mongoose,
+    QueryFilter,
     QueryOptions,
     QueryWithHelpers,
     UpdateQuery
@@ -113,7 +114,7 @@ declare module 'mongoose' {
        * unknown schema path and otherwise infers a document containing only `_id`.
        */
       find<TOptions extends QueryOptions<TRawDocType> | undefined = undefined>(
-        filter: object,
+        filter: QueryFilter<TRawDocType>,
         projection: WildcardProjection,
         options?: TOptions
       ): QueryWithHelpers<
@@ -128,7 +129,7 @@ declare module 'mongoose' {
       >;
 
       find<TOptions extends WildcardProjectionOptions<TRawDocType>>(
-        filter: object,
+        filter: QueryFilter<TRawDocType>,
         projection: null | undefined,
         options: TOptions
       ): QueryWithHelpers<
@@ -143,7 +144,7 @@ declare module 'mongoose' {
       >;
 
       findOne<TOptions extends QueryOptions<TRawDocType> | undefined = undefined>(
-        filter: object,
+        filter: QueryFilter<TRawDocType>,
         projection: WildcardProjection,
         options?: TOptions
       ): QueryWithHelpers<
@@ -158,7 +159,7 @@ declare module 'mongoose' {
       >;
 
       findOne<TOptions extends WildcardProjectionOptions<TRawDocType>>(
-        filter: object,
+        filter: QueryFilter<TRawDocType>,
         projection: null | undefined,
         options: TOptions
       ): QueryWithHelpers<
@@ -173,7 +174,7 @@ declare module 'mongoose' {
       >;
 
       findOneAndUpdate<TOptions extends WildcardProjectionOptions<TRawDocType>>(
-        filter: object,
+        filter: QueryFilter<TRawDocType>,
         update: UpdateQuery<TRawDocType>,
         options: TOptions
       ): QueryWithHelpers<
@@ -190,7 +191,7 @@ declare module 'mongoose' {
       >;
 
       findOneAndReplace<TOptions extends WildcardProjectionOptions<TRawDocType>>(
-        filter: object,
+        filter: QueryFilter<TRawDocType>,
         replacement: TRawDocType | AnyObject,
         options: TOptions
       ): QueryWithHelpers<
@@ -207,7 +208,7 @@ declare module 'mongoose' {
       >;
 
       findOneAndDelete<TOptions extends WildcardProjectionOptions<TRawDocType>>(
-        filter: object | null,
+        filter: QueryFilter<TRawDocType> | null,
         options: TOptions
       ): QueryWithHelpers<
         WildcardModifyResult<
