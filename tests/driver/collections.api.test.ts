@@ -1047,7 +1047,10 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         });
 
         it('works with select: *', async function() {
-            const res = await Vector.findOne({}, { '*': 1 }).sort({ $vector: { $meta: [1, 99] } }).orFail();
+            const res = await Vector
+                .findOne<InferSchemaType<typeof vectorSchema>>({}, { '*': 1 })
+                .sort({ $vector: { $meta: [1, 99] } })
+                .orFail();
             assert.strictEqual(res.name, 'Test vector 1');
             assert.deepStrictEqual(res.$vector, [1, 100]);
         });
