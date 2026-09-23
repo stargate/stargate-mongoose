@@ -175,8 +175,55 @@ declare module 'mongoose' {
         TInstanceMethods & TVirtuals
       >;
 
+      findById<TOptions extends QueryOptions<TRawDocType> | undefined = undefined>(
+        id: any,
+        projection: WildcardProjection,
+        options?: TOptions
+      ): QueryWithHelpers<
+        (TOptions extends { lean: true }
+          ? GetLeanResultType<TRawDocType, TRawDocType, 'findOne'>
+          : THydratedDocumentType) | null,
+        THydratedDocumentType,
+        TQueryHelpers,
+        TLeanResultType,
+        'findOne',
+        TInstanceMethods & TVirtuals
+      >;
+
+      findById<TOptions extends WildcardProjectionOptions<TRawDocType>>(
+        id: any,
+        projection: null | undefined,
+        options: TOptions
+      ): QueryWithHelpers<
+        (TOptions extends { lean: true }
+          ? GetLeanResultType<TRawDocType, TRawDocType, 'findOne'>
+          : THydratedDocumentType) | null,
+        THydratedDocumentType,
+        TQueryHelpers,
+        TLeanResultType,
+        'findOne',
+        TInstanceMethods & TVirtuals
+      >;
+
       findOneAndUpdate<TOptions extends WildcardProjectionOptions<TRawDocType>>(
         filter: QueryFilter<TRawDocType>,
+        update: UpdateQuery<TRawDocType>,
+        options: TOptions
+      ): QueryWithHelpers<
+        WildcardModifyResult<
+          TOptions,
+          THydratedDocumentType,
+          GetLeanResultType<TRawDocType, TRawDocType, 'findOneAndUpdate'>
+        >,
+        THydratedDocumentType,
+        TQueryHelpers,
+        TLeanResultType,
+        'findOneAndUpdate',
+        TInstanceMethods & TVirtuals
+      >;
+
+      findByIdAndUpdate<TOptions extends WildcardProjectionOptions<TRawDocType>>(
+        id: any,
         update: UpdateQuery<TRawDocType>,
         options: TOptions
       ): QueryWithHelpers<
@@ -209,8 +256,41 @@ declare module 'mongoose' {
         TInstanceMethods & TVirtuals
       >;
 
+      findByIdAndReplace<TOptions extends WildcardProjectionOptions<TRawDocType>>(
+        id: any,
+        replacement: TRawDocType | AnyObject,
+        options: TOptions
+      ): QueryWithHelpers<
+        WildcardModifyResult<
+          TOptions,
+          THydratedDocumentType,
+          GetLeanResultType<TRawDocType, TRawDocType, 'findOneAndReplace'>
+        >,
+        THydratedDocumentType,
+        TQueryHelpers,
+        TLeanResultType,
+        'findOneAndReplace',
+        TInstanceMethods & TVirtuals
+      >;
+
       findOneAndDelete<TOptions extends WildcardProjectionOptions<TRawDocType>>(
         filter: QueryFilter<TRawDocType> | null,
+        options: TOptions
+      ): QueryWithHelpers<
+        WildcardModifyResult<
+          TOptions,
+          THydratedDocumentType,
+          GetLeanResultType<TRawDocType, TRawDocType, 'findOneAndDelete'>
+        >,
+        THydratedDocumentType,
+        TQueryHelpers,
+        TLeanResultType,
+        'findOneAndDelete',
+        TInstanceMethods & TVirtuals
+      >;
+
+      findByIdAndDelete<TOptions extends WildcardProjectionOptions<TRawDocType>>(
+        id: any,
         options: TOptions
       ): QueryWithHelpers<
         WildcardModifyResult<

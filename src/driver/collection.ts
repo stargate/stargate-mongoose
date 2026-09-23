@@ -847,6 +847,8 @@ function checkForTimeoutOption<T extends { timeout?: unknown }>(options: T): Omi
  *
  * Exclusions are left in place: removing them would silently return fields the user asked to omit,
  * so Data API should reject those instead.
+ *
+ * @ignore
  */
 function processProjectionOption<T extends { projection?: unknown }>(options: T): T {
     const projection = options.projection as Record<string, unknown> | null | undefined;
