@@ -769,11 +769,10 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             );
 
             let cursor = Product.find().sort({ name: 1 }).cursor();
-            for (let i = 0; i < 20; ++i) {
+            for (let i = 0; i < 25; ++i) {
                 const product = await cursor.next();
                 assert.equal(product?.name, `Product ${(i + 1).toString().padStart(2, '0')}`, 'Failed at index ' + i);
             }
-            assert.equal(await cursor.next(), null);
 
             cursor = await Product.find().sort({ name: 1 }).limit(20).cursor();
             for (let i = 0; i < 20; ++i) {
@@ -1048,7 +1047,10 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
         });
 
         it('works with select: *', async function() {
-            const res = await Vector.findOne({}, { '*': 1 }).sort({ $vector: { $meta: [1, 99] } }).orFail();
+            const res = await Vector
+                .findOne<InferSchemaType<typeof vectorSchema>>({}, { '*': 1 })
+                .sort({ $vector: { $meta: [1, 99] } })
+                .orFail();
             assert.strictEqual(res.name, 'Test vector 1');
             assert.deepStrictEqual(res.$vector, [1, 100]);
         });

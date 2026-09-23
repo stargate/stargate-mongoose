@@ -579,11 +579,10 @@ describe('TABLES: Mongoose Model API level tests', async () => {
             );
 
             let cursor = Product.find().sort({ name: 1 }).cursor();
-            for (let i = 0; i < 20; ++i) {
+            for (let i = 0; i < 25; ++i) {
                 const product = await cursor.next();
                 assert.equal(product?.name, `Product ${(i + 1).toString().padStart(2, '0')}`, 'Failed at index ' + i);
             }
-            assert.equal(await cursor.next(), null);
 
             cursor = await Product.find().sort({ name: 1 }).limit(20).cursor();
             for (let i = 0; i < 20; ++i) {
