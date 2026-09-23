@@ -21,14 +21,12 @@ import mongoose, {
     Schema,
     InferSchemaType,
     InsertManyResult,
-    Model,
-    version as mongooseVersion
+    Model
 } from 'mongoose';
 import * as AstraMongooseDriver from '../../src/driver';
 import {randomUUID} from 'crypto';
 import { OperationNotSupportedError } from '../../src/operationNotSupportedError';
 import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections, testDebug } from '../mongooseFixtures';
-import { once } from 'events';
 import { parseUri } from '../../src/driver/connection';
 import { FindCursor, DataAPIResponseError } from '@datastax/astra-db-ts';
 import type { AstraMongoose } from '../../src';
