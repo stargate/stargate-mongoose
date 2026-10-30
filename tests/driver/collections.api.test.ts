@@ -632,13 +632,12 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 { name: 'Product 4', category: 'cat 4', secret: 'secret 4' }
             ]);
 
+            const emptyDocs = Array.from({ length: 4 }, () => [undefined, undefined]);
             const starResp = await ProductWithSecret.find({}, {'*': 0});
-            assert.strictEqual(starResp.length, 4);
-            assert.deepStrictEqual(starResp.map(doc => [doc.name, doc.secret]), Array(4).fill([undefined, undefined]));
+            assert.deepStrictEqual(starResp.map(doc => [doc.name, doc.secret]), emptyDocs);
 
             const starFalseResp = await ProductWithSecret.find({}, {'*': false});
-            assert.strictEqual(starFalseResp.length, 4);
-            assert.deepStrictEqual(starFalseResp.map(doc => [doc.name, doc.secret]), Array(4).fill([undefined, undefined]));
+            assert.deepStrictEqual(starFalseResp.map(doc => [doc.name, doc.secret]), emptyDocs);
 
             const starOptionsResp = await ProductWithSecret.findOne({category: 'cat 1'}, null, {projection: {'*': 0}}).orFail();
             assert.strictEqual(starOptionsResp.name, undefined);

@@ -42,6 +42,11 @@ export function handleVectorFieldsProjection(schema: Schema) {
                 }
                 return;
             }
+            // `'*': 0` excludes every field, so don't add `$vector: 1` or `$vectorize: 1`: Data API
+            // only allows `*` as the only root-level path.
+            if ('*' in projection && !projection['*']) {
+                return;
+            }
         }
         if ($vector?.options?.select && projectionDoesNotHaveProperty(projection, '$vector')) {
             this.projection({ ...projection, $vector: 1 });
