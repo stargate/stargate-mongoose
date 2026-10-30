@@ -837,21 +837,24 @@ function checkForTimeoutOption<T extends { timeout?: unknown }>(options: T): Omi
 
 /**
  * Data API allows the wildcard projection `*` only as the only root-level path. But Mongoose adds
- * schema-level `select: true` paths to inclusive projections, including the discriminator key on
- * models that have discriminators. Those additions are redundant because `*` already selects every
- * field, so strip them out rather than letting Data API reject the whole projection.
+ * schema-level paths to wildcard projections. For `'*': 1`, Mongoose adds inclusions: `select: true`
+ * paths, the discriminator key on models that have discriminators, and populated paths. For `'*': 0`,
+ * Mongoose adds exclusions for `select: false` paths. Those additions are redundant because `*`
+ * already selects or excludes every field, so strip them out rather than letting Data API reject
+ * the whole projection.
  *
- * Exclusions are left in place: removing them would silently return fields the user asked to omit,
- * so Data API should reject those instead.
+ * Entries of the opposite kind are left in place: Mongoose never adds them, and removing them would
+ * silently change which fields the user gets back, so Data API should reject those instead.
  *
  * @ignore
  */
 function processProjectionOption<T extends { projection?: unknown }>(options: T): T {
     const projection = options.projection as Record<string, unknown> | null | undefined;
-    if (projection == null || !projection['*']) {
+    if (projection == null || !('*' in projection)) {
         return options;
     }
-    const entries = Object.entries(projection).filter(([key, value]) => key === '*' || !value);
+    const isInclusive = !!projection['*'];
+    const entries = Object.entries(projection).filter(([key, value]) => key === '*' || !!value !== isInclusive);
     if (entries.length === Object.keys(projection).length) {
         return options;
     }

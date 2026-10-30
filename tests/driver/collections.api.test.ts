@@ -618,6 +618,58 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.strictEqual(starMetadata.value!.name, 'Product 45');
             assert.strictEqual(starMetadata.value!.category, 'cat 1');
         });
+        it('API ops tests wildcard exclusion projection with select: false paths', async () => {
+            // Mongoose adds `secret: 0` to `'*': 0` projections, which Data API would otherwise reject
+            const ProductWithSecret = mongooseInstance.model(
+                'ProductWithSecret',
+                new Schema({ name: String, category: String, secret: { type: String, select: false } }, { versionKey: false }),
+                Product.collection.collectionName
+            );
+            await ProductWithSecret.create([
+                { name: 'Product 1', category: 'cat 1', secret: 'secret 1' },
+                { name: 'Product 2', category: 'cat 2', secret: 'secret 2' },
+                { name: 'Product 3', category: 'cat 3', secret: 'secret 3' },
+                { name: 'Product 4', category: 'cat 4', secret: 'secret 4' }
+            ]);
+
+            const starResp = await ProductWithSecret.find({}, {'*': 0});
+            assert.strictEqual(starResp.length, 4);
+            assert.deepStrictEqual(starResp.map(doc => [doc.name, doc.secret]), Array(4).fill([undefined, undefined]));
+
+            const starFalseResp = await ProductWithSecret.find({}, {'*': false});
+            assert.strictEqual(starFalseResp.length, 4);
+            assert.deepStrictEqual(starFalseResp.map(doc => [doc.name, doc.secret]), Array(4).fill([undefined, undefined]));
+
+            const starOptionsResp = await ProductWithSecret.findOne({category: 'cat 1'}, null, {projection: {'*': 0}}).orFail();
+            assert.strictEqual(starOptionsResp.name, undefined);
+            assert.strictEqual(starOptionsResp.secret, undefined);
+
+            const updateResp = await ProductWithSecret.findOneAndUpdate(
+                {category: 'cat 1'},
+                {name: 'Product 11'},
+                {projection: {'*': 0}, returnDocument: 'after'}
+            ).orFail();
+            assert.strictEqual(updateResp.name, undefined);
+            assert.strictEqual(updateResp.secret, undefined);
+
+            const replaceResp = await ProductWithSecret.findOneAndReplace(
+                {category: 'cat 2'},
+                {name: 'Product 22', category: 'cat 2', secret: 'secret 22'},
+                {projection: {'*': 0}, returnDocument: 'after'}
+            ).orFail();
+            assert.strictEqual(replaceResp.name, undefined);
+            assert.strictEqual(replaceResp.secret, undefined);
+
+            const deleteResp = await ProductWithSecret.findOneAndDelete({category: 'cat 3'}, {projection: {'*': 0}}).orFail();
+            assert.strictEqual(deleteResp.name, undefined);
+            assert.strictEqual(deleteResp.secret, undefined);
+
+            const remaining = await ProductWithSecret.find({}, {'*': 1}).sort({category: 1});
+            assert.deepStrictEqual(
+                remaining.map(doc => [doc.name, doc.secret]),
+                [['Product 11', 'secret 1'], ['Product 22', 'secret 22'], ['Product 4', 'secret 4']]
+            );
+        });
         it('API ops tests Model.insertMany()', async () => {
             const product1Id = new mongoose.Types.ObjectId('0'.repeat(24));
             const product2Id = new mongoose.Types.ObjectId('1'.repeat(24));
@@ -1117,6 +1169,15 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 .orFail();
             assert.strictEqual(res.name, 'Test vector 1');
             assert.deepStrictEqual(res.$vector, [1, 100]);
+        });
+
+        it('works with select: { \'*\': 0 }', async function() {
+            const res = await Vector
+                .findOne({}, { '*': 0 })
+                .sort({ $vector: { $meta: [1, 99] } })
+                .orFail();
+            assert.strictEqual(res.name, undefined);
+            assert.strictEqual(res.$vector, undefined);
         });
 
         it('supports sort() with includeSortVector in find()', async function() {

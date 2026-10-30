@@ -51,7 +51,7 @@ export { OperationNotSupportedError } from './operationNotSupportedError';
 
 export type AstraMongoose = Omit<Mongoose, 'connection'> & { connection: AstraMongooseDriver.Connection };
 
-interface WildcardProjection { '*': 1 | true }
+interface WildcardProjection { '*': 0 | 1 | boolean }
 type WildcardProjectionOptions<TRawDocType> = QueryOptions<TRawDocType> & { projection: WildcardProjection };
 type WildcardModifyResult<TOptions, THydratedDocumentType, TLeanResultType> =
     TOptions extends { includeResultMetadata: true }
@@ -109,8 +109,9 @@ declare module 'mongoose' {
     > {
 
       /**
-       * Astra's `*` projection selects every field. Mongoose treats `*` as an
-       * unknown schema path and otherwise infers a document containing only `_id`.
+       * Astra's `'*': 1` projection selects every field and `'*': 0` excludes every field. Mongoose
+       * treats `*` as an unknown schema path and otherwise infers a document containing only `_id`
+       * for `'*': 1`.
        */
       find<TOptions extends QueryOptions<TRawDocType> | undefined = undefined>(
         filter: QueryFilter<TRawDocType>,
