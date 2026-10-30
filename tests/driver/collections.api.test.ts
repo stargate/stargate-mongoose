@@ -21,14 +21,12 @@ import mongoose, {
     Schema,
     InferSchemaType,
     InsertManyResult,
-    Model,
-    version as mongooseVersion
+    Model
 } from 'mongoose';
 import * as AstraMongooseDriver from '../../src/driver';
 import {randomUUID} from 'crypto';
 import { OperationNotSupportedError } from '../../src/operationNotSupportedError';
 import { CartModelType, ProductModelType, productSchema, ProductRawDoc, createMongooseCollections, testDebug } from '../mongooseFixtures';
-import { once } from 'events';
 import { parseUri } from '../../src/driver/connection';
 import { FindCursor, DataAPIResponseError } from '@datastax/astra-db-ts';
 import type { AstraMongoose } from '../../src';
@@ -437,6 +435,38 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             assert.strictEqual(rawFindResp.length, 3);
 
             assert.throws(() => Product.collection.find({}, { sort: 'test' }).toArray(), /Sort must be an object/);
+
+            // Astra's `*` projection selects every field, so the result is the full document
+            const starResp = await Product.find({category: 'cat 1'}, {'*': 1});
+            assert.deepStrictEqual(starResp.map(doc => doc.name).sort(), ['Product 1', 'Product 3']);
+
+            const starTrueResp = await Product.find({category: 'cat 1'}, {'*': true});
+            assert.deepStrictEqual(starTrueResp.map(doc => doc.name).sort(), ['Product 1', 'Product 3']);
+
+            const starOptionsResp = await Product.find({category: 'cat 1'}, null, {projection: {'*': 1}});
+            assert.deepStrictEqual(starOptionsResp.map(doc => doc.name).sort(), ['Product 1', 'Product 3']);
+        });
+        it('API ops tests Model.findAndCount()', async () => {
+            const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
+            const product2 = new Product({name: 'Product 2', price: 10, isCertified: true, category: 'cat 1'});
+            const product3 = new Product({name: 'Product 3', price: 10, isCertified: true, category: 'cat 2'});
+            await Product.insertMany([product1, product2, product3]);
+
+            const [docs, count] = await Product.findAndCount(
+                {category: 'cat 1'},
+                {'*': 1},
+                {sort: {name: 1}, limit: 1}
+            );
+            assert.deepStrictEqual(docs.map(doc => doc.name), ['Product 1']);
+            assert.strictEqual(count, 2);
+
+            const [leanDocs, leanCount] = await Product.findAndCount(
+                {category: 'cat 1'},
+                null,
+                {projection: {'*': 1}, sort: {name: 1}, limit: 1, lean: true}
+            );
+            assert.deepStrictEqual(leanDocs.map(doc => doc.name), ['Product 1']);
+            assert.strictEqual(leanCount, 2);
         });
         it('API ops tests Model.findById()', async () => {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 1'});
@@ -470,6 +500,12 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
 
             const rawFindResp = await Product.collection.findOne();
             assert.ok(rawFindResp?.category);
+
+            const starResp = await Product.findOne({category: 'cat 1'}, {'*': 1}).orFail();
+            assert.strictEqual(starResp.name, 'Product 3');
+
+            const starOptionsResp = await Product.findOne({category: 'cat 1'}, null, {projection: {'*': 1}}).orFail();
+            assert.strictEqual(starOptionsResp.name, 'Product 3');
         });
         it('API ops tests Model.findOneAndDelete()', async function() {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
@@ -493,6 +529,10 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 {name: 'Product 2'}
             );
             assert.strictEqual(raw!.name, 'Product 2');
+
+            await Product.create({name: 'Product 4', price: 10, isCertified: true, category: 'cat 4'});
+            const starResp = await Product.findOneAndDelete({category: 'cat 4'}, {projection: {'*': 1}}).orFail();
+            assert.strictEqual(starResp.name, 'Product 4');
         });
         it('API ops tests Model.findOneAndReplace()', async function() {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
@@ -526,6 +566,14 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
             const rawDoc = await Product.collection.findOneAndReplace({_id: doc!._id}, {name: 'Product 22'});
             assert.strictEqual(rawDoc!.name, 'Product 21');
             assert.strictEqual(rawDoc!.category, undefined);
+
+            const starResp = await Product.findOneAndReplace(
+                {_id: product3._id},
+                {name: 'Product 23', category: 'cat 1'},
+                {projection: {'*': 1}, returnDocument: 'after'}
+            ).orFail();
+            assert.strictEqual(starResp.name, 'Product 23');
+            assert.strictEqual(starResp.category, 'cat 1');
         });
         it('API ops tests Model.findOneAndUpdate()', async function() {
             const product1 = new Product({name: 'Product 1', price: 10, isCertified: true, category: 'cat 2'});
@@ -552,6 +600,73 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                     {updatePipeline: true}
                 ),
                 /Astra-mongoose does not support update pipelines/
+            );
+
+            const starResp = await Product.findOneAndUpdate(
+                {category: 'cat 1'},
+                {name: 'Product 44'},
+                {projection: {'*': 1}, returnDocument: 'after'}
+            ).orFail();
+            assert.strictEqual(starResp.name, 'Product 44');
+            assert.strictEqual(starResp.category, 'cat 1');
+
+            const starMetadata = await Product.findOneAndUpdate(
+                {category: 'cat 1'},
+                {name: 'Product 45'},
+                {projection: {'*': 1}, includeResultMetadata: true, returnDocument: 'after'}
+            );
+            assert.strictEqual(starMetadata.value!.name, 'Product 45');
+            assert.strictEqual(starMetadata.value!.category, 'cat 1');
+        });
+        it('API ops tests wildcard exclusion projection with select: false paths', async () => {
+            // Mongoose adds `secret: 0` to `'*': 0` projections, which Data API would otherwise reject
+            const ProductWithSecret = mongooseInstance.model(
+                'ProductWithSecret',
+                new Schema({ name: String, category: String, secret: { type: String, select: false } }, { versionKey: false }),
+                Product.collection.collectionName
+            );
+            await ProductWithSecret.create([
+                { name: 'Product 1', category: 'cat 1', secret: 'secret 1' },
+                { name: 'Product 2', category: 'cat 2', secret: 'secret 2' },
+                { name: 'Product 3', category: 'cat 3', secret: 'secret 3' },
+                { name: 'Product 4', category: 'cat 4', secret: 'secret 4' }
+            ]);
+
+            const emptyDocs = Array.from({ length: 4 }, () => [undefined, undefined]);
+            const starResp = await ProductWithSecret.find({}, {'*': 0});
+            assert.deepStrictEqual(starResp.map(doc => [doc.name, doc.secret]), emptyDocs);
+
+            const starFalseResp = await ProductWithSecret.find({}, {'*': false});
+            assert.deepStrictEqual(starFalseResp.map(doc => [doc.name, doc.secret]), emptyDocs);
+
+            const starOptionsResp = await ProductWithSecret.findOne({category: 'cat 1'}, null, {projection: {'*': 0}}).orFail();
+            assert.strictEqual(starOptionsResp.name, undefined);
+            assert.strictEqual(starOptionsResp.secret, undefined);
+
+            const updateResp = await ProductWithSecret.findOneAndUpdate(
+                {category: 'cat 1'},
+                {name: 'Product 11'},
+                {projection: {'*': 0}, returnDocument: 'after'}
+            ).orFail();
+            assert.strictEqual(updateResp.name, undefined);
+            assert.strictEqual(updateResp.secret, undefined);
+
+            const replaceResp = await ProductWithSecret.findOneAndReplace(
+                {category: 'cat 2'},
+                {name: 'Product 22', category: 'cat 2', secret: 'secret 22'},
+                {projection: {'*': 0}, returnDocument: 'after'}
+            ).orFail();
+            assert.strictEqual(replaceResp.name, undefined);
+            assert.strictEqual(replaceResp.secret, undefined);
+
+            const deleteResp = await ProductWithSecret.findOneAndDelete({category: 'cat 3'}, {projection: {'*': 0}}).orFail();
+            assert.strictEqual(deleteResp.name, undefined);
+            assert.strictEqual(deleteResp.secret, undefined);
+
+            const remaining = await ProductWithSecret.find({}, {'*': 1}).sort({category: 1});
+            assert.deepStrictEqual(
+                remaining.map(doc => [doc.name, doc.secret]),
+                [['Product 11', 'secret 1'], ['Product 22', 'secret 22'], ['Product 4', 'secret 4']]
             );
         });
         it('API ops tests Model.insertMany()', async () => {
@@ -1048,11 +1163,20 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
 
         it('works with select: *', async function() {
             const res = await Vector
-                .findOne<InferSchemaType<typeof vectorSchema>>({}, { '*': 1 })
+                .findOne({}, { '*': 1 })
                 .sort({ $vector: { $meta: [1, 99] } })
                 .orFail();
             assert.strictEqual(res.name, 'Test vector 1');
             assert.deepStrictEqual(res.$vector, [1, 100]);
+        });
+
+        it('works with select: { \'*\': 0 }', async function() {
+            const res = await Vector
+                .findOne({}, { '*': 0 })
+                .sort({ $vector: { $meta: [1, 99] } })
+                .orFail();
+            assert.strictEqual(res.name, undefined);
+            assert.strictEqual(res.$vector, undefined);
         });
 
         it('supports sort() with includeSortVector in find()', async function() {
@@ -1061,10 +1185,6 @@ describe('COLLECTIONS: mongoose Model API level tests with collections', async (
                 .sort({ $vector: { $meta: [1, 99] } })
                 .cursor();
 
-            // Mongoose 8 requires waiting for the cursor to be opened here.
-            if (mongooseVersion.startsWith('8.')) {
-                await once(cursor, 'cursor');
-            }
             const rawCursor = (cursor as unknown as { cursor: FindCursor<unknown> }).cursor;
             assert.deepStrictEqual(await rawCursor.getSortVector().then(vec => vec?.asArray()), [1, 99]);
         });

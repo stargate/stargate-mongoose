@@ -189,7 +189,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'find', arguments);
 
-        const remainingOptions = options == null ? {} : checkForTimeoutOption(checkForMaxTimeMS(options));
+        const remainingOptions = options == null ? {} : processProjectionOption(checkForTimeoutOption(checkForMaxTimeMS(options)));
         const requestOptions: CollectionFindOptions | TableFindOptions = remainingOptions.sort != null
             ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
             : { ...remainingOptions, sort: undefined };
@@ -209,7 +209,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         // eslint-disable-next-line prefer-rest-params
         _logFunctionCall(this, this.connection.debug, this.name, 'findOne', arguments);
 
-        const remainingOptions = options == null ? {} : checkForTimeoutOption(checkForMaxTimeMS(options));
+        const remainingOptions = options == null ? {} : processProjectionOption(checkForTimeoutOption(checkForMaxTimeMS(options)));
         const requestOptions: CollectionFindOneOptions | TableFindOneOptions = remainingOptions.sort != null
             ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
             : { ...remainingOptions, sort: undefined };
@@ -274,9 +274,10 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findOneAndUpdate() with tables');
         }
-        const requestOptions: CollectionFindOneAndUpdateOptions = options.sort != null
-            ? { ...options, sort: processSortOption(options.sort) }
-            : { ...options, sort: undefined };
+        const updateOptions = processProjectionOption(options);
+        const requestOptions: CollectionFindOneAndUpdateOptions = updateOptions.sort != null
+            ? { ...updateOptions, sort: processSortOption(updateOptions.sort) }
+            : { ...updateOptions, sort: undefined };
 
         filter = serialize(filter);
         setDefaultIdForUpdate<DocType>(filter, update, requestOptions);
@@ -317,7 +318,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findOneAndDelete() with tables');
         }
-        const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
+        const remainingOptions = options == null ? {} : processProjectionOption(checkForMaxTimeMS(options));
         const requestOptions: CollectionFindOneAndDeleteOptions = remainingOptions.sort != null
             ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
             : { ...remainingOptions, sort: undefined };
@@ -366,7 +367,7 @@ export class Collection<DocType extends Record<string, unknown> = Record<string,
         if (this.collection instanceof AstraTable) {
             throw new OperationNotSupportedError('Cannot use findOneAndReplace() with tables');
         }
-        const remainingOptions = options == null ? {} : checkForMaxTimeMS(options);
+        const remainingOptions = options == null ? {} : processProjectionOption(checkForMaxTimeMS(options));
         const requestOptions: CollectionFindOneAndReplaceOptions = remainingOptions.sort != null
             ? { ...remainingOptions, sort: processSortOption(remainingOptions.sort) }
             : { ...remainingOptions, sort: undefined };
@@ -832,6 +833,32 @@ function checkForTimeoutOption<T extends { timeout?: unknown }>(options: T): Omi
         throw new OperationNotSupportedError('Cannot use timeout');
     }
     return remainingOptions;
+}
+
+/**
+ * Data API allows the wildcard projection `*` only as the only root-level path. But Mongoose adds
+ * schema-level paths to wildcard projections. For `'*': 1`, Mongoose adds inclusions: `select: true`
+ * paths, the discriminator key on models that have discriminators, and populated paths. For `'*': 0`,
+ * Mongoose adds exclusions for `select: false` paths. Those additions are redundant because `*`
+ * already selects or excludes every field, so strip them out rather than letting Data API reject
+ * the whole projection.
+ *
+ * Entries of the opposite kind are left in place: Mongoose never adds them, and removing them would
+ * silently change which fields the user gets back, so Data API should reject those instead.
+ *
+ * @ignore
+ */
+function processProjectionOption<T extends { projection?: unknown }>(options: T): T {
+    const projection = options.projection as Record<string, unknown> | null | undefined;
+    if (projection == null || !('*' in projection)) {
+        return options;
+    }
+    const isInclusive = !!projection['*'];
+    const entries = Object.entries(projection).filter(([key, value]) => key === '*' || !!value !== isInclusive);
+    if (entries.length === Object.keys(projection).length) {
+        return options;
+    }
+    return { ...options, projection: Object.fromEntries(entries) };
 }
 
 function checkForMaxTimeMS<T extends { maxTimeMS?: unknown }>(options: T): Omit<T, 'maxTimeMS'> {
