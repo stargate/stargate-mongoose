@@ -94,21 +94,18 @@ declare module 'mongoose' {
 
     // Module augmentation for Astra-specific Mongoose `Model` behavior. Not strictly 100% type-safe
     // since you may import astra-mongoose without actually calling `setDriver()` but sufficient for
-    // practical purposes. The generic parameters must match Mongoose's `Model` generics **exactly**.
+    // practical purposes. The generic parameter names and order must match Mongoose's `Model` generics.
+    // Defaults are intentionally omitted so this declaration inherits whatever defaults Mongoose declares,
+    // because TypeScript reports TS2428 if merged declarations specify different defaults.
     interface Model<
       TRawDocType,
-      // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-      TQueryHelpers = {},
-      // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-      TInstanceMethods = {},
-      // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-      TVirtuals = {},
+      TQueryHelpers,
+      TInstanceMethods,
+      TVirtuals,
+      THydratedDocumentType,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      THydratedDocumentType = HydratedDocument<TRawDocType, TVirtuals & TInstanceMethods, TQueryHelpers, TVirtuals>,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-      TSchema = any,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      TLeanResultType = TRawDocType
+      TSchema,
+      TLeanResultType
     > {
 
       /**
