@@ -8,6 +8,6 @@
     "extensions": ["ts", "tsx"],
     "ignore": ["**/*.(test|spec).ts"],
     "babelrc": false,
-    "presets": [["@babel/preset-env", { "targets": { "node": true } }], "@babel/preset-typescript"]
+    "presets": [["@babel/preset-env", { "targets": { "node": true } }], ["@babel/preset-typescript", { "allowDeclareFields": true }]]
   }
 }
